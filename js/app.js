@@ -1,11 +1,15 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
+import {createCRM} from './crm.js';
 import {parseCSV,isoDate} from './csv.js';
 import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js';
-const SUPA_URL='https://jtlivzauyzdbpweimrvl.supabase.co';
-const KEY='sb_publishable_FkxjuD_iyU94-c522G7BoA_gnL8qFEQ';
+// Projeto Campanella V2 conectado ao Supabase.
+// Esta e uma chave publica, segura para uso em frontend com RLS corretamente configurado.
+// Nunca incluir chave secret ou service_role neste arquivo.
+const SUPA_URL = 'https://tyxmskdgbnrcaacwwkhi.supabase.co';
+const KEY = 'sb_publishable_Q9UBmlwOl9S5Ew7UwLn_rw_U-iHrCqF';
 const sb=createClient(SUPA_URL,KEY);
-const db={leads:[],interviews:[],packages:[],students:[],contracts:[],profiles:[],teachers:[],contract_types:[],school_settings:[],interview_invites:[]};
+const db={leads:[],interviews:[],packages:[],students:[],contracts:[],profiles:[],teachers:[],contract_types:[],school_settings:[],interview_invites:[],crm_followups:[],crm_appointments:[],crm_activities:[]};
 const ui={page:'dashboard',user:null,role:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',contractTab:'current',interviewTab:'current'};
 const errors=e=>{console.error(e);toast(e?.message||String(e),true)};
 const canAdmin=()=>ui.role==='admin';
@@ -20,7 +24,8 @@ const card=(title,body,extra='')=>`<section class="panel"><div class="panel-head
 const empty=text=>`<div class="empty"><span class="empty-symbol">✳</span>${safe(text)}</div>`;
 const row=(columns)=>`<tr>${columns.map(c=>`<td>${c}</td>`).join('')}</tr>`;
 function table(headers,rows,placeholder='Nenhum registro encontrado'){return `<div class="table-wrap">${rows.length?`<table class="data-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`:empty(placeholder)}</div>`;}
-const nav=[['dashboard','▦','Visão geral'],['leads','◉','Leads'],['interviews','▤','Fichas iniciais'],['contracts','▧','Contratos'],['students','▣','Matrículas'],['directory','♧','Alunos'],['teachers','♙','Professores'],['packages','◈','Pacotes'],['settings','⚙','Configurações']];
+const crm=createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup});
+const nav=[['dashboard','▦','Visão geral'],['leads','◉','CRM · Leads'],['interviews','▤','Fichas iniciais'],['contracts','▧','Contratos'],['students','▣','Matrículas'],['directory','♧','Alunos'],['teachers','♙','Professores'],['packages','◈','Pacotes'],['settings','⚙','Configurações']];
 function shell(){let initials=(ui.user?.email||'?').slice(0,1).toUpperCase();return `<div class="shell"><aside class="sidebar"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">School management</div></div></div><div><div class="nav-group">Área de trabalho</div><nav class="nav">${nav.map(([key,ico,label])=>`<button class="nav-btn ${ui.page===key?'active':''}" data-action="navigate" data-page="${key}"><span class="nav-ico">${ico}</span>${label}</button>`).join('')}</nav></div><div class="sidebar-bottom">Administrador<div class="user-email">${safe(ui.user?.email)}</div><button class="logout" data-action="logout">Sair da conta</button></div></aside><div class="workspace"><div class="topbar"><span class="subtle">Gestão escolar <b> / ${nav.find(x=>x[0]===ui.page)?.[2]}</b></span><div class="topbar-right"><span>Ambiente interno</span><div class="avatar">${initials}</div></div></div><main class="content" id="pageContent"></main></div></div>`}
 function login(){return `<div class="login-wrap"><div class="login-art"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">School management</div></div></div><div><h1>Uma escola mais organizada. Uma experiência mais humana.</h1><p>Leads, entrevistas, matrículas e contratos em um só lugar.</p></div><div class="small">© Campanella · Plataforma interna</div></div><div class="login-area"><div class="login-card"><div class="eyebrow">Acesso da equipe</div><h2>Bem-vindo de volta</h2><p class="muted">Entre com seu e-mail e senha cadastrados no Supabase.</p><form id="loginForm" style="margin-top:28px;display:grid;gap:16px">${input('E-mail','email','','email')}${input('Senha','password','','password')}<button class="btn">Entrar no painel →</button></form><button type="button" class="auth-text-action" data-action="showForgotPassword">Esqueci minha senha</button><p class="small muted" style="margin-top:22px">Somente administradores autorizados têm acesso.</p></div></div></div>`;}
 
@@ -30,11 +35,22 @@ function authWrap(content){return `<div class="login-wrap">${authIllustration()}
 function forgotPasswordPage(message=''){return authWrap(`<div class="eyebrow">Recuperação de acesso</div><h2>Esqueceu sua senha?</h2><p class="muted">Informe o e-mail utilizado para entrar no Campanella. Enviaremos um link para cadastrar uma nova senha.</p>${message?`<div class="inline-note" role="status">${safe(message)}</div>`:''}<form id="forgotPasswordForm" class="auth-form">${input('E-mail da conta','email','','email')}<button class="btn" type="submit">Enviar link de recuperação →</button></form><button type="button" class="auth-text-action" data-action="backLogin">← Voltar ao login</button>`);}
 function newPasswordPage(){return authWrap(`<div class="eyebrow">Nova senha</div><h2>Crie sua nova senha</h2><p class="muted">Digite uma senha com pelo menos 8 caracteres e confirme abaixo.</p><form id="newPasswordForm" class="auth-form">${input('Nova senha','password','','password')}${input('Confirmar senha','password_confirm','','password')}<button class="btn" type="submit">Salvar nova senha →</button></form><button type="button" class="auth-text-action" data-action="backLogin">← Voltar ao login</button>`);}
 async function initialize(){if(location.hash.startsWith('#assinar/'))return publicStart(location.hash.slice(9));if(location.hash.startsWith('#entrevista/'))return externalStart(location.hash.slice('#entrevista/'.length));if(passwordRecoveryRoute()){const {data:{session}}=await sb.auth.getSession();ui.user=null;$('#app').innerHTML=session?newPasswordPage():forgotPasswordPage('O link de recuperação está inválido ou expirou. Solicite um novo e-mail.');return;}const {data:{session}}=await sb.auth.getSession();if(!session){ui.user=null;$('#app').innerHTML=login();return;}ui.user=session.user;const {data:p,error}=await sb.from('profiles').select('role').eq('id',session.user.id).maybeSingle();if(error)return errors(error);ui.role=p?.role||'pending';if(ui.role!=='admin'){$('#app').innerHTML=`<div class="login-area" style="min-height:100vh"><div class="login-card"><h2>Acesso administrativo necessário</h2><p>Peça a outro administrador para promover esta conta em Configurações.</p><br><button class="btn" data-action="logout">Sair</button></div></div>`;return;}await refresh();}
-async function refresh(){for(const k of Object.keys(db)){const {data,error}=await sb.from(k).select('*').order('created_at',{ascending:false}).limit(500);if(error){errors(error);return;}db[k]=data||[];}render();}
+async function refresh(){
+ for(const k of Object.keys(db)){
+  const all=[];const pageSize=500;const maxPages=(k==='leads'||k.startsWith('crm_'))?10:1;
+  for(let page=0;page<maxPages;page++){
+   const {data,error}=await sb.from(k).select('*').order('created_at',{ascending:false}).range(page*pageSize,(page+1)*pageSize-1);
+   if(error){errors(error);return;}
+   all.push(...(data||[]));if(!data||data.length<pageSize)break;
+  }
+  db[k]=all;
+ }
+ render();
+}
 function render(){
  if(!ui.user)return;
  $('#app').innerHTML=shell();
- const func={dashboard,leads:leadsView,interviews:interviewsView,contracts:contractsView,students:studentsView,directory:directoryView,teachers:teachersView,packages:packagesView,settings:settingsView}[ui.page]||dashboard;
+ const func={dashboard,leads:crm.view,interviews:interviewsView,contracts:contractsView,students:studentsView,directory:directoryView,teachers:teachersView,packages:packagesView,settings:settingsView}[ui.page]||dashboard;
  $('#pageContent').innerHTML=func();
 }
 
@@ -42,7 +58,7 @@ function enrollmentState(c){if(c.status==='closed'||c.status==='superseded')retu
 function enrollmentTag(c){const st=enrollmentState(c);return st==='closed'?'<span class="pill">Encerrada</span>':st==='expired'?'<span class="pill pill-sent">Expirada</span>':st==='active'?'<span class="pill pill-signed">Ativa</span>':contractTag(c);}
 function contractTag(c){return c.status==='draft'?'<span class="pill">A enviar</span>':c.status==='sent'?'<span class="pill pill-sent">Enviado</span>':c.status==='signed'?(enrollmentState(c)==='expired'?'<span class="pill pill-sent">Expirado</span>':'<span class="pill pill-signed">Ativo</span>'):c.status==='closed'||c.status==='superseded'?'<span class="pill">Encerrado</span>':c.status==='void'?'<span class="pill pill-void">Cancelado</span>':tag(c.status);}
 function expiryBadge(c){const d=diffDays(c.terms?.end_date||'');return `<span class="pill ${d<=30?'pill-sent':'pill-signed'}">${d<0?'Expirou há '+(-d)+' dias':d===0?'Expira hoje':d+' dias'}</span>`;}
-function dashboard(){const signed=db.contracts.filter(c=>c.status==='signed');const exp=signed.filter(c=>diffDays(c.terms.end_date)<=30);const awaiting=db.contracts.filter(c=>c.status==='sent');return `${heading('Painel de controle','Visão geral','Acompanhe a jornada da matrícula até a renovação.')}<div class="metric-grid"><div class="metric"><div class="metric-value">${db.leads.filter(l=>l.status!=='convertido'&&l.status!=='perdido').length}</div><div class="metric-label">Leads em andamento</div></div><div class="metric"><div class="metric-value">${db.leads.filter(l=>l.status!=='convertido'&&!!l.ficha_iniciada_at&&l.ficha_status!=='archived'&&!db.contracts.some(c=>c.lead_id===l.id&&c.status!=='void')).length}</div><div class="metric-label">Fichas sem contrato</div></div><div class="metric"><div class="metric-value">${awaiting.length}</div><div class="metric-label">Aguardando assinatura</div></div><div class="metric"><div class="metric-value">${exp.length}</div><div class="metric-label">Expiradas ou a vencer</div></div></div>${card('Matrículas recentes',table(['Aluno','Pacote','Fim','Estado'],signed.sort((a,b)=>a.terms.end_date.localeCompare(b.terms.end_date)).slice(0,8).map(c=>row([safe(lookup('students',c.student_id)?.full_name),safe(c.terms.package_name),dateBR(c.terms.end_date),enrollmentTag(c)]))))}`;}
+function dashboard(){const signed=db.contracts.filter(c=>c.status==='signed');const exp=signed.filter(c=>diffDays(c.terms.end_date)<=30);const awaiting=db.contracts.filter(c=>c.status==='sent');return `${heading('Painel de controle','Visão geral','Acompanhe a jornada da matrícula até a renovação.')}<div class="metric-grid"><div class="metric"><div class="metric-value">${db.leads.filter(l=>l.crm_outcome==='open'&&l.status!=='convertido').length}</div><div class="metric-label">Leads em andamento</div></div><div class="metric"><div class="metric-value">${db.leads.filter(l=>l.status!=='convertido'&&!!l.ficha_iniciada_at&&l.ficha_status!=='archived'&&!db.contracts.some(c=>c.lead_id===l.id&&c.status!=='void')).length}</div><div class="metric-label">Fichas sem contrato</div></div><div class="metric"><div class="metric-value">${awaiting.length}</div><div class="metric-label">Aguardando assinatura</div></div><div class="metric"><div class="metric-value">${exp.length}</div><div class="metric-label">Expiradas ou a vencer</div></div></div>${card('Matrículas recentes',table(['Aluno','Pacote','Fim','Estado'],signed.sort((a,b)=>a.terms.end_date.localeCompare(b.terms.end_date)).slice(0,8).map(c=>row([safe(lookup('students',c.student_id)?.full_name),safe(c.terms.package_name),dateBR(c.terms.end_date),enrollmentTag(c)]))))}`;}
 
 function leadsView(){
  const list=db.leads.filter(l=>l.status!=='convertido'&&(!ui.search||[l.name,l.phone,l.guardian_name].join(' ').toLowerCase().includes(ui.search))&&(ui.leadStatus==='all'||ui.leadStatus==='com_ficha'&&!!l.ficha_iniciada_at||ui.leadStatus==='sem_ficha'&&!l.ficha_iniciada_at||ui.leadStatus===l.status));
@@ -394,7 +410,7 @@ document.addEventListener('click',async e=>{
 document.addEventListener('input',e=>{
  if(e.target.id==='search'){
   ui.search=e.target.value.toLowerCase();const pos=e.target.selectionStart;
-  const view=ui.page==='leads'?leadsView():ui.page==='interviews'?interviewsView():ui.page==='contracts'?contractsView():ui.page==='students'?studentsView():ui.page==='directory'?directoryView():null;
+  const view=ui.page==='leads'?null:ui.page==='interviews'?interviewsView():ui.page==='contracts'?contractsView():ui.page==='students'?studentsView():ui.page==='directory'?directoryView():null;
   if(view){$('#pageContent').innerHTML=view;$('#search').focus();$('#search').setSelectionRange(pos,pos);}
  }
  if(['total_amount','installments','installment_amount'].includes(e.target.name)&&['interviewForm','renewForm','manualEnrollmentForm','externalInterviewForm'].includes(e.target.form?.id))updateInstallment(e.target.form,e.target.name);
