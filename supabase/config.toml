@@ -1,0 +1,2 @@
+[functions.assinatura]
+verify_jwt = false
