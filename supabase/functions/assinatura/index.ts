@@ -28,11 +28,12 @@ function values(c:any,s:any,signedDate:string){const t=c.terms,minor=c.kind==='m
  qtd_aulas:String(t.lessons_count),data_inicio:brDate(t.start_date),data_fim:brDate(t.end_date),
  dias:(t.weekly_days||[]).map((d:number)=>weekdays[d]).join(' e '),horario:String(t.lesson_time||'').slice(0,5),
  parcelas:String(t.installments),primeiro_vencimento:brDate(t.first_due_date),segundo_vencimento:brDate(nextDue(t.first_due_date)),
- valor_parcela:money(t.installment_amount),data_assinatura_extenso:longDate(signedDate)
+ valor_parcela:money(t.installment_amount),valor_primeira_parcela:money(t.first_installment_amount??t.installment_amount),curso:String(t.course||'Inglês'),professor:String(t.teacher_name||''),forma_pagamento:String(t.payment_method||''),data_assinatura_extenso:longDate(signedDate),...Object.fromEntries(Object.entries({...t.custom_fields,...s.custom_fields}).filter(([k])=>/^[a-z][a-z0-9_]{1,39}$/.test(k)).map(([k,v])=>[k,String(v??'')]))
 };}
 function render(c:any,s:any,date:string,signature?:string){const v=values(c,s,date);
  const body=String(c.template_html).replace(/\{\{([a-z0-9_]+)\}\}/g,(_,k)=>esc((v as Record<string,string>)[k]??''));
- return `<article class="legal-document">${body}<section class="signature-summary"><p><b>Assinatura eletrônica:</b> ${esc(c.kind==='menor'?s.guardian_name:s.full_name)}</p>${signature?`<img alt="Assinatura manuscrita eletrônica" src="${signature}">`:''}<p>Registrado em ${esc(longDate(date))}. Identificação do contrato: ${esc(c.id)}.</p></section></article>`;
+ const ownerImage=typeof c.owner_signature_png==='string'&&/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(c.owner_signature_png)?`<img alt="Assinatura da escola" src="${c.owner_signature_png}" style="max-width:240px;max-height:75px;display:block">`:'';
+ return `<article class="legal-document">${body}<section class="owner-signature" style="border-top:1px solid #ddd;padding-top:14px;margin-top:26px">${ownerImage}<strong>CONTRATADA: ${esc(c.owner_name||'Escola')}</strong></section><section class="signature-summary"><p><b>Assinatura eletrônica:</b> ${esc(c.kind==='menor'?s.guardian_name:s.full_name)}</p>${signature?`<img alt="Assinatura manuscrita eletrônica" src="${signature}">`:''}<p>Registrado em ${esc(longDate(date))}. Identificação do contrato: ${esc(c.id)}.</p></section></article>`;
 }
 const origins=(Deno.env.get('APP_ORIGINS')||'').split(',').map(s=>s.trim()).filter(Boolean);
 function cors(req:Request){const o=req.headers.get('origin')||'';return {
@@ -55,7 +56,7 @@ Deno.serve(async(req)=>{
   if(!/^[a-f0-9]{64}$/.test(token))return respond({error:'Link inválido'},400);
   if(!['lookup','sign'].includes(b.action))return respond({error:'Operação inválida'},400);
   const tokenHash=await hash(token);
-  const {data:c,error:e}=await db.from('contracts').select('id,kind,status,terms,template_html,template_version,lead_id,student_id,token_expires_at')
+  const {data:c,error:e}=await db.from('contracts').select('id,kind,status,terms,template_html,template_version,lead_id,student_id,token_expires_at,owner_name,owner_signature_png')
    .eq('token_hash',tokenHash).eq('status','sent').gt('token_expires_at',new Date().toISOString()).maybeSingle();
   if(e)throw e;
   if(!c)return respond({error:'Este link não existe, expirou ou já foi utilizado.'},404);
@@ -64,17 +65,17 @@ Deno.serve(async(req)=>{
    const {data:lead}=await db.from('leads').select('name,guardian_name').eq('id',c.lead_id).single();
    let existing=null;
    if(c.student_id){const {data:student}=await db.from('students').select('full_name,cpf,email,birth_date,phone,address,cep,is_minor,guardian_name,guardian_birth_date,guardian_cpf,guardian_phone,guardian_email,guardian_address,guardian_cep').eq('id',c.student_id).single();existing=student;}
-   return respond({kind:c.kind,terms:c.terms,template_html:c.template_html,template_version:c.template_version,
+   return respond({kind:c.kind,terms:c.terms,template_html:c.template_html,template_version:c.template_version,owner_name:c.owner_name,owner_signature_png:c.owner_signature_png,
     lead:{name:lead?.name||'',guardian_name:lead?.guardian_name||''},existing});
   }
   const s=b.student||{};
   if(Object.values(s).some(v=>typeof v==='string' && v.length>500))return respond({error:'Campo excede o tamanho permitido'},422);
-  for(const f of ['full_name','cpf','email','birth_date','phone','address','cep'])if(!String(s[f]||'').trim())return respond({error:`Campo obrigatório: ${f}`},422);
+  for(const f of c.kind==='menor'?['full_name','cpf','email','birth_date']:['full_name','cpf','email','birth_date','phone','address','cep'])if(!String(s[f]||'').trim())return respond({error:`Campo obrigatório: ${f}`},422);
   if(String(s.full_name).trim().length<3||String(s.full_name).length>180)return respond({error:'Nome inválido'},422);
   if(!cpfValid(s.cpf))return respond({error:'CPF do aluno inválido'},422);
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s.email))||String(s.email).length>180)return respond({error:'E-mail inválido'},422);
   if(!asDate(s.birth_date)||s.birth_date>todayBR()||s.birth_date<'1900-01-01')return respond({error:'Data de nascimento inválida'},422);
-  if(digits(s.cep).length!==8)return respond({error:'CEP inválido'},422);
+  if(c.kind!=='menor'&&digits(s.cep).length!==8)return respond({error:'CEP inválido'},422);
   const minor=isMinor(s.birth_date);
   if(minor!==(c.kind==='menor'))return respond({error:'A idade informada exige outro modelo de contrato. Contate a escola.'},422);
   if(minor){
@@ -84,13 +85,27 @@ Deno.serve(async(req)=>{
     ||digits(s.guardian_cep).length!==8||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s.guardian_email)))
     return respond({error:'Confira CPF, nascimento, CEP e e-mail do responsável'},422);
   }
+  const customFields:Record<string,string>={};
+  const schema=Array.isArray(c.terms?.custom_field_schema)?c.terms.custom_field_schema:[];
+  if(schema.length>25)return respond({error:'Campos adicionais inválidos'},422);
+  for(const spec of schema){
+   if(!spec||typeof spec.key!=='string'||!/^[a-z][a-z0-9_]{1,39}$/.test(spec.key)||!['admin','aluno'].includes(spec.who))return respond({error:'Modelo inválido'},422);
+   if(spec.who==='admin'){
+    customFields[spec.key]=String(c.terms.custom_fields?.[spec.key]??'').trim();
+   }else{
+    const value=String(s.custom_fields?.[spec.key]??'').trim();
+    if(!value||value.length>400)return respond({error:'Campo adicional obrigatório: '+spec.key},422);
+    customFields[spec.key]=value;
+   }
+  }
   if(b.accepted!==true)return respond({error:'É preciso aceitar o contrato'},422);
   const signature=String(b.signature||'');
   if(!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(signature)||signature.length>300_000||signature.length<400)
    return respond({error:'Assinatura inválida ou muito grande'},422);
   const student={
+   custom_fields:customFields,
    full_name:String(s.full_name).trim(),cpf:digits(s.cpf),email:String(s.email).trim().toLowerCase(),
-   birth_date:s.birth_date,phone:String(s.phone).trim(),address:String(s.address).trim(),cep:digits(s.cep),
+   birth_date:s.birth_date,phone:String(minor?s.guardian_phone:s.phone).trim(),address:String(minor?s.guardian_address:s.address).trim(),cep:digits(minor?s.guardian_cep:s.cep),
    guardian_name:minor?String(s.guardian_name).trim():null,
    guardian_birth_date:minor?s.guardian_birth_date:null,guardian_cpf:minor?digits(s.guardian_cpf):null,
    guardian_phone:minor?String(s.guardian_phone).trim():null,guardian_email:minor?String(s.guardian_email).trim().toLowerCase():null,

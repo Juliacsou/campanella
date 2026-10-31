@@ -192,7 +192,7 @@ begin
  if not found then raise exception 'Link inválido, vencido ou já utilizado'; end if;
  if c.kind='dupla' then raise exception 'Assinatura de dupla não habilitada nesta versão'; end if;
  dob := (p_student->>'birth_date')::date;
- minor := (dob + interval '18 years')::date > current_date;
+ minor := (dob + interval '18 years')::date > (now() at time zone 'America/Sao_Paulo')::date;
  if (minor and c.kind<>'menor') or (not minor and c.kind<>'individual') then
   raise exception 'Modelo incompatível com a idade do aluno'; end if;
  if c.student_id is not null then
@@ -216,6 +216,9 @@ begin
   on conflict(lead_id) do update set full_name=excluded.full_name
   returning id into sid;
  end if;
+ -- Ao entrar uma nova matrícula assinada, as anteriores tornam-se históricas.
+ update public.contracts set status='superseded'
+ where student_id=sid and id<>c.id and status='signed';
  update public.contracts set student_id=sid,status='signed',signed_at=now(),signed_name=p_signed_name,
   student_snapshot=p_student,signature_png=p_signature_png,signed_document_html=p_signed_html,
   signed_hash=p_signed_hash,audit=p_audit,token_hash=null,token_expires_at=null where id=c.id;

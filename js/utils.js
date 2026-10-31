@@ -23,8 +23,8 @@ export function valuesFor(c,s={}){let t=c.terms||{},minor=c.kind==='menor';retur
  qtd_aulas:String(t.lessons_count||''),data_inicio:dateBR(t.start_date),data_fim:dateBR(t.end_date),
  dias:(t.weekly_days||[]).map(d=>fullDays[d]).join(' e '),horario:String(t.lesson_time||'').slice(0,5),
  parcelas:String(t.installments||''),primeiro_vencimento:dateBR(t.first_due_date),
- segundo_vencimento:t.first_due_date?dateBR(plusMonth(t.first_due_date)):'',valor_parcela:money(t.installment_amount),
- data_assinatura_extenso:c.signed_at?new Intl.DateTimeFormat('pt-BR',{dateStyle:'long'}).format(new Date(c.signed_at)):'data da assinatura eletrônica'};}
+ segundo_vencimento:t.first_due_date?dateBR(plusMonth(t.first_due_date)):'',valor_parcela:money(t.installment_amount),valor_primeira_parcela:money(t.first_installment_amount??t.installment_amount),curso:t.course||'Inglês',professor:t.teacher_name||'',forma_pagamento:t.payment_method||'',
+ data_assinatura_extenso:c.signed_at?new Intl.DateTimeFormat('pt-BR',{dateStyle:'long'}).format(new Date(c.signed_at)):'data da assinatura eletrônica',...Object.fromEntries(Object.entries({...t.custom_fields,...s.custom_fields}).filter(([k])=>/^[a-z][a-z0-9_]{1,39}$/.test(k)).map(([k,v])=>[k,String(v??'')]))};}
 export function contractHTML(c,s){const fields=valuesFor(c,s);return String(c.template_html||'').replace(/\{\{([a-z0-9_]+)\}\}/g,(_,key)=>safe(fields[key]??''));}
 export function formData(form){return Object.fromEntries(new FormData(form).entries())}
 export function options(items,selected='',key='id',name='name'){return items.map(x=>`<option value="${safe(x[key])}" ${String(x[key])===String(selected)?'selected':''}>${safe(x[name])}</option>`).join('')}

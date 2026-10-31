@@ -1,2 +1,5 @@
 [functions.assinatura]
 verify_jwt = false
+
+[functions.entrevista]
+verify_jwt = false
