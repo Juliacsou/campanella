@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Campanella · Tutorial de contratos</title>
+  <link rel="stylesheet" href="./css/ajuda-contratos.css?v=2.1.2">
+</head>
+<body>
+  <header class="guide-top"><div class="guide-top-inner"><a href="./index.html" class="guide-brand"><span class="logo">C</span><span><strong>CAMPANELLA</strong><small>Central de ajuda</small></span></a><a class="back" href="./index.html">← Voltar ao sistema</a></div></header>
+  <main class="guide-layout">
+    <aside class="guide-sidebar" aria-label="Tópicos do tutorial">
+      <div class="guide-nav-title">Neste tutorial</div>
+      <nav class="guide-nav">
+        <a href="#preparar">01 · Preparar o Word</a>
+        <a href="#campos">02 · Criar campos livres</a>
+        <a href="#assinaturas">03 · Posicionar assinaturas</a>
+        <a href="#cadastrar">04 · Cadastrar e vincular</a>
+        <a href="#conferir">05 · Conferir antes de enviar</a>
+        <a href="#duvidas">Dúvidas comuns</a>
+      </nav>
+      <div class="guide-side-note"><strong>Modelo de exemplo</strong><p>Baixe um DOCX preparado com os marcadores.</p><a href="./exemplos/Modelo_de_Contrato_com_Marcadores.docx" download>↓ Baixar exemplo Word</a></div>
+    </aside>
+    <div class="guide-main">
+      <div class="guide-hero"><div class="guide-overline">GUIA PRÁTICO · DOCUMENTOS</div><h1>Como criar um modelo de contrato</h1><p>Prepare seu arquivo Word, marque os campos que serão preenchidos automaticamente e cadastre o documento na biblioteca do Campanella.</p><div class="guide-hero-footer"><span>5 etapas</span><span>Modelos .docx</span><span>Para administradores</span></div></div>
+
+      <section class="step" id="preparar"><div class="step-number">01</div><div class="step-content"><h2>Prepare o arquivo no Word</h2><p>Escreva o contrato com as cláusulas e a formatação que deseja utilizar. Salve como <strong>Documento do Word (.docx)</strong>.</p><div class="guide-checks"><div><span class="check">✓</span> O limite por arquivo é de <strong>2 MB</strong>.</div><div><span class="check">✓</span> Você pode usar títulos, parágrafos e tabelas.</div><div><span class="check">✓</span> Use marcadores nos pontos onde deseja que o sistema insira informações.</div></div></div></section>
+
+      <section class="step field-step" id="campos">
+        <div class="step-number">02</div>
+        <div class="step-content">
+          <div class="field-heading"><span class="feature-label">CAMPOS DINÂMICOS</span><h2>Você escolhe quais informações o contrato vai pedir</h2></div>
+          <p>Não existe uma lista fechada: você pode criar um campo para <strong>qualquer informação</strong>, como RG, profissão, material didático ou objetivo do curso. Basta escrever o marcador no Word seguindo <strong>esta fórmula</strong>:</p>
+
+          <div class="syntax-showcase" aria-label="Fórmula para criar campos no contrato">
+            <div class="syntax-header"><span>FÓRMULA PARA USAR NO WORD</span><span class="syntax-label">Obrigatória</span></div>
+            <div class="syntax-formula" role="img" aria-label="Dois sinais de menor, nome underline campo, barra, quem underline preenche, dois sinais de maior">
+              <span class="syntax-delim">&lt;&lt;</span><span class="syntax-name">nome_campo</span><span class="syntax-slash">/</span><span class="syntax-who">quem_preenche</span><span class="syntax-delim">&gt;&gt;</span>
+            </div>
+            <div class="syntax-legend">
+              <div><span class="legend-marker legend-name"></span><div><strong>nome_campo</strong><small>Qual informação deseja coletar? Você inventa o nome.</small></div></div>
+              <div><span class="legend-marker legend-slash"></span><div><strong>/</strong><small>A barra separa o nome de quem vai preencher.</small></div></div>
+              <div><span class="legend-marker legend-who"></span><div><strong>quem_preenche</strong><small>Escolha exatamente <code>contratante</code> ou <code>contratado</code>.</small></div></div>
+            </div>
+          </div>
+
+          <h3 class="role-title">Quem deve preencher o campo?</h3>
+          <div class="role-grid role-definitions">
+            <article class="role-card"><span class="role-token">contratante</span><h4>Aluno ou responsável</h4><p>O campo aparece para a pessoa preencher pelo link de assinatura.</p></article>
+            <article class="role-card"><span class="role-token">contratado</span><h4>Escola / administração</h4><p>O campo é preenchido pela escola antes do contrato ser enviado.</p></article>
+          </div>
+
+          <div class="marker-builder" aria-labelledby="marker-builder-title">
+            <div class="builder-heading"><div><span class="feature-label">EXPERIMENTE AQUI</span><h3 id="marker-builder-title">Monte seu próprio campo</h3><p>Escreva o nome que quiser, escolha quem preenche e copie o resultado para o seu documento Word.</p></div><span class="builder-tag">Interativo</span></div>
+            <div class="builder-inputs">
+              <div class="builder-field"><label for="custom-field-name">1. Nome da informação</label><input id="custom-field-name" type="text" value="objetivo_curso" maxlength="40" spellcheck="false" autocomplete="off" aria-describedby="marker-validation"><small>Ex.: <code>objetivo_curso</code> · Sem espaços ou acentos</small></div>
+              <div class="builder-field"><label for="custom-field-role">2. Quem preenche?</label><select id="custom-field-role"><option value="contratante">Aluno ou responsável</option><option value="contratado">Escola / administração</option></select><small>Esta escolha define quem verá o campo.</small></div>
+            </div>
+            <div class="builder-output">
+              <div><span class="output-caption">SEU MARCADOR PRONTO PARA COLAR</span><code id="custom-marker-preview">&lt;&lt;objetivo_curso/contratante&gt;&gt;</code></div>
+              <button id="copy-custom-marker" class="copy-primary" type="button">Copiar marcador</button>
+            </div>
+            <p id="marker-validation" class="builder-validation" aria-live="polite">Pronto! Coloque esse texto no local desejado dentro do seu contrato Word.</p>
+          </div>
+
+          <div class="sample-examples"><h3>Exemplos de ideias para campos</h3><p>São apenas sugestões. Você pode criar outros nomes e escolher qualquer um dos dois responsáveis pelo preenchimento.</p><div class="examples-list"><code>&lt;&lt;rg/contratante&gt;&gt;</code><code>&lt;&lt;profissao/contratante&gt;&gt;</code><code>&lt;&lt;livro_utilizado/contratado&gt;&gt;</code><code>&lt;&lt;objetivo_curso/contratante&gt;&gt;</code></div></div>
+
+          <div class="guide-tip"><strong>Para o marcador funcionar</strong><p>Use letras <strong>minúsculas</strong>, números e <strong>underline (_)</strong>, sem espaços ou acentos. O nome deve começar com uma letra e ter de <strong>2 a 40 caracteres</strong>. Mantenha <code>&lt;&lt;</code>, <code>/</code> e <code>&gt;&gt;</code>. O termo <code>assinatura</code> é reservado para os marcadores da próxima etapa.</p><p>Se repetir a mesma informação em vários trechos do Word, use o <strong>mesmo marcador</strong> e o mesmo responsável em todos eles.</p></div>
+          <h3>Campos que o Campanella já reconhece</h3><p>Você também pode aproveitar estes campos automáticos, que vêm de informações do cadastro e da ficha inicial.</p><div class="marker-list"><span><code>&lt;&lt;aluno_nome/contratante&gt;&gt;</code></span><span><code>&lt;&lt;contratante_nome/contratante&gt;&gt;</code></span><span><code>&lt;&lt;curso/contratado&gt;&gt;</code></span><span><code>&lt;&lt;valor_total/contratado&gt;&gt;</code></span><span><code>&lt;&lt;data_inicio/contratado&gt;&gt;</code></span><span><code>&lt;&lt;data_fim/contratado&gt;&gt;</code></span><span><code>&lt;&lt;grade_horarios/contratado&gt;&gt;</code></span><span><code>&lt;&lt;qtd_aulas/contratado&gt;&gt;</code></span></div>
+        </div>
+      </section>
+
+      <section class="step" id="assinaturas"><div class="step-number">03</div><div class="step-content"><h2>Posicione as duas assinaturas</h2><p>Em vez de deixar apenas uma linha em branco, insira os marcadores abaixo no lugar exato em que deseja cada assinatura.</p><div class="signature-sample"><div class="sig-block"><div class="marker-row"><code>&lt;&lt;assinatura/contratante&gt;&gt;</code><button class="copy" data-copy="<<assinatura/contratante>>" type="button">Copiar</button></div><div class="sig-line"></div><strong>CONTRATANTE</strong><small>Assinatura feita pelo link</small></div><div class="sig-block"><div class="marker-row"><code>&lt;&lt;assinatura/contratado&gt;&gt;</code><button class="copy" data-copy="<<assinatura/contratado>>" type="button">Copiar</button></div><div class="sig-line"></div><strong>CONTRATADA</strong><small>Assinatura cadastrada pela escola</small></div></div><div class="guide-tip"><strong>Importante</strong><p>Esses dois marcadores são obrigatórios nos novos modelos. O sistema utiliza a assinatura da escola cadastrada em Configurações e a assinatura feita pelo aluno no link. O modelo de dupla ainda não tem assinatura pública de dois contratantes nesta versão.</p></div></div></section>
+
+      <section class="step" id="cadastrar"><div class="step-number">04</div><div class="step-content"><h2>Cadastre na biblioteca</h2><div class="action-sequence"><div><span>1</span><p>Abra <strong>Modelos de contratos</strong> no menu lateral e clique em <strong>Novo modelo</strong>.</p></div><div><span>2</span><p>Informe o nome, selecione a modalidade e envie o arquivo <code>.docx</code>.</p></div><div><span>3</span><p>Se desejar, marque os pacotes que usarão esse modelo como padrão.</p></div><div><span>4</span><p>Salve. O modelo ficará disponível ao gerar novos contratos.</p></div></div><p class="small-note">Se um pacote não tiver modelo associado, será possível escolher um modelo manualmente na matrícula. O cadastro de pacotes é opcional para matrículas personalizadas.</p></div></section>
+
+      <section class="step" id="conferir"><div class="step-number">05</div><div class="step-content"><h2>Faça uma conferência antes de usar</h2><p>Após salvar, clique em <strong>Visualizar</strong> para conferir o texto e a identificação dos campos. Em seguida, crie um contrato fictício, abra o link e veja como o documento fica para o aluno.</p><div class="guide-checks"><div><span class="check">✓</span> Os dados pessoais aparecem nos campos certos?</div><div><span class="check">✓</span> Os dias e horários correspondem à ficha inicial?</div><div><span class="check">✓</span> As assinaturas aparecem onde foram marcadas?</div><div><span class="check">✓</span> O modelo correto foi selecionado para o pacote?</div></div><div class="guide-tip"><strong>Preservação do histórico</strong><p>Alterações no modelo são aplicadas a contratos novos. Os contratos já criados guardam uma cópia própria e não devem mudar retroativamente.</p></div></div></section>
+
+      <section class="faq" id="duvidas"><h2>Dúvidas comuns</h2><details><summary>Posso usar o mesmo modelo em mais de um pacote?</summary><p>Sim. O mesmo modelo pode ser vinculado a vários pacotes. Cada pacote tem um modelo padrão por vez.</p></details><details><summary>O aluno recebe um arquivo Word depois de assinar?</summary><p>A via assinada disponibilizada pelo link é em HTML e pode ser salva em PDF pelo navegador. O DOCX gerado antes da assinatura não incorpora a imagem desenhada pelo aluno.</p></details><details><summary>O que acontece se eu desativar um modelo?</summary><p>Ele deixa de estar disponível para novos contratos. Isso não altera os contratos já criados.</p></details><details><summary>Preciso cadastrar uma assinatura padrão?</summary><p>Não há imagem de assinatura predefinida no projeto. A escola deve cadastrar sua assinatura na área Configurações.</p></details></section>
+
+      <footer class="guide-footer"><span>Campanella · Tutorial de contratos</span><a href="./index.html">Voltar ao sistema ↑</a></footer>
+    </div>
+  </main>
+  <div id="copy-feedback" aria-live="polite" role="status"></div>
+  <script>
+    (() => {
+      const field = document.getElementById('custom-field-name');
+      const role = document.getElementById('custom-field-role');
+      const preview = document.getElementById('custom-marker-preview');
+      const action = document.getElementById('copy-custom-marker');
+      const message = document.getElementById('marker-validation');
+      const validName = /^[a-z][a-z0-9_]{1,39}$/;
+      function updateMarker() {
+        const name = field.value.trim();
+        const valid = validName.test(name) && name !== 'assinatura';
+        preview.textContent = valid ? `<<${name}/${role.value}>>` : 'Corrija o nome do campo';
+        action.disabled = !valid;
+        field.setAttribute('aria-invalid', String(!valid));
+        message.classList.toggle('is-invalid', !valid);
+        message.textContent = valid
+          ? 'Pronto! Coloque esse texto no local desejado dentro do seu contrato Word.'
+          : 'O nome deve começar com uma letra minúscula, ter de 2 a 40 caracteres e conter somente letras, números e underline. "assinatura" é reservado.';
+      }
+      field.addEventListener('input', updateMarker);
+      role.addEventListener('change', updateMarker);
+      updateMarker();
+      document.addEventListener('click', async event => {
+        const button = event.target.closest('[data-copy], #copy-custom-marker');
+        if (!button || button.disabled) return;
+        const value = button.id === 'copy-custom-marker' ? preview.textContent : button.dataset.copy;
+        const previous = button.id === 'copy-custom-marker' ? 'Copiar marcador' : 'Copiar';
+        try {
+          await navigator.clipboard.writeText(value);
+          button.textContent = 'Copiado ✓';
+          setTimeout(() => {button.textContent = previous}, 1600);
+        } catch (_) {
+          button.textContent = 'Selecione o texto';
+          setTimeout(() => {button.textContent = previous}, 2000);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

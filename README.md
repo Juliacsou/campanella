@@ -1,4 +1,4 @@
-# Campanella V2.1 — CRM, contratos e agendas de aulas
+# Campanella V2.1.2 — CRM, contratos e agendas de aulas
 
 Sistema completo (HTML, CSS, JavaScript, Supabase) para a escola, preservando a V2 e o projeto conectado:
 `https://tyxmskdgbnrcaacwwkhi.supabase.co`.
@@ -57,3 +57,22 @@ O aluno visualiza a grade com destaque antes de assinar. Contratos antigos sem `
 4. No link de assinatura, confira o destaque de terça e quinta com horários distintos.
 5. Assine com dados fictícios; baixe o HTML e confira o local e a quantidade de assinaturas.
 6. Edite o horário atual no perfil do aluno; confirme que o contrato antigo fica igual e que a rematrícula usa os novos horários.
+
+## V2.1.1 — Biblioteca de contratos mais limpa
+
+- A página **Modelos de contratos** usa cartões organizados com ações de visualizar, editar, ativar/desativar e excluir/arquivar.
+- Removidas as instruções repetidas da biblioteca, do formulário DOCX e de **Configurações**.
+- Novo link **Tutorial de contratos** na biblioteca, no formulário de cadastro/edição e em Configurações. O tutorial abre a página `ajuda-contratos.html` em outra aba, para não perder o preenchimento do formulário.
+- O tutorial explica preparação do Word, marcadores `<<campo/contratante>>` e `<<campo/contratado>>`, assinatura em posições definidas, vínculo a pacotes e checagem.
+- **Atualização exclusivamente de interface:** não precisa de SQL adicional nem republicar Edge Functions se você já instalou a V2.1.
+- Substitua a pasta publicada pelo conteúdo deste ZIP completo. Não misture arquivos de versões diferentes.
+
+## V2.1.2 — Tutorial de campos personalizado
+
+- A ajuda em `ajuda-contratos.html` agora prioriza a regra **`<<nome_campo/quem_preenche>>`**, exibida em uma área visual com a explicação de cada componente.
+- Explica que qualquer campo pode ser criado, desde que o nome siga as regras do importador DOCX (2–40 caracteres, letra minúscula inicial, depois letras minúsculas, números e `_`). O termo `assinatura` é reservado.
+- Exibe as duas opções `contratante` (aluno/responsável) e `contratado` (escola/administração).
+- Inclui um gerador interativo no tutorial: escolha o nome e quem preenche; valide e copie o marcador para colar no Word.
+- Os exemplos aparecem depois da fórmula e estão explicitamente identificados como sugestões.
+- Apenas a página de ajuda e seu CSS foram alterados. **Não execute nenhum SQL nem atualize as Edge Functions para esta versão.**
+- Faça upload de **todo o conteúdo** desta pasta no GitHub Pages, substituindo a versão anterior. Os dados ficam no mesmo Supabase; não são apagados.
