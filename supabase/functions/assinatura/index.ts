@@ -26,14 +26,23 @@ function values(c:any,s:any,signedDate:string){const t=c.terms,minor=c.kind==='m
  contratante_2_nome:'',contratante_2_cpf:'',contratante_2_endereco:'',contratante_2_cep:'',contratante_2_telefone:'',contratante_2_email:'',
  valor_total:money(t.total_amount),valor_total_extenso:t.total_extenso||'valor conforme indicado',
  qtd_aulas:String(t.lessons_count),data_inicio:brDate(t.start_date),data_fim:brDate(t.end_date),
- dias:(t.weekly_days||[]).map((d:number)=>weekdays[d]).join(' e '),horario:String(t.lesson_time||'').slice(0,5),
+ dias:(t.weekly_days||[]).map((d:number)=>weekdays[d]).join(' e '),horario:(Array.isArray(t.lesson_schedule)&&t.lesson_schedule.length?t.lesson_schedule.map((x:any)=>`${weekdays[x.day]} às ${x.time}`).join(' e '):String(t.lesson_time||'').slice(0,5)),grade_horarios:(Array.isArray(t.lesson_schedule)?t.lesson_schedule:[]).map((x:any)=>`${weekdays[x.day]}: ${x.time}`).join(' | '),
  parcelas:String(t.installments),primeiro_vencimento:brDate(t.first_due_date),segundo_vencimento:brDate(nextDue(t.first_due_date)),
  valor_parcela:money(t.installment_amount),valor_primeira_parcela:money(t.first_installment_amount??t.installment_amount),curso:String(t.course||'Inglês'),professor:String(t.teacher_name||''),forma_pagamento:String(t.payment_method||''),data_assinatura_extenso:longDate(signedDate),...Object.fromEntries(Object.entries({...t.custom_fields,...s.custom_fields}).filter(([k])=>/^[a-z][a-z0-9_]{1,39}$/.test(k)).map(([k,v])=>[k,String(v??'')]))
 };}
-function render(c:any,s:any,date:string,signature?:string){const v=values(c,s,date);
- const body=String(c.template_html).replace(/\{\{([a-z0-9_]+)\}\}/g,(_,k)=>esc((v as Record<string,string>)[k]??''));
- const ownerImage=typeof c.owner_signature_png==='string'&&/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(c.owner_signature_png)?`<img alt="Assinatura da escola" src="${c.owner_signature_png}" style="max-width:240px;max-height:75px;display:block">`:'';
- return `<article class="legal-document">${body}<section class="owner-signature" style="border-top:1px solid #ddd;padding-top:14px;margin-top:26px">${ownerImage}<strong>CONTRATADA: ${esc(c.owner_name||'Escola')}</strong></section><section class="signature-summary"><p><b>Assinatura eletrônica:</b> ${esc(c.kind==='menor'?s.guardian_name:s.full_name)}</p>${signature?`<img alt="Assinatura manuscrita eletrônica" src="${signature}">`:''}<p>Registrado em ${esc(longDate(date))}. Identificação do contrato: ${esc(c.id)}.</p></section></article>`;
+function render(c:any,s:any,date:string,signature?:string){
+ const v=values(c,s,date),template=String(c.template_html||'');
+ const hasMarkers=template.includes('{{assinatura_contratante}}')&&template.includes('{{assinatura_contratado}}');
+ const signatureOk=(v:unknown)=>typeof v==='string'&&/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(v);
+ const ownerImg=signatureOk(c.owner_signature_png)?`<img alt="Assinatura da escola" src="${c.owner_signature_png}" style="max-width:250px;max-height:110px">`:'';
+ const studentImg=signatureOk(signature)?`<img alt="Assinatura eletrônica do contratante" src="${signature}" style="max-width:280px;max-height:115px">`:'';
+ const body=template.replace(/\{\{([a-z0-9_]+)\}\}/g,(_,k)=>{
+  if(k==='assinatura_contratado')return ownerImg;
+  if(k==='assinatura_contratante')return studentImg||'<span>Assinatura eletrônica pendente</span>';
+  return esc((v as Record<string,string>)[k]??'');
+ });
+ const fallback=hasMarkers?'':`<section class="owner-signature" style="border-top:1px solid #ddd;padding-top:14px;margin-top:26px">${ownerImg}<strong>CONTRATADA: ${esc(c.owner_name||'Escola')}</strong></section><section class="signature-summary"><p><b>Assinatura eletrônica:</b> ${esc(c.kind==='menor'?s.guardian_name:s.full_name)}</p>${studentImg}</section>`;
+ return `<article class="legal-document">${body}${fallback}<section class="signature-audit" style="margin-top:24px;border-top:1px solid #ddd;padding-top:12px"><p><small>Assinatura registrada em ${esc(longDate(date))}. Identificação: ${esc(c.id)}.</small></p></section></article>`;
 }
 const origins=(Deno.env.get('APP_ORIGINS')||'').split(',').map(s=>s.trim()).filter(Boolean);
 function cors(req:Request){const o=req.headers.get('origin')||'';return {

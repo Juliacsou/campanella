@@ -55,3 +55,34 @@ dialog{max-width:calc(100vw - 26px)}dialog:has(.student-profile){width:min(940px
 .settings-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}.settings-section{background:#fff;border:1px solid #e1e9e5;border-radius:16px;box-shadow:0 6px 22px #15392e08;padding:23px;min-width:0}.settings-section-primary,.settings-section-admin{grid-column:1/-1}.settings-section-head{display:flex;align-items:flex-start;gap:13px;margin-bottom:21px}.settings-section-head h2{font-size:18px;color:#183b34;line-height:1.25;letter-spacing:-.3px;margin:4px 0}.settings-section-head p{font-size:12px;color:#73837b;line-height:1.55}.settings-section-head .eyebrow{color:#427763;font-size:10px;text-transform:uppercase;letter-spacing:1.1px;font-weight:800}.settings-icon{flex:0 0 43px;height:43px;border-radius:12px;background:#e6f3ec;color:#1b7358;display:grid;place-items:center;font-size:23px}.settings-section .signature-preview{margin-top:16px;min-height:95px}.settings-section .signature-preview.has-signature{background:#fcfdfc;border-style:solid}.settings-section .signature-preview img{max-width:240px;max-height:100px;object-fit:contain}.settings-section .form-footer{margin-top:18px}.settings-table{margin-top:18px;border:1px solid #edf0ed;border-radius:11px;overflow:auto}.settings-table .data-table{min-width:380px}.settings-table .data-table td,.settings-table .data-table th{padding:12px 13px}.settings-section .form-note{margin:11px 0 18px}.settings-download{display:inline-flex;align-items:center;min-height:42px;padding:10px 14px;margin-bottom:18px;border-radius:9px;background:#ecf5ef;color:#165e49;font-weight:750;text-decoration:none;font-size:13px}.settings-download:hover{background:#dcefe3}.admin-add-grid{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}.admin-add-grid .field{flex:1 1 250px}.admin-add-grid .btn{min-height:43px}
 @media(max-width:960px){.settings-overview{align-items:flex-start;flex-direction:column}.settings-summary{flex-wrap:wrap;width:100%}.settings-summary>div{flex:1;max-width:none;min-width:100px}.settings-grid{grid-template-columns:1fr}.settings-section-primary,.settings-section-admin{grid-column:auto}}
 @media(max-width:650px){.settings-overview{padding:23px 19px}.settings-overview h2{font-size:21px}.settings-section{padding:18px}.settings-section-head{gap:10px}.settings-icon{width:38px;flex-basis:38px;height:38px}.fiche-choice-grid{grid-template-columns:1fr}.fiche-choice{padding:16px}.settings-summary>div{min-width:85px;padding:11px}.settings-summary span{font-size:10px}}
+
+/* Campanella V2.1 — biblioteca de modelos, agenda individual e assinatura */
+.schedule-editor{border:1px solid #d9e8df;background:#f6faf7;border-radius:15px;margin:14px 0;padding:17px;min-width:0}
+.schedule-editor legend{font-size:13px;font-weight:800;color:#204b3d;padding:0 9px}
+.schedule-editor p{margin:0 0 14px}
+.schedule-rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.schedule-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #e0eae4;background:white;border-radius:10px;padding:11px 12px;min-width:0}
+.day-toggle{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:800;color:#23453a;min-width:80px}
+.day-toggle input{width:17px;height:17px;accent-color:#176d58}
+.schedule-time{display:flex;flex-direction:column;gap:2px;color:#7a8b80;font-size:10px;font-weight:700;min-width:105px}
+.schedule-time input{height:37px;min-width:0;padding:5px 8px;background:#fff;border:1px solid #cddfd5;border-radius:7px;color:#1d5142;font-size:14px;font-weight:700}
+.schedule-time input:disabled{opacity:.35;background:#eef1ef}
+.schedule-highlight{padding:18px 19px;margin-top:17px;background:linear-gradient(110deg,#eaf7f0,#f2f9f5);border:1px solid #cbe4d4;border-radius:14px;color:#174c3a}
+.schedule-highlight b{font-size:14px;display:block;margin-bottom:8px}
+.schedule-highlight p{font-size:16px;font-weight:750;margin:0;line-height:1.6}
+.sign-schedule{padding:22px;margin:22px 0 4px}
+.sign-schedule-days{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.sign-schedule-days>div{border:1px solid #d4e9dc;background:white;border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sign-schedule-days strong{font-size:14px;display:block;text-transform:capitalize}
+.sign-schedule-days span{color:#136d55;font-weight:850;font-size:18px}
+.linked-packages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:13px 0 24px}
+.linked-packages .checkrow{margin:0;padding:10px 13px;border:1px solid #dee9e2;border-radius:10px;background:#f7faf8}
+.info-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:14px 0}
+.info-pair>div{background:#f3f8f5;border-radius:10px;padding:16px;border:1px solid #deebe3;overflow-wrap:anywhere}
+.info-pair b{color:#1c5b4d}
+.info-pair p{margin:7px 0 0}
+.doc-signature-image{max-width:250px;max-height:110px;object-fit:contain;display:block}
+.signature-pending{font-size:12px;color:#66776f;font-style:italic}
+@media(max-width:700px){.schedule-rows,.linked-packages,.info-pair{grid-template-columns:1fr}.schedule-row{padding:10px}.sign-schedule-days{grid-template-columns:1fr}.schedule-time{min-width:120px}.sign-schedule-days span{font-size:17px}.schedule-highlight{padding:14px}.settings-section{min-width:0}}
+
+@media(min-width:760px){dialog:has(#typeForm){width:min(910px,calc(100vw - 40px))}}

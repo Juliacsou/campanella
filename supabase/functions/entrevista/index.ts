@@ -29,19 +29,23 @@ Deno.serve(async(req)=>{
   if(!lead||!teacher?.active)return reply({error:'Cadastro ou professor indisponivel'},409);
   if(interview){const {count}=await db.from('contracts').select('id',{head:true,count:'exact'}).eq('interview_id',interview.id).neq('status','void');if(count&&count>0)return reply({error:'Esta ficha ja possui contrato e nao pode ser modificada pelo link.'},409);}
   if(b.action==='lookup')return reply({lead,teacher,interview,packages:packages||[]});
-  const f=b.form||{};const p=(packages||[]).find((x:any)=>x.id===f.package_id);if(!p)return reply({error:'Escolha um pacote ativo.'},422);
-  const days=Array.isArray(f.weekly_days)?[...new Set(f.weekly_days.map(Number))].sort():[];
-  if(days.length!==p.weekly_frequency||days.some(x=>!Number.isInteger(x)||x<0||x>6))return reply({error:'Selecione os dias de aula conforme a frequencia do pacote.'},422);
-  if(!short(f.course,120)||!validDate(f.start_date)||!validDate(f.end_date)||f.end_date<f.start_date)return reply({error:'Confira curso, inicio e termino.'},422);
-  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(f.lesson_time||'')))return reply({error:'Horario invalido'},422);
+  const f=b.form||{};const p=(packages||[]).find((x:any)=>x.id===f.package_id);
+  const count=Number(f.lessons_count),freq=Number(f.weekly_frequency);
+  if(!Number.isInteger(count)||count<1||count>500||!Number.isInteger(freq)||freq<1||freq>7)return reply({error:'Quantidade ou frequência inválidas'},422);
+  if(p && (count!==p.lessons_count||freq!==p.weekly_frequency))return reply({error:'O pacote escolhido define a quantidade e a frequência de aulas.'},422);
+  const timetable=Array.isArray(f.lesson_schedule)?f.lesson_schedule:[];
+  const schedule=timetable.map((x:any)=>({day:Number(x.day),time:String(x.time||'')})).sort((x:any,y:any)=>x.day-y.day);
+  if(schedule.length!==freq || new Set(schedule.map((x:any)=>x.day)).size!==schedule.length || schedule.some((x:any)=>!Number.isInteger(x.day)||x.day<0||x.day>6||!/^([01]\d|2[0-3]):[0-5]\d$/.test(x.time)))return reply({error:'Confira dias e horários de cada aula'},422);
+  const days=schedule.map((x:any)=>x.day);
+  if(!short(f.course,120)||!validDate(f.start_date)||!validDate(f.end_date)||f.end_date<f.start_date)return reply({error:'Confira curso, início e término'},422);
   const total=Number(f.total_amount),installments=Number(f.installments),part=Number(f.installment_amount);
   if(!Number.isFinite(total)||total<0||total>1000000||!Number.isInteger(installments)||installments<1||installments>48||!Number.isFinite(part)||part<0)return reply({error:'Valores financeiros invalidos'},422);
   const cents=Math.round(total*100),unit=Math.round(part*100),first=cents-unit*(installments-1);
   if(first<0||Math.abs(cents-unit*installments)>installments+1)return reply({error:'Valor total e parcelas nao conferem.'},422);
   if(!validDate(f.first_due_date)||!short(f.payment_method,60))return reply({error:'Confira vencimento e pagamento'},422);
   if(typeof f.notes==='string'&&f.notes.length>3000)return reply({error:'Observacoes muito grandes'},422);
-  const payload={lead_id:permit.lead_id,teacher_id:permit.teacher_id,package_id:p.id,interviewer_id:null,
-   course:String(f.course).trim(),weekly_days:days,lesson_time:f.lesson_time,start_date:f.start_date,end_date:f.end_date,
+  const payload={lead_id:permit.lead_id,teacher_id:permit.teacher_id,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,lesson_schedule:schedule,interviewer_id:null,
+   course:String(f.course).trim(),weekly_days:days,lesson_time:schedule[0].time,start_date:f.start_date,end_date:f.end_date,
    total_amount:cents/100,total_extenso:String(f.total_extenso||'valor conforme contrato').slice(0,600),
    installments,installment_amount:unit/100,first_installment_amount:first/100,first_due_date:f.first_due_date,
    payment_method:f.payment_method,notes:String(f.notes||''),pipeline_status:'open',archived_at:null};
