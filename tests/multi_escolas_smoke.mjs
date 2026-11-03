@@ -15,7 +15,7 @@ for(const s of [".eq('school_id',permit.school_id)","school_id:permit.school_id"
  assert.ok(edgeInterview.includes(s),'Entrevista externa nao filtra escola: '+s);
 for(const s of ["select('id,school_id,kind", ".eq('school_id',c.school_id)"])
  assert.ok(edgeSignature.includes(s),'Assinatura externa nao filtra escola: '+s);
-for(const s of ['async function loadSchools','async function switchSchool','function schoolsView','schoolSwitcher','activate_school_license',"{onConflict:'school_id'}", "ui.schoolId+'/'+crypto.randomUUID()"])
+for(const s of ['async function loadSchools','async function switchSchool','function schoolsView','account-popover','activate_school_license',"{onConflict:'school_id'}", "ui.schoolId+'/'+crypto.randomUUID()"])
  assert.ok(app.includes(s),'UI multi-escolas incompleta: '+s);
 
 // Executa a funcao REAL de escrita em sandbox com um cliente Supabase simulado.

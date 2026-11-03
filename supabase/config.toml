@@ -3,3 +3,6 @@ verify_jwt = false
 
 [functions.entrevista]
 verify_jwt = false
+
+[functions.purge-schools]
+verify_jwt = false

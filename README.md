@@ -94,3 +94,9 @@ O aluno visualiza a grade com destaque antes de assinar. Contratos antigos sem `
 - Os exemplos aparecem depois da fórmula e estão explicitamente identificados como sugestões.
 - Apenas a página de ajuda e seu CSS foram alterados. **Não execute nenhum SQL nem atualize as Edge Functions para esta versão.**
 - Faça upload de **todo o conteúdo** desta pasta no GitHub Pages, substituindo a versão anterior. Os dados ficam no mesmo Supabase; não são apagados.
+
+## Atualização V4.1 (continuação da V4)
+
+A versão V4.1 reorganiza navegação, perfis, configurações escolares e gestão global de licenças, adiciona novas chaves para escolas existentes e exclusão programada em 30 dias. Veja `V4_1_INSTALACAO_E_TESTES.md`.
+
+Se 07 e 08 já foram executados, **rode somente** `sql/09_upgrade_experiencia_v4.sql`. A exclusão definitiva exige publicar e agendar `supabase/functions/purge-schools` (script de agendamento em `sql/10_AGENDAMENTO_EXCLUSAO_EXEMPLO_NAO_PUBLICAR_COM_SEGREDO.sql`).
