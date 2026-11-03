@@ -22,13 +22,14 @@ Deno.serve(async(req)=>{
   const {data:permit,error:e}=await db.rpc('verify_external_interview',{p_hash:await hash(token),p_code:code});
   if(e)throw e;
   if(!permit)return reply({error:'Codigo incorreto ou link expirado/bloqueado. Solicite novo convite ao administrador.'},401);
-  const {data:lead}=await db.from('leads').select('id,name,phone,guardian_name').eq('id',permit.lead_id).single();
-  const {data:teacher}=await db.from('teachers').select('id,name,active').eq('id',permit.teacher_id).single();
-  const {data:interview}=await db.from('interviews').select('*').eq('lead_id',permit.lead_id).maybeSingle();
-  const {data:packages}=await db.from('packages').select('id,name,kind,lessons_count,weekly_frequency,default_total,active').eq('active',true);
+  const {data:lead}=await db.from('leads').select('id,name,phone,guardian_name').eq('id',permit.lead_id).eq('school_id',permit.school_id).single();
+  const {data:teacher}=await db.from('teachers').select('id,name,active').eq('id',permit.teacher_id).eq('school_id',permit.school_id).single();
+  const {data:school}=await db.from('schools').select('name').eq('id',permit.school_id).single();
+  const {data:interview}=await db.from('interviews').select('*').eq('lead_id',permit.lead_id).eq('school_id',permit.school_id).maybeSingle();
+  const {data:packages}=await db.from('packages').select('id,name,kind,lessons_count,weekly_frequency,default_total,active').eq('active',true).eq('school_id',permit.school_id);
   if(!lead||!teacher?.active)return reply({error:'Cadastro ou professor indisponivel'},409);
-  if(interview){const {count}=await db.from('contracts').select('id',{head:true,count:'exact'}).eq('interview_id',interview.id).neq('status','void');if(count&&count>0)return reply({error:'Esta ficha ja possui contrato e nao pode ser modificada pelo link.'},409);}
-  if(b.action==='lookup')return reply({lead,teacher,interview,packages:packages||[]});
+  if(interview){const {count}=await db.from('contracts').select('id',{head:true,count:'exact'}).eq('interview_id',interview.id).eq('school_id',permit.school_id).neq('status','void');if(count&&count>0)return reply({error:'Esta ficha ja possui contrato e nao pode ser modificada pelo link.'},409);}
+  if(b.action==='lookup')return reply({lead,teacher,interview,packages:packages||[],school_name:school?.name||'Escola'});
   const f=b.form||{};const p=(packages||[]).find((x:any)=>x.id===f.package_id);
   const count=Number(f.lessons_count),freq=Number(f.weekly_frequency);
   if(!Number.isInteger(count)||count<1||count>500||!Number.isInteger(freq)||freq<1||freq>7)return reply({error:'Quantidade ou frequência inválidas'},422);
@@ -44,12 +45,12 @@ Deno.serve(async(req)=>{
   if(first<0||Math.abs(cents-unit*installments)>installments+1)return reply({error:'Valor total e parcelas nao conferem.'},422);
   if(!validDate(f.first_due_date)||!short(f.payment_method,60))return reply({error:'Confira vencimento e pagamento'},422);
   if(typeof f.notes==='string'&&f.notes.length>3000)return reply({error:'Observacoes muito grandes'},422);
-  const payload={lead_id:permit.lead_id,teacher_id:permit.teacher_id,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,lesson_schedule:schedule,interviewer_id:null,
+  const payload={school_id:permit.school_id,lead_id:permit.lead_id,teacher_id:permit.teacher_id,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,lesson_schedule:schedule,interviewer_id:null,
    course:String(f.course).trim(),weekly_days:days,lesson_time:schedule[0].time,start_date:f.start_date,end_date:f.end_date,
    total_amount:cents/100,total_extenso:String(f.total_extenso||'valor conforme contrato').slice(0,600),
    installments,installment_amount:unit/100,first_installment_amount:first/100,first_due_date:f.first_due_date,
    payment_method:f.payment_method,notes:String(f.notes||''),pipeline_status:'open',archived_at:null};
-  const result=interview?await db.from('interviews').update(payload).eq('id',interview.id):await db.from('interviews').insert(payload);
+  const result=interview?await db.from('interviews').update(payload).eq('id',interview.id).eq('school_id',permit.school_id):await db.from('interviews').insert(payload);
   if(result.error)throw result.error;
   const marked=await db.rpc('finish_external_interview',{p_invite:permit.invite_id});if(marked.error)throw marked.error;
   return reply({ok:true});

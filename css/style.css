@@ -132,3 +132,41 @@ dialog:has(.template-edit-modal) #modal-body{padding:29px 31px 27px}
 .template-availability .checkrow{margin:0;font-weight:700}.template-form-footer{margin-top:20px}
 @media(max-width:920px){.template-card-grid{grid-template-columns:1fr}.template-stats>div{padding:15px 13px}}
 @media(max-width:650px){.template-header-actions{width:100%}.template-header-actions .btn{flex:1 1 auto;min-height:42px}.template-stats{gap:7px}.template-stats>div{flex-direction:column;align-items:flex-start;gap:6px;padding:13px}.template-stats strong{font-size:22px}.template-stats span{font-size:11px}.template-card-grid{padding:12px}.template-card{padding:16px}.template-library-heading{padding:20px 16px}.template-card-actions .btn{flex:1 1 38%}dialog:has(.template-edit-modal) #modal-body{padding:24px 17px 20px}.template-package-grid{grid-template-columns:1fr}.template-edit-head h2{font-size:23px}.template-card-facts div{grid-template-columns:1fr;gap:3px}}
+
+/* Campanella V3 — seletor e gestao multi-escolas */
+.school-switcher{display:grid;gap:8px;margin:0 8px;padding:14px 10px;background:#1c3940;border:1px solid #35545a;border-radius:13px}
+.school-switcher label{font-size:10px;font-weight:800;letter-spacing:1.4px;color:#a3c2b5}
+.school-switcher select{width:100%;min-width:0;color:#183a36;background:#f9fcfa;border-radius:8px;border:0;padding:11px 8px;font-size:13px;font-weight:750}
+.school-switcher span{font-size:11px;color:#b5d1c5}
+.school-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:22px}
+.school-card{display:flex;gap:14px;align-items:center;padding:18px;border-radius:14px;background:#fff;border:1px solid #e3eae6;min-width:0}
+.school-card.is-current{border-color:#6ca992;background:#f4fbf6}
+.school-card h3{font-size:14px;overflow-wrap:anywhere}
+.school-card p{color:#779187;font-size:12px;margin-top:4px}
+.school-card .btn{margin-left:auto;flex-shrink:0}
+.school-card-icon{width:41px;height:41px;border-radius:10px;background:#deeee5;color:#2a715c;display:grid;place-items:center;font-size:22px;flex-shrink:0}
+.school-access-grid{display:grid;grid-template-columns:minmax(310px,.9fr) minmax(0,1.4fr);gap:20px}
+.school-member-form{margin-top:24px;display:grid;gap:15px}
+.school-member-form .btn{justify-self:start}
+@media(max-width:1000px){.school-access-grid{grid-template-columns:1fr}.school-cards{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}}
+@media(max-width:650px){.school-card{flex-wrap:wrap}.school-card .btn{margin-left:0}.school-switcher{margin:0}}
+
+.sidebar{overflow-y:auto;scrollbar-width:thin}
+
+/* Campanella V4 - chave, ativacao e painel do proprietario */
+.license-platform-only{width:min(1200px,100%);margin:auto}
+.license-toolbar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:26px}
+.license-toolbar h1{font-size:30px;color:#183f33;margin:6px 0 7px}
+.license-platform-only .page-head{margin-top:12px}
+.license-key-reveal{background:#e9f6ed;border:1px solid #83b99c;border-radius:14px;padding:22px;margin-bottom:24px}
+.license-code{font-size:clamp(15px,2.2vw,24px);font-weight:800;letter-spacing:1px;color:#145a41;overflow-wrap:anywhere;user-select:all;padding:12px 0}
+.license-key-reveal .actions{display:flex;gap:8px;flex-wrap:wrap}
+.license-locked{display:grid;gap:14px;padding:26px;max-width:760px}
+.license-locked h2{color:#8c4231}
+.license-locked p{line-height:1.6}
+.license-locked .btn{justify-self:start}
+.license-form{display:grid;gap:15px}
+.license-form .field{min-width:0}
+.license-form .field input,.license-form .field select,.license-form .field textarea{width:100%;max-width:100%}
+.school-card p .pill{vertical-align:middle;margin-right:4px}
+@media(max-width:650px){.license-toolbar{align-items:flex-start;flex-direction:column}.license-platform-only{min-width:0}.license-code{font-size:14px;letter-spacing:0}}

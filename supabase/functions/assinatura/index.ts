@@ -65,16 +65,20 @@ Deno.serve(async(req)=>{
   if(!/^[a-f0-9]{64}$/.test(token))return respond({error:'Link inválido'},400);
   if(!['lookup','sign'].includes(b.action))return respond({error:'Operação inválida'},400);
   const tokenHash=await hash(token);
-  const {data:c,error:e}=await db.from('contracts').select('id,kind,status,terms,template_html,template_version,lead_id,student_id,token_expires_at,owner_name,owner_signature_png')
+  const {data:c,error:e}=await db.from('contracts').select('id,school_id,kind,status,terms,template_html,template_version,lead_id,student_id,token_expires_at,owner_name,owner_signature_png')
    .eq('token_hash',tokenHash).eq('status','sent').gt('token_expires_at',new Date().toISOString()).maybeSingle();
   if(e)throw e;
   if(!c)return respond({error:'Este link não existe, expirou ou já foi utilizado.'},404);
+  const {data:licensed,error:licenseError}=await db.rpc('has_active_school_license',{p_school:c.school_id});
+  if(licenseError)throw licenseError;
+  if(!licensed)return respond({error:'A escola está com o acesso temporariamente suspenso. Entre em contato com a escola.'},403);
   if(c.kind==='dupla')return respond({error:'Assinatura para contrato de dupla disponível em uma próxima versão.'},409);
   if(b.action==='lookup'){
-   const {data:lead}=await db.from('leads').select('name,guardian_name').eq('id',c.lead_id).single();
+   const {data:lead}=await db.from('leads').select('name,guardian_name').eq('id',c.lead_id).eq('school_id',c.school_id).single();
+   const {data:school}=await db.from('schools').select('name').eq('id',c.school_id).single();
    let existing=null;
-   if(c.student_id){const {data:student}=await db.from('students').select('full_name,cpf,email,birth_date,phone,address,cep,is_minor,guardian_name,guardian_birth_date,guardian_cpf,guardian_phone,guardian_email,guardian_address,guardian_cep').eq('id',c.student_id).single();existing=student;}
-   return respond({kind:c.kind,terms:c.terms,template_html:c.template_html,template_version:c.template_version,owner_name:c.owner_name,owner_signature_png:c.owner_signature_png,
+   if(c.student_id){const {data:student}=await db.from('students').select('full_name,cpf,email,birth_date,phone,address,cep,is_minor,guardian_name,guardian_birth_date,guardian_cpf,guardian_phone,guardian_email,guardian_address,guardian_cep').eq('id',c.student_id).eq('school_id',c.school_id).single();existing=student;}
+   return respond({kind:c.kind,school_name:school?.name||'Escola',terms:c.terms,template_html:c.template_html,template_version:c.template_version,owner_name:c.owner_name,owner_signature_png:c.owner_signature_png,
     lead:{name:lead?.name||'',guardian_name:lead?.guardian_name||''},existing});
   }
   const s=b.student||{};

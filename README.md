@@ -1,3 +1,21 @@
+# Campanella V4 — Licenciamento manual por escola
+
+**Nova versão:** cadastro de usuários, chaves de ativação de uso único, licenças independentes por escola, vencimento personalizado, renovações manuais e transferência de administrador. O Campanella **não cobra Pix nem processa pagamentos**.
+
+**Leia primeiro [`LICENCAS.md`](./LICENCAS.md)** para instalação e medidas de segurança. Num Supabase que já recebeu a V3, execute **apenas** `sql/08_upgrade_licencas.sql` após backup e teste em homologação. Depois, cadastre manualmente o seu usuário como administrador da plataforma, publique o frontend e atualize a Edge Function de assinatura. Não rode `00` ou outras migrações novamente.
+
+As instruções históricas abaixo são de versões anteriores. Não siga os passos de SQL anteriores se seu banco já está na V3.
+
+---
+
+# Campanella V3 — Multi-escolas
+
+**Atualização a partir da V2.1.2:** esta versão suporta múltiplas escolas e vínculos de usuários por escola, com RLS. Leia primeiro **[`MULTI_ESCOLAS.md`](./MULTI_ESCOLAS.md)**. Em um banco já instalado, execute **somente** `sql/07_upgrade_multi_escolas.sql` (uma vez, após backup), atualize **ambas as Edge Functions** e publique o frontend novo. **Não execute os SQLs 00–06 novamente.**
+
+As instruções de instalação V2.1.2 abaixo são históricas e não devem ser repetidas durante a atualização V3.
+
+---
+
 # Campanella V2.1.2 — CRM, contratos e agendas de aulas
 
 Sistema completo (HTML, CSS, JavaScript, Supabase) para a escola, preservando a V2 e o projeto conectado:
