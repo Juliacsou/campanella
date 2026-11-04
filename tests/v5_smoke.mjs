@@ -1,0 +1,37 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import ts from '/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescript/lib/typescript.js';
+const read = p => fs.readFileSync(new URL(`../${p}`,import.meta.url),'utf8');
+const sql=read('sql/11_upgrade_assinaturas_v5.sql');
+assert.match(sql,/CREATE TABLE IF NOT EXISTS public\.external_signatures/);
+assert.match(sql,/contract_id uuid NOT NULL UNIQUE/);
+assert.match(sql,/school_id uuid NOT NULL REFERENCES public\.schools/);
+assert.match(sql,/ENABLE ROW LEVEL SECURITY/);
+assert.match(sql,/REVOKE ALL ON public\.school_drive_connections FROM PUBLIC,anon,authenticated/);
+assert.match(sql,/public\.is_school_admin\(school_id\)/);
+assert.match(sql,/record_assinapi_event/);
+const frontend=read('js/app.js');
+assert.match(frontend,/function externalSignatureActions/);
+assert.match(frontend,/function externalSendForm/);
+assert.match(frontend,/settings-backup/);
+assert.match(frontend,/externalPdfBase64/);
+assert.doesNotMatch(frontend,/ask_test_[a-zA-Z0-9]{15,}|GOOGLE_DRIVE_CLIENT_SECRET\s*=/);
+const conf=read('supabase/config.toml');
+for(const fn of ['contract-signing','assinapi-webhook','google-drive-oauth','google-drive-backup']){
+ assert.match(conf,new RegExp(`\\[functions\\.${fn}\\]`));
+ const source=read(`supabase/functions/${fn}/index.ts`);
+ const result=ts.transpileModule(source,{fileName:`${fn}.ts`,compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext},reportDiagnostics:true});
+ const errors=(result.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error);
+ assert.equal(errors.length,0,`TypeScript syntax (${fn}): ${errors.map(e=>ts.flattenDiagnosticMessageText(e.messageText,' '))}`);
+}
+const shared=read('supabase/functions/_shared/v5.ts');
+const result=ts.transpileModule(shared,{fileName:'v5.ts',compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext},reportDiagnostics:true});
+assert.equal((result.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error).length,0,'shared TypeScript syntax');
+assert.match(shared,/AES-GCM/);
+assert.match(shared,/GOOGLE_DRIVE_ENCRYPTION_KEY/);
+assert.match(shared,/is_school_admin|admin_user_id/);
+assert.match(read('supabase/functions/assinapi-webhook/index.ts'),/x-signature/i);
+assert.match(read('supabase/functions/assinapi-webhook/index.ts'),/x-timestamp/i);
+assert.match(read('supabase/functions/google-drive-oauth/index.ts'),/verifyState/);
+assert.match(read('supabase/functions/contract-signing/index.ts'),/Idempotency|idempotency|contractId/);
+console.log('OK: V5 SQL + frontend + 4 Edge Functions + HMAC / AES-GCM / isolamento por escola (verificações estáticas).');

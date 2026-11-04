@@ -1,5 +1,7 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
+import {generateContractPdf} from './pdf-contract.js';
+import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
 import {createCRM} from './crm.js';
 import {parseCSV,isoDate} from './csv.js';
 import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js';
@@ -9,14 +11,55 @@ import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,only
 const SUPA_URL = 'https://tyxmskdgbnrcaacwwkhi.supabase.co';
 const KEY = 'sb_publishable_Q9UBmlwOl9S5Ew7UwLn_rw_U-iHrCqF';
 const sb=createClient(SUPA_URL,KEY);
-const db={leads:[],interviews:[],packages:[],students:[],contracts:[],profiles:[],teachers:[],contract_types:[],school_settings:[],interview_invites:[],crm_followups:[],crm_appointments:[],crm_activities:[]};
-const ui={page:'dashboard',user:null,role:null,schoolId:null,schools:[],memberships:[],schoolMembers:[],isPlatformAdmin:false,schoolLicense:null,licenseActive:false,licenses:[],platformSchools:[],platformProfiles:[],platformKeys:[],platformEvents:[],platformRenewalKeys:[],platformSearch:'',platformFilter:'all',newlyIssuedKey:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',contractTab:'current',interviewTab:'current'};
+// Campanella V5.6: assinatura externa e backup Google sao experimentais e ficam desligados.
+const EXTERNAL_SIGNATURE_ENABLED=false;
+const db={leads:[],interviews:[],packages:[],students:[],contracts:[],profiles:[],teachers:[],contract_types:[],school_settings:[],interview_invites:[],external_signatures:[],crm_followups:[],crm_appointments:[],crm_activities:[]};
+const ui={page:'dashboard',user:null,role:null,schoolId:null,schools:[],memberships:[],schoolMembers:[],isPlatformAdmin:false,schoolLicense:null,licenseActive:false,licenses:[],platformSchools:[],platformProfiles:[],platformKeys:[],platformEvents:[],platformRenewalKeys:[],platformSearch:'',platformFilter:'all',newlyIssuedKey:null,driveConnection:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',contractTab:'current',interviewTab:'current'};
 const errors=e=>{console.error(e);toast(e?.message||String(e),true)};
 const canAdmin=()=>ui.role==='admin';
 let refreshVersion=0;
 const lookup=(table,id)=>db[table].find(x=>x.id===id);
 const toForm=(id)=>$(id)?.elements;
 const attrs=(obj)=>Object.entries(obj).map(([k,v])=>`${k}="${safe(v)}"`).join(' ');
+let appBusy=false;
+let appBusyTimer=null;
+function startBusy(message='Processando sua solicita\u00e7\u00e3o...'){
+ if(appBusy)return false;
+ appBusy=true;
+ const el=document.getElementById('busyOverlay');
+ if(el){const label=el.querySelector('[data-busy-label]');if(label)label.textContent=message;}
+ clearTimeout(appBusyTimer);
+ appBusyTimer=setTimeout(()=>{if(appBusy&&el){el.hidden=false;el.setAttribute('aria-hidden','false');}},180);
+ return true;
+}
+function finishBusy(){appBusy=false;clearTimeout(appBusyTimer);const el=document.getElementById('busyOverlay');if(el){el.hidden=true;el.setAttribute('aria-hidden','true');}}
+function contactWhatsAppNumber(contract){
+ const student=contract?.student_snapshot||lookup('students',contract?.student_id)||{};
+ const lead=lookup('leads',contract?.lead_id)||{};
+ let raw=onlyDigits(contract?.kind==='menor'?(student.guardian_phone||lead.phone||student.phone):(student.phone||lead.phone));
+ if(raw.length===10||raw.length===11)raw='55'+raw;
+ return /^55\d{10,11}$/.test(raw)?raw:'';
+}
+function openWhatsApp(contract,link){
+ const phone=contactWhatsAppNumber(contract);
+ if(!phone)throw new Error('Informe um telefone brasileiro com DDD no cadastro do interessado.');
+ if(!/^https:\/\//i.test(link))throw new Error('O link local n\u00e3o funciona no celular. Publique a versão atual do Campanella antes de enviar pelo WhatsApp.');
+ const name=contract?.student_snapshot?.full_name||lookup('students',contract?.student_id)?.full_name||lookup('leads',contract?.lead_id)?.name||'aluno(a)';
+ const text=`Ol\u00e1! Segue seu link seguro para preencher a pr\u00e9-matr\u00edcula de ${name}:\n${link}\n\nEm caso de d\u00favidas, fale com a escola.`;
+ const url=`https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+ window.open(url,'_blank','noopener,noreferrer');
+}
+async function confirmExternalSignature(){
+ return await new Promise(resolve=>{
+  const dialog=document.getElementById('modal');let settled=false;
+  const done=value=>{if(settled)return;settled=true;dialog.removeEventListener('close',cancel);if(dialog.open)closeModal();resolve(value)};
+  const cancel=()=>done(false);
+  showModal(`<div class="eyebrow">Assinatura eletr\u00f4nica</div><h2>Pronto para assinar?</h2><p class="modal-intro">Seu contrato ser\u00e1 preparado e voc\u00ea ser\u00e1 encaminhado para um <strong>ambiente externo seguro de assinatura</strong>. Confira os dados antes de continuar.</p><p class="form-note">Sua matr\u00edcula s\u00f3 ser\u00e1 conclu\u00edda depois da confirma\u00e7\u00e3o da assinatura. O link de assinatura tamb\u00e9m pode chegar ao seu e-mail.</p><div class="form-footer"><button type="button" class="btn ghost" id="externalSignatureNo">Voltar</button><button type="button" class="btn" id="externalSignatureYes">Abrir assinatura externa</button></div>`);
+  dialog.addEventListener('close',cancel,{once:true});
+  document.getElementById('externalSignatureNo').addEventListener('click',()=>done(false),{once:true});
+  document.getElementById('externalSignatureYes').addEventListener('click',()=>done(true),{once:true});
+ });
+}
 function toast(msg,bad=false){const el=$('#toast');el.textContent=msg;el.style.background=bad?'#8a332d':'#163b38';el.classList.add('visible');clearTimeout(toast.timeout);toast.timeout=setTimeout(()=>el.classList.remove('visible'),3900)}
 function showModal(content){$('#modal-body').innerHTML=content;if(!$('#modal').open)$('#modal').showModal();}
 function closeModal(){$('#modal').close()}
@@ -25,7 +68,7 @@ const card=(title,body,extra='')=>`<section class="panel"><div class="panel-head
 const empty=text=>`<div class="empty"><span class="empty-symbol">✳</span>${safe(text)}</div>`;
 const row=(columns)=>`<tr>${columns.map(c=>`<td>${c}</td>`).join('')}</tr>`;
 function table(headers,rows,placeholder='Nenhum registro encontrado'){return `<div class="table-wrap">${rows.length?`<table class="data-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`:empty(placeholder)}</div>`;}
-const crm=createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup});
+const crm=createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy:()=>appBusy});
 // SVGs internos: nao dependem de fontes de icones ou CDNs adicionais.
 const ICONS={
  dashboard:'<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
@@ -131,6 +174,7 @@ function authWrap(content){return `<div class="login-wrap">${authIllustration()}
 function forgotPasswordPage(message=''){return authWrap(`<div class="eyebrow">Recuperação de acesso</div><h2>Esqueceu sua senha?</h2><p class="muted">Informe o e-mail utilizado para entrar no Campanella. Enviaremos um link para cadastrar uma nova senha.</p>${message?`<div class="inline-note" role="status">${safe(message)}</div>`:''}<form id="forgotPasswordForm" class="auth-form">${input('E-mail da conta','email','','email')}<button class="btn" type="submit">Enviar link de recuperação →</button></form><button type="button" class="auth-text-action" data-action="backLogin">← Voltar ao login</button>`);}
 function newPasswordPage(){return authWrap(`<div class="eyebrow">Nova senha</div><h2>Crie sua nova senha</h2><p class="muted">Digite uma senha com pelo menos 8 caracteres e confirme abaixo.</p><form id="newPasswordForm" class="auth-form">${input('Nova senha','password','','password')}${input('Confirmar senha','password_confirm','','password')}<button class="btn" type="submit">Salvar nova senha →</button></form><button type="button" class="auth-text-action" data-action="backLogin">← Voltar ao login</button>`);}
 async function initialize(){
+ if(location.hash.startsWith('#pre-matricula/'))return publicStart(location.hash.slice(15));
  if(location.hash.startsWith('#assinar/'))return publicStart(location.hash.slice(9));
  if(location.hash.startsWith('#entrevista/'))return externalStart(location.hash.slice('#entrevista/'.length));
  if(passwordRecoveryRoute()){
@@ -143,6 +187,8 @@ async function initialize(){
  await loadSchools();if(ui.isPlatformAdmin)await loadPlatformData();
  if(!ui.schoolId){if(ui.isPlatformAdmin){ui.page='licenses';render();}else $('#app').innerHTML=noSchoolPage();return;}
  await refresh();
+ const driveReturn=new URLSearchParams(location.search).get('drive');
+ if(driveReturn){toast(driveReturn==='connected'?'Google Drive conectado à escola.':'Não foi possível concluir a conexão com o Google Drive.',driveReturn!=='connected');history.replaceState({},'',location.pathname);}
 }
 async function refresh(){
  const version=++refreshVersion,schoolId=ui.schoolId;
@@ -171,6 +217,8 @@ async function refresh(){
  if(version!==refreshVersion||ui.schoolId!==schoolId)return;
  ui.schoolMembers=schoolMembers;ui.role='admin';
  Object.assign(db,newData);
+ // Integracao Google preservada no codigo, mas inativa para o produto atual.
+ ui.driveConnection=null;
  render();
 }
 function render(){
@@ -182,17 +230,18 @@ function render(){
  if(ui.page==='licenses'&&ui.isPlatformAdmin){$('#pageContent').innerHTML=licensesView();return;}
  if(ui.page==='profile'||ui.page.startsWith('profile-')){$('#pageContent').innerHTML=profileView();return;}
  if(ui.page==='schools'){$('#pageContent').innerHTML=schoolsView();return;}
+ if(ui.page==='settings-backup'&&!EXTERNAL_SIGNATURE_ENABLED)ui.page='settings';
  if(ui.page==='settings'||ui.page.startsWith('settings-')){$('#pageContent').innerHTML=settingsView();return;}
  if(!ui.licenseActive){$('#pageContent').innerHTML=licenseBlockView();return;}
  const func={dashboard,leads:crm.view,interviews:interviewsView,contracts:contractsView,students:studentsView,directory:directoryView,teachers:teachersView,packages:packagesView,templates:templatesView}[ui.page]||dashboard;
  $('#pageContent').innerHTML=func();
 }
-function enrollmentState(c){if(c.status==='closed'||c.status==='superseded')return 'closed';if(c.status!=='signed')return null;return diffDays(c.terms?.end_date||'')<0?'expired':'active';}
-function enrollmentTag(c){const st=enrollmentState(c);return st==='closed'?'<span class="pill">Encerrada</span>':st==='expired'?'<span class="pill pill-sent">Expirada</span>':st==='active'?'<span class="pill pill-signed">Ativa</span>':contractTag(c);}
-function contractTag(c){return c.status==='draft'?'<span class="pill">A enviar</span>':c.status==='sent'?'<span class="pill pill-sent">Enviado</span>':c.status==='signed'?(enrollmentState(c)==='expired'?'<span class="pill pill-sent">Expirado</span>':'<span class="pill pill-signed">Ativo</span>'):c.status==='closed'||c.status==='superseded'?'<span class="pill">Encerrado</span>':c.status==='void'?'<span class="pill pill-void">Cancelado</span>':tag(c.status);}
+function enrollmentState(c){if(c.status==='closed'||c.status==='superseded')return 'closed';if(c.status!=='signed')return null;if(c.terms?.start_date>today())return 'scheduled';return diffDays(c.terms?.end_date||'')<0?'expired':'active';}
+function enrollmentTag(c){if(c.status==='signed'&&c.audit?.method==='manual_registry')return `<span class="pill pill-signed">${enrollmentState(c)==='expired'?'Expirada · Manual':enrollmentState(c)==='scheduled'?'Agendada · Manual':'Assinado · Manual'}</span>`;const st=enrollmentState(c);return st==='closed'?'<span class="pill">Encerrada</span>':st==='scheduled'?'<span class="pill pill-sent">Agendada</span>':st==='expired'?'<span class="pill pill-sent">Expirada</span>':st==='active'?'<span class="pill pill-signed">Ativa</span>':contractTag(c);}
+function contractTag(c){if(c.status==='pre_enrolled')return '<span class="pill pill-sent">Pré-matrícula feita</span>';if(c.status==='ready_manual')return '<span class="pill pill-sent">Contrato gerado · Assinatura pendente</span>';if(c.status==='sent'&&!externalSignatureFor(c.id))return '<span class="pill pill-sent">Aguardando pré-matrícula</span>';if(c.status==='signed'&&c.audit?.method==='manual_registry')return '<span class="pill pill-signed">Assinado · Registro manual</span>';return c.status==='draft'?'<span class="pill">A enviar</span>':c.status==='sent'?'<span class="pill pill-sent">Enviado</span>':c.status==='signed'?(enrollmentState(c)==='expired'?'<span class="pill pill-sent">Expirado</span>':'<span class="pill pill-signed">Ativo</span>'):c.status==='closed'||c.status==='superseded'?'<span class="pill">Encerrado</span>':c.status==='void'?'<span class="pill pill-void">Cancelado</span>':tag(c.status);}
 function expiryBadge(c){const d=diffDays(c.terms?.end_date||'');return `<span class="pill ${d<=30?'pill-sent':'pill-signed'}">${d<0?'Expirou há '+(-d)+' dias':d===0?'Expira hoje':d+' dias'}</span>`;}
-function dashboard(){const signed=db.contracts.filter(c=>c.status==='signed');const exp=signed.filter(c=>diffDays(c.terms.end_date)<=30);const awaiting=db.contracts.filter(c=>c.status==='sent');const pending=db.leads.filter(l=>l.crm_outcome==='open'&&l.status!=='convertido').length;const fichas=db.leads.filter(l=>l.status!=='convertido'&&!!l.ficha_iniciada_at&&l.ficha_status!=='archived'&&!db.contracts.some(c=>c.lead_id===l.id&&c.status!=='void')).length;
- const metrics=[['leads','Leads em andamento',pending,'leads'],['interviews','Fichas sem contrato',fichas,'interviews'],['contracts','Aguardando assinatura',awaiting.length,'contracts'],['students','Matrículas a vencer',exp.length,'students']];
+function dashboard(){const signed=db.contracts.filter(c=>c.status==='signed');const exp=signed.filter(c=>diffDays(c.terms.end_date)<=30);const awaiting=db.contracts.filter(c=>['sent','pre_enrolled','ready_manual'].includes(c.status));const pending=db.leads.filter(l=>l.crm_outcome==='open'&&l.status!=='convertido').length;const fichas=db.leads.filter(l=>l.status!=='convertido'&&!!l.ficha_iniciada_at&&l.ficha_status!=='archived'&&!db.contracts.some(c=>c.lead_id===l.id&&c.status!=='void')).length;
+ const metrics=[['leads','Leads em andamento',pending,'leads'],['interviews','Fichas sem contrato',fichas,'interviews'],['contracts','Pré-matrículas e contratos pendentes',awaiting.length,'contracts'],['students','Matrículas a vencer',exp.length,'students']];
  return `${heading('Painel de controle','Visão geral',`Acompanhe as atividades da ${safe(currentSchool().name)} em um só lugar.`)}<div class="metric-grid">${metrics.map(([type,label,value,target])=>`<button type="button" class="metric metric-action" data-action="navigate" data-page="${target}"><span class="metric-icon">${ico(type,23)}</span><span class="metric-value">${value}</span><span class="metric-label">${label}</span><span class="metric-go">${ico('arrow',16)}</span></button>`).join('')}</div><section class="home-actions"><div class="home-actions-title"><h2>Acesso rápido</h2><p class="muted">Continue de onde parou</p></div><div class="home-shortcuts">${[['leads','CRM e interessados','Acompanhe o primeiro contato'],['directory','Alunos','Consulte o histórico dos alunos'],['contracts','Contratos','Gerencie assinaturas e documentos'],['teachers','Professores','Organize sua equipe']].map(([type,title,subtitle])=>`<button class="home-shortcut" data-action="navigate" data-page="${type}"><span class="shortcut-ico">${ico(type,23)}</span><span><b>${title}</b><small>${subtitle}</small></span>${ico('arrow',16)}</button>`).join('')}</div></section>${card('Matrículas recentes',table(['Aluno','Pacote','Fim','Estado'],signed.sort((a,b)=>a.terms.end_date.localeCompare(b.terms.end_date)).slice(0,8).map(c=>row([safe(lookup('students',c.student_id)?.full_name),safe(c.terms.package_name),dateBR(c.terms.end_date),enrollmentTag(c)]))))}`;
 }
 function leadsView(){
@@ -262,8 +311,8 @@ function weeksOrCustom(){return `<option value="">Personalizado · sem pacote</o
 function contractOptions(kind,pkgId,selected=''){
  const pkg=lookup('packages',pkgId),allowed=kind==='dupla'?['dupla']:['individual','menor'];
  const associated=db.contract_types.find(t=>t.id===pkg?.contract_type_id&&t.active&&allowed.includes(t.kind));
- const defaultValue=selected||(associated?`custom:${associated.id}`:`base:${kind}`);
- return [...allowed.map(k=>`<option value="base:${k}" ${defaultValue===`base:${k}`?'selected':''}>${k==='menor'?'Menor de idade':k==='dupla'?'Dupla':'Individual'} · Modelo básico</option>`),...db.contract_types.filter(t=>t.active&&allowed.includes(t.kind)).map(t=>`<option value="custom:${t.id}" ${defaultValue===`custom:${t.id}`?'selected':''}>${safe(t.name)}${t.id===associated?.id?' · Associado ao pacote':''}</option>`)].join('');
+ const defaultValue=selected||(associated?`custom:${associated.id}`:'');
+ return `<option value="">Selecione um modelo DOCX validado</option>`+db.contract_types.filter(t=>t.active&&allowed.includes(t.kind)&&analyzeContractMarkers(t.body_text||'',t.kind).valid).map(t=>`<option value="custom:${t.id}" ${defaultValue===`custom:${t.id}`?'selected':''}>${safe(t.name)}${t.id===associated?.id?' · Associado ao pacote':''}</option>`).join('');
 }
 function onPackageSelection(form,p){
  if(!form)return;
@@ -299,6 +348,110 @@ function interviewForm(leadId){
  updateInstallment($('#interviewForm'));
 }
 
+
+// V5 - O provider pode mudar, mas o contrato segue pertencendo à escola.
+const externalSignatureFor = id => db.external_signatures.find(e=>e.contract_id===id);
+function externalSignatureTag(c){const e=externalSignatureFor(c.id);if(!e)return contractTag(c);if(!EXTERNAL_SIGNATURE_ENABLED)return `<span class="pill">Assinatura externa anterior · histórico</span>`;
+ const labels={preparing:'Preparando envio',error:'Erro no envio',sent:'Aguardando assinatura',in_progress:'Em assinatura',completed:c.student_id?'Assinado · AssinAPI':'Assinado · cadastro pendente',declined:'Recusado',cancelled:'Cancelado',expired:'Expirado'};
+ return `<span class="pill ${e.status==='completed'?'pill-signed':e.status==='sent'?'pill-sent':''}">${safe(labels[e.status]||e.status)}</span>`;
+}
+function contractActionsMenu(c){
+ const e=externalSignatureFor(c.id),a=[];
+ const opt=(action,label,kind='')=>a.push(`<button type="button" role="menuitem" data-action="${action}" data-id="${safe(c.id)}" class="contract-menu-item ${kind}">${safe(label)}</button>`);
+ opt('previewContract','Visualizar prévia');
+ if(e){
+  // Contratos externos permanecem gravados, mas as acoes da API ficam escondidas.
+  // Os adapters continuam no repositorio para uma futura reativacao controlada.
+ }else{
+  if(['draft','sent'].includes(c.status)&&c.kind!=='dupla')opt('sendContract','Gerar link de pré-matrícula');
+  if(['pre_enrolled','ready_manual'].includes(c.status)||(c.status==='signed'&&c.audit?.method==='manual_registry'))opt('manualDownload','Baixar contrato sem assinaturas (PDF)');
+  if(c.status==='ready_manual')opt('manualConfirm','Marcar como assinado manualmente');
+  if(['draft','sent','pre_enrolled','ready_manual'].includes(c.status))opt('voidContract','Cancelar contrato','danger');
+  if(c.status==='signed'&&c.audit?.method!=='manual_registry')opt('proof','Baixar cópia do registro anterior (HTML)');
+ }
+ if(c.status==='signed')opt('closeEnrollment','Encerrar matrícula','danger');
+ return `<details class="contract-actions-dropdown"><summary class="btn mini light" aria-label="Abrir ações do contrato">Ações <span aria-hidden="true">⌄</span></summary><div class="contract-actions-popover" role="menu">${a.join('')}</div></details>`;
+}
+function externalSignatureActions(c){if(!EXTERNAL_SIGNATURE_ENABLED)return '';const e=externalSignatureFor(c.id);return e?.status==='completed'?`<span class="pill ${e.backup_status==='saved'?'pill-signed':'pill-sent'}">${safe(e.backup_status==='saved'?'Backup salvo':e.backup_status==='error'?'Falha no backup':e.backup_status==='not_configured'?'Sem Drive':'Backup pendente')}</span>`:'';}
+async function v5Request(functionName,payload){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integrações externas desativadas nesta versão.');const {data,error}=await sb.functions.invoke(functionName,{body:payload});if(error){let msg=error.message;try{const info=await error.context?.json?.();if(info?.error)msg=info.error;}catch{}throw new Error(msg);}if(data?.error)throw new Error(data.error);return data;}
+function externalSendForm(id){const c=lookup('contracts',id);if(!c)throw new Error('Contrato não encontrado.');if(externalSignatureFor(id))throw new Error('Este contrato já foi enviado à AssinAPI.');
+ const student=c.student_snapshot||lookup('students',c.student_id)||{};const lead=lookup('leads',c.lead_id)||{};const guardian=c.kind==='menor';
+ const name=guardian?student.guardian_name||lead.guardian_name||'':student.full_name||lead.name||'';
+ const email=guardian?student.guardian_email||'':student.email||'';
+ const cpf=guardian?student.guardian_cpf||'':student.cpf||'';
+ showModal(`<div class="eyebrow">Campanella V5 · Assinatura externa</div><h2>Enviar contrato à AssinAPI</h2><p class="modal-intro">A plataforma coleta a assinatura e gera o PDF com evidências. O contrato fica vinculado somente a esta escola.</p><form id="externalSignForm" data-id="${safe(id)}" class="license-form">${input('Nome do signatário','name',name)}${input('E-mail para o link','email',email,'email')}${input('CPF do signatário (opcional no nível simples)','cpf',cpf,'text',false)}<p class="form-note">O PDF precisa estar integralmente preenchido antes do envio. Se ainda houver campos “A preencher”, finalize primeiro o cadastro do aluno no Campanella. Uma assinatura externa NÃO pode concluir automaticamente uma matrícula sem os dados do aluno.</p><label class="field"><span>Assinatura adicional da escola (opcional)</span><input type="text" name="school_name" placeholder="Nome do representante da escola"></label><label class="field"><span>E-mail do representante (opcional)</span><input type="email" name="school_email" placeholder="responsavel@escola.com.br"></label><div class="form-footer"><button class="btn ghost" type="button" data-action="close">Cancelar</button><button class="btn">Gerar PDF e enviar</button></div></form>`);
+}
+
+// Gera o contrato como PDF de texto vetorial; nao depende de screenshot do DOM.
+async function contractPdfBase64(html){return generateContractPdf(html);}
+async function externalPdfBase64(c){
+ const student=c.student_snapshot||lookup('students',c.student_id)||{};
+ // Do not send contracts containing unfilled personal fields; the final signed PDF is immutable.
+ if(c.terms?.template_rules_version==='v5.2'){const check=validateConvertedTemplate(c.template_html,c.kind);if(!check.valid)throw new Error('Modelo de contrato inválido: '+check.issues[0]);}
+ const html=renderContract({...c,owner_signature_png:null,signature_png:null},student).replace(/Assinatura da escola pendente|Assinatura do aluno após confirmação/gi,'Assinatura eletrônica registrada no certificado de evidências');
+ if(/A preencher|\{\{[a-z0-9_]+\}\}/i.test(html))throw new Error('O contrato ainda possui campos não preenchidos. Complete os dados do aluno antes de enviar à AssinAPI.');
+ return contractPdfBase64(html);
+}
+async function externalSend(f){const id=f.dataset.id,c=lookup('contracts',id);if(!c)throw new Error('Contrato indisponível.');
+ const d=formData(f);const signers=[{name:d.name.trim(),email:d.email.trim(),cpf:d.cpf.trim()}];
+ if(d.school_name.trim()||d.school_email.trim()){
+  if(!d.school_name.trim()||!d.school_email.trim())throw new Error('Informe nome e e-mail do representante.');
+  signers.push({name:d.school_name.trim(),email:d.school_email.trim()});
+ }
+ const pdfBase64=await externalPdfBase64(c);const result=await v5Request('contract-signing',{action:'send',contractId:id,pdfBase64,signers});
+ closeModal();await refresh();toast('Solicitação enviada à AssinAPI; matrícula aguardando assinatura.');
+ if(result.signingUrl)showModal(`<h2>Assinatura enviada</h2><p class="modal-intro">A AssinAPI enviou a solicitação. Este link é individual do primeiro signatário.</p><div class="link-field" id="externalGeneratedLink">${safe(result.signingUrl)}</div><div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button><button class="btn" data-action="externalCopy" data-id="${safe(id)}">Copiar link</button></div>`);
+}
+async function externalDownload(id,type){const data=await v5Request('contract-signing',{action:'download',contractId:id,type});const bytes=Uint8Array.from(atob(data.contentBase64),c=>c.charCodeAt(0));
+ const blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;const contract=lookup('contracts',id),person=contract?.student_snapshot?.full_name||lookup('students',contract?.student_id)?.full_name||lookup('leads',contract?.lead_id)?.name||'Aluno';const name=String(person).normalize('NFC').replace(/[\\/:*?"<>|\u0000-\u001f]/g,'-').replace(/\s+/g,' ').trim().slice(0,80)||'Aluno';const date=String(externalSignatureFor(id)?.completed_at||new Date().toISOString()).slice(0,10);link.download=`Contrato - ${name} - ${date} - ${type==='certificate'?'evidencias':'assinado'}.pdf`;link.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+
+function manualContractHTML(c){
+ const student=c.student_snapshot||lookup('students',c.student_id)||{};
+ const needs=['full_name','cpf','email','birth_date','phone','address','cep'];
+ if(c.kind==='menor')needs.push('guardian_name','guardian_birth_date','guardian_cpf','guardian_email','guardian_phone','guardian_address','guardian_cep');
+ const missing=needs.filter(key=>!String(student[key]??'').trim());
+ if(missing.length)throw new Error('Dados pessoais incompletos ('+missing.join(', ')+'). Atualize o cadastro antes de gerar o documento.');
+ if(c.terms?.template_rules_version==='v5.2'){
+  const report=validateConvertedTemplate(c.template_html,c.kind);
+  if(!report.valid)throw new Error('Modelo DOCX inválido: '+report.issues[0]);
+ }
+ const html=renderContract({...c,owner_signature_png:null,signature_png:null,manualUnsigned:true,signed_at:null},student,{unsigned:true});
+ if(/A preencher|\{\{[a-z0-9_]+\}\}/i.test(html))throw new Error('O contrato ainda possui campos em branco. Confira os dados e campos adicionais.');
+ return html;
+}
+async function downloadManualContract(id){
+ const c=lookup('contracts',id);
+ if(!c||!(['pre_enrolled','ready_manual'].includes(c.status)||(c.status==='signed'&&c.audit?.method==='manual_registry'))||externalSignatureFor(id))throw new Error('Documento manual indisponível.');
+ const html=manualContractHTML(c),base64=await contractPdfBase64(html);
+ const bytes=Uint8Array.from(atob(base64),x=>x.charCodeAt(0));
+ if(bytes.length<1000||new TextDecoder().decode(bytes.subarray(0,5))!=='%PDF-')throw new Error('A geração do PDF falhou. Não é possível marcar o contrato como pronto.');
+ const blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ const s=c.student_snapshot||lookup('students',c.student_id)||{},label=(s.full_name||'Aluno').replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').trim().slice(0,70);
+ a.href=url;a.download=`Contrato - ${label} - ${today()} - para assinatura.pdf`;a.click();setTimeout(()=>URL.revokeObjectURL(url),5000);
+ if(c.status==='pre_enrolled'){
+  const {error}=await sb.rpc('prepare_manual_contract',{p_contract_id:c.id});if(error)throw error;
+  await refresh();toast('PDF gerado sem assinaturas. O contrato aguarda confirmação manual.');
+ }else toast('PDF sem assinaturas baixado.');
+}
+async function confirmManualSignatureUI(){
+ return new Promise(resolve=>{
+  const dialog=document.getElementById('modal');let settled=false;
+  const done=v=>{if(settled)return;settled=true;dialog.removeEventListener('close',cancel);if(dialog.open)closeModal();resolve(v);};
+  const cancel=()=>done(false);
+  showModal(`<div class="eyebrow">Controle de contratos</div><h2>Registrar assinatura manual?</h2><p class="modal-intro">Confirme somente depois de obter o contrato realmente assinado fora do Campanella.</p><div class="notice">Esse registro é uma declaração administrativa. O sistema não autentica as assinaturas, não certifica o documento e não armazena uma versão assinada automaticamente.</div><div class="form-footer"><button type="button" class="btn ghost" id="manualNo">Voltar</button><button type="button" class="btn" id="manualYes">Confirmar registro manual</button></div>`);
+  dialog.addEventListener('close',cancel,{once:true});
+  document.getElementById('manualNo').addEventListener('click',()=>done(false),{once:true});
+  document.getElementById('manualYes').addEventListener('click',()=>done(true),{once:true});
+ });
+}
+async function confirmManualContract(id){
+ const c=lookup('contracts',id);if(!c||c.status!=='ready_manual')throw new Error('Gere o PDF primeiro.');
+ if(!await confirmManualSignatureUI())return;
+ const {error}=await sb.rpc('confirm_manual_contract',{p_contract_id:id});if(error)throw error;
+ await refresh();toast('Assinatura registrada manualmente no controle da escola.');
+}
+
 function schoolSignatureModal(){if(!canAdmin())throw new Error('Apenas administradores podem configurar a assinatura.');const settings=db.school_settings[0]||{},pending=!!currentSchool().deletion_requested_at;showModal(`<div class="eyebrow">Serviços e contratos</div><h2>Assinatura da escola</h2><p class="modal-intro">Defina o responsável e a imagem de assinatura utilizada nos contratos da unidade.</p><form id="ownerForm" class="license-form">${input('Nome do responsável pela assinatura','owner_name',settings.owner_name||'')}<label class="field"><span>Assinatura PNG/JPG (até 90 KB)</span><input type="file" name="signature_file" accept="image/png,image/jpeg"></label><div class="signature-preview">${settings.owner_signature_png?`<img src="${safe(settings.owner_signature_png)}" alt="Assinatura cadastrada">`:'<span>Nenhuma assinatura cadastrada.</span>'}</div><div class="form-footer"><button class="btn" ${pending||!ui.licenseActive?'disabled':''}>Salvar assinatura</button></div></form>`);}
 function studentImportModal(){if(!canAdmin()||!ui.licenseActive)throw new Error('Importação indisponível para esta escola.');showModal(`<div class="eyebrow">Alunos</div><h2>Importar alunos via CSV</h2><p class="modal-intro">Importe até 200 alunos de uma vez. Confira o modelo para preencher as colunas corretamente.</p><a class="btn light" href="./modelo_importacao_alunos.csv" download>Baixar modelo CSV</a><form id="csvForm" class="license-form" style="margin-top:20px"><label class="field"><span>Arquivo CSV (até 300 KB)</span><input type="file" name="csv_file" accept=".csv,text/csv" required></label><div class="form-footer"><button class="btn" type="submit">Importar alunos</button></div></form><div id="csvResults"></div>`);}
 function contractsView(){
@@ -315,10 +468,10 @@ function contractsView(){
   return ui.expiry==='all'||ui.expiry==='expired'&&remaining<0||ui.expiry!=='expired'&&remaining>=0&&remaining<=Number(ui.expiry);
  });
  const tabs=[['current','Em andamento'],['closed','Encerrados'],['canceled','Cancelados']];
- return `${heading('Serviços e contratos','Contratos','Contratos ativos, a enviar e encerrados com histórico preservado.',`<button type="button" class="btn light" data-action="configureSchoolSignature">${ico('profile',17)} Assinatura da escola</button>`)}
+ return `${heading('Serviços e contratos','Contratos','Pré-matrículas, contratos para assinatura física e histórico preservado.','')}
  <div class="tabs" role="group" aria-label="Estado dos contratos">${tabs.map(([id,label])=>`<button class="btn ${ui.contractTab===id?'':'light'}" data-action="contractTab" data-tab="${id}">${label}</button>`).join('')}</div>
- <div class="toolbar"><input class="search" id="search" placeholder="Buscar nome, curso ou pacote" value="${safe(ui.search)}">${ui.contractTab==='current'?`<label class="small">Situação <select id="contractFilter">${[['all','Todas'],['draft','A enviar'],['sent','Enviado'],['active','Ativo'],['expired','Expirado']].map(([v,n])=>`<option value="${v}" ${ui.contractStatus===v?'selected':''}>${n}</option>`).join('')}</select></label>`:''}<label class="small">Vencimento <select id="expiryFilter"><option value="all">Todos</option>${[7,15,30,60,90].map(n=>`<option value="${n}" ${ui.expiry==n?'selected':''}>Até ${n} dias</option>`).join('')}<option value="expired" ${ui.expiry==='expired'?'selected':''}>Expirados</option></select></label></div>
- ${card('Contratos',table(['Aluno / lead','Modelo','Vigência','Estado','Ações'],list.map(c=>row([safe(lookup('students',c.student_id)?.full_name||lookup('leads',c.lead_id)?.name||'—'),safe(lookup('contract_types',c.contract_type_id)?.name||c.kind),`${dateBR(c.terms?.start_date)} — ${dateBR(c.terms?.end_date)}`,contractTag(c),`<div class="actions"><button class="btn mini light" data-action="previewContract" data-id="${c.id}">Ver</button><button class="btn mini ghost" data-action="proof" data-id="${c.id}">Baixar</button>${c.status==='draft'||c.status==='sent'?c.kind!=='dupla'?`<button class="btn mini" data-action="sendContract" data-id="${c.id}">Copiar link</button>`:'':c.status==='signed'?`<button class="btn mini danger" data-action="closeEnrollment" data-id="${c.id}">Encerrar</button>`:''}${['draft','sent'].includes(c.status)?`<button class="btn mini danger" data-action="voidContract" data-id="${c.id}">Cancelar</button>`:''}</div>`])),'Nenhum contrato nesta aba.'))}`;
+ <div class="toolbar"><input class="search" id="search" placeholder="Buscar nome, curso ou pacote" value="${safe(ui.search)}">${ui.contractTab==='current'?`<label class="small">Situação <select id="contractFilter">${[['all','Todas'],['draft','A preparar'],['sent','Aguardando pré-matrícula'],['pre_enrolled','Pré-matrícula feita'],['ready_manual','Contrato gerado'],['active','Ativo'],['expired','Expirado']].map(([v,n])=>`<option value="${v}" ${ui.contractStatus===v?'selected':''}>${n}</option>`).join('')}</select></label>`:''}<label class="small">Vencimento <select id="expiryFilter"><option value="all">Todos</option>${[7,15,30,60,90].map(n=>`<option value="${n}" ${ui.expiry==n?'selected':''}>Até ${n} dias</option>`).join('')}<option value="expired" ${ui.expiry==='expired'?'selected':''}>Expirados</option></select></label></div>
+ ${card('Contratos',table(['Aluno / lead','Modelo','Vigência','Estado','Ações'],list.map(c=>row([safe(lookup('students',c.student_id)?.full_name||lookup('leads',c.lead_id)?.name||'—'),safe(lookup('contract_types',c.contract_type_id)?.name||c.kind),`${dateBR(c.terms?.start_date)} — ${dateBR(c.terms?.end_date)}`,externalSignatureTag(c)+(externalSignatureActions(c)?`<div class="contract-backup-status">${externalSignatureActions(c)}</div>`:''),contractActionsMenu(c)])),'Nenhum contrato nesta aba.'))}`;
 }
 
 function contractForm(leadId){
@@ -326,11 +479,11 @@ function contractForm(leadId){
  if(!i){toast('Preencha a ficha inicial antes de matricular.',true);return;}
  if(db.contracts.some(c=>c.interview_id===i.id&&c.status!=='void')){toast('Já existe um contrato para esta ficha.',true);return;}
  const kind=p?.kind==='dupla'?'dupla':l.guardian_name?'menor':'individual';
- showModal(`<h2>Matricular · Gerar contrato</h2><p class="modal-intro">${safe(l.name)} · ${safe(i.course||'Inglês')} · ${safe(p?.name||'Personalizado')}</p><form id="contractForm" data-lead="${leadId}" data-kind="${kind}"><div class="detail-grid"><div class="detail-item"><span>Vigência</span><strong>${dateBR(i.start_date)} a ${dateBR(i.end_date)}</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(i.total_amount)}</strong></div></div><div class="schedule-highlight"><b>Dias e horários acordados</b><p>${safe(formatSchedule(i.lesson_schedule,i.weekly_days,i.lesson_time))}</p></div><div class="form-grid" style="margin-top:18px"><label class="field wide"><span>Modelo do contrato</span><select name="type_option" id="contractType" required>${contractOptions(kind,p?.id)}</select></label></div><div id="contractExtraFields"></div><p class="form-note">${p?.contract_type_id?'O modelo associado ao pacote foi selecionado automaticamente.':'Nenhum modelo vinculado a este pacote. Escolha o contrato adequado.'} A assinatura da escola será a imagem cadastrada em Configurações.</p><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Criar contrato</button></div></form>`);renderContractExtra();
+ showModal(`<h2>Iniciar pré-matrícula</h2><p class="modal-intro">${safe(l.name)} · ${safe(i.course||'Inglês')} · ${safe(p?.name||'Personalizado')}</p><form id="contractForm" data-lead="${leadId}" data-kind="${kind}"><div class="detail-grid"><div class="detail-item"><span>Vigência</span><strong>${dateBR(i.start_date)} a ${dateBR(i.end_date)}</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(i.total_amount)}</strong></div></div><div class="schedule-highlight"><b>Dias e horários acordados</b><p>${safe(formatSchedule(i.lesson_schedule,i.weekly_days,i.lesson_time))}</p></div><div class="form-grid" style="margin-top:18px"><label class="field wide"><span>Modelo do contrato</span><select name="type_option" id="contractType" required>${contractOptions(kind,p?.id)}</select></label></div><div id="contractExtraFields"></div><p class="form-note">${p?.contract_type_id?'O modelo associado ao pacote foi selecionado automaticamente.':'Nenhum modelo vinculado a este pacote. Escolha o contrato adequado.'} O aluno preencherá os dados pelo link, sem receber contrato ou assinar online. Depois, a escola gerará o PDF sem assinaturas.</p><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Criar contrato</button></div></form>`);renderContractExtra();
 }
 function previewContract(id){const c=lookup('contracts',id),s=c.student_snapshot||lookup('students',c.student_id)||{};
- let html=c.signed_document_html||`<article class="legal-document">${renderContract(c,s)}</article>`;
- showModal(`<h2>Contrato · ${c.status==='signed'?(enrollmentState(c)==='expired'?'Expirado':'Ativo'):c.status==='void'?'Cancelado':c.status==='closed'?'Encerrado':safe(c.status)}</h2><p class="modal-intro">${dateBR(c.terms.start_date)} até ${dateBR(c.terms.end_date)} · ${safe(c.template_version)}</p><iframe class="doc-frame" sandbox srcdoc="${safe(docFrame(html))}" title="Visualização do contrato"></iframe>${c.signed_hash?`<p class="small muted">SHA-256: ${safe(c.signed_hash)}</p>`:''}<div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button><button class="btn" data-action="proof" data-id="${id}">${c.signed_document_html?'Baixar cópia assinada':'Baixar contrato'}</button></div>`);
+ let html=c.signed_document_html||`<article class="legal-document">${renderContract(externalSignatureFor(c.id)?c:{...c,manualUnsigned:true,signed_at:null},s,{unsigned:!externalSignatureFor(c.id)})}</article>`;
+ showModal(`<h2>Contrato · ${c.status==='signed'?(enrollmentState(c)==='expired'?'Expirado':'Ativo'):c.status==='void'?'Cancelado':c.status==='closed'?'Encerrado':c.status==='pre_enrolled'?'Pré-matrícula feita':c.status==='ready_manual'?'Aguardando assinatura manual':safe(c.status)}</h2><p class="modal-intro">${dateBR(c.terms.start_date)} até ${dateBR(c.terms.end_date)} · ${safe(c.template_version)}</p><iframe class="doc-frame" sandbox srcdoc="${safe(docFrame(html))}" title="Visualização do contrato"></iframe>${c.signed_hash?`<p class="small muted">SHA-256: ${safe(c.signed_hash)}</p>`:''}<p class="form-note" style="margin-top:14px">Esta tela apresenta uma pr\u00e9via em HTML. Esta prévia não é comprovante de assinatura. Contratos manuais exigem assinatura fora do Campanella e confirmação administrativa.</p><div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button>${externalSignatureFor(id)?.status==='completed'?`<span class="small muted">Registro eletrônico anterior preservado (integração suspensa).</span>`:`<button class="btn" data-action="manualDownload" data-id="${id}" ${(['pre_enrolled','ready_manual'].includes(c.status)||c.audit?.method==='manual_registry')?'':'disabled'}>Baixar PDF sem assinaturas</button>`}</div>`);
 }
 
 function docFrame(html){return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html{overflow-wrap:anywhere}body{padding:28px;font:13px/1.6 Georgia,serif;color:#20292a}h2{text-align:center;font-size:17px}h3{text-align:center;font-size:14px;background:#eee;padding:5px;margin-top:25px}p{margin:10px 0;text-align:justify}table{max-width:100%;width:100%;overflow-wrap:anywhere}img{max-width:100%;height:auto}@media(max-width:650px){body{padding:14px;font-size:13px}table{font-size:11px}}.signature-summary{border-top:1px solid #aaa;padding-top:18px;margin-top:25px}.signature-summary img{max-width:300px;max-height:140px}</style></head><body>${html}</body></html>`}
@@ -339,7 +492,7 @@ function studentsView(){
   const s=lookup('students',c.student_id);const text=[s?.full_name,s?.email,c.terms?.package_name,c.terms?.course].join(' ').toLowerCase();if(ui.search&&!text.includes(ui.search))return false;
   const remaining=diffDays(c.terms.end_date);return ui.expiry==='all'||ui.expiry==='expired'&&remaining<0||ui.expiry!=='expired'&&remaining>=0&&remaining<=+ui.expiry;
  });
- return `${heading('Gestão contratual','Matrículas','A vigência expira pela data; só é encerrada manualmente ou após rematrícula assinada.')}
+ return `${heading('Gestão contratual','Matrículas','O contrato permanece pendente até a escola registrar a assinatura manual. A rematrícula não apaga o histórico.')}
  <div class="tabs"><button class="btn ${ui.enrollmentTab==='current'?'':'light'}" data-action="enrollmentTab" data-tab="current">Ativas e expiradas</button><button class="btn ${ui.enrollmentTab==='closed'?'':'light'}" data-action="enrollmentTab" data-tab="closed">Encerradas</button></div>
  <div class="toolbar"><input id="search" class="search" placeholder="Buscar aluno, pacote ou curso" value="${safe(ui.search)}"><label class="small">Vencimento <select id="expiryFilter"><option value="all">Todos</option>${[7,15,30,60,90].map(n=>`<option value="${n}" ${ui.expiry==n?'selected':''}>Próximos ${n} dias</option>`).join('')}<option value="expired" ${ui.expiry==='expired'?'selected':''}>Expirados</option></select></label></div>
  ${card('Matrículas',table(['Aluno','Pacote','Vigência','Matrícula','Ações'],list.map(c=>{const s=lookup('students',c.student_id);return row([safe(s?.full_name),safe(c.terms.package_name),`${dateBR(c.terms.start_date)} — ${dateBR(c.terms.end_date)}`,enrollmentTag(c),`<div class="actions"><button class="btn mini light" data-action="studentDetail" data-id="${s?.id}">Perfil</button>${['signed','closed','superseded'].includes(c.status)?`<button class="btn mini" data-action="renew" data-id="${c.id}">Rematricular</button>`:''}${c.status==='signed'?`<button class="btn mini danger" data-action="closeEnrollment" data-id="${c.id}">Encerrar</button>`:''}</div>`]);}),'Nenhuma matrícula neste filtro.'))}`;
@@ -348,7 +501,7 @@ function studentsView(){
 function studentDetail(id){
  const s=lookup('students',id);if(!s)return toast('Aluno não encontrado.',true);
  const all=db.contracts.filter(c=>c.student_id===s.id).sort((a,b)=>b.created_at.localeCompare(a.created_at));
- const current=all.find(c=>c.status==='signed');
+ const current=all.find(c=>c.status==='signed'&&enrollmentState(c)==='active')||all.find(c=>c.status==='signed');
  const last=all.find(c=>['signed','closed','superseded'].includes(c.status));
  const t=(current||last)?.terms||{};
  const schedule=normalSchedule(s.current_schedule?.length?s.current_schedule:t.lesson_schedule,s.current_weekly_days?.length?s.current_weekly_days:t.weekly_days,s.current_lesson_time||t.lesson_time);const d=schedule.map(x=>x.day);
@@ -365,7 +518,7 @@ function studentDetail(id){
  ${last?`<div class="profile-grid">${info('Curso',t.course||'Inglês')}${info('Pacote',t.package_name)}${info('Professor',lookup('teachers',t.teacher_id)?.name||t.teacher_name||'—')}${info('Quantidade de aulas',t.lessons_count)}${info('Frequência',t.weekly_frequency?`${t.weekly_frequency}x por semana`:'—')}${info('Horário no contrato',formatSchedule(t.lesson_schedule,t.weekly_days,t.lesson_time))}${info('Vigência',`${dateBR(t.start_date)} a ${dateBR(t.end_date)}`)}${info('Valor total',money(t.total_amount))}${info('Parcelas',t.installments?`${t.installments}x de ${money(t.installment_amount)}`:'—')}</div>`:'<p class="muted">Aluno cadastrado sem contrato. Você pode gerar a matrícula quando desejar.</p>'}
  <div class="schedule-line"><div><div class="small muted">HORÁRIO ATUAL DO ALUNO · INDEPENDENTE DO CONTRATO</div><strong>${safe(currentDay)}</strong></div><button class="btn light" data-action="toggleSchedule">✎ Editar dias e horário</button></div>
  <div id="scheduleEditor" hidden><form id="scheduleForm" data-id="${s.id}"><h3>Alterar horário atual</h3><p class="small muted">Esta alteração não muda as condições do contrato assinado. A próxima rematrícula usará este horário.</p>${scheduleHTML(schedule)}<div class="form-footer"><button class="btn">Salvar horário</button></div></form></div></section>
- <section class="profile-section"><div class="profile-section-head"><div><div class="eyebrow">03 · Histórico</div><h3>Contratos anteriores e rematrículas</h3></div></div><div class="timeline">${all.map(c=>`<div class="timeline-item"><b>${safe(c.terms?.package_name||'Contrato')}</b> · ${enrollmentTag(c)}<p class="small muted">${dateBR(c.terms?.start_date)} — ${dateBR(c.terms?.end_date)} · ${money(c.terms?.total_amount)}</p><div class="actions"><button class="btn mini light" data-action="previewContract" data-id="${c.id}">Ver documento</button><button class="btn mini ghost" data-action="proof" data-id="${c.id}">Baixar</button>${['draft','sent'].includes(c.status)&&c.kind!=='dupla'?`<button class="btn mini" data-action="sendContract" data-id="${c.id}">Copiar link</button>`:''}${c.status==='signed'?`<button class="btn mini danger" data-action="closeEnrollment" data-id="${c.id}">Encerrar matrícula</button>`:''}</div></div>`).join('')||'<p class="muted">Sem contratos</p>'}</div>
+ <section class="profile-section"><div class="profile-section-head"><div><div class="eyebrow">03 · Histórico</div><h3>Contratos anteriores e rematrículas</h3></div></div><div class="timeline">${all.map(c=>`<div class="timeline-item"><b>${safe(c.terms?.package_name||'Contrato')}</b> · ${enrollmentTag(c)}<p class="small muted">${dateBR(c.terms?.start_date)} — ${dateBR(c.terms?.end_date)} · ${money(c.terms?.total_amount)}</p><div class="actions">${contractActionsMenu(c)}</div></div>`).join('')||'<p class="muted">Sem contratos</p>'}</div>
  ${!all.length?`<div class="form-footer"><button class="btn" data-action="manualEnrollment" data-id="${s.id}">Criar matrícula para este aluno</button></div>`:''}</section></div>`);
  const modal=$('#modal');if(modal)modal.scrollTop=scroll;
 }
@@ -373,7 +526,7 @@ function studentDetail(id){
 function renewForm(id){
  const original=lookup('contracts',id),s=lookup('students',original?.student_id);if(!s)return toast('Aluno não disponível.',true);
  const t=original.terms,start=addDays(t.end_date,1),chosen=s.current_schedule?.length?s.current_schedule:normalSchedule(t.lesson_schedule,t.weekly_days,t.lesson_time);
- showModal(`<h2>Rematrícula · ${safe(s.full_name)}</h2><p class="modal-intro">Cria um novo contrato, mantendo o histórico anterior. O horário atual do aluno foi utilizado.</p><form id="renewForm" data-original="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid">
+ showModal(`<h2>Rematrícula · ${safe(s.full_name)}</h2><p class="modal-intro">O administrador preenche todas as informações, inclusive campos adicionais do contratante. O aluno não recebe link: o PDF será baixado para assinatura física.</p><form id="renewForm" data-original="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid">
  <label class="field wide"><span>Pacote (opcional)</span><select name="package_id" id="renewPackage">${weeksOrCustom()}${options(db.packages.filter(p=>p.kind!=='dupla'),t.package_id)}</select></label>
  <label class="field wide"><span>Modelo</span><select name="type_option" id="renewContractType">${contractOptions(s.is_minor?'menor':'individual',t.package_id)}</select></label>
  ${input('Quantidade de aulas','lessons_count',t.lessons_count,'number')}${input('Aulas por semana','weekly_frequency',t.weekly_frequency,'number')}${input('Data de início','start_date',start,'date')}
@@ -383,7 +536,7 @@ function renewForm(id){
  <label class="field"><span>Valor da parcela (editável)</span><input name="installment_amount" type="number" step="0.01" value="${safe(t.installment_amount)}"></label>
  ${input('Primeiro vencimento','first_due_date',start,'date')}<label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${t.payment_method===x?'selected':''}>${x}</option>`).join('')}</select></label>
  </div><div id="contractExtraFields"></div>
- <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Criar rematrícula · A enviar</button></div></form>`);
+ <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar rematrícula e preparar contrato</button></div></form>`);
  updateInstallment($('#renewForm'));renderContractExtra();
 }
 
@@ -397,6 +550,7 @@ const schoolSections=[
  ['settings-identity','school','Informações da escola','Nome, contato e endereço'],
  ['settings-license','key','Licença e ativação','Validade e código de renovação'],
  ['settings-admin','profile','Administrador responsável','Transferência de administração'],
+ // ['settings-backup','school','Backup no Google Drive','Conectar o Drive desta escola'], // recurso preservado para uso futuro
  ['settings-deletion','trash','Exclusão da escola','Agendamento e restauração']
 ];
 function preferencesOverview(sections,description){return `<div class="preferences-intro"><span class="preferences-intro-icon">${ico('settings',26)}</span><h2>Escolha uma configuração</h2><p>${safe(description)}</p></div><div class="preferences-overview-grid">${sections.map(([page,icon,label,hint])=>`<button class="preferences-tile" type="button" data-action="navigate" data-page="${page}"><span class="preferences-tile-icon">${ico(icon,21)}</span><span><b>${safe(label)}</b><small>${safe(hint)}</small></span>${ico('arrow',18)}</button>`).join('')}</div>`;}
@@ -416,6 +570,7 @@ function settingsView(){const s=currentSchool(),l=ui.schoolLicense,section=ui.pa
  if(section==='settings-identity')main=preferencesPanel('Informações da escola','Atualize os dados institucionais da unidade.',`<form id="schoolDetailsForm" class="license-form">${input('Nome da escola','name',s.name)}${input('E-mail institucional','contact_email',s.contact_email||'','email',false)}${input('Telefone / WhatsApp','contact_phone',s.contact_phone||'','text',false)}<label class="field"><span>Endereço da escola</span><textarea name="address" maxlength="500" rows="3">${safe(s.address||'')}</textarea></label><div class="form-footer"><button class="btn" ${pending?'disabled':''}>Salvar informações</button></div></form>`,'school');
  else if(section==='settings-license')main=preferencesPanel('Licença e ativação','Consulte o estado atual da sua licença ou aplique uma nova chave.',`<div class="school-license-summary"><div><span>Estado</span>${fullSchoolStatus(s)}</div><div><span>Modalidade</span><b>${safe(l?.kind==='cortesia'?'Cortesia / teste':l?'Paga':'Não definida')}</b></div><div><span>Validade</span><b>${safe(licenseExpiration(l))}</b></div></div><p class="form-note">O pagamento é combinado diretamente com o Campanella. Cada escola usa a própria licença.</p><form id="renewSchoolKeyForm" class="license-form"><label class="field"><span>Aplicar nova chave de licença</span><input type="text" name="key" placeholder="CAMP-XXXXXXXX-..." autocomplete="off" spellcheck="false" required></label><div class="form-footer"><button class="btn light" ${pending?'disabled':''}>${ico('key',16)} Aplicar código</button></div></form>`,'key');
  else if(section==='settings-admin')main=preferencesPanel('Administrador responsável','Transfira a administração para outra conta existente.',`<p><b>${safe(ownerEmail)}</b></p><p class="muted">A licença e os registros continuam pertencendo à escola. O administrador anterior perde o acesso após a transferência.</p><form id="transferAdminForm" class="license-form"><label class="field"><span>E-mail do novo administrador</span><input name="email" type="email" placeholder="admin@escola.com.br" required></label><div class="form-footer"><button class="btn light" ${pending?'disabled':''}>Transferir administração</button></div></form>`,'profile');
+ else if(section==='settings-backup')main=preferencesPanel('Backup no Google Drive','Cada escola autoriza seu próprio Drive. Os PDFs finais e certificados são copiados após a assinatura.',`<div class="school-license-summary"><div><span>Conexão</span><b>${ui.driveConnection?.connected?'Drive conectado':'Não conectado'}</b></div><div><span>Último backup</span><b>${ui.driveConnection?.last_success_at?new Date(ui.driveConnection.last_success_at).toLocaleString('pt-BR'):'Ainda não realizado'}</b></div></div>${ui.driveConnection?.last_error?`<p class="notice">${safe(ui.driveConnection.last_error)}</p>`:''}<p class="form-note">O backup fica sob controle da conta Google autorizada por esta escola. Não inclua contas compartilhadas sem autorização. O Drive poderá ser desconectado aqui.</p><div class="form-footer">${ui.driveConnection?.connected?`<button class="btn light" data-action="driveConnect" ${pending?'disabled':''}>Trocar conta Google</button><button class="btn danger" data-action="driveDisconnect">Desconectar Drive</button>`:`<button class="btn" data-action="driveConnect" ${pending?'disabled':''}>Conectar Google Drive</button>`}</div>`,'school');
  else if(section==='settings-deletion')main=preferencesPanel('Exclusão da escola','Gerencie a exclusão programada com prazo de 30 dias.',`<div class="settings-danger-copy"><p>Ao solicitar a exclusão, o acesso operacional é interrompido. Você tem <b>30 dias para restaurar</b> a escola. Depois, o sistema poderá apagar permanentemente seus dados e arquivos.</p></div>${pending?(s.deletion_due_at&&new Date(s.deletion_due_at)>new Date()&&!s.deletion_started_at?`<button class="btn light" data-action="restoreSchool" data-id="${safe(s.id)}">${ico('restore',16)} Cancelar exclusão</button>`:'<p class="muted">Prazo para restauração encerrado.</p>'):`<button class="btn danger" data-action="deleteSchool" ${!canAdmin()?'disabled':''}>${ico('trash',16)} Solicitar exclusão</button>`}`,'trash');
  else main=`<div class="settings-hero"><span class="school-hero-icon">${ico('school',28)}</span><div><div class="eyebrow">Escola selecionada</div><h2>${safe(s.name)}</h2><div class="settings-hero-meta">${fullSchoolStatus(s)}<span>${safe(licenseExpiration(l))}</span></div></div></div>${preferencesOverview(schoolSections,'Selecione uma categoria para gerenciar a instituição, a licença, o administrador ou a exclusão da escola.')}`;
  const notice=pending?schoolRemovalNotice(s):'';
@@ -441,8 +596,18 @@ function licensesView(){const schools=ui.platformSchools,keys=ui.platformKeys,re
  const code=ui.newlyIssuedKey?`<section class="license-key-reveal"><div class="eyebrow">Código recém-gerado · copie agora</div><p class="license-code">${safe(ui.newlyIssuedKey)}</p><div class="actions"><button class="btn" data-action="copyIssuedKey">Copiar código</button><button class="btn ghost" data-action="hideIssuedKey">Ocultar</button></div><p class="small muted">Este código não será exibido novamente. Envie ao administrador da escola.</p></section>`:'';
  return `${heading('Administração da plataforma','Gestão de escolas','Visão de todos os clientes do Campanella, independentemente das escolas da sua conta.',`<button class="btn" data-action="issueLicense">${ico('plus',17)} Gerar chave para nova escola</button>`)}${code}<div class="metric-grid platform-metrics"><div class="metric"><span class="metric-icon">${ico('school',22)}</span><div class="metric-value">${schools.length}</div><div class="metric-label">Escolas cadastradas</div></div><div class="metric"><span class="metric-icon">${ico('check',22)}</span><div class="metric-value">${active}</div><div class="metric-label">Licenças ativas</div></div><div class="metric"><span class="metric-icon">${ico('calendar',22)}</span><div class="metric-value">${expired}</div><div class="metric-label">Licenças vencidas</div></div><div class="metric"><span class="metric-icon">${ico('lock',22)}</span><div class="metric-value">${suspended}</div><div class="metric-label">Suspensas / exclusão</div></div></div><section class="panel"><div class="panel-head"><h2>Escolas e clientes</h2><span class="muted small">${filtered.length} resultado(s)</span></div><div class="panel-body"><div class="platform-filters"><input type="search" class="search" id="platformSearch" placeholder="Buscar escola ou administrador" value="${safe(ui.platformSearch)}" aria-label="Buscar escolas"><select id="platformFilter" aria-label="Filtrar escolas">${[['all','Todas as escolas'],['active','Ativas'],['expired','Vencidas'],['suspended','Suspensas'],['courtesy','Cortesias'],['deleting','Exclusão agendada'],['missing','Sem licença']].map(([v,n])=>`<option value="${v}" ${ui.platformFilter===v?'selected':''}>${n}</option>`).join('')}</select></div></div>${table(['Escola','Administrador','Situação','Validade','Gerenciar'],filtered.map(s=>{const l=schoolLicense(s.id),email=ui.platformProfiles.find(p=>p.id===s.admin_user_id)?.email||'Sem administrador';return row([`<strong>${safe(s.name)}</strong><div class="muted">${safe(s.contact_email||'Sem e-mail institucional')}</div>`,safe(email),`${fullSchoolStatus(s)}<div class="muted">${safe(l?.kind==='cortesia'?'Cortesia':'Paga')}</div>`,safe(licenseExpiration(l)),`<div class="actions"><button class="btn mini light" data-action="platformSchoolDetail" data-id="${safe(s.id)}">Detalhes</button><button class="btn mini" data-action="issueRenewal" data-id="${safe(s.id)}" ${s.deletion_requested_at?'disabled':''}>${ico('key',14)} Nova chave</button></div>`]);}),'Nenhuma escola encontrada.')}</section><section class="panel"><div class="panel-head"><h2>Chaves emitidas</h2><span class="muted small">${keys.filter(k=>!k.redeemed_at&&!k.revoked_at).length+renewals.filter(k=>!k.redeemed_at&&!k.revoked_at).length} disponíveis</span></div>${table(['Destinatário','Escola','Modalidade / prazo','Situação','Ação'],[...renewals.map(k=>({key:k,isRenewal:true})),...keys.map(k=>({key:k,isRenewal:false}))].sort((a,b)=>b.key.created_at.localeCompare(a.key.created_at)).slice(0,100).map(({key:k,isRenewal})=>row([safe(k.recipient_email),`<strong>${safe(isRenewal?schools.find(s=>s.id===k.school_id)?.name||'Escola removida':k.school_name)}</strong><div class="muted">${isRenewal?'Renovação':'Ativação inicial'}</div>`,`${safe(k.kind==='cortesia'?'Cortesia':'Paga')} · ${safe(k.validity_mode==='days'?k.validity_days+' dias':k.validity_mode==='date'?dateBR(k.expires_on):'Sem vencimento')}`,k.redeemed_at?'<span class="pill pill-signed">Utilizada</span>':k.revoked_at?'<span class="pill pill-void">Revogada</span>':'<span class="pill pill-sent">Disponível</span>',`<div class="actions"><span class="muted small">••••${safe(k.code_suffix)}</span>${!k.redeemed_at&&!k.revoked_at?`<button class="btn mini danger" data-action="${isRenewal?'revokeRenewal':'revokeKey'}" data-id="${safe(k.id)}">Revogar</button>`:''}</div>`])),'Nenhuma chave emitida.')}</section><section class="panel"><div class="panel-head"><h2>Movimentações recentes</h2></div>${table(['Data','Escola','Alteração','Observação'],ui.platformEvents.slice(0,35).map(ev=>row([new Date(ev.created_at).toLocaleString('pt-BR'),safe(schools.find(s=>s.id===ev.school_id)?.name||'—'),safe(ev.action.replaceAll('_',' ')),safe(ev.detail?.observacao||'—')])),'Nenhuma movimentação.')}</section>`;
 }
-function teachersView(){return `${heading('Equipe','Professores','Cada professor tem um código privativo para responder fichas por link.','<button class="btn" data-action="editTeacher">＋ Professor</button>')}${card('Professores',table(['Nome','Ativo','Ações'],db.teachers.map(t=>row([safe(t.name),t.active?'Sim':'Não',`<div class="actions"><button class="btn mini light" data-action="editTeacher" data-id="${t.id}">Editar</button><button class="btn mini" data-action="teacherCode" data-id="${t.id}">Definir código</button></div>`])),'Nenhum professor cadastrado.'))}`;}
-function teacherForm(id){const t=lookup('teachers',id)||{};showModal(`<h2>${id?'Editar professor':'Novo professor'}</h2><form id="teacherForm" data-id="${id||''}">${input('Nome do professor','name',t.name)}<div class="form-footer"><button class="btn">Salvar professor</button></div></form>`);}
+function teachersView(){
+ const active=db.teachers.filter(t=>t.active!==false).length;
+ const rows=db.teachers.slice().sort((a,b)=>(b.active!==false)-(a.active!==false)||a.name.localeCompare(b.name,'pt-BR'));
+ return `${heading('Equipe','Professores','Cadastre nome e e-mail da equipe. Os e-mails servirão para futuros acessos e notificações.','<button class="btn" data-action="editTeacher">＋ Novo professor</button>')}
+ <div class="teacher-stats"><div><strong>${active}</strong><span>Ativos</span></div><div><strong>${rows.length-active}</strong><span>Inativos</span></div><div><strong>${rows.length}</strong><span>Total</span></div></div>
+ ${card('Equipe docente',table(['Professor','E-mail','Situação','Ações'],rows.map(t=>row([
+  `<b>${safe(t.name)}</b>`,t.email?`<a href="mailto:${safe(t.email)}">${safe(t.email)}</a>`:'<span class="muted">Não cadastrado</span>',
+  `<span class="pill ${t.active!==false?'pill-signed':''}">${t.active!==false?'Ativo':'Inativo'}</span>`,
+  `<div class="actions"><button class="btn mini light" data-action="editTeacher" data-id="${t.id}">Editar</button>${t.active!==false?`<button class="btn mini ghost" data-action="teacherCode" data-id="${t.id}">Código de entrevista</button>`:''}<button class="btn mini ${t.active!==false?'ghost':'light'}" data-action="teacherToggle" data-id="${t.id}">${t.active!==false?'Desativar':'Reativar'}</button><button class="btn mini danger" data-action="teacherRemove" data-id="${t.id}">Excluir</button></div>`
+ ])),'Nenhum professor cadastrado.'))}<p class="form-note">Professores vinculados a entrevistas ou fichas serão desativados em vez de apagados, preservando o histórico.</p>`;
+}
+function teacherForm(id){const t=lookup('teachers',id)||{};showModal(`<div class="eyebrow">Equipe e ensino</div><h2>${id?'Editar professor':'Novo professor'}</h2><p class="modal-intro">O e-mail será utilizado futuramente para convites e notificações. Por enquanto, não cria acesso ao sistema.</p><form id="teacherForm" data-id="${safe(id||'')}"><div class="form-grid">${input('Nome completo','name',t.name)}${input('E-mail profissional','email',t.email||'','email')}<label class="field wide"><span>Situação</span><select name="active"><option value="true" ${t.active!==false?'selected':''}>Ativo</option><option value="false" ${t.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar professor</button></div></form>`);}
 function teacherCodeForm(id){const t=lookup('teachers',id);showModal(`<h2>Código de acesso</h2><p class="modal-intro">${safe(t?.name||'Professor')} · crie um código com pelo menos 8 caracteres. Compartilhe com o professor por outro canal, não inclua no link.</p><form id="teacherCodeForm" data-id="${id}">${input('Novo código de acesso','code','','password')}<div class="notice">Ao alterar o código, o anterior não funciona mais. Após cinco tentativas erradas, o link de entrevista fica bloqueado.</div><div class="form-footer"><button class="btn">Salvar código</button></div></form>`);}
 async function createInterviewInviteLink(leadId,teacherId){
  if(!lookup('leads',leadId))throw new Error('Lead não encontrado.');
@@ -469,21 +634,22 @@ function studentForm(id){const s=lookup('students',id)||{},minor=!!s.is_minor;
  ${!id?`<label class="checkrow" style="margin-top:16px"><input type="checkbox" name="create_contract"> Após cadastrar, preencher matrícula e contrato</label>`:''}
  <div class="form-footer"><button class="btn">Salvar cadastro</button></div></form>`);
 }
-function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;showModal(`<h2>Criar matrícula de ${safe(s.full_name)}</h2><p class="modal-intro">O aluno já está cadastrado. Gere um contrato agora ou feche para deixar sem matrícula.</p><form id="manualEnrollmentForm" data-student="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid"><label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active))}</select></label>${input('Curso','course','Inglês')}<label class="field wide"><span>Pacote (opcional)</span><select name="package_id" id="manualPackage">${weeksOrCustom()}${options(db.packages.filter(p=>p.active&&p.kind!=='dupla'))}</select></label>${input('Aulas','lessons_count','','number')}${input('Aulas por semana','weekly_frequency','2','number')}${input('Início','start_date',today(),'date')}${input('Final (manual)','end_date','','date')}<div class="wide">${scheduleHTML(s.current_schedule,s.current_weekly_days||[1,3],s.current_lesson_time?.slice(0,5)||'18:00')}</div>${input('Valor total','total_amount','','number')}${input('Parcelas','installments','6','number')}${input('Valor da parcela','installment_amount','','number')}${input('Primeiro vencimento','first_due_date',today(),'date')}<label class="field"><span>Pagamento</span><select name="payment_method"><option>Boleto</option><option>PIX</option><option>Cartão</option><option>Transferência</option></select></label><label class="field wide"><span>Modelo</span><select name="type_option" id="manualContractType">${contractOptions(s.is_minor?'menor':'individual',null)}</select></label></div><div id="contractExtraFields"></div><div class="form-footer"><button type="button" class="btn ghost" data-action="studentDetail" data-id="${id}">Agora não</button><button class="btn">Criar contrato · A enviar</button></div></form>`);renderContractExtra();}
+function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;showModal(`<h2>Criar matrícula de ${safe(s.full_name)}</h2><p class="modal-intro">O aluno já está cadastrado. Gere um contrato agora ou feche para deixar sem matrícula.</p><form id="manualEnrollmentForm" data-student="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid"><label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active))}</select></label>${input('Curso','course','Inglês')}<label class="field wide"><span>Pacote (opcional)</span><select name="package_id" id="manualPackage">${weeksOrCustom()}${options(db.packages.filter(p=>p.active&&p.kind!=='dupla'))}</select></label>${input('Aulas','lessons_count','','number')}${input('Aulas por semana','weekly_frequency','2','number')}${input('Início','start_date',today(),'date')}${input('Final (manual)','end_date','','date')}<div class="wide">${scheduleHTML(s.current_schedule,s.current_weekly_days||[1,3],s.current_lesson_time?.slice(0,5)||'18:00')}</div>${input('Valor total','total_amount','','number')}${input('Parcelas','installments','6','number')}${input('Valor da parcela','installment_amount','','number')}${input('Primeiro vencimento','first_due_date',today(),'date')}<label class="field"><span>Pagamento</span><select name="payment_method"><option>Boleto</option><option>PIX</option><option>Cartão</option><option>Transferência</option></select></label><label class="field wide"><span>Modelo</span><select name="type_option" id="manualContractType">${contractOptions(s.is_minor?'menor':'individual',null)}</select></label></div><div id="contractExtraFields"></div><div class="form-footer"><button type="button" class="btn ghost" data-action="studentDetail" data-id="${id}">Agora não</button><button class="btn">Salvar dados e preparar contrato</button></div></form>`);renderContractExtra();}
 
 function guardianHTML(s,minor){return minor?`<h3 class="form-section">Responsável</h3><div class="form-grid">${input('Nome do responsável','guardian_name',s.guardian_name)}${input('Data nascimento','guardian_birth_date',s.guardian_birth_date,'date')}${input('CPF','guardian_cpf',s.guardian_cpf)}${input('Telefone','guardian_phone',s.guardian_phone)}${input('E-mail','guardian_email',s.guardian_email,'email')}${input('CEP','guardian_cep',s.guardian_cep)}<div class="wide">${input('Endereço','guardian_address',s.guardian_address)}</div></div>`:'';}
-const BUILTIN_FIELDS=new Set(['aluno_nome','aluno_cpf','aluno_email','contratante_nome','contratante_cpf','contratante_endereco','contratante_cep','contratante_telefone','contratante_email','valor_total','valor_total_extenso','qtd_aulas','data_inicio','data_fim','dias','horario','parcelas','primeiro_vencimento','segundo_vencimento','valor_parcela','valor_primeira_parcela','data_assinatura_extenso','grade_horarios','curso','professor','forma_pagamento']);
+const BUILTIN_FIELDS=CONTRACT_RESERVED;
 function templatesView(){
  const count=db.contract_types.length;
- const active=db.contract_types.filter(t=>t.active!==false).length;
+ const active=db.contract_types.filter(t=>t.active!==false&&analyzeContractMarkers(t.body_text||'',t.kind).valid).length;
  const linked=new Set(db.packages.filter(p=>p.contract_type_id).map(p=>p.contract_type_id)).size;
  const cards=db.contract_types.map(t=>{
    const pkgs=db.packages.filter(p=>p.contract_type_id===t.id);
    const used=db.contracts.some(c=>c.contract_type_id===t.id);
    const activeModel=t.active!==false;
+   const validModel=analyzeContractMarkers(t.body_text||'',t.kind).valid;
    const kindNames={individual:'Individual',menor:'Menor de idade',dupla:'Dupla'};
    return `<article class="template-card">
-     <div class="template-card-top"><div class="template-file-icon" aria-hidden="true">▤</div><span class="template-status ${activeModel?'is-active':'is-inactive'}">${activeModel?'Disponível':'Inativo'}</span></div>
+     <div class="template-card-top"><div class="template-file-icon" aria-hidden="true">▤</div><span class="template-status ${!validModel?'is-inactive':activeModel?'is-active':'is-inactive'}">${!validModel?'Corrigir DOCX':activeModel?'Disponível':'Inativo'}</span></div>
      <h3 class="template-card-title">${safe(t.name)}</h3>
      <p class="template-card-kind">${safe(kindNames[t.kind]||t.kind)}</p>
      <div class="template-card-facts">
@@ -507,13 +673,20 @@ function typeForm(id){
  const pkgs=db.packages.map(p=>`<label class="template-package-option"><input type="checkbox" name="linked_package" value="${p.id}" ${linked.includes(p.id)?'checked':''}><span><b>${safe(p.name)}</b><small>${safe(p.kind)}</small></span></label>`).join('');
  showModal(`<div class="template-edit-modal"><div class="template-edit-head"><div class="eyebrow">Biblioteca de documentos</div><h2>${id?'Editar modelo':'Novo modelo DOCX'}</h2><a href="./ajuda-contratos.html" target="_blank" rel="noopener noreferrer" class="template-guide-inline">? Como preparar o Word <span aria-hidden="true">↗</span></a></div>
  <form id="typeForm" data-id="${id||''}">
-  <section class="template-edit-section"><h3>Informações do modelo</h3><div class="form-grid">${input('Nome do contrato','name',t.name)}<label class="field"><span>Modalidade</span><select name="kind" id="typeKind">${[['individual','Individual'],['menor','Menor de idade'],['dupla','Dupla']].map(([key,label])=>`<option value="${key}" ${t.kind===key?'selected':''}>${label}</option>`).join('')}</select></label><label class="field wide"><span>${id?'Substituir arquivo DOCX (opcional)':'Arquivo DOCX'}</span><input type="file" name="docx_file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" ${id?'':'required'}></label></div></section>
+  <section class="template-edit-section"><h3>Informações do modelo</h3><div class="form-grid">${input('Nome do contrato','name',t.name)}<label class="field"><span>Modalidade</span><select name="kind" id="typeKind">${[['individual','Individual'],['menor','Menor de idade'],['dupla','Dupla']].map(([key,label])=>`<option value="${key}" ${t.kind===key?'selected':''}>${label}</option>`).join('')}</select></label><label class="field wide"><span>${id?'Substituir arquivo DOCX (opcional)':'Arquivo DOCX'}</span><input type="file" name="docx_file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" ${id?'':'required'}></label></div><div id="docxValidation" class="docx-report" aria-live="polite"><p class="muted small">Selecione um DOCX para verificar campos obrigatórios, responsáveis e repetições antes de salvar.</p></div></section>
   <section class="template-edit-section"><div class="template-section-title"><h3>Vincular a pacotes</h3><span class="template-optional">Opcional</span></div>${pkgs?`<div class="template-package-grid">${pkgs}</div>`:`<p class="template-no-package">Não há pacotes cadastrados.</p>`}</section>
   <section class="template-edit-section template-availability"><label class="checkrow"><input type="checkbox" name="active" ${t.active!==false?'checked':''}> <span>Disponível para novas matrículas</span></label></section>
   <div class="form-footer template-form-footer"><button class="btn ghost" type="button" data-action="close">Cancelar</button><button class="btn" type="submit">${id?'Salvar alterações':'Cadastrar modelo'}</button></div>
  </form></div>`);
+ const current=$('#docxValidation');
+ if(current&&id){const report=analyzeContractMarkers(t.body_text||'',t.kind);renderDocxReport(report,true);}
 }
-const DOCX_MARKER=/<<([a-z][a-z0-9_]{1,39})\/(contratante|contratado)>>/g;
+const DOCX_MARKER=CONTRACT_MARKER;
+let docxValidationCache=new WeakMap();
+function renderDocxReport(report,existing=false){const el=$('#docxValidation');if(!el)return;
+ if(!report){el.innerHTML='<p class="muted small">Selecione um arquivo DOCX para analisar.</p>';return;}
+ const ok=report.valid;el.innerHTML=`<div class="docx-report-heading ${ok?'is-ok':'is-error'}"><b>${ok?'✓ Modelo validado':`⚠ ${report.issues.length} ajuste(s) necessário(s)`}</b><span>${report.baseFound}/${report.requiredCount} campos base obrigatórios encontrados</span></div>${existing&&!ok?'<p class="small">Este modelo antigo precisa ser corrigido e ter o DOCX substituído antes de ser usado em uma nova matrícula.</p>':''}${report.issues.length?`<ul>${report.issues.map(x=>`<li>${safe(x.message)}</li>`).join('')}</ul>`:`<p class="small">Campos base, papéis e assinaturas corretos. Campos adicionais identificados: ${report.customFields.length}.</p>`}`;
+}
 function safeDocxHTML(markup){const doc=new DOMParser().parseFromString(markup,'text/html');const tags=new Set(['P','DIV','SPAN','H1','H2','H3','H4','B','STRONG','I','EM','U','BR','UL','OL','LI','TABLE','TBODY','THEAD','TR','TD','TH','BLOCKQUOTE']);for(const el of [...doc.body.querySelectorAll('*')]){if(!tags.has(el.tagName)){el.replaceWith(...el.childNodes);continue;}for(const attr of [...el.attributes])el.removeAttribute(attr.name);}
  const blockTags='p,li,td,th,h1,h2,h3,h4,blockquote';for(const el of doc.body.querySelectorAll(blockTags)){
   const walker=doc.createTreeWalker(el,NodeFilter.SHOW_TEXT),nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
@@ -524,24 +697,36 @@ function safeDocxHTML(markup){const doc=new DOMParser().parseFromString(markup,'
  }
  return doc.body.innerHTML;
 }
-async function importDocx(file){if(!window.mammoth)throw new Error('Carregamento do leitor DOCX falhou. Confira sua internet.');if(file.size>2000000||!file.name.toLowerCase().endsWith('.docx'))throw new Error('Envie um arquivo .docx de até 2 MB.');const buffer=await file.arrayBuffer();const raw=await window.mammoth.extractRawText({arrayBuffer:buffer});const matches=[...raw.value.matchAll(new RegExp(DOCX_MARKER.source,'g'))];if(raw.value.length<20||raw.value.length>24000)throw new Error('O texto do contrato deve ter de 20 a 24.000 caracteres.');if(!matches.some(m=>m[1]==='assinatura'&&m[2]==='contratante')||!matches.some(m=>m[1]==='assinatura'&&m[2]==='contratado'))throw new Error('Inclua os dois marcadores de assinatura no Word: <<assinatura/contratante>> e <<assinatura/contratado>>.');const map=new Map();for(const m of matches){const key=m[1],who=m[2]==='contratante'?'aluno':'admin';if(map.has(key)&&map.get(key).who!==who)throw new Error('Campo '+key+' possui papéis conflitantes.');if(key!=='assinatura'&&!BUILTIN_FIELDS.has(key))map.set(key,{key,label:key.replaceAll('_',' ').replace(/^./,x=>x.toUpperCase()),who});}
- if(map.size>25)throw new Error('Máximo de 25 campos personalizados.');const result=await window.mammoth.convertToHtml({arrayBuffer:buffer},{convertImage:window.mammoth.images.imgElement(async()=>({src:''}))});const html=safeDocxHTML(result.value);if(html.length>100000)throw new Error('DOCX convertido muito grande.');
- return {body_text:raw.value.slice(0,23999),template_html:html,fields:[...map.values()]};
+async function importDocx(file){
+ if(docxValidationCache.has(file))return docxValidationCache.get(file);
+ if(!window.mammoth)throw new Error('Leitor DOCX indisponível. Confira a conexão.');
+ if(file.size>2000000||!file.name.toLowerCase().endsWith('.docx'))throw new Error('Envie um DOCX de até 2 MB.');
+ const buffer=await file.arrayBuffer(),raw=await window.mammoth.extractRawText({arrayBuffer:buffer});
+ if(raw.value.length<20||raw.value.length>24000)throw new Error('O texto do contrato deve ter de 20 a 24.000 caracteres.');
+ const report=analyzeContractMarkers(raw.value,$('#typeKind')?.value||'individual');
+ if(!report.valid){const r={report,body_text:raw.value,template_html:'',fields:[]};docxValidationCache.set(file,r);return r;}
+ const result=await window.mammoth.convertToHtml({arrayBuffer:buffer},{convertImage:window.mammoth.images.imgElement(async()=>({src:''}))});
+ const html=safeDocxHTML(result.value);
+ if(html.length>100000)throw new Error('DOCX convertido muito grande.');
+ const converted=validateConvertedTemplate(html,$('#typeKind')?.value||'individual');
+ if(!converted.valid){report.valid=false;for(const issue of converted.issues)report.issues.push({code:'conversion',message:`Marcador não convertido: ${issue}. Reescreva o marcador sem separar os sinais no Word.`});}
+ const parsed={body_text:raw.value.slice(0,23999),template_html:html,fields:report.customFields,report};
+ docxValidationCache.set(file,parsed);return parsed;
 }
 
-function renderContractExtra(){const f=$('#contractForm')||$('#renewForm')||$('#manualEnrollmentForm');if(!f)return;const value=f.elements.type_option.value,id=value.startsWith('custom:')?value.slice(7):null,ct=lookup('contract_types',id);const fields=ct?.fields?.filter(x=>x.who==='admin')||[];$('#contractExtraFields').innerHTML=fields.length?`<h3 class="form-section">Campos deste modelo</h3><div class="form-grid">${fields.map(x=>input(x.label,'extra_'+x.key,'')).join('')}</div>`:'';}
-function snapshotFromForm(f,kind,terms){const selected=f.elements.type_option.value,ct=selected.startsWith('custom:')?lookup('contract_types',selected.slice(7)):null;const k=ct?.kind||selected.replace('base:','');const fields=ct?.fields||[];const custom_fields={};for(const spec of fields.filter(x=>x.who==='admin')){const value=f.elements['extra_'+spec.key]?.value?.trim();if(!value)throw new Error('Preencha '+spec.label);custom_fields[spec.key]=value;}
+function renderContractExtra(){const f=$('#contractForm')||$('#renewForm')||$('#manualEnrollmentForm');if(!f)return;const value=f.elements.type_option.value,id=value.startsWith('custom:')?value.slice(7):null,ct=lookup('contract_types',id);const manual=['renewForm','manualEnrollmentForm'].includes(f.id);const fields=ct?.fields?.filter(x=>manual||x.who==='admin')||[];const previous=f.id==='renewForm'?lookup('contracts',f.dataset.original)?.terms?.custom_fields||{}:{};$('#contractExtraFields').innerHTML=fields.length?`<h3 class="form-section">Campos deste modelo</h3><div class="form-grid">${fields.map(x=>input(x.label,'extra_'+x.key,previous[x.key]||'')).join('')}</div>`:'';}
+function snapshotFromForm(f,kind,terms){const selected=f.elements.type_option.value;if(!selected.startsWith('custom:'))throw new Error('Selecione um modelo DOCX cadastrado e validado.');const ct=lookup('contract_types',selected.slice(7));if(!ct)throw new Error('Modelo DOCX não encontrado.');const validation=analyzeContractMarkers(ct.body_text||'',ct.kind);if(!validation.valid)throw new Error('O modelo DOCX possui campos base inválidos ou ausentes. Vá em Modelos de contratos, substitua o Word e confira a validação: '+validation.issues[0].message);const k=ct?.kind||selected.replace('base:','');const fields=ct?.fields||[];const custom_fields={};for(const spec of fields.filter(x=>['renewForm','manualEnrollmentForm'].includes(f.id)||x.who==='admin')){const value=f.elements['extra_'+spec.key]?.value?.trim();if(!value)throw new Error('Preencha '+spec.label);custom_fields[spec.key]=value;}
  const config=db.school_settings[0]||{};
- if(!config.owner_name||!config.owner_signature_png)throw new Error('Cadastre nome e assinatura da escola em Configurações antes de gerar contratos.');
- return {kind:k,contract_type_id:ct?.id||null,template_html:ct?(ct.template_html||safe(ct.body_text||'').replace(/\n/g,'<br>')):TEMPLATES[k].html,template_version:ct?'custom-'+ct.id+'-'+ct.updated_at:TEMPLATES[k].version,owner_name:config.owner_name||'',owner_signature_png:config.owner_signature_png||null,terms:{...terms,custom_fields,custom_field_schema:fields,template_storage_path:ct?.template_storage_path||null}};}
+ // Na etapa manual nao exigimos nem anexamos a imagem de assinatura da escola.
+ return {kind:k,contract_type_id:ct.id,template_html:ct.template_html,template_version:'custom-'+ct.id+'-'+ct.updated_at,owner_name:config.owner_name||'',owner_signature_png:EXTERNAL_SIGNATURE_ENABLED?(config.owner_signature_png||null):null,terms:{...terms,school_name:currentSchool().name||'',template_rules_version:'v5.2',custom_fields,custom_field_schema:fields,template_storage_path:ct.template_storage_path||null}};}
 function signatureImage(data,alt){return typeof data==='string'&&/^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(data)?`<img src="${data}" alt="${alt}" class="doc-signature-image">`:'';}
-function renderContract(c,student){
+function renderContract(c,student,{unsigned=false}={}){
  const hasMarkers=String(c.template_html||'').includes('{{assinatura_contratado}}')||String(c.template_html||'').includes('{{assinatura_contratante}}');
  let body=contractHTML(c,student);
- const owner=signatureImage(c.owner_signature_png,'Assinatura da escola');
- const who=signatureImage(c.signature_png,'Assinatura do contratante');
- body=body.replaceAll('{{assinatura_contratado}}',owner||'<span>Assinatura da escola pendente</span>').replaceAll('{{assinatura_contratante}}',who||'<span class="signature-pending">Assinatura do aluno após confirmação</span>');
- if(!hasMarkers)body+=`<section class="owner-signature" style="margin-top:25px">${owner}<b>CONTRATADA: ${safe(c.owner_name||'Escola')}</b></section>`;
+ const owner=unsigned?'':signatureImage(c.owner_signature_png,'Assinatura da escola');
+ const who=unsigned?'':signatureImage(c.signature_png,'Assinatura do contratante');
+ body=body.replaceAll('{{assinatura_contratado}}',unsigned?'<span>_______________________________________<br>Assinatura da contratada</span>':owner||'<span>Assinatura da escola pendente</span>').replaceAll('{{assinatura_contratante}}',unsigned?'<span>_______________________________________<br>Assinatura do contratante</span>':who||'<span class="signature-pending">Assinatura do aluno após confirmação</span>');
+ if(!hasMarkers)body+=`<section class="owner-signature" style="margin-top:25px">${unsigned?'_______________________________________<br>':''}${owner}<b>CONTRATADA: ${safe(c.owner_name||'Escola')}</b></section>`;
  return body;
 }
 function downloadHTML(content,filename){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([docFrame(content)],{type:'text/html;charset=utf-8'}));a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);}
@@ -573,14 +758,15 @@ function updateInstallment(f,edited='total_amount'){
  if(f.elements.total_extenso)f.elements.total_extenso.value=amountWords(Number(f.elements.total_amount.value));
 }
 
-async function sendLink(id){const c=lookup('contracts',id);if(!c||!['draft','sent'].includes(c.status))throw new Error('Contrato indisponível para link.');if(c.kind==='dupla')throw new Error('Assinatura de dupla não habilitada.');
+async function sendLink(id){if(externalSignatureFor(id))throw new Error('Este contrato já usa assinatura externa.');const c=lookup('contracts',id);if(!c||!['draft','sent'].includes(c.status))throw new Error('Contrato indisponível para link.');if(c.kind==='dupla')throw new Error('Assinatura de dupla não habilitada.');
  const token=randomToken(),token_hash=await sha256(token),exp=new Date(Date.now()+7*86400000).toISOString();
- await save('contracts',{token_hash,token_expires_at:exp},id);
- const link=location.href.split('#')[0]+'#assinar/'+token;
- showModal(`<div class="eyebrow">Link de contrato</div><h2>Copie para enviar ao aluno</h2><p class="modal-intro">O estado A enviar muda para Enviado quando você clicar em Copiar link.</p><div class="link-field" id="generatedLink">${safe(link)}</div><p class="notice">Expira em 7 dias. Gerar outro link invalida o anterior.</p><div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button><button class="btn" data-action="copyGenerated" data-id="${id}">Copiar link</button></div>`);
+ await save('contracts',{token_hash,token_expires_at:exp,status:'sent',sent_at:new Date().toISOString()},id);
+ const link=location.href.split('#')[0]+'#pre-matricula/'+token;
+ const phone=contactWhatsAppNumber(c),publicLink=link.startsWith('https://');
+ showModal(`<div class="eyebrow">Matr\u00edcula digital</div><h2>Link de pré-matrícula</h2><p class="modal-intro">O interessado preencherá apenas os dados pessoais. Nenhum contrato será exibido ou assinado nesta etapa. Após o envio, a escola gerará o documento para assinatura manual.</p><div class="link-field" id="generatedLink">${safe(link)}</div><p class="notice">V\u00e1lido por 7 dias. Criar outro link invalida o anterior.</p>${!publicLink?'<p class="form-note">Este link usa 127.0.0.1 e s\u00f3 abre neste computador. O envio pelo WhatsApp estar\u00e1 dispon\u00edvel depois da publica\u00e7\u00e3o em HTTPS.</p>':''}<div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button><button class="btn light" data-action="copyGenerated" data-id="${id}">Copiar link</button><button class="btn" data-action="shareWhatsApp" data-id="${id}" ${phone&&publicLink?'':'disabled title="Requer n\u00famero com DDD e link p\u00fablico HTTPS"'}>Enviar pelo WhatsApp</button></div>`);
 }
 
-function exportProof(id){const c=lookup('contracts',id);if(!c)throw new Error('Contrato não encontrado.');const signed=!!c.signed_document_html,student=c.student_snapshot||lookup('students',c.student_id)||{};
+function exportProof(id){if(externalSignatureFor(id)?.status==='completed')return externalDownload(id,'signed');const c=lookup('contracts',id);if(!c)throw new Error('Contrato não encontrado.');const signed=!!c.signed_document_html,student=c.student_snapshot||lookup('students',c.student_id)||{};
  const html=signed?c.signed_document_html+`<p style="font:11px monospace;word-break:break-all">SHA-256: ${safe(c.signed_hash)}</p>`:`<article class="legal-document">${renderContract(c,student)}</article>`;
  downloadHTML(html,`${signed?'Contrato-assinado':'Contrato'}-${c.id.slice(0,8)}.html`);
  toast(signed?'Cópia assinada baixada. Você pode imprimir como PDF.':'Contrato com assinatura da escola baixado.');
@@ -619,15 +805,18 @@ async function downloadDocx(id){const c=lookup('contracts',id),s=c.student_snaps
  if(c.terms?.template_storage_path){const {data,error}=await sb.storage.from('campanella-contratos').download(c.terms.template_storage_path);if(error)throw error;blob=data;}
  else{const response=await fetch(TEMPLATES[c.kind].docx);if(!response.ok)throw new Error('Arquivo Word não encontrado.');blob=await response.blob();}
  const z=new window.PizZip(await blob.arrayBuffer()),vals=valuesFor(c,s);
- const doc=new window.docxtemplater(z,{delimiters:{start:'<<',end:'>>'},paragraphLoop:true,linebreaks:true,nullGetter:()=>'',parser:tag=>({get:scope=>tag==='assinatura/contratado'?'__CAMPANELLA_OWNER_POSITION__':tag==='assinatura/contratante'?'Assinatura digital registrada no comprovante eletrônico':scope[tag.split('/')[0]]??''})});
- doc.render(vals);const signed=await embedOwnerSignature(doc.toBlob(),c.owner_signature_png,c.owner_name);const a=document.createElement('a'),url=URL.createObjectURL(signed);a.href=url;a.download=`Contrato-${c.id.slice(0,8)}.docx`;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
+ const doc=new window.docxtemplater(z,{delimiters:{start:'<<',end:'>>'},paragraphLoop:true,linebreaks:true,nullGetter:()=>'',parser:tag=>({get:scope=>tag==='assinatura/contratado'?(EXTERNAL_SIGNATURE_ENABLED?'__CAMPANELLA_OWNER_POSITION__':'_______________________________________'):tag==='assinatura/contratante'?(EXTERNAL_SIGNATURE_ENABLED?'Assinatura digital registrada no comprovante eletrônico':'_______________________________________'):scope[tag.split('/')[0]]??''})});
+ doc.render(vals);const signed=EXTERNAL_SIGNATURE_ENABLED?await embedOwnerSignature(doc.toBlob(),c.owner_signature_png,c.owner_name):doc.toBlob();const a=document.createElement('a'),url=URL.createObjectURL(signed);a.href=url;a.download=`Contrato-${c.id.slice(0,8)}.docx`;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
 
-document.addEventListener('click',e=>{if(!e.target.closest('.account-popover'))document.querySelectorAll('.account-popover[open]').forEach(d=>d.removeAttribute('open'));});
+document.addEventListener('click',e=>{if(!e.target.closest('.account-popover'))document.querySelectorAll('.account-popover[open]').forEach(d=>d.removeAttribute('open'));if(!e.target.closest('.contract-actions-dropdown'))document.querySelectorAll('.contract-actions-dropdown[open]').forEach(d=>d.removeAttribute('open'));});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.account-popover[open]').forEach(d=>d.removeAttribute('open'));});
 document.addEventListener('click',async e=>{
- const x=e.target.closest('[data-action]');if(!x)return;
+ const x=e.target.closest('[data-action]');if(!x||appBusy)return;
+ document.querySelectorAll('.contract-actions-dropdown[open]').forEach(d=>{if(!d.contains(x))d.removeAttribute('open');});
  const {action,id,page}=x.dataset;
+ x.closest('.contract-actions-dropdown')?.removeAttribute('open');
+ startBusy();
  try{
  if(action==='close')return closeModal();
  if(action==='showSignup'){$('#app').innerHTML=signupPage();return;}
@@ -637,7 +826,7 @@ document.addEventListener('click',async e=>{
  if(action==='logout'){refreshVersion++;await sb.auth.signOut();ui.user=null;ui.role=null;ui.schoolId=null;ui.isPlatformAdmin=false;ui.newlyIssuedKey=null;ui.page='dashboard';return initialize();}
  if(action==='selectSchool')return switchSchool(id);
  if(action==='showActivation')return activationModal();
- if(action==='configureSchoolSignature')return schoolSignatureModal();
+ if(action==='configureSchoolSignature'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Assinatura eletrônica não disponível nesta versão.');return schoolSignatureModal();}
  if(action==='importStudents')return studentImportModal();
  if(action==='platformSchoolDetail'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return platformSchoolDetail(id);}
  if(action==='issueRenewal'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return schoolRenewalForm(id);}
@@ -661,6 +850,13 @@ document.addEventListener('click',async e=>{
  if(action==='editStudent')return studentForm(id);
  if(action==='editTeacher')return teacherForm(id);
  if(action==='teacherCode')return teacherCodeForm(id);
+ if(action==='teacherToggle'){const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');if(!confirm(`${t.active!==false?'Desativar':'Reativar'} ${t.name}?`))return;await save('teachers',{active:t.active===false},id);toast(t.active!==false?'Professor desativado.':'Professor reativado.');return refresh();}
+ if(action==='teacherRemove'){const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');const linked=db.interviews.some(i=>i.teacher_id===id)||db.interview_invites.some(i=>i.teacher_id===id)||(db.crm_appointments||[]).some(i=>i.teacher_id===id)||db.contracts.some(c=>c.terms?.teacher_id===id);
+  if(linked){if(!confirm(`O professor ${t.name} possui histórico. Ele será DESATIVADO para preservar contratos e entrevistas. Continuar?`))return;await save('teachers',{active:false},id);toast('Professor desativado. Histórico preservado.');return refresh();}
+  if(!confirm(`Excluir DEFINITIVAMENTE o professor ${t.name}? Esta ação não pode ser desfeita.`))return;
+  const {error}=await sb.from('teachers').delete().eq('school_id',ui.schoolId).eq('id',id);if(error){if(error.code==='23503'){await save('teachers',{active:false},id);toast('Professor vinculado a histórico: desativado em vez de excluído.');return refresh();}throw error;}
+  toast('Professor excluído.');return refresh();}
+
  if(action==='inviteInterview')return inviteInterview(id);
  if(action==='manualEnrollment')return manualEnrollmentForm(id);
  if(action==='toggleSchedule'){const el=$('#scheduleEditor');if(el)el.hidden=!el.hidden;return;}
@@ -673,19 +869,32 @@ document.addEventListener('click',async e=>{
  if(action==='copyInterviewLink'){await navigator.clipboard.writeText($('#generatedLink').textContent);toast('Link de entrevista copiado.');return;}
  if(action==='editContractType')return typeForm(id);
  if(action==='viewContractType')return viewContractType(id);
- if(action==='toggleContractType'){const t=lookup('contract_types',id);if(!t)return;await save('contract_types',{active:!t.active},id);toast('Disponibilidade alterada.');return refresh();}
+ if(action==='toggleContractType'){const t=lookup('contract_types',id);if(!t)return;if(!t.active&&!analyzeContractMarkers(t.body_text||'',t.kind).valid)throw new Error('Corrija o DOCX antes de ativar este modelo. Abra Editar e confira a lista de campos.');await save('contract_types',{active:!t.active},id);toast('Disponibilidade alterada.');return refresh();}
  if(action==='removeContractType'){const t=lookup('contract_types',id);if(!t)return;const inUse=db.contracts.some(c=>c.contract_type_id===id);if(!confirm(inUse?'Modelo utilizado em contratos. Deseja desativá-lo para novas matrículas?':'Excluir definitivamente o modelo? Contratos já gerados não são alterados.'))return;if(inUse){await save('contract_types',{active:false},id);}else{for(const pkg of db.packages.filter(p=>p.contract_type_id===id))await save('packages',{contract_type_id:null},pkg.id);const {error}=await sb.from('contract_types').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;}toast('Modelo atualizado.');return refresh();}
  if(action==='previewContract')return previewContract(id);
  if(action==='renew')return renewForm(id);
+ if(action==='externalSend'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Assinatura eletrônica indisponível nesta versão.');return externalSendForm(id);}
+ if(action==='externalStatus'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração desativada.');const result=await v5Request('contract-signing',{action:'status',contractId:id});toast(`AssinAPI: ${result.providerStatus||result.localStatus||'pendente'}`);await refresh();return;}
+ if(action==='externalCancel'){if(!confirm('Cancelar a solicitação de assinatura na AssinAPI?'))return;await v5Request('contract-signing',{action:'cancel',contractId:id});toast('Assinatura cancelada.');return refresh();}
+ if(action==='externalRemind'){if(!confirm('Reenviar lembrete de assinatura?'))return;await v5Request('contract-signing',{action:'remind',contractId:id});toast('Lembrete enviado.');return;}
+ if(action==='externalCopy'){const item=externalSignatureFor(id);if(!item?.signing_url)throw new Error('Link não disponível.');await navigator.clipboard.writeText(item.signing_url);toast('Link copiado.');return;}
+ if(action==='externalShareWhatsApp'){const item=externalSignatureFor(id),c=lookup('contracts',id);if(!item?.signing_url||!c)throw new Error('Link n\u00e3o dispon\u00edvel.');openWhatsApp(c,item.signing_url);return;}
+ if(action==='externalDownload')return externalDownload(id,'signed');
+ if(action==='externalEvidence')return externalDownload(id,'certificate');
+ if(action==='externalBackup'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração desativada.');await v5Request('google-drive-backup',{contractId:id});toast('Backup concluído no Google Drive.');await refresh();return;}
+ if(action==='driveConnect'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração com Drive indisponível nesta versão.');const r=await v5Request('google-drive-oauth',{action:'start',schoolId:ui.schoolId});if(!/^https:\/\/accounts\.google\.com\//.test(r.authorizationUrl))throw new Error('Autorização Google inválida.');location.assign(r.authorizationUrl);return;}
+ if(action==='driveDisconnect'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração com Drive indisponível nesta versão.');if(!confirm('Desconectar o Drive desta escola? Os arquivos já enviados não serão apagados.'))return;await v5Request('google-drive-oauth',{action:'disconnect',schoolId:ui.schoolId});toast('Drive desconectado.');return refresh();}
+ if(action==='manualDownload')return await downloadManualContract(id);
+ if(action==='manualConfirm')return await confirmManualContract(id);
  if(action==='sendContract'){await sendLink(id);return;}
  if(action==='downloadDocx')return await downloadDocx(id);
  if(action==='proof')return exportProof(id);
- if(action==='copyGenerated'){await navigator.clipboard.writeText($('#generatedLink').textContent);await save('contracts',{status:'sent',sent_at:new Date().toISOString()},id);toast('Link copiado. Contrato marcado como Enviado.');closeModal();return refresh();}
- if(action==='clearSignature')return clearSignature();
+ if(action==='copyGenerated'){await navigator.clipboard.writeText($('#generatedLink').textContent);await save('contracts',{status:'sent',sent_at:new Date().toISOString()},id);toast('Link de matr\u00edcula copiado.');closeModal();return refresh();}
+ if(action==='shareWhatsApp'){const link=$('#generatedLink')?.textContent||'',c=lookup('contracts',id);if(!c)throw new Error('Contrato n\u00e3o encontrado.');openWhatsApp(c,link);await save('contracts',{status:'sent',sent_at:new Date().toISOString()},id);closeModal();toast('WhatsApp aberto com a mensagem pronta para envio.');return refresh();}
  if(action==='removeLead'){if(!confirm('Excluir este lead? Contratos e fichas existentes impedem exclusão.'))return;const {error}=await sb.from('leads').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;toast('Lead excluído.');return refresh();}
  if(action==='removePackage'){if(!confirm('Excluir pacote? Pacotes utilizados não podem ser excluídos.'))return;const {error}=await sb.from('packages').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;toast('Pacote excluído.');return refresh();}
- if(action==='voidContract'){if(!confirm('Cancelar contrato e invalidar seu link?'))return;await save('contracts',{status:'void',token_hash:null,token_expires_at:null},id);toast('Contrato cancelado.');return refresh();}
- }catch(error){errors(error)}
+ if(action==='voidContract'){if(!confirm('Cancelar contrato e invalidar seu link?'))return;const {error}=await sb.rpc('void_manual_contract',{p_contract_id:id});if(error)throw error;toast('Contrato cancelado.');return refresh();}
+ }catch(error){errors(error)}finally{finishBusy()}
 });
 document.addEventListener('input',e=>{
  if(e.target.id==='platformSearch'){ui.platformSearch=e.target.value;const pos=e.target.selectionStart;render();const input=$('#platformSearch');if(input){input.focus();input.setSelectionRange(pos,pos);}return;}
@@ -696,7 +905,13 @@ document.addEventListener('input',e=>{
  }
  if(['total_amount','installments','installment_amount'].includes(e.target.name)&&['interviewForm','renewForm','manualEnrollmentForm','externalInterviewForm'].includes(e.target.form?.id))updateInstallment(e.target.form,e.target.name);
 });
-document.addEventListener('change',e=>{
+document.addEventListener('change',async e=>{
+ if(e.target.name==='docx_file'&&e.target.form?.id==='typeForm'){
+  const file=e.target.files?.[0];if(!file){renderDocxReport(null);return;}
+  const report=$('#docxValidation');if(report)report.textContent='Analisando campos e marcadores do DOCX…';
+  try{const parsed=await importDocx(file);if(e.target.files?.[0]===file)renderDocxReport(parsed.report);}catch(error){if(report)report.innerHTML='<p class="docx-report-error">'+safe(error?.message||String(error))+'</p>';}finally{finishBusy()}return;
+ }
+ if(e.target.id==='typeKind'&&e.target.form?.id==='typeForm'){docxValidationCache=new WeakMap();const file=e.target.form.elements.docx_file.files?.[0];if(file){try{const parsed=await importDocx(file);renderDocxReport(parsed.report);}catch(error){renderDocxReport(null);}}else{const old=lookup('contract_types',e.target.form.dataset.id);if(old)renderDocxReport(analyzeContractMarkers(old.body_text||'',e.target.value),true);}return;}
  if(e.target.id==='licenseValidity'){
   const mode=e.target.value;
   $('#licensePeriodFields').innerHTML=mode==='days'?'<label class="field"><span>Quantidade de dias após a ativação</span><input name="validity_days" type="number" min="1" max="3650" value="30" required></label>':mode==='date'?`<label class="field"><span>Vencimento exato</span><input name="expires_on" type="date" min="${today()}" required></label>`:'<p class="form-note">Cortesia sem prazo, revogável pelo administrador da plataforma.</p>';
@@ -723,8 +938,10 @@ document.addEventListener('change',e=>{
 });
 
 document.addEventListener('submit',async event=>{
- const f=event.target;if(!f.id)return;event.preventDefault();const btn=f.querySelector('button[type="submit"],button:not([type])');if(btn)btn.disabled=true;
+ const f=event.target;if(!f.id)return;event.preventDefault();if(appBusy)return;const btn=f.querySelector('button[type="submit"],button:not([type])');if(btn)btn.disabled=true;
+ if(f.id!=='signForm')startBusy();
  try{
+ if(f.id==='externalSignForm'){await externalSend(f);return;}
  if(f.id==='externalCodeForm'){await externalVerify(f.elements.code.value);return;}
  if(f.id==='externalInterviewForm'){await externalSave(f);return;}
  if(f.id==='profileForm'){const name=f.elements.full_name.value.trim();if(name.length<2||name.length>120)throw new Error('Informe um nome válido.');const {data,error}=await sb.auth.updateUser({data:{full_name:name}});if(error)throw error;ui.user=data.user;toast('Perfil atualizado.');return render();}
@@ -805,7 +1022,7 @@ document.addEventListener('submit',async event=>{
  else if(f.id==='contractForm'){
   const lead=f.dataset.lead,i=db.interviews.find(v=>v.lead_id===lead),p=lookup('packages',i.package_id),snapshot=snapshotFromForm(f,null,buildTerms(i,p));
   if(((p?.kind||'individual')==='dupla')!==(snapshot.kind==='dupla'))throw new Error('Modalidade incompatível com o pacote.');
-  const created=await save('contracts',{lead_id:lead,interview_id:i.id,...snapshot,created_by:ui.user.id});toast('Contrato criado. Copie o link abaixo para enviá-lo.');await refresh();if(created.kind!=='dupla'){await sendLink(created.id);return;}
+  const created=await save('contracts',{lead_id:lead,interview_id:i.id,...snapshot,created_by:ui.user.id});toast('Pré-matrícula iniciada. Compartilhe o link de cadastro.');await refresh();if(created.kind!=='dupla'){await sendLink(created.id);return;}
  }
  else if(f.id==='renewForm'){
   const original=lookup('contracts',f.dataset.original),p=lookup('packages',f.elements.package_id.value);if(!original)throw new Error('Contrato anterior indisponível.');
@@ -814,7 +1031,8 @@ document.addEventListener('submit',async event=>{
   if(!Number.isInteger(count)||count<1||count>500||!Number.isInteger(freq)||freq<1||freq>7)throw new Error('Confira quantidade e frequência.');
   const fields=financialFields(f,count,freq),terms={...original.terms,...fields,package_id:p?.id||null,package_name:p?.name||'Personalizado',lessons_count:count,weekly_frequency:freq};
   const snapshot=snapshotFromForm(f,null,terms);
-  const renewed=await save('contracts',{lead_id:original.lead_id,student_id:original.student_id,previous_contract_id:original.id,...snapshot,created_by:ui.user.id});toast('Rematrícula criada. Copie o link abaixo.');await refresh();if(renewed.kind!=='dupla'){await sendLink(renewed.id);return;}
+  const s=lookup('students',original.student_id);if(!s)throw new Error('Aluno original indisponível.');
+  const renewed=await save('contracts',{lead_id:original.lead_id,student_id:original.student_id,previous_contract_id:original.id,...snapshot,status:'pre_enrolled',student_snapshot:{...s,custom_fields:{...snapshot.terms.custom_fields}},created_by:ui.user.id});closeModal();await refresh();toast('Rematrícula preparada: baixe o contrato sem assinaturas na lista de contratos.');ui.page='contracts';render();return;
  }
  else if(f.id==='manualEnrollmentForm'){
   const student=lookup('students',f.dataset.student),p=lookup('packages',f.elements.package_id.value);if(!student)throw new Error('Aluno não encontrado.');
@@ -829,10 +1047,13 @@ document.addEventListener('submit',async event=>{
   interview=await save('interviews',values,interview?.id);
   const terms={...fields,package_id:p?.id||null,package_name:p?.name||'Personalizado',course:values.course,teacher_id:values.teacher_id,teacher_name:lookup('teachers',values.teacher_id)?.name||'',lessons_count:count,weekly_frequency:freq};
   const snap=snapshotFromForm(f,null,terms);
-  const enrollment=await save('contracts',{lead_id:leadId,student_id:student.id,interview_id:interview.id,...snap,created_by:ui.user.id});toast('Matrícula criada. Copie o link abaixo.');await refresh();if(enrollment.kind!=='dupla'){await sendLink(enrollment.id);return;}studentDetail(student.id);return;
+  const enrollment=await save('contracts',{lead_id:leadId,student_id:student.id,interview_id:interview.id,...snap,status:'pre_enrolled',student_snapshot:{...student,custom_fields:{...snap.terms.custom_fields}},created_by:ui.user.id});closeModal();await refresh();toast('Cadastro pronto. Gere o contrato sem assinaturas na área Contratos.');ui.page='contracts';render();return;
  }
  else if(f.id==='teacherForm'){
-  await save('teachers',{name:f.elements.name.value.trim(),active:true},f.dataset.id||undefined);toast('Professor salvo.');
+  const name=f.elements.name.value.trim(),email=f.elements.email.value.trim().toLowerCase();
+  if(name.length<2||name.length>180||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)throw new Error('Informe nome e e-mail válidos.');
+  if(db.teachers.some(t=>t.id!==f.dataset.id&&t.email?.toLowerCase()===email))throw new Error('Este e-mail já está associado a outro professor da escola.');
+  await save('teachers',{name,email,active:f.elements.active.value==='true'},f.dataset.id||undefined);toast('Professor salvo.');
  }
  else if(f.id==='studentForm'){
   const d=formData(f),minor=!!f.elements.is_minor.checked;
@@ -857,19 +1078,20 @@ document.addEventListener('submit',async event=>{
   const d=formData(f),file=f.elements.docx_file.files[0],old=lookup('contract_types',f.dataset.id)||{};
   if(!file&&!old.template_storage_path)throw new Error('Envie o arquivo DOCX do contrato.');
   let fields=old.fields||[],body_text=old.body_text,template_html=old.template_html,template_storage_path=old.template_storage_path;
-  if(file){const parsed=await importDocx(file);fields=parsed.fields;body_text=parsed.body_text;template_html=parsed.template_html;
+  if(file){const parsed=await importDocx(file);if(!parsed.report.valid){renderDocxReport(parsed.report);throw new Error('Corrija o documento Word. A lista completa está abaixo do campo de upload.');}fields=parsed.fields;body_text=parsed.body_text;template_html=parsed.template_html;
    const name=ui.schoolId+'/'+crypto.randomUUID()+'.docx';const {error}=await sb.storage.from('campanella-contratos').upload(name,file,{contentType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',upsert:false});if(error)throw error;template_storage_path=name;
   }
+  if(!file){const report=analyzeContractMarkers(body_text||'',d.kind);renderDocxReport(report,true);if(!report.valid)throw new Error('Este modelo antigo precisa de um DOCX corrigido antes de salvar: '+report.issues[0].message);}
   const saved=await save('contract_types',{name:d.name.trim(),kind:d.kind,body_text,template_html,template_storage_path,fields,active:!!f.elements.active.checked},f.dataset.id||undefined);
   const chosen=new Set($$('input[name="linked_package"]:checked',f).map(x=>x.value));
   for(const pkg of db.packages){if(chosen.has(pkg.id)&&(pkg.kind==='dupla')!==(d.kind==='dupla'))throw new Error(`O pacote ${pkg.name} possui modalidade incompatível com o modelo.`);}
   for(const pkg of db.packages){const next=chosen.has(pkg.id)?saved.id:pkg.contract_type_id===saved.id?null:pkg.contract_type_id;if(next!==pkg.contract_type_id)await save('packages',{contract_type_id:next},pkg.id);}
   toast('Modelo e associações salvos.');
  }
- else if(f.id==='signForm'){await completeSignature(f);return;}
+ else if(f.id==='preEnrollmentForm'){await completePreEnrollment(f);return;}
  else return;
  closeModal();await refresh();
- }catch(error){errors(error)}finally{if(btn)btn.disabled=false;}
+ }catch(error){errors(error)}finally{finishBusy();if(btn)btn.disabled=false;}
 });
 
 function formDataExtras(f){const o={};for(const [key,value] of new FormData(f).entries()){if(key.startsWith('extra_'))o[key.slice(6)]=String(value).trim();}return o;}
@@ -891,16 +1113,37 @@ async function externalSave(f){const d=formData(f),p=externalData.packages.find(
  await externalAPI({action:'save',form:data});$('.sign-main').innerHTML='<section class="sign-panel"><h1>Ficha salva!</h1><p>Obrigado. A administração poderá gerar o contrato e enviar o link de matrícula para o aluno.</p><p class="muted">Este link de entrevista já foi utilizado.</p></section>';
 }
 
-let publicToken='',publicData=null,sigTouched=false;
-async function publicAPI(body){const response=await fetch(`${SUPA_URL}/functions/v1/assinatura`,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({token:publicToken,...body})});const json=await response.json().catch(()=>({error:'Resposta inválida do servidor'}));if(!response.ok)throw new Error(json.error||'Serviço indisponível');return json;}
-async function publicStart(token){publicToken=token;ui.user=null;$('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Matrícula digital</div></div></div></header><main class="sign-main"><div class="sign-panel"><h2>Preparando seu contrato…</h2><p>Verificando o link de assinatura.</p></div></main></div>`;try{publicData=await publicAPI({action:'lookup'});renderPublic();}catch(error){$('.sign-main').innerHTML=`<div class="sign-panel"><h2>Não foi possível abrir o contrato</h2><p class="muted">${safe(error.message)}</p><p class="notice">Confira se este link é o mais recente e, se necessário, peça outro à escola.</p></div>`}}
-function renderPublic(){const d=publicData,t=d.terms,e=d.existing||{},minor=d.kind==='menor';const brand=$('.sign-top .brand-sub');if(brand)brand.textContent=d.school_name||'Matrícula digital';const read=(key,fallback='')=>e[key]??fallback;$('.sign-main').innerHTML=`<div class="eyebrow">Matrícula online · ${minor?'Responsável legal':'Aluno maior de idade'}</div><h1>Formalize sua matrícula com tranquilidade.</h1><p class="leadline" style="margin-bottom:25px">Complete seus dados, leia o contrato e assine diretamente nesta página.</p><section class="sign-panel"><div class="sign-step">Etapa 1 de 4</div><h2>Confira seu plano de aulas</h2><p class="muted">Informações preenchidas pelo entrevistador.</p><div class="detail-grid" style="margin-top:22px"><div class="detail-item"><span>Pacote</span><strong>${safe(t.package_name)}</strong></div><div class="detail-item"><span>Aulas</span><strong>${t.lessons_count} · ${t.weekly_frequency}x/semana</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(t.total_amount)}</strong></div><div class="detail-item"><span>Início</span><strong>${dateBR(t.start_date)}</strong></div><div class="detail-item"><span>Término previsto</span><strong>${dateBR(t.end_date)}</strong></div><div class="detail-item"><span>Pagamento</span><strong>${t.installments}x de ${money(t.installment_amount)}</strong></div></div><div class="schedule-highlight sign-schedule"><b>Seus dias e horários de aula</b><div class="sign-schedule-days">${normalSchedule(t.lesson_schedule,t.weekly_days,t.lesson_time).map(x=>`<div><strong>${safe(fullDays[x.day])}</strong><span>${safe(x.time)}</span></div>`).join('')||'<span>Consulte a escola</span>'}</div></div><div class="notice">Se alguma condição estiver incorreta, não assine. Solicite a correção do contrato à escola.</div></section><form id="signForm"><section class="sign-panel"><div class="sign-step">Etapa 2 de 4</div><h2>Seus dados pessoais</h2><p class="muted">Preencha seus dados completos para o documento.</p><div class="form-grid">${input('Nome completo do aluno','full_name',read('full_name',d.lead.name))}${input('CPF do aluno','cpf',read('cpf'))}${input('E-mail do aluno','email',read('email'),'email')}${input('Data de nascimento','birth_date',read('birth_date'),'date')}${minor?'':`${input('Telefone','phone',read('phone'),'tel')}${input('CEP','cep',read('cep'))}<div class="wide">${input('Endereço completo (rua, número, complemento, bairro, cidade e UF)','address',read('address'))}</div>`}</div>${minor?`<h3 class="form-section">Dados do responsável legal</h3><p class="muted" style="margin-bottom:15px">O responsável será o contratante e fará a assinatura.</p><div class="form-grid">${input('Nome completo do responsável','guardian_name',read('guardian_name',d.lead.guardian_name))}${input('Data de nascimento do responsável','guardian_birth_date',read('guardian_birth_date'),'date')}${input('CPF do responsável','guardian_cpf',read('guardian_cpf'))}${input('Telefone do responsável','guardian_phone',read('guardian_phone'),'tel')}${input('E-mail do responsável','guardian_email',read('guardian_email'),'email')}${input('CEP do responsável','guardian_cep',read('guardian_cep'))}<div class="wide">${input('Endereço completo do responsável','guardian_address',read('guardian_address'))}</div></div>`:''}<p class="form-note" style="margin-top:18px">${minor?'Por ser menor de 18 anos, o aluno deve ser representado por um responsável maior de idade.':'Para alunos maiores de idade, o próprio aluno é o contratante. Não é necessário repetir seus dados como responsável.'}</p>${(t.custom_field_schema||[]).filter(x=>x.who==='aluno').length?`<h3 class="form-section">Informações adicionais</h3><div class="form-grid">${t.custom_field_schema.filter(x=>x.who==='aluno').map(x=>input(x.label,'extra_'+x.key,e.custom_fields?.[x.key]||'')).join('')}</div>`:''}</section><section class="sign-panel"><div class="sign-step">Etapa 3 de 4</div><h2>Leia o contrato</h2><p class="muted" style="margin-bottom:16px">Confira o texto completo. Ele será preenchido automaticamente com seus dados.</p><div class="sign-document-wrap"><iframe id="signPreview" class="sign-frame" sandbox title="Texto completo do contrato"></iframe></div></section><section class="sign-panel"><div class="sign-step">Etapa 4 de 4</div><h2>Assinatura eletrônica</h2><p class="muted" style="margin-bottom:16px">Desenhe sua assinatura com o dedo, mouse ou caneta digital.</p><canvas id="signatureCanvas" class="sig-canvas" aria-label="Campo para desenhar assinatura"></canvas><div class="signature-row"><span class="small muted">Assinatura de ${minor?'responsável legal':'aluno/contratante'}</span><button type="button" class="btn ghost mini" data-action="clearSignature">Limpar assinatura</button></div><label class="checkrow"><input type="checkbox" name="accepted" required><span>Declaro que li integralmente o contrato, confiro e aceito os dados e condições apresentados, e concordo em assinar eletronicamente.</span></label><button class="btn sign-button" type="submit">Assinar e concluir minha matrícula →</button><div class="notice">Sua assinatura será registrada com data, identificação do documento e informações técnicas da operação. Não compartilhe este link.</div></section></form>`;setupSignature();updatePublicPreview();}
-function updatePublicPreview(){if(!publicData||!$('#signForm'))return;const data=formData($('#signForm'));const html=renderContract({kind:publicData.kind,terms:publicData.terms,template_html:publicData.template_html,owner_signature_png:publicData.owner_signature_png,owner_name:publicData.owner_name},{...data,custom_fields:formDataExtras($('#signForm'))});$('#signPreview').srcdoc=docFrame(`<article class="legal-document">${html}</article>`);}
-document.addEventListener('input',e=>{if(e.target.closest('#signForm')&&e.target.tagName!=='CANVAS')updatePublicPreview()});
-function setupSignature(){const c=$('#signatureCanvas');const ratio=window.devicePixelRatio||1,rect=c.getBoundingClientRect();c.width=Math.round(rect.width*ratio);c.height=Math.round(rect.height*ratio);const ctx=c.getContext('2d');ctx.scale(ratio,ratio);ctx.fillStyle='#fff';ctx.fillRect(0,0,rect.width,rect.height);ctx.lineWidth=2.4;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#153e38';let active=false;const point=e=>{const r=c.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]};c.addEventListener('pointerdown',e=>{e.preventDefault();active=true;c.setPointerCapture(e.pointerId);const [x,y]=point(e);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+.1,y+.1);ctx.stroke();sigTouched=true;});c.addEventListener('pointermove',e=>{if(!active)return;e.preventDefault();const [x,y]=point(e);ctx.lineTo(x,y);ctx.stroke();});const stop=()=>{active=false};c.addEventListener('pointerup',stop);c.addEventListener('pointercancel',stop);}
-function clearSignature(){const c=$('#signatureCanvas');if(!c)return;const ctx=c.getContext('2d');ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.restore();sigTouched=false;}
-async function completeSignature(f){if(!sigTouched)throw new Error('Desenhe sua assinatura no quadro antes de continuar.');const d=formData(f);if(!cpfValid(d.cpf))throw new Error('CPF do aluno inválido.');if(publicData.kind==='menor'&&!cpfValid(d.guardian_cpf))throw new Error('CPF do responsável inválido.');if(!f.elements.accepted.checked)throw new Error('Leia e aceite o contrato.');if(!confirm('Confirma que leu o contrato e deseja efetivar sua assinatura?'))return;const signature=$('#signatureCanvas').toDataURL('image/png');const result=await publicAPI({action:'sign',student:{...d,custom_fields:formDataExtras(f)},signature,accepted:true});location.hash='#matricula-concluida';const html=result.html;$('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Matrícula digital</div></div></div></header><main class="sign-main"><section class="sign-panel"><div class="eyebrow">Assinatura registrada</div><h1>Matrícula concluída!</h1><p class="leadline">Seu contrato foi assinado. A escola já pode consultar o registro no sistema.</p><div class="inline-note" style="margin-top:20px">✓ Assinado em ${new Date(result.signed_at).toLocaleString('pt-BR')}<br><span class="small">Identificador: ${safe(result.contract_id)}</span></div><p class="small muted" style="margin:20px 0 8px">Hash SHA-256 do documento:</p><p class="hash">${safe(result.hash)}</p></section><section class="sign-panel"><h2>Cópia do contrato assinado</h2><p class="muted" style="margin:10px 0">Baixe uma cópia do contrato assinado para guardar.</p><button class="btn" id="downloadSignedPublic" type="button">↓ Baixar contrato assinado</button><iframe class="sign-frame" sandbox srcdoc="${safe(docFrame(html))}" title="Contrato assinado"></iframe></section></main></div>`;$('#downloadSignedPublic')?.addEventListener('click',()=>downloadHTML(html+`<p>SHA-256: ${safe(result.hash)}</p>`,`Contrato-assinado-${result.contract_id.slice(0,8)}.html`));}
-window.addEventListener('hashchange',()=>{if(location.hash.startsWith('#assinar/')||location.hash.startsWith('#entrevista/'))location.reload()});
+let publicToken='',publicData=null;
+async function publicAPI(body){const response=await fetch(`${SUPA_URL}/functions/v1/matricula-v5`,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({token:publicToken,...body})});const json=await response.json().catch(()=>({error:'Resposta inválida do servidor'}));if(!response.ok)throw new Error(json.error||'Serviço indisponível');return json;}
+async function publicStart(token){
+ publicToken=token;ui.user=null;
+ $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div></header><main class="sign-main"><section class="sign-panel"><div class="busy-wheel" aria-hidden="true"></div><h2>Carregando pré-matrícula…</h2></section></main></div>`;
+ try{publicData=await publicAPI({action:'lookup'});renderPublic();}
+ catch(error){const main=$('.sign-main');if(main)main.innerHTML=`<section class="sign-panel"><h2>Link indisponível</h2><p>${safe(error.message)}</p></section>`;}
+}
+function renderPublic(){
+ const d=publicData,t=d.terms,e=d.existing||{},minor=d.kind==='menor';
+ const brand=$('.sign-top .brand-sub');if(brand)brand.textContent=d.school_name||'Pré-matrícula';
+ const read=(key,fallback='')=>e[key]??fallback;
+ $('.sign-main').innerHTML=`<div class="eyebrow">Pré-matrícula · ${minor?'Aluno menor de idade':'Aluno maior de idade'}</div><h1>Vamos registrar seus dados.</h1><p class="leadline">Este cadastro não é uma assinatura e não inclui contrato. Depois, a escola preparará o documento para assinatura presencial ou por outro meio combinado.</p>
+ <section class="sign-panel"><div class="sign-step">Etapa 1 de 2</div><h2>Confira as informações do curso</h2><div class="detail-grid" style="margin-top:18px"><div class="detail-item"><span>Pacote</span><strong>${safe(t.package_name)}</strong></div><div class="detail-item"><span>Aulas</span><strong>${safe(t.lessons_count)} · ${safe(t.weekly_frequency)}x/semana</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(t.total_amount)}</strong></div><div class="detail-item"><span>Início previsto</span><strong>${dateBR(t.start_date)}</strong></div><div class="detail-item"><span>Término previsto</span><strong>${dateBR(t.end_date)}</strong></div><div class="detail-item"><span>Pagamento</span><strong>${safe(t.installments)}x de ${money(t.installment_amount)}</strong></div></div><div class="notice">Se algum dado estiver incorreto, avise à escola antes de enviar suas informações.</div></section>
+ <form id="preEnrollmentForm"><section class="sign-panel"><div class="sign-step">Etapa 2 de 2</div><h2>Seus dados pessoais</h2><p class="muted">Informe os dados necessários para que a escola prepare o documento.</p><div class="form-grid">${input('Nome completo do aluno','full_name',read('full_name',d.lead.name))}${input('CPF do aluno','cpf',read('cpf'))}${input('E-mail do aluno','email',read('email'),'email')}${input('Data de nascimento','birth_date',read('birth_date'),'date')}${minor?'':`${input('Telefone','phone',read('phone'),'tel')}${input('CEP','cep',read('cep'))}<div class="wide">${input('Endereço completo','address',read('address'))}</div>`}</div>
+ ${minor?`<h3 class="form-section">Responsável legal</h3><p class="muted">Os dados do responsável são necessários porque o aluno é menor de idade.</p><div class="form-grid">${input('Nome completo do responsável','guardian_name',read('guardian_name',d.lead.guardian_name))}${input('Nascimento do responsável','guardian_birth_date',read('guardian_birth_date'),'date')}${input('CPF do responsável','guardian_cpf',read('guardian_cpf'))}${input('Telefone do responsável','guardian_phone',read('guardian_phone'),'tel')}${input('E-mail do responsável','guardian_email',read('guardian_email'),'email')}${input('CEP do responsável','guardian_cep',read('guardian_cep'))}<div class="wide">${input('Endereço completo do responsável','guardian_address',read('guardian_address'))}</div></div>`:''}
+ ${(t.custom_field_schema||[]).length?`<h3 class="form-section">Informações adicionais</h3><div class="form-grid">${t.custom_field_schema.map(x=>input(safe(x.label),'extra_'+x.key,e.custom_fields?.[x.key]||'')).join('')}</div>`:''}
+ <p class="form-note">Seus dados serão enviados à administração da escola para elaboração do contrato. Nenhuma assinatura é realizada aqui.</p><button class="btn sign-button" type="submit">Concluir pré-matrícula →</button></section></form>`;
+}
+async function completePreEnrollment(f){
+ const d=formData(f);
+ if(!cpfValid(d.cpf))throw new Error('CPF do aluno inválido.');
+ if(publicData.kind==='menor'&&!cpfValid(d.guardian_cpf))throw new Error('CPF do responsável inválido.');
+ startBusy('Enviando sua pré-matrícula...');
+ const student={...d,custom_fields:formDataExtras(f)};
+ const result=await publicAPI({action:'submit',student});
+ if(!result.pre_enrolled)throw new Error('Não foi possível confirmar o cadastro.');
+ history.replaceState({},'',location.pathname+'#pre-matricula-concluida');
+ $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div></header><main class="sign-main"><section class="sign-panel"><div class="eyebrow">Cadastro recebido</div><h1>Pré-matrícula concluída!</h1><p class="leadline">Seus dados foram enviados à escola. A administração preparará o contrato e combinará com você a assinatura por outro meio.</p><div class="notice">Nenhum contrato foi assinado nesta etapa. Aguarde as orientações da escola.</div></section></main></div>`;
+}
+window.addEventListener('hashchange',()=>{if(location.hash.startsWith('#assinar/')||location.hash.startsWith('#pre-matricula/')||location.hash.startsWith('#entrevista/'))location.reload()});
 sb.auth.onAuthStateChange((event)=>{
  if(event==='PASSWORD_RECOVERY'){
   history.replaceState({},'',location.pathname+'?recuperar=1');

@@ -35,7 +35,7 @@ assert.ok(signature.includes("db.rpc('has_active_school_license'"),'Assinatura p
 assert.ok(interview.includes('verify_external_interview'),'Entrevista publica nao usa verificacao RPC');
 // Testa renderizacao de componentes reais, sem conexão remota.
 const start=app.indexOf('function licenseSummary(');
-const end=app.indexOf('\nfunction shell()',start);
+const end=app.indexOf('\nfunction fullSchoolStatus(',start);
 assert.ok(start>0&&end>start);
 const context=vm.createContext({today:()=> '2026-11-03',dateBR:s=>s.slice(8)+'/'+s.slice(5,7)+'/'+s.slice(0,4)});
 vm.runInContext(app.slice(start,end),context);

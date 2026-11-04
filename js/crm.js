@@ -4,7 +4,8 @@ import {safe,today,dateBR,onlyDigits,formData} from './utils.js';
 export const CRM_STAGES={
  novo:'Novo lead',contato:'Primeiro contato',aguardando:'Aguardando resposta',nao_responde:'Não responde',
  marcar_entrevista:'Marcar entrevista',entrevista_agendada:'Entrevista agendada',
- entrevista_realizada:'Fez entrevista',negociacao:'Em negociação',contrato_enviado:'Contrato enviado',
+ entrevista_realizada:'Fez entrevista',negociacao:'Em negociação',contrato_enviado:'Contrato enviado · histórico',
+ pre_matricula_enviada:'Pré-matrícula enviada',pre_matricula_feita:'Pré-matrícula feita',contrato_gerado:'Contrato gerado',
  reativacao:'Ex-aluno / reativação',matriculado:'Matriculado'
 };
 const NON_LOSS=['Sem interesse','Preço / condições financeiras','Disponibilidade / horário','Não é nosso perfil','Contratou outra escola','Não retornou contato','Questões pessoais','Outro'];
@@ -28,7 +29,7 @@ const textarea=(name,title,val='')=>`<label class="field wide"><span>${safe(titl
 const formFooter=(label='Salvar')=>`<div class="form-footer"><button type="button" class="btn ghost" data-action="crmCancel">Cancelar</button><button class="btn" type="submit">${safe(label)}</button></div>`;
 const formatWhats=s=>{let raw=onlyDigits(s);if(!raw)return '';if(raw.length===10||raw.length===11)raw='55'+raw;return /^[0-9]{11,15}$/.test(raw)?`https://wa.me/${raw}`:''};
 
-export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup}){
+export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy}){
  const state={tab:'open',mode:'board',search:'',stage:'all',source:'all',service:'all',region:'all',followup:'all',interview:'all',period:'all',sort:'activity',lead:null,importRows:[]};
  const leads=()=>db.leads||[];
  const fups=id=>(db.crm_followups||[]).filter(x=>x.lead_id===id).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
@@ -83,7 +84,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   ${state.mode==='board'&&state.tab==='open'?board(rows):listing(rows)}</section>
   ${state.tab==='open'?upcoming():''}</div>`;
  }
- const boardColumns=[['novo','Novos',['novo','contato']],['aguardando','Em contato',['aguardando','nao_responde']],['entrevista','Entrevistas',['marcar_entrevista','entrevista_agendada']],['proposta','Pós-entrevista',['entrevista_realizada','negociacao']],['contrato','Contratos',['contrato_enviado']],['reativacao','Reativação',['reativacao']]];
+ const boardColumns=[['novo','Novos',['novo','contato']],['aguardando','Em contato',['aguardando','nao_responde']],['entrevista','Entrevistas',['marcar_entrevista','entrevista_agendada']],['proposta','Pós-entrevista',['entrevista_realizada','negociacao']],['contrato','Pré-matrículas e contratos',['contrato_enviado','pre_matricula_enviada','pre_matricula_feita','contrato_gerado']],['reativacao','Reativação',['reativacao']]];
  function leadCard(l){const f=nextFollow(l.id);return `<article class="crm-lead-card" data-action="crmDetail" data-id="${l.id}" role="button" tabindex="0"><div class="crm-lead-top"><strong>${safe(l.name)}</strong><span class="crm-dot ${priority(l)}"></span></div><div class="crm-muted">${safe(l.crm_source||'Origem não informada')}</div><div class="crm-card-foot">${pill(CRM_STAGES[l.crm_stage]||'Novo','soft')} ${f?`<span class="crm-mini-date ${priority(l)}">${shortDate(f.due_on)}</span>`:'<span class="crm-mini-date">Sem retorno</span>'}</div>${nextInterview(l.id)?'<div class="crm-card-interview">▦ Entrevista: '+dateTime(nextInterview(l.id).scheduled_at)+'</div>':''}</article>`;}
  function board(rows){return `<div class="crm-board" role="list">${boardColumns.map(([key,title,stages])=>{const r=rows.filter(l=>stages.includes(l.crm_stage));return `<section class="crm-board-col" role="listitem"><header><span>${title}</span><b>${r.length}</b></header><div class="crm-board-items">${r.length?r.map(leadCard).join(''):'<p class="crm-column-empty">Sem contatos</p>'}</div></section>`}).join('')}</div>`;}
  function listing(rows){return `<div class="crm-table-scroll"><table class="crm-table"><thead><tr><th>Lead</th><th>Etapa</th><th>Origem / serviço</th><th>Próximo retorno</th><th>Entrevista</th><th>Ação</th></tr></thead><tbody>${rows.map(l=>`<tr><td><strong>${safe(l.name)}</strong><small>${safe(l.phone||'Sem telefone')}</small></td><td>${pill(l.crm_outcome==='lost'?(l.crm_loss_reason||'Não convertido'):l.crm_outcome==='won'?'Fechado':(CRM_STAGES[l.crm_stage]||'Novo'),'soft')}</td><td>${safe(l.crm_source||'—')}<small>${safe(l.crm_service||'')}</small></td><td>${followText(l)}</td><td>${interviewText(l)}</td><td>${btn('crmDetail','Abrir',l.id,'subtle')}</td></tr>`).join('')||'<tr><td colspan="6" class="crm-no-data">Nenhum lead corresponde a estes filtros.</td></tr>'}</tbody></table></div>`;}
@@ -146,8 +147,8 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   closeModal();await refresh();toast(`${ok} leads importados, ${duplicates} duplicados ignorados${failed.length?', '+failed.length+' falhas':''}.`,!!failed.length);
   if(failed.length)showModal(`<h2>Importação com pendências</h2><p>${ok} importados. Corrija estas linhas antes de tentar novamente:</p><pre class="crm-import-errors">${safe(failed.slice(0,30).join('\n'))}</pre>`);
  }
- async function handleClick(e){const x=e.target.closest('[data-action^="crm"]');if(!x)return; e.stopImmediatePropagation();const act=x.dataset.action,id=x.dataset.id;
-  try{switch(act){
+ async function handleClick(e){const x=e.target.closest('[data-action^="crm"]');if(!x)return; e.stopImmediatePropagation();if(isBusy())return;const act=x.dataset.action,id=x.dataset.id;
+  startBusy();try{return await (async()=>{switch(act){
    case 'crmTab':state.tab=x.dataset.tab;return refreshView();
    case 'crmMode':state.mode=x.dataset.mode;return refreshView();
    case 'crmCancel':return closeModal();
@@ -173,11 +174,11 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    case 'crmConfirmImport':return await importRows();
    case 'crmDue':state.tab='open';state.mode='list';state.followup='overdue';return refreshView();
    default:return;
-  }}catch(err){errors(err);}
+  }})();}catch(err){errors(err);}finally{finishBusy();}
  }
  function refreshView(){if(ui.page!=='leads')return;const page=document.getElementById('pageContent');if(page)page.innerHTML=view();}
- async function handleSubmit(event){const f=event.target;if(!f.id?.startsWith('crm'))return;event.preventDefault();event.stopImmediatePropagation();const b=f.querySelector('button[type="submit"]');if(b)b.disabled=true;
-  try{if(f.id==='crmLeadForm'){
+ async function handleSubmit(event){const f=event.target;if(!f.id?.startsWith('crm'))return;event.preventDefault();event.stopImmediatePropagation();if(isBusy())return;const b=f.querySelector('button[type="submit"]');if(b)b.disabled=true;
+  startBusy();try{if(f.id==='crmLeadForm'){
     const d=formData(f);if(!d.name?.trim())throw new Error('Informe o nome');const id=f.dataset.id;
     const fields={name:d.name.trim(),phone:d.phone.trim()||null,guardian_name:d.guardian_name.trim()||null,crm_source:d.crm_source.trim()||null,crm_service:d.crm_service.trim()||'Aulas de inglês',crm_region:d.crm_region.trim()||null,crm_first_contact_on:d.crm_first_contact_on||null,crm_stage:d.crm_stage};
     const old=id?lookup('leads',id):null,record=await save('leads',{...fields,...(!id?{status:'novo',crm_outcome:'open'}:{})},id||undefined);
@@ -226,7 +227,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     state.tab=outcome;closeModal();await reloadReopen(id);toast('Lead arquivado no grupo correto.');return;
    }
    if(f.id==='crmImportForm'){const file=f.elements.csv_file.files[0];if(!file||file.size>800000)throw new Error('Selecione CSV com no máximo 800 KB');const rows=parseCSV(await file.text());if(rows.length>250)throw new Error('Importe no máximo 250 registros por arquivo');importReview(rows);return;}
-  }catch(err){errors(err);}finally{if(b)b.disabled=false;}
+  }catch(err){errors(err);}finally{finishBusy();if(b)b.disabled=false;}
  }
  document.addEventListener('click',handleClick);
  document.addEventListener('submit',handleSubmit);

@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from '/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescript/lib/typescript.js';
+const file=name=>fs.readFileSync(new URL(`../${name}`,import.meta.url),'utf8');
+const app=file('js/app.js'),html=file('index.html'),css=file('css/style.css'),backend=file('supabase/functions/_shared/v5.ts');
+assert.match(app,/function contractActionsMenu\(c\)/);
+assert.match(app,/Baixar PDF assinado/);
+assert.match(app,/Ver pr\\u00e9via/);
+assert.match(app,/contractActionsMenu\(c\)\]\)\)/);
+assert.match(app,/function contactWhatsAppNumber/);
+assert.match(app,/function openWhatsApp/);
+assert.match(app,/link local.*n\\u00e3o funciona/);
+assert.match(app,/action==='shareWhatsApp'/);
+assert.match(app,/action==='externalShareWhatsApp'/);
+assert.match(app,/function startBusy/);
+assert.match(app,/finally\{finishBusy\(\)/);
+assert.match(app,/confirmExternalSignature\(\)/);
+assert.doesNotMatch(app,/confirm\('Confirmar envio deste contrato/);
+assert.match(app,/location\.replace\(result\.signingUrl\)/);
+assert.match(app,/location\.replace\(publicData\.signingUrl\)/);
+assert.match(app,/Continuar para assinatura/);
+assert.doesNotMatch(app,/Continuar para a AssinAPI/);
+assert.match(html,/id="busyOverlay"/);
+assert.match(css,/\.contract-actions-popover/);
+assert.match(css,/#busyOverlay/);
+assert.match(backend,/function verifyDriveUpload/);
+assert.match(backend,/await verifyDriveUpload\(token,String\(info\.id\),bytes\)/);
+assert.match(backend,/shaHex\(received\).*shaHex\(expected\)/);
+assert.match(backend,/Contrato - \$\{basename\} - assinado\.pdf/);
+assert.match(backend,/Contrato - \$\{basename\} - evidencias\.pdf/);
+for(const name of ['supabase/functions/_shared/v5.ts','supabase/functions/matricula-v5/index.ts','supabase/functions/contract-signing/index.ts','supabase/functions/assinapi-webhook/index.ts','supabase/functions/google-drive-backup/index.ts']){
+ const code=file(name),transpiled=ts.transpileModule(code,{fileName:name,reportDiagnostics:true,compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}});
+ assert.equal((transpiled.diagnostics||[]).filter(x=>x.category===ts.DiagnosticCategory.Error).length,0,name);
+}
+console.log('OK: V5.3 UX, menus, WhatsApp, loading, direct signing, Drive integrity, TS syntax.');

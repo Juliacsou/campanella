@@ -64,6 +64,8 @@ Deno.serve(async(req)=>{
   const token=String(b.token||'');
   if(!/^[a-f0-9]{64}$/.test(token))return respond({error:'Link inválido'},400);
   if(!['lookup','sign'].includes(b.action))return respond({error:'Operação inválida'},400);
+  // V5.6: a assinatura desenhada antiga nao pode finalizar matriculas.
+  if(Deno.env.get('CAMPANELLA_SIGNATURES_ENABLED')!=='true')return respond({error:'A pagina antiga de assinatura esta desativada. Utilize o link de pre-matricula da escola.'},403);
   const tokenHash=await hash(token);
   const {data:c,error:e}=await db.from('contracts').select('id,school_id,kind,status,terms,template_html,template_version,lead_id,student_id,token_expires_at,owner_name,owner_signature_png')
    .eq('token_hash',tokenHash).eq('status','sent').gt('token_expires_at',new Date().toISOString()).maybeSingle();

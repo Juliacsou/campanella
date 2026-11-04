@@ -24,3 +24,9 @@
 .sample-examples{background:#f8faf8;padding:20px 22px;border:1px solid #e4ece6;border-radius:12px;margin-bottom:18px}.sample-examples h3{margin:0 0 7px!important}.sample-examples>p{font-size:12px!important}.examples-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}.examples-list code{font-size:11px;border:1px solid #e2eae2;background:#fff;color:#5e7867;padding:8px 10px}
 @media(max-width:870px){.syntax-legend{grid-template-columns:1fr}.syntax-legend>div{padding:11px 16px}.syntax-legend>div+div{border-left:0;border-top:1px solid #e6eee8}.builder-inputs{grid-template-columns:1fr}}
 @media(max-width:680px){.syntax-showcase{margin:19px 0}.syntax-header{padding:12px}.syntax-formula{padding:22px 5px;font-size:clamp(11px,3.1vw,16px);letter-spacing:-.5px}.syntax-name,.syntax-who{padding:7px 2px}.marker-builder{padding:17px 14px}.builder-heading{align-items:center}.builder-tag{display:none}.builder-output{flex-direction:column;align-items:stretch;padding:15px;gap:14px}.copy-primary{width:100%}.sample-examples{padding:15px 13px}}
+
+/* V5.2 — validacao visual dos marcadores nativos */
+.base-field-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:14px 0 24px}
+.base-field-line{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:12px 11px;border:1px solid #dfece3;border-radius:10px;background:#fbfdfb;min-width:0}
+.base-field-line>div{min-width:0}.base-field-line strong{display:block;color:#365c4a;font-size:11px;margin-bottom:7px}.base-field-line code{display:block;font-size:11px;overflow-wrap:anywhere;color:#13664c;background:#eaf6ee;padding:5px}.base-field-line button{flex:0 0 auto}
+@media(max-width:950px){.base-field-list{grid-template-columns:1fr}}

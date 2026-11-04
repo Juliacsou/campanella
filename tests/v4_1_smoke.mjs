@@ -14,7 +14,7 @@ for(const expected of ["request.headers.get('apikey') !== SERVICE_KEY", "db.rpc(
 const parsed=ts?ts.transpileModule(edge,{fileName:'index.ts',reportDiagnostics:true,compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}):{diagnostics:[]};
 assert.equal((parsed.diagnostics||[]).filter(x=>x.category===1).length,0,'Edge Function TypeScript invalido');
 const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const ctx={ui:{user:{id:'u1',email:'ana@example.com',user_metadata:{full_name:'Ana Educadora'}},schoolId:'1',role:'admin',schools:[{id:'1',name:'Escola das Artes',admin_user_id:'u1',contact_email:'contato@escola.br'}],isPlatformAdmin:true,platformSchools:[{id:'1',name:'Escola das Artes',admin_user_id:'u1',contact_email:'contato@escola.br',created_at:'2026-11-03T12:00:00Z'},{id:'2',name:'Instituto do Futuro',admin_user_id:'u2',created_at:'2026-10-01T12:00:00Z'}],platformProfiles:[{id:'u1',email:'ana@example.com'},{id:'u2',email:'outro@example.com'}],licenses:[{school_id:'1',kind:'paga',expires_on:'2026-12-03'},{school_id:'2',kind:'paga',expires_on:'2026-10-30'}],platformKeys:[],platformRenewalKeys:[],platformEvents:[],platformFilter:'all',platformSearch:'',newlyIssuedKey:null,schoolLicense:{school_id:'1',kind:'paga',expires_on:'2026-12-03'},licenseActive:true,schoolMembers:[]},safe,
+const ctx={ui:{page:'dashboard',user:{id:'u1',email:'ana@example.com',user_metadata:{full_name:'Ana Educadora'}},schoolId:'1',role:'admin',schools:[{id:'1',name:'Escola das Artes',admin_user_id:'u1',contact_email:'contato@escola.br'}],isPlatformAdmin:true,platformSchools:[{id:'1',name:'Escola das Artes',admin_user_id:'u1',contact_email:'contato@escola.br',created_at:'2026-11-03T12:00:00Z'},{id:'2',name:'Instituto do Futuro',admin_user_id:'u2',created_at:'2026-10-01T12:00:00Z'}],platformProfiles:[{id:'u1',email:'ana@example.com'},{id:'u2',email:'outro@example.com'}],licenses:[{school_id:'1',kind:'paga',expires_on:'2026-12-03'},{school_id:'2',kind:'paga',expires_on:'2026-10-30'}],platformKeys:[],platformRenewalKeys:[],platformEvents:[],platformFilter:'all',platformSearch:'',newlyIssuedKey:null,schoolLicense:{school_id:'1',kind:'paga',expires_on:'2026-12-03'},licenseActive:true,schoolMembers:[]},safe,
  today:()=> '2026-11-03', dateBR:v=>v?`${v.slice(8,10)}/${v.slice(5,7)}/${v.slice(0,4)}`:'—',
  input:(title,name,value='')=>`<label>${safe(title)}<input name="${name}" value="${safe(value)}"></label>`,
  heading:(e,h,t,a='')=>`<header class="page-head"><h1>${h}</h1><p>${t}</p>${a}</header>`,
@@ -34,19 +34,36 @@ const v=vm.createContext(ctx);
 const runBlock=(start,end)=>vm.runInContext(app.slice(app.indexOf(start),app.indexOf(end,app.indexOf(start))),v);
 runBlock('// SVGs internos','function currentSchool()');
 runBlock('function platformOnlyShell()','async function loadPlatformData()');
-runBlock('function profileView()','function activationModal()');
+runBlock('const profileSections=','function activationModal()');
 runBlock('function schoolRenewalForm(id)','function teachersView()');
 runBlock('function dashboard()','function leadsView()');
+runBlock('function schoolSignatureModal()','function contractForm(');
+runBlock('function directoryView()','function studentForm(');
 const shell=vm.runInContext('shell()',v);
 assert.ok(shell.includes('account-popover')&&shell.includes('Relacionamento')&&shell.includes('Equipe e ensino')&&shell.includes('Modelos de contratos'));
+assert.match(shell, /nav-group\">Serviços e contratos/);
+assert.match(shell, /nav-group\">Equipe e ensino/);
+assert.ok(!shell.includes('<div class=\"nav-group\">Administração</div>'),'Menu administrativo duplicado');
+assert.ok(shell.indexOf('Pacotes')>shell.indexOf('Serviços e contratos')&&shell.indexOf('Pacotes')<shell.indexOf('Modelos de contratos'));
+assert.equal((app.match(/function shell\(\)/g)||[]).length,1,'Evitar regressao de funcao shell duplicada');
 const account=vm.runInContext('accountMenu()',v);
 assert.ok(account.includes('Escola das Artes')&&account.includes('Meu perfil')&&account.includes('Administração geral'));
-const profile=vm.runInContext('profileView()',v);assert.ok(profile.includes('Informações pessoais')&&profile.includes('Atualizar senha'));
-const settings=vm.runInContext('settingsView()',v);assert.ok(settings.includes('E-mail institucional')&&settings.includes('Transferir administração')&&settings.includes('Aplicar código')&&settings.includes('Solicitar exclusão'));
-const platform=vm.runInContext('licensesView()',v);assert.ok(platform.includes('Licenças vencidas')&&platform.includes('Nova chave')&&platform.includes('Buscar escola'));
+ctx.ui.page='profile';const profile=vm.runInContext('profileView()',v);assert.ok(profile.includes('Dados pessoais')&&profile.includes('Senha e segurança')&&profile.includes('Escolas vinculadas'));
+ctx.ui.page='profile-personal';assert.ok(vm.runInContext('profileView()',v).includes('profileForm'));
+ctx.ui.page='profile-security';assert.ok(vm.runInContext('profileView()',v).includes('profilePasswordForm'));
+ctx.ui.page='profile-schools';assert.ok(vm.runInContext('profileView()',v).includes('Escola das Artes'));
+ctx.ui.page='settings';const settings=vm.runInContext('settingsView()',v);assert.ok(settings.includes('Informações da escola')&&settings.includes('Licença e ativação')&&settings.includes('Administrador responsável')&&settings.includes('Exclusão da escola'));
+ctx.ui.page='settings-identity';assert.ok(vm.runInContext('settingsView()',v).includes('schoolDetailsForm'));
+ctx.ui.page='settings-license';assert.ok(vm.runInContext('settingsView()',v).includes('renewSchoolKeyForm'));
+ctx.ui.page='settings-admin';assert.ok(vm.runInContext('settingsView()',v).includes('transferAdminForm'));
+ctx.ui.page='settings-deletion';assert.ok(vm.runInContext('settingsView()',v).includes('Solicitar exclusão'));
+assert.ok(!settings.includes('ownerForm')&&!settings.includes('csvForm'),'Contrato ou importacao nao devem aparecer nas configuracoes');
+const contracts=vm.runInContext('contractsView()',v);assert.ok(!contracts.includes('configureSchoolSignature'),'Assinatura escolar deve ficar oculta na V5.6 manual');
+const directory=vm.runInContext('directoryView()',v);assert.ok(directory.includes('importStudents'),'Importacao CSV deve ficar na area de Alunos');
+ctx.ui.page='licenses';const platform=vm.runInContext('licensesView()',v);assert.ok(platform.includes('Licenças vencidas')&&platform.includes('Nova chave')&&platform.includes('Buscar escola'));
 const dashboard=vm.runInContext('dashboard()',v);assert.ok(dashboard.includes('home-shortcuts')&&dashboard.includes('metric-action'));
 const platformShell=vm.runInContext('platformOnlyShell()',v);assert.ok(platformShell.includes('Gestão de escolas')&&!platformShell.includes('sidebar-current'));
-console.log('OK: V4.1 UI (menu, perfil, escola, global, home), SQL, regras de chave e edge.');
+console.log('OK: V4.1.2 UI (menu, perfil, escola, global, home), SQL, regras de chave e edge.');
 if(process.env.PREVIEW){
  const {writeFileSync}=await import('node:fs');
  const base=readFileSync(new URL('../index.html',import.meta.url),'utf8');

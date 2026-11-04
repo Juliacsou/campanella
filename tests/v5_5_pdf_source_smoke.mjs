@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const app=fs.readFileSync(new URL('../js/app.js',import.meta.url),'utf8');
+const mod=fs.readFileSync(new URL('../js/pdf-contract.js',import.meta.url),'utf8');
+const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+assert.match(app,/import \{generateContractPdf\} from '\.\/pdf-contract\.js'/);
+assert.match(app,/return generateContractPdf\(html\)/);
+assert.doesNotMatch(app,/window\.html2pdf/);
+assert.match(mod,/document\.createRange/);
+assert.match(mod,/\/Type \/Font/);
+assert.match(mod,/PDF_TEXT_MIN/);
+assert.doesNotMatch(index,/html2pdf\.bundle/);
+console.log('OK: V5.5 backend-neutral text-PDF renderer connected; legacy html2pdf disabled.');

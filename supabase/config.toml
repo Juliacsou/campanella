@@ -6,3 +6,18 @@ verify_jwt = false
 
 [functions.purge-schools]
 verify_jwt = false
+
+[functions.contract-signing]
+verify_jwt = false
+
+[functions.assinapi-webhook]
+verify_jwt = false
+
+[functions.google-drive-oauth]
+verify_jwt = false
+
+[functions.google-drive-backup]
+verify_jwt = false
+
+[functions.matricula-v5]
+verify_jwt = false
