@@ -32,7 +32,7 @@ for(const snippet of [
  "function licensesView()", "function licenseBlockView()", "function activationForm()"
 ])assert.ok(app.includes(snippet),`Frontend ausente: ${snippet}`);
 assert.ok(signature.includes("db.rpc('has_active_school_license'"),'Assinatura publica nao consulta licenca');
-assert.ok(interview.includes(".from('interview_invites')")&&interview.includes(".eq('token_hash', tokenHash)")&&interview.includes('teacher?.active'),'Entrevista publica precisa validar convite assinado por token e professor ativo');
+assert.ok(interview.includes(".from('interview_invites')")&&interview.includes(".eq('token_hash', tokenHash)")&&interview.includes('interviewerRes.data?.active')&&interview.includes('teachers.some(t=>t.id===teacherId)'),'Entrevista publica precisa validar convite por token, entrevistador ativo e professor escolhido');
 // Testa renderizacao de componentes reais, sem conexão remota.
 const start=app.indexOf('function licenseSummary(');
 const end=app.indexOf('\nfunction fullSchoolStatus(',start);

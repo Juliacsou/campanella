@@ -51,6 +51,6 @@ assert.match(app,/iconSvg:\(name,size\)=>ico\(name,size\)/,'svg compartilhado co
 assert.match(app,/cal-editor-target'\)\)/,'editor semanal acionavel pelo teclado');
 assert.match(cal.adminNav(),/data-test-icon="clock"/,'menu administrador usa icone SVG');
 assert.match(css,/\.cal-editor-target\{/, 'escala horaria definida no CSS');
-assert.match(html,/6\.3\.0/, 'assets com cache busting V6.3');
+assert.match(html,/6\.4\.0/, 'assets com cache busting V6.4');
 assert.doesNotMatch(cal.adminNav(),/[📅👩🕒⛔⚙]/u, 'menu sem emoji');
 console.log('OK: V6.2 grade semanal editavel em Horarios, agenda avulsa, horarios separados e iconografia SVG.');

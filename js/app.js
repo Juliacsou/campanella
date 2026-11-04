@@ -303,11 +303,11 @@ function interviewsView(){
  return `${heading('Entrevistas','Fichas iniciais','Prepare entrevistas, retome interessados e matricule quem fechou o pacote.')}
  <div class="tabs" role="group" aria-label="Etapas da ficha">${[['current','Em andamento'],['lost','Desistiu'],['archived','Arquivadas']].map(([k,v])=>`<button class="btn ${ui.interviewTab===k?'':'light'}" data-action="interviewTab" data-tab="${k}">${v} <span class="tab-count">${db.leads.filter(l=>l.status!=='convertido'&&(l.ficha_iniciada_at||db.interviews.some(i=>i.lead_id===l.id))&& (k==='current'?!['lost','archived'].includes(ficheStage(l,db.interviews.find(i=>i.lead_id===l.id))):ficheStage(l,db.interviews.find(i=>i.lead_id===l.id))===k)).length}</span></button>`).join('')}</div>
  <div class="toolbar"><input id="search" class="search" placeholder="Buscar lead, curso ou professor" value="${safe(ui.search)}"><label class="small">Preenchimento <select id="interviewFilter">${[['all','Todos'],['unfilled','A preencher'],['ready','Preenchida']].map(([v,t])=>`<option value="${v}" ${ui.interviewStatus===v?'selected':''}>${t}</option>`).join('')}</select></label></div>
- ${card(titles[ui.interviewTab]||titles.current,table(['Lead','Professor','Curso / pacote','Preenchimento','Contrato','Ações'],list.map(({l,i})=>{
+ ${card(titles[ui.interviewTab]||titles.current,table(['Lead','Professor responsável','Curso / pacote','Preenchimento','Contrato','Ações'],list.map(({l,i})=>{
   const ct=db.contracts.filter(c=>c.interview_id===i?.id&&c.status!=='void').sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];
   const invite=db.interview_invites?.find(x=>x.lead_id===l.id&&!x.revoked_at&&!x.used_at&&new Date(x.expires_at)>new Date());
   const st=ficheStage(l,i);
-  return row([`<b>${safe(l.name)}</b><div class="muted">${safe(l.phone)}</div>`,safe(lookup('teachers',i?.teacher_id)?.name||lookup('teachers',invite?.teacher_id)?.name||'—'),i?`${safe(i.course||'Inglês')}<div class="small muted">${safe(lookup('packages',i.package_id)?.name||'')}</div>`:'<span class="muted">—</span>',i?'<span class="pill pill-signed">Preenchida</span>':'<span class="pill pill-sent">A preencher</span>',ct?contractTag(ct):'<span class="pill">Não gerado</span>',`<div class="actions actions-right">${st==='open'&&i&&!ct?`<button class="btn mini" data-action="newContract" data-id="${l.id}">Matricular</button>`:''}${st==='open'&&(!i||!ct)?`<button class="btn mini ghost" data-action="inviteInterview" data-id="${l.id}">Link entrevistador</button>`:''}<button class="icon-btn" data-action="editInterview" data-id="${l.id}" title="${i?'Editar ficha':'Preencher ficha'}" aria-label="Editar ficha de ${safe(l.name)}">✎</button>${st==='lost'||st==='archived'?`<button class="icon-btn" data-action="interviewStage" data-id="${l.id}" data-stage="open" title="Retomar ficha" aria-label="Retomar ficha">↶</button>`:`<button class="icon-btn danger-icon" data-action="interviewStage" data-id="${l.id}" data-stage="lost" title="Registrar desistência" aria-label="Marcar desistência">×</button><button class="icon-btn" data-action="interviewStage" data-id="${l.id}" data-stage="archived" title="Arquivar ficha" aria-label="Arquivar ficha">▤</button>`}</div>`]);
+  return row([`<b>${safe(l.name)}</b><div class="muted">${safe(l.phone)}</div>`,safe(lookup('teachers',i?.teacher_id)?.name||lookup('teachers',invite?.teacher_id)?.name||'—')+(i?.interviewer_teacher_id&&i.interviewer_teacher_id!==i.teacher_id?`<div class="small muted">Entrevistador: ${safe(lookup('teachers',i.interviewer_teacher_id)?.name||'—')}</div>`:''),i?`${safe(i.course||'Inglês')}<div class="small muted">${safe(lookup('packages',i.package_id)?.name||'')}</div>`:'<span class="muted">—</span>',i?'<span class="pill pill-signed">Preenchida</span>':'<span class="pill pill-sent">A preencher</span>',ct?contractTag(ct):'<span class="pill">Não gerado</span>',`<div class="actions actions-right">${st==='open'&&i&&!ct?`<button class="btn mini" data-action="newContract" data-id="${l.id}">Matricular</button>`:''}${st==='open'&&(!i||!ct)?`<button class="btn mini ghost" data-action="inviteInterview" data-id="${l.id}">Link entrevistador</button>`:''}<button class="icon-btn" data-action="editInterview" data-id="${l.id}" title="${i?'Editar ficha':'Preencher ficha'}" aria-label="Editar ficha de ${safe(l.name)}">✎</button>${st==='lost'||st==='archived'?`<button class="icon-btn" data-action="interviewStage" data-id="${l.id}" data-stage="open" title="Retomar ficha" aria-label="Retomar ficha">↶</button>`:`<button class="icon-btn danger-icon" data-action="interviewStage" data-id="${l.id}" data-stage="lost" title="Registrar desistência" aria-label="Marcar desistência">×</button><button class="icon-btn" data-action="interviewStage" data-id="${l.id}" data-stage="archived" title="Arquivar ficha" aria-label="Arquivar ficha">▤</button>`}</div>`]);
  }),'Nenhuma ficha nesta aba.'))}`;
 }
 
@@ -334,6 +334,7 @@ function formatSchedule(schedule,weeklyDays=[],lessonTime='18:00'){
  const rows=normalSchedule(schedule,weeklyDays,lessonTime);
  return rows.length?rows.map(x=>`${days[x.day]} · ${x.time}`).join('  |  '):'Não informado';
 }
+function dbCalendarSlotId(item,selected){return calendar.slotIdForSchedule(item,selected);}
 function scheduleFromRecord(i){return normalSchedule(i?.lesson_schedule||i?.current_schedule,i?.weekly_days||i?.current_weekly_days,i?.lesson_time||i?.current_lesson_time||'18:00')}
 function weeksOrCustom(){return `<option value="">Personalizado · sem pacote</option>`;}
 function contractOptions(kind,pkgId,selected=''){
@@ -358,12 +359,17 @@ function onPackageSelection(form,p){
 }
 function interviewForm(leadId){
  const l=lookup('leads',leadId),i=db.interviews.find(x=>x.lead_id===leadId)||{},p=lookup('packages',i.package_id);
- showModal(`<h2>Ficha inicial</h2><p class="modal-intro"><b>${safe(l.name)}</b> · condições acordadas na entrevista.</p><form id="interviewForm" data-id="${i.id||''}" data-lead="${leadId}"><div class="form-grid">
- <label class="field"><span>Professor entrevistador</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active!==false||t.id===i.teacher_id),i.teacher_id)}</select></label>
+ if(!l)throw new Error('Interessado não encontrado.');
+ const responsible=i.teacher_id||'';
+ const interviewer=i.interviewer_teacher_id||i.teacher_id||'';
+ showModal(`<h2>Ficha inicial</h2><p class="modal-intro"><b>${safe(l.name)}</b> · condições da matrícula.</p><form id="interviewForm" data-id="${i.id||''}" data-lead="${leadId}"><div class="form-grid">
+ <label class="field"><span>Professor entrevistador</span><select name="interviewer_teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active!==false||t.id===interviewer),interviewer)}</select></label>
+ <label class="field"><span>Professor responsável pelas aulas</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active!==false||t.id===responsible),responsible)}</select></label>
  ${input('Curso','course',i.course||'Inglês')}
  <label class="field wide"><span>Pacote escolhido</span><select name="package_id" id="interviewPackage">${weeksOrCustom()}${options(db.packages.filter(x=>x.active||x.id===i.package_id),i.package_id)}</select></label>
- ${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}${input('Data de início','start_date',i.start_date||today(),'date')}${input('Data de término do contrato','end_date',i.end_date||'','date')}
- <div class="wide">${scheduleHTML(i.lesson_schedule,i.weekly_days||[1,3],i.lesson_time?.slice(0,5)||'18:00')}</div>
+ ${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}
+ ${input('Data de início','start_date',i.start_date||today(),'date')}${input('Data de término do contrato','end_date',i.end_date||'','date')}
+ <div class="wide" id="calPickerHost">${calendar.getFormPicker(responsible,i.start_date||today(),false,i.calendar_slot_ids||[],true)}</div>
  ${input('Valor total (R$)','total_amount',i.total_amount??p?.default_total??'','number')}
  ${input('Valor total por extenso','total_extenso',i.total_extenso||amountWords(i.total_amount??p?.default_total??0),'text')}
  ${input('Número de parcelas','installments',i.installments||6,'number')}
@@ -371,11 +377,10 @@ function interviewForm(leadId){
  ${input('Primeiro vencimento','first_due_date',i.first_due_date||today(),'date')}
  <label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${x===i.payment_method?'selected':''}>${x}</option>`).join('')}</select></label>
  <div class="wide"><label class="field"><span>Observações internas</span><textarea name="notes">${safe(i.notes||'')}</textarea></label></div></div>
- <p class="form-note">Edite o valor total ou da parcela: o outro será recalculado. A data final é escolhida manualmente e não é alterada pelo sistema.</p>
+ <p class="form-note">Os horários escolhidos são do professor responsável, mesmo quando outra pessoa realiza a entrevista. A disponibilidade será conferida novamente ao matricular.</p>
  <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar ficha inicial</button></div></form>`);
- updateInstallment($('#interviewForm'));
+ updateInstallment($('#interviewForm'));calendar.autoPreview($('#interviewForm'));
 }
-
 
 // V5 - O provider pode mudar, mas o contrato segue pertencendo à escola.
 const externalSignatureFor = id => db.external_signatures.find(e=>e.contract_id===id);
@@ -520,7 +525,7 @@ function contractForm(leadId){
  if(!i){toast('Preencha a ficha inicial antes de matricular.',true);return;}
  if(db.contracts.some(c=>c.interview_id===i.id&&c.status!=='void')){toast('Já existe um contrato para esta ficha.',true);return;}
  const kind=p?.kind==='dupla'?'dupla':l.guardian_name?'menor':'individual';
- showModal(`<h2>Iniciar pré-matrícula</h2><p class="modal-intro">${safe(l.name)} · ${safe(i.course||'Inglês')} · ${safe(p?.name||'Personalizado')}</p><form id="contractForm" data-lead="${leadId}" data-kind="${kind}"><div class="detail-grid"><div class="detail-item"><span>Vigência</span><strong>${dateBR(i.start_date)} a ${dateBR(i.end_date)}</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(i.total_amount)}</strong></div></div><div class="schedule-highlight"><b>Professor</b><p>${safe(lookup('teachers',i.teacher_id)?.name||'—')} · Selecione os horários disponíveis na agenda abaixo.</p></div><div class="form-grid" style="margin-top:18px"><label class="field wide"><span>Modelo do contrato</span><select name="type_option" id="contractType" required>${contractOptions(kind,p?.id)}</select></label></div><div id="calPickerHost">${calendar.getFormPicker(i.teacher_id,i.start_date,true)}</div><div id="contractExtraFields"></div><p class="form-note">${p?.contract_type_id?'O modelo associado ao pacote foi selecionado automaticamente.':'Nenhum modelo vinculado a este pacote. Escolha o contrato adequado.'} O aluno preencherá os dados pelo link, sem receber contrato ou assinar online. Depois, a escola gerará o PDF sem assinaturas.</p><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Criar contrato</button></div></form>`);renderContractExtra();calendar.autoPreview($('#contractForm'));
+ showModal(`<h2>Iniciar pré-matrícula</h2><p class="modal-intro">${safe(l.name)} · ${safe(i.course||'Inglês')} · ${safe(p?.name||'Personalizado')}</p><form id="contractForm" data-lead="${leadId}" data-kind="${kind}"><div class="detail-grid"><div class="detail-item"><span>Vigência</span><strong>${dateBR(i.start_date)} a ${dateBR(i.end_date)}</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(i.total_amount)}</strong></div></div><div class="schedule-highlight"><b>Professor</b><p>${safe(lookup('teachers',i.teacher_id)?.name||'—')} · Selecione os horários disponíveis na agenda abaixo.</p></div><div class="form-grid" style="margin-top:18px"><label class="field wide"><span>Modelo do contrato</span><select name="type_option" id="contractType" required>${contractOptions(kind,p?.id)}</select></label></div><div id="calPickerHost">${calendar.getFormPicker(i.teacher_id,i.start_date,true,i.calendar_slot_ids||[])}</div><div id="contractExtraFields"></div><p class="form-note">${p?.contract_type_id?'O modelo associado ao pacote foi selecionado automaticamente.':'Nenhum modelo vinculado a este pacote. Escolha o contrato adequado.'} O aluno preencherá os dados pelo link, sem receber contrato ou assinar online. Depois, a escola gerará o PDF sem assinaturas.</p><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Criar contrato</button></div></form>`);renderContractExtra();calendar.autoPreview($('#contractForm'));
 }
 function previewContract(id){const c=lookup('contracts',id),s=c.student_snapshot||lookup('students',c.student_id)||{};
  let html=c.signed_document_html||`<article class="legal-document">${renderContract(externalSignatureFor(c.id)?c:{...c,manualUnsigned:true,signed_at:null},s,{unsigned:!externalSignatureFor(c.id)})}</article>`;
@@ -553,13 +558,9 @@ function studentProfilePage(){
  const latest=all.find(c=>c.status==='signed')||all[0];
  const curTeacher=s.calendar_teacher_id||latest?.terms?.teacher_id;
  const info=(label,value)=>`<div class="detail-item"><span>${safe(label)}</span><strong>${safe(value??'—')}</strong></div>`;
- const contact=s.is_minor?(s.guardian_phone||s.phone):s.phone;
- return `${calendar.studentProfileView(true)}<div class="cal-admin-detail-extras">
- <section class="panel cal-section"><div class="panel-head"><h2>Cadastro e responsável</h2><button class="btn mini light" type="button" data-action="editStudent" data-id="${s.id}">${ico('profile',14)} Editar dados</button></div>
- <div class="profile-grid">${info('Aluno',s.full_name)}${info('Professor responsável',lookup('teachers',curTeacher)?.name||'Não definido')}${info('E-mail',s.email)}${info('Telefone',s.phone)}${info('Nascimento',dateBR(s.birth_date))}${info('CPF',s.cpf)}${s.is_minor?info('Responsável',s.guardian_name)+info('Telefone responsável',s.guardian_phone)+info('E-mail responsável',s.guardian_email):''}${info('Endereço',s.address)}</div>
- </section><section class="panel cal-section"><div class="panel-head"><h2>Contratos e rematrículas</h2></div>
- ${all.map(c=>`<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.terms?.package_name||'Contrato')} · ${safe(c.terms?.course||'Aulas')}</strong><small>${dateBR(c.terms?.start_date)} a ${dateBR(c.terms?.end_date)} · ${money(c.terms?.total_amount)} · ${safe(lookup('teachers',c.terms?.teacher_id)?.name||'')}</small></div><div class="cal-lesson-actions">${contractActionsMenu(c)}${c.status==='signed'?`<button class="btn mini light" data-action="renew" data-id="${c.id}">Rematricular</button>`:''}</div></div>`).join('')||'<p class="muted">Sem contratos.</p>'}
- ${!all.length?`<div class="form-footer"><button class="btn" data-action="manualEnrollment" data-id="${s.id}">Criar matrícula</button></div>`:''}</section></div>`;
+ const registration=`<section class="panel cal-section cal-profile-registration"><div class="panel-head"><h2>Dados cadastrais</h2><button class="btn mini light" type="button" data-action="editStudent" data-id="${s.id}">${ico('profile',14)} Editar dados</button></div><div class="profile-grid">${info('Aluno',s.full_name)}${info('Professor responsável',lookup('teachers',curTeacher)?.name||'Não definido')}${info('E-mail',s.email)}${info('Telefone',s.phone)}${info('Nascimento',dateBR(s.birth_date))}${info('CPF',s.cpf)}${s.is_minor?info('Responsável',s.guardian_name)+info('Telefone responsável',s.guardian_phone)+info('E-mail responsável',s.guardian_email):''}${info('Endereço',s.address)}</div></section>`;
+ const contracts=all.map(c=>`<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.terms?.package_name||'Contrato')} · ${safe(c.terms?.course||'Aulas')}</strong><small>${dateBR(c.terms?.start_date)} a ${dateBR(c.terms?.end_date)} · ${money(c.terms?.total_amount)} · ${safe(lookup('teachers',c.terms?.teacher_id)?.name||'')}</small></div><div class="cal-lesson-actions">${contractActionsMenu(c)}${c.status==='signed'?`<button class="btn mini light" data-action="renew" data-id="${c.id}">Rematricular</button>`:''}</div></div>`).join('')||'<p class="muted">Sem contratos.</p>';
+ return calendar.studentProfileView(true,{registration,contractCount:all.length,contracts:contracts+(!all.length?`<div class="form-footer"><button class="btn" data-action="manualEnrollment" data-id="${s.id}">Criar matrícula</button></div>`:'')});
 }
 
 function renewForm(id){
@@ -886,6 +887,7 @@ document.addEventListener('click',async e=>{
  if(action==='editInterview')return interviewForm(id);
  if(action==='startFiche'){const lead=lookup('leads',id);if(!lead||lead.status==='convertido')throw new Error('Lead indisponível.');if(!lead.ficha_iniciada_at)await save('leads',{ficha_iniciada_at:new Date().toISOString(),ficha_status:'open'},id);await refresh();return ficheCreatedPopup(id);}
  if(action==='navigateFiche'){const lead=lookup('leads',id),interview=db.interviews.find(i=>i.lead_id===id);ui.page='interviews';ui.search=lead?.name?.toLowerCase()||'';ui.interviewTab=lead?(['lost','archived'].includes(ficheStage(lead,interview))?ficheStage(lead,interview):'current'):'current';return render();}
+ if(action==='externalPreview')return externalPreview();
  if(action==='newContract')return contractForm(id);
  if(action==='studentDetail')return studentDetail(id);
  if(action==='studentProfileBack'){ui.page=ui.studentReturnPage||'directory';ui.studentId=null;return render();}
@@ -937,6 +939,7 @@ document.addEventListener('click',async e=>{
  if(action==='voidContract'){if(!await window.campanellaConfirm('Cancelar contrato e invalidar seu link?'))return;const {error}=await sb.rpc('void_manual_contract',{p_contract_id:id});if(error)throw error;toast('Contrato cancelado.');return refresh();}
  }catch(error){errors(error)}finally{finishBusy()}
 });
+document.addEventListener('click',e=>{if(e.target.closest('#externalPreviewBtn'))externalPreview().catch(errors);});
 document.addEventListener('input',e=>{
  if(e.target.id==='platformSearch'){ui.platformSearch=e.target.value;const pos=e.target.selectionStart;render();const input=$('#platformSearch');if(input){input.focus();input.setSelectionRange(pos,pos);}return;}
  if(e.target.id==='search'){
@@ -947,7 +950,7 @@ document.addEventListener('input',e=>{
  if(['total_amount','installments','installment_amount'].includes(e.target.name)&&['interviewForm','renewForm','manualEnrollmentForm','externalInterviewForm'].includes(e.target.form?.id))updateInstallment(e.target.form,e.target.name);
 });
 document.addEventListener('change',async e=>{
- if(e.target.id==='calTeacherFilter'||['end_date','cal_manual_end','cal_slot','cal_start_date'].includes(e.target.name)||(['start_date','lessons_count'].includes(e.target.name)&&e.target.form?.querySelector('.cal-enrollment'))||(e.target.name==='teacher_id'&&e.target.form?.id==='manualEnrollmentForm')){try{await calendar.change(e.target);}catch(err){errors(err);}return;}
+ if(e.target.id==='calTeacherFilter'||e.target.name==='cal_student_teacher'||['end_date','cal_manual_end','cal_slot','cal_start_date'].includes(e.target.name)||(['start_date','lessons_count'].includes(e.target.name)&&e.target.form?.querySelector('.cal-enrollment'))||(e.target.name==='teacher_id'&&e.target.form?.id==='manualEnrollmentForm')){try{await calendar.change(e.target);}catch(err){errors(err);}return;}
  if(e.target.name==='docx_file'&&e.target.form?.id==='typeForm'){
   const file=e.target.files?.[0];if(!file){renderDocxReport(null);return;}
   const report=$('#docxValidation');if(report)report.textContent='Analisando campos e marcadores do DOCX…';
@@ -968,7 +971,19 @@ document.addEventListener('change',async e=>{
  if(e.target.matches('input[name="days"]')){const el=e.target.closest('.schedule-row')?.querySelector('input[type="time"]');if(el){el.disabled=!e.target.checked;if(e.target.checked&&!el.value)el.value='18:00';}}
  if(['interviewPackage','renewPackage','manualPackage','externalPackage'].includes(e.target.id)){
   const p=(e.target.id==='externalPackage'?externalData?.packages.find(x=>x.id===e.target.value):lookup('packages',e.target.value));onPackageSelection(e.target.form,p);
-  if(e.target.id==='externalPackage'){const el=e.target.form.elements.type_option;if(el)el.removeAttribute('required');}
+  if(e.target.id==='externalPackage'){const el=e.target.form.elements.type_option;if(el)el.removeAttribute('required');externalPreview().catch(errors);}
+ }
+ if(e.target.id==='externalTeacher'&&e.target.form?.id==='externalInterviewForm'){
+  const host=$('#externalSlots');if(host)host.innerHTML=externalSlotPicker(e.target.value);
+  const end=e.target.form.elements.end_date;if(end){end.dataset.manuallyEdited='';end.value='';}
+  externalPreview().catch(errors);return;
+ }
+ if(e.target.form?.id==='externalInterviewForm'&&['interview_slot','weekly_frequency','lessons_count','start_date'].includes(e.target.name)){
+  e.target.form.elements.end_date.dataset.manuallyEdited='';externalPreview().catch(errors);
+ }
+ if(e.target.form?.id==='externalInterviewForm'&&e.target.name==='end_date')e.target.dataset.manuallyEdited='1';
+ if(e.target.form?.id==='interviewForm'&&e.target.name==='teacher_id'){
+  calendar.updateFormPicker(e.target.form);await calendar.autoPreview(e.target.form);return;
  }
  if(e.target.id==='expiryFilter'){ui.expiry=e.target.value;render();}
  if(e.target.id==='leadFilter'){ui.leadStatus=e.target.value;render();}
@@ -1055,9 +1070,17 @@ document.addEventListener('submit',async event=>{
  else if(f.id==='interviewForm'){
   const p=lookup('packages',f.elements.package_id.value),count=Number(f.elements.lessons_count.value),freq=Number(f.elements.weekly_frequency.value);
   if(!Number.isInteger(count)||count<1||count>500||!Number.isInteger(freq)||freq<1||freq>7)throw new Error('Quantidade e frequência inválidas.');
+  const teacher=f.elements.teacher_id.value;
+  const interviewer=f.elements.interviewer_teacher_id.value;
+  if(!teacher||!interviewer)throw new Error('Escolha o entrevistador e o professor responsável pelas aulas.');
+  const selected=[...f.querySelectorAll('input[name="cal_slot"]:checked')].map(x=>x.value);
+  if(selected.length!==freq)throw new Error(`Selecione exatamente ${freq} horário(s) da agenda do professor.`);
+  const planned=await calendar.applyTerms(f,{teacher_id:teacher,lessons_count:count,start_date:f.elements.start_date.value});
+  f.elements.end_date.value=planned.end_date;
   const values=financialFields(f,count,freq);
-  if(!f.elements.teacher_id.value)throw new Error('Escolha o professor responsável.');
-  await save('interviews',{lead_id:f.dataset.lead,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,interviewer_id:ui.user.id,teacher_id:f.elements.teacher_id.value,course:f.elements.course.value.trim(),pipeline_status:'open',archived_at:null,...values,notes:f.elements.notes.value},f.dataset.id||undefined);toast('Ficha inicial salva.');
+  const schedules=planned.lesson_schedule.map(x=>({...x,slot_id:dbCalendarSlotId(x,selected)}));
+  if(schedules.some(x=>!x.slot_id))throw new Error('Os horários selecionados não coincidem com a grade do professor. Atualize a ficha.');
+  await save('interviews',{lead_id:f.dataset.lead,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,interviewer_id:ui.user.id,interviewer_teacher_id:interviewer,calendar_slot_ids:selected,teacher_id:teacher,course:f.elements.course.value.trim(),pipeline_status:'open',archived_at:null,...values,lesson_schedule:schedules,weekly_days:planned.weekly_days,lesson_time:planned.lesson_time,notes:f.elements.notes.value},f.dataset.id||undefined);toast('Ficha inicial salva com os horários do professor.');
  }
  else if(f.id==='contractForm'){
   const lead=f.dataset.lead,i=db.interviews.find(v=>v.lead_id===lead),p=lookup('packages',i.package_id);
@@ -1105,7 +1128,7 @@ document.addEventListener('submit',async event=>{
   if(minor&&(!d.guardian_name||!d.guardian_email))throw new Error('Preencha os dados do responsável.');
   const calendarManaged=!!f.dataset.id&&db.contracts.some(c=>c.student_id===f.dataset.id&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status));
   const selected=calendarManaged?null:readSchedule(f,null,true);
-  const teacherForStudent=calendarManaged?db.contracts.find(c=>c.student_id===f.dataset.id&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status))?.terms?.teacher_id:f.elements.calendar_teacher_id?.value;
+  const teacherForStudent=calendarManaged?db.students.find(x=>x.id===f.dataset.id)?.calendar_teacher_id||db.contracts.find(c=>c.student_id===f.dataset.id&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status))?.terms?.teacher_id:f.elements.calendar_teacher_id?.value;
   if(!teacherForStudent)throw new Error('Associe o aluno a um professor da escola.');
   const payload={calendar_teacher_id:teacherForStudent,full_name:d.full_name.trim(),cpf:onlyDigits(d.cpf),email:d.email.trim(),birth_date:d.birth_date,phone:d.phone,address:d.address,cep:onlyDigits(d.cep),is_minor:minor,...(calendarManaged?{}:{current_schedule:selected,current_weekly_days:selected.map(x=>x.day),current_lesson_time:selected[0]?.time||null}),
   guardian_name:minor?d.guardian_name:null,guardian_birth_date:minor?d.guardian_birth_date:null,guardian_cpf:minor?onlyDigits(d.guardian_cpf):null,guardian_phone:minor?d.guardian_phone:null,guardian_email:minor?d.guardian_email:null,guardian_address:minor?d.guardian_address:null,guardian_cep:minor?onlyDigits(d.guardian_cep):null};
@@ -1148,15 +1171,60 @@ function formDataExtras(f){const o={};for(const [key,value] of new FormData(f).e
 let externalToken='',externalData=null;
 async function externalAPI(payload){const res=await fetch(`${SUPA_URL}/functions/v1/entrevista`,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({token:externalToken,...payload})});const data=await res.json().catch(()=>({error:'Resposta inválida'}));if(!res.ok)throw new Error(data.error||'Erro no formulário da entrevista');return data;}
 async function externalStart(token){externalToken=token;externalData=null;ui.user=null;$('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Ficha inicial</div></div></div></header><main class="sign-main"><section class="sign-panel"><div class="busy-wheel" aria-hidden="true"></div><h2>Carregando ficha…</h2></section></main></div>`;try{externalData=await externalAPI({action:'lookup'});externalRender();}catch(error){const main=$('.sign-main');if(main)main.innerHTML=`<section class="sign-panel"><h2>Link indisponível</h2><p>${safe(error.message)}</p></section>`;}}
-function externalRender(){const d=externalData,i=d.interview||{},p=d.packages.find(x=>x.id===i.package_id)||d.packages[0];const brand=$('.sign-top .brand-sub');if(brand)brand.textContent=d.school_name||'Ficha inicial';
- $('.sign-main').innerHTML=`<h1>Ficha inicial</h1><p class="leadline">Lead: <b>${safe(d.lead.name)}</b> · ${safe(d.lead.phone)}<br>Professor: <b>${safe(d.teacher.name)}</b></p><section class="sign-panel"><form id="externalInterviewForm"><div class="form-grid">${input('Curso','course',i.course||'Inglês')}<label class="field wide"><span>Pacote escolhido</span><select id="externalPackage" name="package_id">${weeksOrCustom()}${options(d.packages,i.package_id||p?.id)}</select></label>${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}${input('Data início','start_date',i.start_date||today(),'date')}${input('Data final (manual)','end_date',i.end_date||'','date')}<div class="wide">${scheduleHTML(i.lesson_schedule,i.weekly_days||[1,3],i.lesson_time?.slice(0,5)||'18:00')}</div>${input('Valor total R$','total_amount',i.total_amount??p?.default_total??'','number')}${input('Parcelas','installments',i.installments||6,'number')}${input('Valor da parcela R$','installment_amount',i.installment_amount||'','number')}${input('Primeiro vencimento','first_due_date',i.first_due_date||today(),'date')}<label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${x===i.payment_method?'selected':''}>${x}</option>`).join('')}</select></label><label class="field wide"><span>Observações</span><textarea name="notes">${safe(i.notes||'')}</textarea></label></div><div class="form-footer"><button class="btn">Salvar ficha</button></div></form></section>`;updateInstallment($('#externalInterviewForm'));}
-async function externalSave(f){const d=formData(f),p=externalData.packages.find(x=>x.id===d.package_id),count=Number(d.lessons_count),freq=Number(d.weekly_frequency);
+function externalSlotPicker(teacherId,previous=[]){
+ const d=externalData;const slots=(d?.slots||[]).filter(s=>s.teacher_id===teacherId);
+ const chosen=new Set(previous);
+ const wd=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+ return `<div class="interview-slot-grid">${slots.length?slots.map(s=>`<label class="interview-slot-option"><input type="checkbox" name="interview_slot" value="${safe(s.id)}" ${chosen.has(s.id)?'checked':''}><span><strong>${wd[s.weekday]} · ${safe(String(s.time).slice(0,5))}</strong><small>${Number(s.duration)} minutos</small></span></label>`).join(''):'<p class="form-note">Este professor ainda não cadastrou horários semanais. Peça à escola para configurar a grade.</p>'}</div>`;
+}
+function externalRender(){
+ const d=externalData,i=d.interview||{},p=d.packages.find(x=>x.id===i.package_id)||d.packages[0],teacher=i.teacher_id||d.interviewer.id;
+ const brand=$('.sign-top .brand-sub');if(brand)brand.textContent=d.school_name||'Ficha inicial';
+ $('.sign-main').innerHTML=`<h1>Ficha inicial</h1><p class="leadline">Lead: <b>${safe(d.lead.name)}</b> · ${safe(d.lead.phone)}<br>Entrevistador: <b>${safe(d.interviewer.name)}</b></p>
+ <section class="sign-panel"><form id="externalInterviewForm"><div class="form-grid">
+ ${input('Curso','course',i.course||'Inglês')}
+ <label class="field wide"><span>Professor responsável pelas aulas</span><select name="teacher_id" id="externalTeacher" required><option value="">Selecione</option>${options(d.teachers,teacher)}</select></label>
+ <label class="field wide"><span>Pacote escolhido</span><select id="externalPackage" name="package_id">${weeksOrCustom()}${options(d.packages,i.package_id||p?.id)}</select></label>
+ ${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}
+ ${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}
+ ${input('Data início','start_date',i.start_date||today(),'date')}
+ ${input('Data de término do contrato','end_date',i.end_date||'','date')}
+ <div class="wide interview-calendar-picker"><h3 class="form-section">Horários do professor</h3><p class="small muted">Selecione os horários semanais. É possível escolher dois dias e horários diferentes.</p><div id="externalSlots">${externalSlotPicker(teacher,i.calendar_slot_ids||[])}</div><button type="button" class="btn mini light" id="externalPreviewBtn">Calcular datas das aulas</button><p class="form-note" id="externalForecast" aria-live="polite">Os horários serão confirmados ao matricular.</p></div>
+ ${input('Valor total R$','total_amount',i.total_amount??p?.default_total??'','number')}
+ ${input('Parcelas','installments',i.installments||6,'number')}
+ ${input('Valor da parcela R$','installment_amount',i.installment_amount||'','number')}
+ ${input('Primeiro vencimento','first_due_date',i.first_due_date||today(),'date')}
+ <label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${x===i.payment_method?'selected':''}>${x}</option>`).join('')}</select></label>
+ <label class="field wide"><span>Observações</span><textarea name="notes">${safe(i.notes||'')}</textarea></label></div><div class="form-footer"><button class="btn">Salvar ficha</button></div></form></section>`;
+ updateInstallment($('#externalInterviewForm'));
+ externalPreview().catch(()=>{});
+}
+let externalPreviewSerial=0;
+async function externalPreview(){
+ const f=$('#externalInterviewForm');if(!f)return;
+ const serial=++externalPreviewSerial;
+ const selected=[...f.querySelectorAll('input[name="interview_slot"]:checked')].map(x=>x.value);
+ const freq=Number(f.elements.weekly_frequency.value),count=Number(f.elements.lessons_count.value),teacher=f.elements.teacher_id.value;
+ const output=$('#externalForecast');
+ if(!teacher||!count||selected.length!==freq){if(output)output.textContent=`Selecione ${freq||'?'} horário(s) da grade para calcular as datas.`;return;}
+ if(output)output.textContent='Verificando recessos, feriados e disponibilidade...';
+ try {
+  const result=await externalAPI({action:'preview',teacher_id:teacher,slot_ids:selected,lessons_count:count,weekly_frequency:freq,start_date:f.elements.start_date.value});
+  if(serial!==externalPreviewSerial)return;
+  if(!f.elements.end_date.dataset.manuallyEdited){f.elements.end_date.value=result.end_date;}
+  if(output)output.textContent=`${result.total} aulas previstas · última aula em ${dateBR(result.end_date)}. Disponibilidade sujeita a confirmação na matrícula.`;
+ } catch(error){if(serial===externalPreviewSerial&&output)output.textContent=error.message||String(error);}
+}
+async function externalSave(f){
+ const d=formData(f),p=externalData.packages.find(x=>x.id===d.package_id),count=Number(d.lessons_count),freq=Number(d.weekly_frequency);
  if(!Number.isInteger(count)||count<1||count>500||!Number.isInteger(freq)||freq<1||freq>7)throw new Error('Quantidade e frequência inválidas.');
- const schedule=readSchedule(f,freq);
- if(!d.end_date||d.end_date<d.start_date)throw new Error('Data final inválida.');
- const total=Number(d.total_amount),part=Number(d.installment_amount),n=Number(d.installments);if(!Number.isFinite(total)||total<0||!Number.isFinite(part)||part<0||!Number.isInteger(n)||n<1||n>48)throw new Error('Confira total e parcelas.');
- const data={...d,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,lesson_schedule:schedule,weekly_days:schedule.map(x=>x.day),lesson_time:schedule[0].time,total_amount:total,installments:n,installment_amount:part,total_extenso:amountWords(total)};
- await externalAPI({action:'save',form:data});$('.sign-main').innerHTML='<section class="sign-panel"><h1>Ficha salva!</h1><p>Obrigado. A administração poderá gerar o contrato e seguir com a matrícula.</p><p class="muted">Este link já foi utilizado.</p></section>';
+ const selected=[...f.querySelectorAll('input[name="interview_slot"]:checked')].map(x=>x.value);
+ if(selected.length!==freq)throw new Error(`Selecione exatamente ${freq} horário(s) do professor responsável.`);
+ const total=Number(d.total_amount),part=Number(d.installment_amount),n=Number(d.installments);
+ if(!Number.isFinite(total)||total<0||!Number.isFinite(part)||part<0||!Number.isInteger(n)||n<1||n>48)throw new Error('Confira o valor total e as parcelas.');
+ const data={...d,package_id:p?.id||null,teacher_id:d.teacher_id,slot_ids:selected,lessons_count:count,weekly_frequency:freq,total_amount:total,installments:n,installment_amount:part};
+ await externalAPI({action:'save',payload:data});
+ $('.sign-main').innerHTML='<section class="sign-panel"><h1>Ficha salva!</h1><p>Os horários escolhidos foram registrados. A administração fará a matrícula e confirmará a disponibilidade.</p><p class="muted">Este link já foi utilizado.</p></section>';
 }
 
 let publicToken='',publicData=null;

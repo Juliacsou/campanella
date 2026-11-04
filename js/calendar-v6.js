@@ -1,4 +1,4 @@
-// Campanella V6.3 - agenda escolar e docente. Nao depende de AssinAPI / Drive.
+// Campanella V6.4 - agenda escolar e docente. Nao depende de AssinAPI / Drive.
 // A autorizacao, a validacao de sobreposicoes e a mudanca de estado acontecem nas RPCs SQL.
 export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg}){
  const weekNames=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
@@ -49,7 +49,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(!school())return;
   const args={p_school:school(),...monthBounds(),p_teacher:teacherMode()?ui.teacherId:null};
   state.loading=true;
-  try {state.snapshot=await call('calendar_overview',args);}
+  try {state.snapshot=await call('calendar_overview',args);state.snapshotSchool=school();}
   finally{state.loading=false;}
  }
  async function loadSafe(){try{await load();}catch(e){console.warn('Calendario V6 indisponivel ate aplicar SQL 14',e);state.snapshot=null;}}
@@ -242,19 +242,24 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   return `<header class="page-head"><div><h1>Minha agenda</h1></div></header><div class="cal-metrics"><div><strong>${upcoming}</strong><span>Aulas hoje</span></div><div><strong>${periodCount}</strong><span>Aulas ${state.mode==='day'?'no dia':state.mode==='week'?'na semana':'no mês'}</span></div><div><strong>${totalStudents}</strong><span>Meus alunos</span></div><div class="${pending?'cal-attention':''}"><strong>${pending}</strong><span>Reagendamentos</span></div></div><div class="cal-toolbar">${control('calNewOneOff',`${navIcon('plus')} Horário avulso`,'','light')}<div class="cal-switcher">${[['day','Dia'],['week','Semana'],['month','Mês']].map(([k,n])=>`<button type="button" class="${state.mode===k?'selected':''}" data-action="calMode" data-mode="${k}">${n}</button>`).join('')}</div><div class="cal-nav">${control('calPrev','‹','','ghost')}${control('calToday','Hoje','','ghost')}${control('calNext','›','','ghost')}<b>${safe(state.mode==='day'?dateBR(state.selected):state.mode==='week'?weekRangeLabel(startOfWeek(state.selected)):monthLabel(state.selected))}</b></div></div><section class="panel cal-calendar">${state.mode==='day'?dayView():state.mode==='month'?monthView():weekView()}</section>`;
  }
  function renderCalendar(){if(teacherMode()){document.getElementById('app').innerHTML=teacherShell();document.getElementById('pageContent').innerHTML=teacherPageView();}else{render();}}
- async function reload(){if(!teacherMode()){await refresh();}else{await load();}if(state.studentId&&state.studentProfile){await openStudent(state.studentId,false);}renderCalendar();}
+ async function reload(){if(!teacherMode())await refresh();await load();if(state.studentId&&state.studentProfile){await openStudent(state.studentId,false);}renderCalendar();}
 
- function getFormPicker(teacherId,startDate,includeManualEnd=false){
+ function getFormPicker(teacherId,startDate,includeManualEnd=false,selectedIds=[],compact=false){
   if(!teacherId)return `<div class="cal-enrollment" data-teacher=""><p class="form-note">Escolha um professor para visualizar os horários de aula.</p></div>`;
   const slots=data().slots.filter(x=>x.teacher_id===teacherId&&x.active&&x.slot_date===null).sort((a,b)=>a.weekday-b.weekday||a.time.localeCompare(b.time));
+  const chosen=new Set(Array.isArray(selectedIds)?selectedIds:[]);
   if(!slots.length)return `<div class="cal-enrollment" data-teacher="${safe(teacherId)}" data-no-slots="1"><h3 class="form-section">Calendário V6</h3><p class="form-note">Este professor ainda não cadastrou horários. O contrato poderá continuar pelo fluxo anterior, mas não será incluído no calendário inteligente até que a escola configure a grade.</p></div>`;
-  return `<div class="cal-enrollment" data-teacher="${safe(teacherId)}"><h3 class="form-section">Calendário inteligente de aulas</h3><div class="cal-form-slots">${slots.map(x=>`<label><input type="checkbox" name="cal_slot" value="${x.id}" ${slots.length===1?'checked':''}><span>${weekNames[x.weekday]} às ${safe(x.time)} · ${x.duration} min</span></label>`).join('')}</div><label class="field"><span>Início da agenda</span><input type="date" name="cal_start_date" value="${safe(startDate||today())}" required></label>${includeManualEnd?`<label class="field"><span>Data final do contrato (opcional: ajuste manual)</span><input type="date" name="cal_manual_end" min="${safe(startDate||today())}"></label>`:''}<div class="cal-preview"><button class="btn mini light" type="button" data-action="calPreview">Calcular última aula</button><span data-cal-result class="form-note">O término será preenchido antes de salvar a matrícula.</span></div></div>`;
+  return `<div class="cal-enrollment" data-teacher="${safe(teacherId)}"><h3 class="form-section">Calendário inteligente de aulas</h3><div class="cal-form-slots">${slots.map(x=>`<label><input type="checkbox" name="cal_slot" value="${x.id}" ${chosen.has(x.id)||(!chosen.size&&slots.length===1)?'checked':''}><span>${weekNames[x.weekday]} às ${safe(x.time)} · ${x.duration} min</span></label>`).join('')}</div>${compact?'':`<label class="field"><span>Início da agenda</span><input type="date" name="cal_start_date" value="${safe(startDate||today())}" required></label>`}${includeManualEnd?`<label class="field"><span>Data final do contrato (opcional: ajuste manual)</span><input type="date" name="cal_manual_end" min="${safe(startDate||today())}"></label>`:''}<div class="cal-preview"><button class="btn mini light" type="button" data-action="calPreview">Calcular última aula</button><span data-cal-result class="form-note">O término será preenchido antes de salvar a matrícula.</span></div></div>`;
+ }
+ function slotIdForSchedule(item,selectedIds=[]){
+  const slot=data().slots.find(s=>selectedIds.includes(s.id)&&s.weekday===Number(item.day)&&niceTime(s.time)===niceTime(item.time));
+  return slot?.id||null;
  }
  function updateFormPicker(form){
   const host=form.querySelector('#calPickerHost');if(!host)return;
   const id=form.elements.teacher_id?.value||form.querySelector('.cal-enrollment')?.dataset.teacher;
   const start=form.elements.start_date?.value||form.elements.cal_start_date?.value||today();
-  host.innerHTML=getFormPicker(id,start);
+  host.innerHTML=getFormPicker(id,start,false,[],form.id==='interviewForm');
  }
  async function plan(form,terms){
   const part=form.querySelector('.cal-enrollment');const teacherId=part?.dataset.teacher||terms.teacher_id;
@@ -293,7 +298,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const {preview}=await plan(f,{teacher_id:teacherId,start_date:start,lessons_count:count});
   if(!preview)return toast('Configure os horários fixos do professor para calcular a agenda.',true);
   const out=f.querySelector('[data-cal-result]');if(out)out.textContent=`${preview.total} aulas • última aula em ${dateBR(preview.end_date)}`;
-  const el=f.elements.end_date||f.elements.cal_manual_end;if(el){el.value=preview.end_date;el.dataset.calManualEdited='0';}
+  const el=f.elements.end_date||f.elements.cal_manual_end;if(el&&el.dataset.calManualEdited!=='1'){el.value=preview.end_date;el.dataset.calManualEdited='0';}
   if(!silent)toast('Datas calculadas com recessos e indisponibilidades.');
  }
  function teacherOptions(includeAll=false){
@@ -331,13 +336,14 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  }
  async function openStudent(id,show=true){
   if(!id)throw new Error('Aluno não identificado.');
+  if(!state.snapshot||state.snapshotSchool!==school())await load();
   const profile=await call('calendar_student_profile',{p_school:school(),p_student:id});
   state.studentId=id;state.studentProfile=profile;
   if(show){if(teacherMode()){state.page='student-profile';renderCalendar();}else{ui.studentReturnPage=ui.page;ui.studentId=id;ui.page='student-profile';render();}}
   return profile;
  }
  const lessonSort=(a,b)=>(a.date||a.original_date||'9999-12-31').localeCompare(b.date||b.original_date||'9999-12-31')||String(a.time||'').localeCompare(String(b.time||''));
- function studentProfileView(admin=false){
+ function studentProfileView(admin=false,adminSections=null){
   const profile=state.studentProfile;
   if(!profile)return '<section class="panel cal-section"><p>Selecione um aluno para abrir o histórico.</p></section>';
   const contracts=profile.contracts||[];
@@ -356,16 +362,21 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
     .map(s=>`<span class="cal-student-slot">${safe(shortDays[s.weekday])} · ${safe(niceTime(s.time))} (${Number(s.duration)} min)</span>`).join('');
   const allLessonRows=rows=>rows.length?rows.map(l=>{
    const detail=(l.history||[]).length?`<details class="cal-lesson-history"><summary>Histórico de alterações (${l.history.length})</summary>${l.history.map(h=>`<div>${h.at?new Date(h.at).toLocaleDateString('pt-BR'):''} · ${safe(h.event)}${h.old_date?` · ${dateBR(h.old_date)}${h.old_time?' '+safe(niceTime(h.old_time)):''}`:''}${h.new_date?` → ${dateBR(h.new_date)}${h.new_time?' '+safe(niceTime(h.new_time)):''}`:''}${h.note?` · ${safe(h.note)}`:''}</div>`).join('')}</details>`:'';
-   return `<div class="cal-lesson-row"><span class="cal-lesson-number">#${Number(l.number)}</span><div class="cal-lesson-main"><strong>${l.date?dateBR(l.date):'Data a definir'} ${l.time?'· '+safe(niceTime(l.time)):''}</strong><small>${safe(teacherName(l.teacher_id))} · ${safe(l.contract.course||'Aulas')} · ${Number(l.duration)} min · ${safe(textStatus(l.status))}</small>${detail}</div><div class="cal-lesson-actions">${['scheduled','needs_reschedule','reserved'].includes(l.status)?control('calReschedule','Reagendar',`data-id="${safeAttr(l.id)}"`,'light'):''}${l.status==='scheduled'?control('calRecord','Registrar',`data-id="${safeAttr(l.id)}"`,'light'):''}</div></div>`;
+   return `<div class="cal-lesson-row"><span class="cal-lesson-number">#${Number(l.number)}</span><div class="cal-lesson-main"><strong>${l.date?dateBR(l.date):'Data a definir'} ${l.time?'· '+safe(niceTime(l.time)):''}</strong><small>${safe(l.teacher_name||teacherName(l.teacher_id))} · ${safe(l.contract.course||'Aulas')} · ${Number(l.duration)} min · ${safe(textStatus(l.status))}</small>${detail}</div><div class="cal-lesson-actions">${['scheduled','needs_reschedule','reserved'].includes(l.status)?control('calReschedule','Reagendar',`data-id="${safeAttr(l.id)}"`,'light'):''}${l.status==='scheduled'?control('calRecord','Registrar',`data-id="${safeAttr(l.id)}"`,'light'):''}</div></div>`;
   }).join(''):'<p class="muted">Nenhuma aula neste grupo.</p>';
   const total=contracts.reduce((n,c)=>n+Number(c.total||0),0);
-  return `<div class="cal-profile-page"><header class="page-head cal-profile-head"><div><button type="button" class="btn mini ghost" data-action="${admin?'studentProfileBack':'calStudentBack'}">${navIcon('arrow')} Voltar</button><p class="eyebrow">Perfil do aluno</p><h1>${safe(profile.name)}</h1><p class="muted">Professor: ${safe(teacherName(topTeacher))}</p></div><div class="cal-profile-contact">${wa?`<a class="btn light" href="${safeAttr(wa)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>`:''}${phone?`<a class="btn ghost" href="tel:${safeAttr(phone)}">Ligar</a>`:''}${profile.email?`<a class="btn ghost" href="mailto:${safeAttr(profile.email)}">E-mail</a>`:''}</div></header>
-  <div class="cal-profile-metrics"><div><strong>${total}</strong><span>Aulas contratadas</span></div><div><strong>${completed.length}</strong><span>Realizadas</span></div><div><strong>${future.length}</strong><span>Futuras</span></div><div><strong>${pending.length}</strong><span>A reagendar</span></div></div>
-  <section class="panel cal-section"><div class="panel-head"><h2>Horários semanais atuais</h2>${contracts.some(c=>c.status==='signed')?control('calEditStudentSlots','Alterar horários',`data-id="${safeAttr(profile.id)}"`,'light'):''}</div><div class="cal-student-slots">${slotTags||'<span class="muted">Não há horário fixo associado nesta matrícula.</span>'}</div>${planned?`<p class="form-note">${planned} aula(s) anterior(es) sem registro de realização. Confirme presença ou reagende na agenda.</p>`:''}</section>
-  <section class="panel cal-section"><div class="panel-head"><h2>Próximas aulas — todas <span class="cal-count">${future.length}</span></h2></div>${allLessonRows(future)}</section>
-  ${pending.length?`<section class="panel cal-section"><div class="panel-head"><h2>Aulas para reagendar <span class="cal-count">${pending.length}</span></h2></div>${allLessonRows(pending)}</section>`:''}
-  <section class="panel cal-section"><div class="panel-head"><h2>Histórico de aulas e presenças <span class="cal-count">${past.length}</span></h2></div>${allLessonRows(past)}</section>
-  ${contracts.length?`<section class="panel cal-section"><div class="panel-head"><h2>Matrículas vinculadas</h2></div>${contracts.map(c=>`<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.course||'Aulas')} · ${safe(c.package||'Pacote')}</strong><small>${safe(teacherName(c.teacher_id))} · ${c.start?dateBR(c.start):'—'} a ${c.contract_end?dateBR(c.contract_end):'—'} · ${safe(c.status)}</small></div></div>`).join('')}</section>`:''}
+  const basic=admin&&adminSections?.registration?adminSections.registration:`<section class="panel cal-section cal-profile-registration"><div class="panel-head"><h2>Dados cadastrais</h2></div><div class="profile-grid"><div class="detail-item"><span>Nome</span><strong>${safe(profile.name)}</strong></div><div class="detail-item"><span>Professor responsável</span><strong>${safe(teacherName(topTeacher))}</strong></div><div class="detail-item"><span>Telefone</span><strong>${safe(profile.phone||'—')}</strong></div><div class="detail-item"><span>E-mail</span><strong>${safe(profile.email||'—')}</strong></div></div></section>`;
+  const contractCards=admin&&adminSections?.contracts?adminSections.contracts:contracts.map(c=>`<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.course||'Aulas')} · ${safe(c.package||'Pacote')}</strong><small>${safe(c.teacher_name||teacherName(c.teacher_id))} · ${c.start?dateBR(c.start):'—'} a ${c.contract_end?dateBR(c.contract_end):'—'} · ${safe(c.status)}</small></div></div>`).join('')||'<p class="muted">Sem matrículas vinculadas.</p>';
+  const accordion=(title,subtitle,content,icon)=>`<details class="panel cal-profile-accordion"><summary class="cal-profile-accordion-toggle"><span class="cal-profile-accordion-icon">${navIcon(icon)}</span><span class="cal-profile-accordion-title"><strong>${title}</strong><small>${subtitle}</small></span><span class="cal-profile-accordion-chevron" aria-hidden="true"></span></summary><div class="cal-profile-accordion-content">${content}</div></details>`;
+  const scheduleCards=`<div class="cal-profile-metrics"><div><strong>${total}</strong><span>Aulas contratadas</span></div><div><strong>${completed.length}</strong><span>Realizadas</span></div><div><strong>${future.length}</strong><span>Futuras</span></div><div><strong>${pending.length}</strong><span>A reagendar</span></div></div>
+   <section class="cal-profile-subsection"><div class="panel-head"><h2>Horários semanais atuais</h2>${contracts.some(c=>c.status==='signed')?control('calEditStudentSlots','Alterar professor e horários',`data-id="${safeAttr(profile.id)}"`,'light'):''}</div><div class="cal-student-slots">${slotTags||'<span class="muted">Não há horário fixo associado nesta matrícula.</span>'}</div>${planned?`<p class="form-note">${planned} aula(s) anterior(es) sem registro de realização.</p>`:''}</section>
+   <section class="cal-profile-subsection"><div class="panel-head"><h2>Próximas aulas <span class="cal-count">${future.length}</span></h2></div>${allLessonRows(future)}</section>
+   ${pending.length?`<section class="cal-profile-subsection"><div class="panel-head"><h2>Aulas para reagendar <span class="cal-count">${pending.length}</span></h2></div>${allLessonRows(pending)}</section>`:''}
+   <section class="cal-profile-subsection"><div class="panel-head"><h2>Histórico de aulas e presenças <span class="cal-count">${past.length}</span></h2></div>${allLessonRows(past)}</section>`;
+  return `<div class="cal-profile-page"><header class="page-head cal-profile-head"><div><button type="button" class="btn mini ghost" data-action="${admin?'studentProfileBack':'calStudentBack'}">${navIcon('arrow')} Voltar</button><p class="eyebrow">Perfil do aluno</p><h1>${safe(profile.name)}</h1></div><div class="cal-profile-contact">${wa?`<a class="btn light" href="${safeAttr(wa)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>`:''}${phone?`<a class="btn ghost" href="tel:${safeAttr(phone)}">Ligar</a>`:''}${profile.email?`<a class="btn ghost" href="mailto:${safeAttr(profile.email)}">E-mail</a>`:''}</div></header>
+  ${basic}
+  ${accordion('Contratos e Matrículas',`${adminSections?.contractCount??contracts.length} matrícula(s) vinculada(s)`,contractCards,'school')}
+  ${accordion('Aulas e Horários',`${total} aula(s) contratada(s) · ${future.length} futura(s)`,scheduleCards,'calendar')}
   </div>`;
  }
  async function studentDetail(id){
@@ -374,22 +385,26 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   return openStudent(s.student_id);
  }
 
+ function studentSlotChoices(teacher,selectedIds=[]){
+  const slots=data().slots.filter(sl=>sl.teacher_id===teacher&&sl.active&&sl.slot_date===null)
+   .sort((a,b)=>a.weekday-b.weekday||niceTime(a.time).localeCompare(niceTime(b.time)));
+  const selected=new Set(selectedIds);
+  return slots.length?slots.map(slot=>`<label><input type="checkbox" name="cal_student_slot" value="${safeAttr(slot.id)}" ${selected.has(slot.id)?'checked':''}><span>${weekNames[slot.weekday]} às ${safe(niceTime(slot.time))} · ${Number(slot.duration)} min</span></label>`).join(''):'<p class="muted">Esse professor ainda não possui horários semanais ativos. Cadastre um horário antes de transferir o aluno.</p>';
+ }
  function editStudentSlots(id){
   const profile=state.studentProfile;
   if(!profile||profile.id!==id)throw new Error('Abra o perfil do aluno antes de alterar os horários.');
   const current=profile.contracts?.find(c=>c.status==='signed');
   if(!current)throw new Error('O aluno não possui matrícula assinada disponível.');
-  const teacher=current.teacher_id;
-  const slots=data().slots.filter(s=>s.teacher_id===teacher&&s.active&&s.slot_date===null)
-   .sort((a,b)=>a.weekday-b.weekday||niceTime(a.time).localeCompare(niceTime(b.time)));
-  if(!slots.length)throw new Error('O professor ainda não possui horários semanais disponíveis.');
-  const selected=new Set(profile.slot_ids||[]);
-  showModal(`<div class="eyebrow">Aluno · Horários semanais</div><h2>Alterar horários de ${safe(profile.name)}</h2>
-  <p class="form-note">Professor responsável: ${safe(teacherName(teacher))}</p>
-  <form id="calStudentSlotsForm" data-id="${safeAttr(id)}"><div class="cal-form-slots">${slots.map(slot=>`<label><input type="checkbox" name="cal_student_slot" value="${safeAttr(slot.id)}" ${selected.has(slot.id)?'checked':''}><span>${weekNames[slot.weekday]} às ${safe(niceTime(slot.time))} · ${Number(slot.duration)} min</span></label>`).join('')}</div>
-  <p class="form-note">O sistema atualizará somente as aulas futuras deste aluno. Aulas concluídas e reagendadas individualmente não mudam. Os demais alunos do professor não serão afetados.</p>
+  const teacher=profile.teacher_id||current.teacher_id;
+  const teachers=data().teachers.filter(t=>t.active||t.id===teacher).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+  const teacherField=canAdmin()?`<label class="field wide"><span>Professor responsável</span><select name="cal_student_teacher" required>${teachers.map(t=>`<option value="${safeAttr(t.id)}" ${t.id===teacher?'selected':''} ${t.active?'':'disabled'}>${safe(t.name)}</option>`).join('')}</select></label>`:`<div class="field wide"><span>Professor responsável</span><strong>${safe(teacherName(teacher))}</strong></div><input type="hidden" name="cal_student_teacher" value="${safeAttr(teacher)}">`;
+  showModal(`<div class="eyebrow">Aluno · Agenda semanal</div><h2>Alterar professor e horários de ${safe(profile.name)}</h2>
+  <form id="calStudentSlotsForm" data-id="${safeAttr(id)}" data-teacher="${safeAttr(teacher)}"><div class="form-grid">${teacherField}</div><div class="form-section"><h3>Horários semanais do professor</h3><div class="cal-form-slots" id="calStudentSlotChoices">${studentSlotChoices(teacher,profile.slot_ids||[])}</div></div>
+  <p class="form-note">A mudança atualizará as aulas futuras deste aluno. Aulas realizadas e o contrato assinado permanecerão no histórico. Se mudar de professor, reagendamentos individuais futuros ficarão pendentes de nova combinação.</p>
   <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Revisar alteração</button></div></form>`);
  }
+
  function record(id){
   const l=lessonById(id);if(!l||l.status!=='scheduled')throw new Error('Aula não está aguardando registro.');
   showModal(`<div class="eyebrow">Registro de aula</div><h2>${safe(l.student_name)} · aula ${l.lesson_number}</h2><form id="calRecordForm" data-id="${id}"><label class="field"><span>Resultado</span><select name="status"><option value="completed">Realizada</option><option value="absent_consumed">Falta — contabilizar aula</option><option value="needs_reschedule">Falta — manter crédito e reagendar</option></select></label><label class="field"><span>Observação</span><input name="note" maxlength="300" placeholder="Opcional"></label><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Salvar registro</button></div></form>`);
@@ -444,6 +459,11 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  }
  async function change(element){
   if(element.id==='calTeacherFilter'){state.teacher=element.value;return renderCalendar();}
+  if(element.name==='cal_student_teacher'&&element.form?.id==='calStudentSlotsForm'){
+   const host=element.form.querySelector('#calStudentSlotChoices');
+   if(host)host.innerHTML=studentSlotChoices(element.value,element.value===element.form.dataset.teacher?(state.studentProfile?.slot_ids||[]):[]);
+   return;
+  }
   if(element.name==='teacher_id'&&element.form?.id==='manualEnrollmentForm'){updateFormPicker(element.form);return autoPreview(element.form);}
   if(element.name==='start_date'&&element.form?.elements.cal_start_date){element.form.elements.cal_start_date.value=element.value;return autoPreview(element.form);}
   if(['cal_slot','cal_start_date','lessons_count'].includes(element.name))return autoPreview(element.form);
@@ -475,12 +495,25 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(f.id==='calStudentSlotsForm'){
    const profile=state.studentProfile;
    if(!profile||profile.id!==f.dataset.id)throw new Error('O perfil do aluno foi alterado. Abra-o novamente.');
+   const newTeacher=f.elements.cal_student_teacher.value,oldTeacher=profile.teacher_id||profile.contracts?.find(c=>c.status==='signed')?.teacher_id;
+   const teacherChanged=newTeacher!==oldTeacher;
+   if(teacherChanged&&!canAdmin())throw new Error('Somente o administrador pode transferir alunos para outro professor.');
    const selected=[...f.querySelectorAll('input[name="cal_student_slot"]:checked')].map(el=>el.value);
-   if(!selected.length)throw new Error('Escolha pelo menos um horário do professor.');
-   if(selected.length===(profile.slot_ids||[]).length&&selected.every(v=>(profile.slot_ids||[]).includes(v))){closeModal();return;}
-   if(!await window.campanellaConfirm(`Alterar os horários semanais de ${profile.name}? As aulas futuras ainda não concluídas serão recalculadas usando os horários escolhidos, sem afetar os outros alunos. Aulas realizadas e reagendamentos individuais serão preservados. As datas previstas podem mudar.`, 'Alterar agenda do aluno','Confirmar alteração'))return;
-   const result=await call('calendar_change_student_schedule',{p_school:school(),p_student:profile.id,p_slots:selected});
-   closeModal();toast(`${Number(result.updated)||0} aula(s) futura(s) de ${profile.name} atualizada(s).`);return reload();
+   if(!selected.length)throw new Error('Escolha pelo menos um horário do professor selecionado.');
+   if(!teacherChanged&&selected.length===(profile.slot_ids||[]).length&&selected.every(v=>(profile.slot_ids||[]).includes(v))){closeModal();return;}
+   const message=teacherChanged?
+    `Transferir ${profile.name} de ${teacherName(oldTeacher)} para ${teacherName(newTeacher)}? As aulas futuras regulares passarão para os horários escolhidos do novo professor. Aulas já realizadas continuarão associadas ao professor anterior e os reagendamentos individuais futuros precisarão ser combinados novamente. Os contratos assinados não serão alterados.`:
+    `Alterar os horários semanais de ${profile.name}? As aulas futuras regulares serão recalculadas nos horários escolhidos. Aulas realizadas e reagendamentos individuais serão preservados. Os demais alunos não serão afetados.`;
+   if(!await window.campanellaConfirm(message,teacherChanged?'Transferir professor responsável':'Alterar agenda do aluno',teacherChanged?'Confirmar transferência':'Confirmar alteração'))return;
+   const result=await call('calendar_update_student_schedule',{p_school:school(),p_student:profile.id,p_teacher:newTeacher,p_slots:selected});
+   closeModal();toast(`${Number(result.updated)||0} aula(s) atualizada(s)${Number(result.pending)||0?` · ${Number(result.pending)} pendente(s) de reagendamento`:''}.`);
+   await reload();
+   // A troca de professor revoga o acesso do antigo docente a este perfil.
+   if(teacherMode()&&teacherChanged){state.page='students';state.studentId=null;state.studentProfile=null;return renderCalendar();}
+   await openStudent(profile.id,false);
+   if(teacherMode())state.page='student-profile';
+   else {ui.page='student-profile';ui.studentId=profile.id;}
+   return render();
   }
   if(f.id==='calEditSlotForm'){
    const v=f.elements,slot=data().slots.find(s=>s.id===f.dataset.id);
@@ -523,7 +556,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   throw new Error('Formulário desconhecido do calendário');
  }
  return {load,loadSafe,view,teacherShell,renderCalendar,getTeacherAccess,processPendingInvite,enterTeacherIfApplicable,
-  inviteLanding,getFormPicker,updateFormPicker,autoPreview,applyTerms,hasAccess,action,change,submit,refresh:reload,adminNav,
+  inviteLanding,getFormPicker,updateFormPicker,slotIdForSchedule,autoPreview,applyTerms,hasAccess,action,change,submit,refresh:reload,adminNav,
   studentSummaryFor,studentForContract,classSummaryFor,scheduleForContract,openStudent,studentProfileView,ensureEnrollmentDates,
   async updateTeacherProfile(name){const n=String(name||'').trim();if(n.length<2||n.length>120)throw new Error('Informe um nome válido.');await call('calendar_update_my_teacher_name',{p_school:school(),p_name:n});await load();}};
 }

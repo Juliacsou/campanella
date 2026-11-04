@@ -22,7 +22,7 @@ const safe=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').repla
 const ui={role:'admin',page:'calendar',schoolId:school,user:{email:'admin@test.invalid'},schools:[{id:school,name:'School'}],teacherId:null};
 const cal=createCalendar({sb:{rpc:async(m,args)=>{calls.push({m,args});if(m==='calendar_overview')return {data:snapshot,error:null};
  if(m==='calendar_student_profile')return {data:profile,error:null};if(m==='calendar_slot_edit_impact')return {data:{lessons:39,students:1},error:null};
- if(m==='calendar_edit_weekly_slot')return {data:{updated:39},error:null};if(m==='calendar_change_student_schedule')return {data:{updated:39},error:null};throw Error('RPC desconhecida: '+m)}},
+ if(m==='calendar_edit_weekly_slot')return {data:{updated:39},error:null};if(m==='calendar_update_student_schedule')return {data:{updated:39,pending:0,teacher_changed:false},error:null};throw Error('RPC desconhecida: '+m)}},
  ui,db:{teachers:snapshot.teachers,contracts:[]},safe,dateBR:s=>s,today:()=>date,showModal:t=>{modal=t},closeModal:()=>{},toast:()=>{},refresh:()=>{},render:()=>{renders++},initialize:()=>{},authWrap:s=>s,lookup:()=>null,canAdmin:()=>true,iconSvg:(n)=>`<svg data-icon="${n}"></svg>`});
 await cal.load();
 // Horarios semanais editaveis, com popup proprio.
@@ -47,8 +47,8 @@ assert.match(page,/data-action="calEditStudentSlots"/);
 await cal.action('calEditStudentSlots',{dataset:{id:student}});
 assert.match(modal,/id="calStudentSlotsForm"/);
 assert.match(modal,/name="cal_student_slot" value="slot2"/);
-await cal.submit({id:'calStudentSlotsForm',dataset:{id:student},querySelectorAll:()=>[{value:'slot2'}]});
-assert.ok(calls.some(x=>x.m==='calendar_change_student_schedule'&&x.args.p_student===student&&x.args.p_slots[0]==='slot2'),'troca individual usa RPC transacional');
+await cal.submit({id:'calStudentSlotsForm',dataset:{id:student},elements:{cal_student_teacher:{value:teacher}},querySelectorAll:()=>[{value:'slot2'}]});
+assert.ok(calls.some(x=>x.m==='calendar_update_student_schedule'&&x.args.p_student===student&&x.args.p_teacher===teacher&&x.args.p_slots[0]==='slot2'),'troca individual usa RPC transacional');
 assert.match(page,/data-action="studentProfileBack"/);
 assert.equal((page.match(/class="cal-lesson-number"/g)||[]).length,40,'todas as 40 aulas no perfil');
 assert.ok(page.includes('#40'),'ultima aula esta visivel');

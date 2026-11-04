@@ -1,6 +1,14 @@
+# Campanella V6.5 — Entrevistas com calendário integrado
+
+A atualização V6.5 separa o **professor entrevistador** do **professor responsável pelo aluno** e permite escolher dois ou mais horários recorrentes diretamente da grade deste último. Corrige também a incompatibilidade entre o formulário público da ficha e a Edge Function de entrevista.
+
+**Instalação:** siga o arquivo [`CHANGELOG_V6_5.md`](CHANGELOG_V6_5.md). Execute o SQL V6.5 entregue **separadamente** e atualize a Edge Function `entrevista` antes de testar o link. O SQL não está no ZIP.
+
+---
+
 # Campanella — contexto técnico do projeto
 
-**Versão em homologação: V6.3 (aluno + professor + calendário sincronizados).** Requer as migrações V6.0 e V6.1 já instaladas e a **migração V6.3, fornecida em arquivo SQL separado**. Não publicar para escolas reais antes da homologação local das permissões e fluxos do Supabase.
+**Versão em homologação: V6.4 (perfil por seções e transferência docente).** Requer as migrações V6.0, V6.1 e V6.3 já instaladas e a **migração V6.4 fornecida em SQL separado**. Não publicar para escolas reais antes da homologação local das permissões e fluxos do Supabase.
 
 ## Produto atual
 
@@ -76,3 +84,24 @@ Preferências do projeto: entregar somente código no ZIP; SQL separado (prefere
 7. Simular um conflito de horários; confirmar que a transação reverte integralmente.
 
 **Limitação**: os testes automatizados locais validam interface e contratos de chamadas, mas não executam as RPCs reais nem substituem homologação no Supabase. A importação histórica de aulas anteriores à V6 exige confirmação explícita de saldo. Não modifica contratos anteriores.
+
+## V6.4 — Perfil organizado e transferencia de professor
+
+- **Perfil do aluno**: dados cadastrais ficam visíveis primeiro. Em seguida há duas seções recolhíveis: **Contratos e Matrículas** e **Aulas e Horários**, fechadas inicialmente. Dentro delas ficam as mesmas ações e registros anteriores, incluindo todas as aulas e seu histórico. O professor vê apenas informações básicas; o administrador vê o cadastro e os contratos completos.
+- **Troca de professor**: na seção Aulas e Horários → Alterar professor e horários, o administrador pode selecionar outro professor da mesma escola. O formulário então exibe **somente** os horários ativos do professor selecionado. Se selecionar o mesmo professor, muda apenas os horários do aluno. Professores não podem transferir alunos para outros professores.
+- **Confirmação interna obrigatória** antes da troca. A RPC `calendar_update_student_schedule` faz a alteração em transação, verifica escola, autorização, grade, disponibilidade e conflito. Se houver falha, a alteração inteira é revertida.
+- **Preservação do histórico**: aulas concluídas permanecem associadas ao docente que as ministrou e contratos assinados permanecem imutáveis. Aulas futuras regulares são redistribuídas para o novo docente; reagendamentos individualmente combinados passam a *pendente de reagendamento* e devem ser combinados novamente com o aluno.
+- **Sincronização**: a lista de alunos e a página de perfil usam o docente atual (`students.calendar_teacher_id`), preservando em cada contrato o professor histórico. O acesso ao perfil por professor é autorizado pelo vínculo docente atual, não apenas por contratos passados. O painel administrativo atualiza o snapshot da agenda quando o aluno é aberto pela área Alunos.
+- **Banco**: execute `Campanella_V6_4_migracao.sql` **fora do ZIP**, após backup, somente uma vez, antes de testar o frontend local. A função é idempotente com `CREATE OR REPLACE FUNCTION`; não cria/apaga tabelas. Os fluxos reais SQL, RLS e conciliação dos contratos devem ser testados em escola fictícia.
+- **Teste**: `node tests/v6_4_profile_transfer_smoke.mjs` para o frontend; o SQL de verificação (separado) pode ser conferido com `node tests/v6_4_sql_contract_smoke.mjs /caminho/Campanella_V6_4_migracao.sql`.
+
+### Roteiro de teste V6.4
+
+1. Criar dois professores com horários semanais diferentes e aluno matriculado com um deles.
+2. Abrir perfil em Alunos e no calendário docente; cadastro deve aparecer primeiro, com duas seções recolhíveis.
+3. Na administração, em Aulas e Horários, trocar professor e selecionar 2 horários da nova grade; conferir confirmação obrigatória.
+4. Verificar novo professor no cadastro, na lista de alunos e nas aulas futuras, sem modificar contratos já assinados nem aulas já realizadas.
+5. Criar reagendamento individual futuro ANTES da transferência; depois transferir e conferir sua pendência individual.
+6. Testar colisão com outro aluno, férias, escola errada e login do antigo professor. A operação em conflito deve ser rejeitada integralmente e o docente antigo não pode consultar o perfil atual do aluno.
+
+Não publicar sem homologar com o Supabase. **Integrações AssinAPI e Google Drive seguem preservadas e desativadas.**
