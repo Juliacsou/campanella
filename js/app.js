@@ -3,7 +3,8 @@ import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
 import {createCRM} from './crm.js';
-import {createCalendar} from './calendar-v6.js';
+import {createCalendar} from './calendar-v6.js?v=6.6.0';
+import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
 import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js';
 // Campanella V4 - multi-escolas, licencas e administracao.
@@ -84,13 +85,14 @@ function alertModal(message,title='Aviso',buttonLabel='Entendi'){
 }
 window.campanellaConfirm=confirmModal;
 window.campanellaAlert=alertModal;
-const heading=(eyebrow,title,sub,action='')=>`<header class="page-head"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p class="leadline">${sub}</p></div>${action}</header>`;
+const heading=(eyebrow,title,sub,action='')=>`<header class="page-head"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${sub?`<p class="leadline">${sub}</p>`:''}</div>${action}</header>`;
 const card=(title,body,extra='')=>`<section class="panel"><div class="panel-head"><h2>${title}</h2>${extra}</div>${body}</section>`;
 const empty=text=>`<div class="empty"><span class="empty-symbol">✳</span>${safe(text)}</div>`;
 const row=(columns)=>`<tr>${columns.map(c=>`<td>${c}</td>`).join('')}</tr>`;
 function table(headers,rows,placeholder='Nenhum registro encontrado'){return `<div class="table-wrap">${rows.length?`<table class="data-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`:empty(placeholder)}</div>`;}
 const crm=createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy:()=>appBusy});
 const calendar=createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg:(name,size)=>ico(name,size)});
+initWeeklyPicker();
 // SVGs internos: nao dependem de fontes de icones ou CDNs adicionais.
 const ICONS={
  dashboard:'<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
@@ -285,7 +287,7 @@ function leadsView(){
 
 function leadForm(id){const l=lookup('leads',id)||{};showModal(`<h2>${id?'Editar lead':'Novo lead'}</h2><p class="modal-intro">Dados mínimos para começar o atendimento.</p><form id="leadForm" data-id="${id||''}"><div class="form-grid">${input('Nome do interessado','name',l.name)}${input('Nome do responsável (se houver)','guardian_name',l.guardian_name,'text',false)}<div class="wide">${input('Telefone / WhatsApp','phone',l.phone,'tel')}</div></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar lead</button></div></form>`);}
 function packagesView(){return `${heading('Serviços e contratos','Pacotes de aulas','Pacotes reutilizáveis ou matrículas personalizadas sem pacote.','<button class="btn" data-action="editPackage">＋ Novo pacote</button>')}${card('Pacotes cadastrados',table(['Pacote','Aulas','Frequência','Modelo vinculado','Valor','Ações'],db.packages.map(p=>row([`<b>${safe(p.name)}</b>`,`${p.lessons_count} aulas`,`${p.weekly_frequency}x/semana`,safe(lookup('contract_types',p.contract_type_id)?.name||'Escolher ao matricular'),money(p.default_total),`<div class="actions"><button class="btn mini light" data-action="editPackage" data-id="${p.id}">Editar</button><button class="btn mini danger" data-action="removePackage" data-id="${p.id}">Excluir</button></div>`])),'Nenhum pacote cadastrado.'))}<div class="notice">Para um plano especial, selecione <b>Personalizado · sem pacote</b> ao preencher a ficha inicial. Você poderá definir quantidades, valores e horários manualmente.</div>`;}
-function packageForm(id){const p=lookup('packages',id)||{};showModal(`<h2>${id?'Editar pacote':'Novo pacote'}</h2><p class="modal-intro">O contrato é opcional. Quando vinculado, será escolhido automaticamente ao matricular.</p><form id="packageForm" data-id="${id||''}"><div class="form-grid"><div class="wide">${input('Nome do pacote','name',p.name||'')}</div><label class="field"><span>Modalidade</span><select name="kind"><option value="individual" ${p.kind==='individual'?'selected':''}>Individual</option><option value="dupla" ${p.kind==='dupla'?'selected':''}>Dupla</option></select></label>${input('Quantidade de aulas','lessons_count',p.lessons_count||24,'number')}${input('Aulas por semana','weekly_frequency',p.weekly_frequency||2,'number')}${input('Valor padrão (R$)','default_total',p.default_total??1200,'number')}<label class="field wide"><span>Modelo de contrato associado (opcional)</span><select name="contract_type_id"><option value="">Nenhum · escolha na matrícula</option>${options(db.contract_types.filter(t=>t.active&&(p.kind==='dupla'?t.kind==='dupla':t.kind!=='dupla')),p.contract_type_id)}</select></label><label class="field"><span>Situação</span><select name="active"><option value="true" ${p.active!==false?'selected':''}>Ativo</option><option value="false" ${p.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar pacote</button></div></form>`);}
+function packageForm(id){const p=lookup('packages',id)||{};showModal(`<h2>${id?'Editar pacote':'Novo pacote'}</h2><form id="packageForm" data-id="${id||''}"><div class="form-grid"><div class="wide">${input('Nome do pacote','name',p.name||'')}</div><label class="field"><span>Modalidade</span><select name="kind"><option value="individual" ${p.kind==='individual'?'selected':''}>Individual</option><option value="dupla" ${p.kind==='dupla'?'selected':''}>Dupla</option></select></label>${input('Quantidade de aulas','lessons_count',p.lessons_count||24,'number')}${input('Aulas por semana','weekly_frequency',p.weekly_frequency||2,'number')}${input('Valor padrão (R$)','default_total',p.default_total??1200,'number')}<label class="field wide"><span>Modelo de contrato associado (opcional)</span><select name="contract_type_id"><option value="">Nenhum · escolha na matrícula</option>${options(db.contract_types.filter(t=>t.active&&(p.kind==='dupla'?t.kind==='dupla':t.kind!=='dupla')),p.contract_type_id)}</select></label><label class="field"><span>Situação</span><select name="active"><option value="true" ${p.active!==false?'selected':''}>Ativo</option><option value="false" ${p.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar pacote</button></div></form>`);}
 function ficheStage(l,i){return i?.pipeline_status||l.ficha_status||'open';}
 function interviewsView(){
  const list=db.leads.filter(l=>l.status!=='convertido'&&(l.ficha_iniciada_at||db.interviews.some(i=>i.lead_id===l.id)))
@@ -300,14 +302,14 @@ function interviewsView(){
   return !ui.search||[l.name,l.phone,i?.course,lookup('teachers',i?.teacher_id)?.name].join(' ').toLowerCase().includes(ui.search);
  });
  const titles={current:'Fichas em andamento',lost:'Leads que desistiram',archived:'Fichas arquivadas'};
- return `${heading('Entrevistas','Fichas iniciais','Prepare entrevistas, retome interessados e matricule quem fechou o pacote.')}
+ return `${heading('Entrevistas','Fichas iniciais','')}
  <div class="tabs" role="group" aria-label="Etapas da ficha">${[['current','Em andamento'],['lost','Desistiu'],['archived','Arquivadas']].map(([k,v])=>`<button class="btn ${ui.interviewTab===k?'':'light'}" data-action="interviewTab" data-tab="${k}">${v} <span class="tab-count">${db.leads.filter(l=>l.status!=='convertido'&&(l.ficha_iniciada_at||db.interviews.some(i=>i.lead_id===l.id))&& (k==='current'?!['lost','archived'].includes(ficheStage(l,db.interviews.find(i=>i.lead_id===l.id))):ficheStage(l,db.interviews.find(i=>i.lead_id===l.id))===k)).length}</span></button>`).join('')}</div>
  <div class="toolbar"><input id="search" class="search" placeholder="Buscar lead, curso ou professor" value="${safe(ui.search)}"><label class="small">Preenchimento <select id="interviewFilter">${[['all','Todos'],['unfilled','A preencher'],['ready','Preenchida']].map(([v,t])=>`<option value="${v}" ${ui.interviewStatus===v?'selected':''}>${t}</option>`).join('')}</select></label></div>
  ${card(titles[ui.interviewTab]||titles.current,table(['Lead','Professor responsável','Curso / pacote','Preenchimento','Contrato','Ações'],list.map(({l,i})=>{
   const ct=db.contracts.filter(c=>c.interview_id===i?.id&&c.status!=='void').sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];
   const invite=db.interview_invites?.find(x=>x.lead_id===l.id&&!x.revoked_at&&!x.used_at&&new Date(x.expires_at)>new Date());
   const st=ficheStage(l,i);
-  return row([`<b>${safe(l.name)}</b><div class="muted">${safe(l.phone)}</div>`,safe(lookup('teachers',i?.teacher_id)?.name||lookup('teachers',invite?.teacher_id)?.name||'—')+(i?.interviewer_teacher_id&&i.interviewer_teacher_id!==i.teacher_id?`<div class="small muted">Entrevistador: ${safe(lookup('teachers',i.interviewer_teacher_id)?.name||'—')}</div>`:''),i?`${safe(i.course||'Inglês')}<div class="small muted">${safe(lookup('packages',i.package_id)?.name||'')}</div>`:'<span class="muted">—</span>',i?'<span class="pill pill-signed">Preenchida</span>':'<span class="pill pill-sent">A preencher</span>',ct?contractTag(ct):'<span class="pill">Não gerado</span>',`<div class="actions actions-right">${st==='open'&&i&&!ct?`<button class="btn mini" data-action="newContract" data-id="${l.id}">Matricular</button>`:''}${st==='open'&&(!i||!ct)?`<button class="btn mini ghost" data-action="inviteInterview" data-id="${l.id}">Link entrevistador</button>`:''}<button class="icon-btn" data-action="editInterview" data-id="${l.id}" title="${i?'Editar ficha':'Preencher ficha'}" aria-label="Editar ficha de ${safe(l.name)}">✎</button>${st==='lost'||st==='archived'?`<button class="icon-btn" data-action="interviewStage" data-id="${l.id}" data-stage="open" title="Retomar ficha" aria-label="Retomar ficha">↶</button>`:`<button class="icon-btn danger-icon" data-action="interviewStage" data-id="${l.id}" data-stage="lost" title="Registrar desistência" aria-label="Marcar desistência">×</button><button class="icon-btn" data-action="interviewStage" data-id="${l.id}" data-stage="archived" title="Arquivar ficha" aria-label="Arquivar ficha">▤</button>`}</div>`]);
+  return row([`<b>${safe(l.name)}</b><div class="muted">${safe(l.phone)}</div>`,safe(lookup('teachers',i?.teacher_id)?.name||lookup('teachers',invite?.teacher_id)?.name||'—')+(i?.interviewer_teacher_id&&i.interviewer_teacher_id!==i.teacher_id?`<div class="small muted">Entrevistador: ${safe(lookup('teachers',i.interviewer_teacher_id)?.name||'—')}</div>`:''),i?`${safe(i.course||'Inglês')}<div class="small muted">${safe(lookup('packages',i.package_id)?.name||'')}</div>`:'<span class="muted">—</span>',i?'<span class="pill pill-signed">Preenchida</span>':'<span class="pill pill-sent">A preencher</span>',ct?contractTag(ct):'<span class="pill">Não gerado</span>',`<details class="contract-actions-dropdown interview-actions-menu"><summary class="btn mini light">Ações <span aria-hidden="true">⌄</span></summary><div class="contract-actions-popover" role="menu">${st==='open'&&i&&!ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="newContract" data-id="${safe(l.id)}">Matricular</button>`:''}${st==='open'&&(!i||!ct)?`<button class="contract-menu-item" type="button" role="menuitem" data-action="inviteInterview" data-id="${safe(l.id)}">Link do entrevistador</button>`:''}<button class="contract-menu-item" type="button" role="menuitem" data-action="editInterview" data-id="${safe(l.id)}">${i?'Editar ficha':'Preencher ficha'}</button>${ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="openInterviewContract" data-id="${safe(ct.id)}">Abrir contrato</button>`:''}${st==='lost'||st==='archived'?`<button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="open">Retomar ficha</button>`:`<button class="contract-menu-item danger" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="lost">Registrar desistência</button><button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="archived">Arquivar ficha</button>`}</div></details>`]);
  }),'Nenhuma ficha nesta aba.'))}`;
 }
 
@@ -377,7 +379,7 @@ function interviewForm(leadId){
  ${input('Primeiro vencimento','first_due_date',i.first_due_date||today(),'date')}
  <label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${x===i.payment_method?'selected':''}>${x}</option>`).join('')}</select></label>
  <div class="wide"><label class="field"><span>Observações internas</span><textarea name="notes">${safe(i.notes||'')}</textarea></label></div></div>
- <p class="form-note">Os horários escolhidos são do professor responsável, mesmo quando outra pessoa realiza a entrevista. A disponibilidade será conferida novamente ao matricular.</p>
+ 
  <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar ficha inicial</button></div></form>`);
  updateInstallment($('#interviewForm'));calendar.autoPreview($('#interviewForm'));
 }
@@ -525,7 +527,7 @@ function contractForm(leadId){
  if(!i){toast('Preencha a ficha inicial antes de matricular.',true);return;}
  if(db.contracts.some(c=>c.interview_id===i.id&&c.status!=='void')){toast('Já existe um contrato para esta ficha.',true);return;}
  const kind=p?.kind==='dupla'?'dupla':l.guardian_name?'menor':'individual';
- showModal(`<h2>Iniciar pré-matrícula</h2><p class="modal-intro">${safe(l.name)} · ${safe(i.course||'Inglês')} · ${safe(p?.name||'Personalizado')}</p><form id="contractForm" data-lead="${leadId}" data-kind="${kind}"><div class="detail-grid"><div class="detail-item"><span>Vigência</span><strong>${dateBR(i.start_date)} a ${dateBR(i.end_date)}</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(i.total_amount)}</strong></div></div><div class="schedule-highlight"><b>Professor</b><p>${safe(lookup('teachers',i.teacher_id)?.name||'—')} · Selecione os horários disponíveis na agenda abaixo.</p></div><div class="form-grid" style="margin-top:18px"><label class="field wide"><span>Modelo do contrato</span><select name="type_option" id="contractType" required>${contractOptions(kind,p?.id)}</select></label></div><div id="calPickerHost">${calendar.getFormPicker(i.teacher_id,i.start_date,true,i.calendar_slot_ids||[])}</div><div id="contractExtraFields"></div><p class="form-note">${p?.contract_type_id?'O modelo associado ao pacote foi selecionado automaticamente.':'Nenhum modelo vinculado a este pacote. Escolha o contrato adequado.'} O aluno preencherá os dados pelo link, sem receber contrato ou assinar online. Depois, a escola gerará o PDF sem assinaturas.</p><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Criar contrato</button></div></form>`);renderContractExtra();calendar.autoPreview($('#contractForm'));
+ showModal(`<h2>Iniciar pré-matrícula</h2><p class="modal-intro">${safe(l.name)} · ${safe(i.course||'Inglês')} · ${safe(p?.name||'Personalizado')}</p><form id="contractForm" data-lead="${leadId}" data-kind="${kind}" data-weekly-frequency="${Number(i.weekly_frequency||p?.weekly_frequency||1)}" data-original-slots="${safe((i.calendar_slot_ids||[]).join(','))}"><div class="detail-grid"><div class="detail-item"><span>Vigência</span><strong>${dateBR(i.start_date)} a ${dateBR(i.end_date)}</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(i.total_amount)}</strong></div></div><div class="schedule-highlight"><b>Professor responsável</b><p>${safe(lookup('teachers',i.teacher_id)?.name||'—')}</p></div><div class="form-grid" style="margin-top:18px"><label class="field wide"><span>Modelo do contrato</span><select name="type_option" id="contractType" required>${contractOptions(kind,p?.id)}</select></label></div><div id="calPickerHost">${calendar.getFormPicker(i.teacher_id,i.start_date,true,i.calendar_slot_ids||[])}</div><div id="contractExtraFields"></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Criar contrato</button></div></form>`);renderContractExtra();calendar.autoPreview($('#contractForm'));
 }
 function previewContract(id){const c=lookup('contracts',id),s=c.student_snapshot||lookup('students',c.student_id)||{};
  let html=c.signed_document_html||`<article class="legal-document">${renderContract(externalSignatureFor(c.id)?c:{...c,manualUnsigned:true,signed_at:null},s,{unsigned:!externalSignatureFor(c.id)})}</article>`;
@@ -538,7 +540,7 @@ function studentsView(){
   const s=lookup('students',c.student_id);const text=[s?.full_name,s?.email,c.terms?.package_name,c.terms?.course].join(' ').toLowerCase();if(ui.search&&!text.includes(ui.search))return false;
   const remaining=diffDays(c.terms.end_date);return ui.expiry==='all'||ui.expiry==='expired'&&remaining<0||ui.expiry!=='expired'&&remaining>=0&&remaining<=+ui.expiry;
  });
- return `${heading('Gestão contratual','Matrículas','O contrato permanece pendente até a escola registrar a assinatura manual. A rematrícula não apaga o histórico.')}
+ return `${heading('Gestão contratual','Matrículas','')}
  <div class="tabs"><button class="btn ${ui.enrollmentTab==='current'?'':'light'}" data-action="enrollmentTab" data-tab="current">Ativas e expiradas</button><button class="btn ${ui.enrollmentTab==='closed'?'':'light'}" data-action="enrollmentTab" data-tab="closed">Encerradas</button></div>
  <div class="toolbar"><input id="search" class="search" placeholder="Buscar aluno, pacote ou curso" value="${safe(ui.search)}"><label class="small">Vencimento <select id="expiryFilter"><option value="all">Todos</option>${[7,15,30,60,90].map(n=>`<option value="${n}" ${ui.expiry==n?'selected':''}>Próximos ${n} dias</option>`).join('')}<option value="expired" ${ui.expiry==='expired'?'selected':''}>Expirados</option></select></label></div>
  ${card('Matrículas',table(['Aluno','Pacote','Vigência','Matrícula','Ações'],list.map(c=>{const s=lookup('students',c.student_id);return row([safe(s?.full_name),safe(c.terms.package_name),`${dateBR(c.terms.start_date)} — ${dateBR(c.terms.end_date)}`,enrollmentTag(c),`<div class="actions"><button class="btn mini light" data-action="studentDetail" data-id="${s?.id}">Perfil</button>${['signed','closed','superseded'].includes(c.status)?`<button class="btn mini" data-action="renew" data-id="${c.id}">Rematricular</button>`:''}${c.status==='signed'?`<button class="btn mini danger" data-action="closeEnrollment" data-id="${c.id}">Encerrar</button>`:''}</div>`]);}),'Nenhuma matrícula neste filtro.'))}`;
@@ -907,6 +909,7 @@ document.addEventListener('click',async e=>{
  if(action==='interviewTab'){ui.interviewTab=x.dataset.tab;ui.interviewStatus='all';return render();}
  if(action==='contractTab'){ui.contractTab=x.dataset.tab;ui.contractStatus='all';ui.expiry='all';return render();}
  if(action==='studentTab'){ui.studentTab=x.dataset.tab;return render();}
+ if(action==='openInterviewContract'){const c=lookup('contracts',id);if(!c)throw new Error('Contrato vinculado não encontrado.');ui.page='contracts';ui.search='';render();return previewContract(c.id);}
  if(action==='interviewStage'){const stage=x.dataset.stage;if(!['open','lost','archived'].includes(stage))return;const lead=lookup('leads',id),item=db.interviews.find(i=>i.lead_id===id);if(!lead||lead.status==='convertido')throw new Error('Lead indisponível.');if(item)await save('interviews',{pipeline_status:stage,archived_at:stage==='archived'?new Date().toISOString():null},item.id);await save('leads',{ficha_status:stage,status:stage==='lost'?'perdido':stage==='open'?(item?'entrevistado':'novo'):lead.status},id);toast(stage==='archived'?'Ficha arquivada':stage==='lost'?'Desistência registrada':'Ficha retomada');return refresh();}
  if(action==='closeEnrollment'){if(!await window.campanellaConfirm('Encerrar esta matrícula? O contrato permanecerá no histórico.'))return;const {error}=await sb.rpc('close_enrollment',{p_contract_id:id});if(error)throw error;toast('Matrícula encerrada e preservada no histórico.');await refresh();return;}
  if(action==='copyInterviewLink'){await navigator.clipboard.writeText($('#generatedLink').textContent);toast('Link de entrevista copiado.');return;}
@@ -940,6 +943,13 @@ document.addEventListener('click',async e=>{
  }catch(error){errors(error)}finally{finishBusy()}
 });
 document.addEventListener('click',e=>{if(e.target.closest('#externalPreviewBtn'))externalPreview().catch(errors);});
+document.addEventListener('toggle',event=>{
+ const node=event.target;if(!node.matches?.('.contract-actions-dropdown')||!node.open)return;
+ document.querySelectorAll('.contract-actions-dropdown[open]').forEach(other=>{if(other!==node)other.open=false;});
+ const rect=node.getBoundingClientRect(),menu=node.querySelector('.contract-actions-popover');
+ if(menu)node.classList.toggle('drop-up',window.innerHeight-rect.bottom<Math.min(menu.scrollHeight+18,320)&&rect.top>menu.scrollHeight+20);
+},true);
+
 document.addEventListener('input',e=>{
  if(e.target.id==='platformSearch'){ui.platformSearch=e.target.value;const pos=e.target.selectionStart;render();const input=$('#platformSearch');if(input){input.focus();input.setSelectionRange(pos,pos);}return;}
  if(e.target.id==='search'){
@@ -974,7 +984,7 @@ document.addEventListener('change',async e=>{
   if(e.target.id==='externalPackage'){const el=e.target.form.elements.type_option;if(el)el.removeAttribute('required');externalPreview().catch(errors);}
  }
  if(e.target.id==='externalTeacher'&&e.target.form?.id==='externalInterviewForm'){
-  const host=$('#externalSlots');if(host)host.innerHTML=externalSlotPicker(e.target.value);
+  const host=$('#externalSlots');if(host)host.innerHTML=externalSlotPicker(e.target.value,[],Number(e.target.form.elements.weekly_frequency.value));
   const end=e.target.form.elements.end_date;if(end){end.dataset.manuallyEdited='';end.value='';}
   externalPreview().catch(errors);return;
  }
@@ -1084,6 +1094,11 @@ document.addEventListener('submit',async event=>{
  }
  else if(f.id==='contractForm'){
   const lead=f.dataset.lead,i=db.interviews.find(v=>v.lead_id===lead),p=lookup('packages',i.package_id);
+  const chosen=[...f.querySelectorAll('input[name="cal_slot"]:checked')].map(x=>x.value).sort();
+  const initial=(i.calendar_slot_ids||[]).slice().sort();
+  if(chosen.join(',')!==initial.join(',')){
+   if(!await window.campanellaConfirm('Os novos horários substituirão os registrados na Ficha Inicial e passarão a ser os horários oficiais da matrícula. Confirmar?','Confirmar horários oficiais'))return;
+  }
   const plannedTerms=await calendar.applyTerms(f,buildTerms(i,p));
   const snapshot=snapshotFromForm(f,null,plannedTerms);
   if(((p?.kind||'individual')==='dupla')!==(snapshot.kind==='dupla'))throw new Error('Modalidade incompatível com o pacote.');
@@ -1171,11 +1186,9 @@ function formDataExtras(f){const o={};for(const [key,value] of new FormData(f).e
 let externalToken='',externalData=null;
 async function externalAPI(payload){const res=await fetch(`${SUPA_URL}/functions/v1/entrevista`,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({token:externalToken,...payload})});const data=await res.json().catch(()=>({error:'Resposta inválida'}));if(!res.ok)throw new Error(data.error||'Erro no formulário da entrevista');return data;}
 async function externalStart(token){externalToken=token;externalData=null;ui.user=null;$('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Ficha inicial</div></div></div></header><main class="sign-main"><section class="sign-panel"><div class="busy-wheel" aria-hidden="true"></div><h2>Carregando ficha…</h2></section></main></div>`;try{externalData=await externalAPI({action:'lookup'});externalRender();}catch(error){const main=$('.sign-main');if(main)main.innerHTML=`<section class="sign-panel"><h2>Link indisponível</h2><p>${safe(error.message)}</p></section>`;}}
-function externalSlotPicker(teacherId,previous=[]){
- const d=externalData;const slots=(d?.slots||[]).filter(s=>s.teacher_id===teacherId);
- const chosen=new Set(previous);
- const wd=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
- return `<div class="interview-slot-grid">${slots.length?slots.map(s=>`<label class="interview-slot-option"><input type="checkbox" name="interview_slot" value="${safe(s.id)}" ${chosen.has(s.id)?'checked':''}><span><strong>${wd[s.weekday]} · ${safe(String(s.time).slice(0,5))}</strong><small>${Number(s.duration)} minutos</small></span></label>`).join(''):'<p class="form-note">Este professor ainda não cadastrou horários semanais. Peça à escola para configurar a grade.</p>'}</div>`;
+function externalSlotPicker(teacherId,previous=[],limit=0){
+ const slots=(externalData?.slots||[]).filter(s=>s.teacher_id===teacherId);
+ return weeklyPickerMarkup(slots,{name:'interview_slot',selected:previous,limit});
 }
 function externalRender(){
  const d=externalData,i=d.interview||{},p=d.packages.find(x=>x.id===i.package_id)||d.packages[0],teacher=i.teacher_id||d.interviewer.id;
@@ -1189,7 +1202,7 @@ function externalRender(){
  ${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}
  ${input('Data início','start_date',i.start_date||today(),'date')}
  ${input('Data de término do contrato','end_date',i.end_date||'','date')}
- <div class="wide interview-calendar-picker"><h3 class="form-section">Horários do professor</h3><p class="small muted">Selecione os horários semanais. É possível escolher dois dias e horários diferentes.</p><div id="externalSlots">${externalSlotPicker(teacher,i.calendar_slot_ids||[])}</div><button type="button" class="btn mini light" id="externalPreviewBtn">Calcular datas das aulas</button><p class="form-note" id="externalForecast" aria-live="polite">Os horários serão confirmados ao matricular.</p></div>
+ <div class="wide interview-calendar-picker"><h3 class="form-section">Horários do professor</h3><div id="externalSlots">${externalSlotPicker(teacher,i.calendar_slot_ids||[],Number(i.weekly_frequency||p?.weekly_frequency||1))}</div><button type="button" class="btn mini light" id="externalPreviewBtn">Calcular datas das aulas</button><p class="muted" id="externalForecast" aria-live="polite"></p></div>
  ${input('Valor total R$','total_amount',i.total_amount??p?.default_total??'','number')}
  ${input('Parcelas','installments',i.installments||6,'number')}
  ${input('Valor da parcela R$','installment_amount',i.installment_amount||'','number')}
@@ -1224,7 +1237,7 @@ async function externalSave(f){
  if(!Number.isFinite(total)||total<0||!Number.isFinite(part)||part<0||!Number.isInteger(n)||n<1||n>48)throw new Error('Confira o valor total e as parcelas.');
  const data={...d,package_id:p?.id||null,teacher_id:d.teacher_id,slot_ids:selected,lessons_count:count,weekly_frequency:freq,total_amount:total,installments:n,installment_amount:part};
  await externalAPI({action:'save',payload:data});
- $('.sign-main').innerHTML='<section class="sign-panel"><h1>Ficha salva!</h1><p>Os horários escolhidos foram registrados. A administração fará a matrícula e confirmará a disponibilidade.</p><p class="muted">Este link já foi utilizado.</p></section>';
+ $('.sign-main').innerHTML='<section class="sign-panel"><h1>Ficha salva!</h1><p class="muted">Este link já foi utilizado.</p></section>';
 }
 
 let publicToken='',publicData=null;

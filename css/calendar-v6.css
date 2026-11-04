@@ -258,3 +258,48 @@
 .interview-slot-option strong{font-size:13px;color:#1c4141}
 .interview-slot-option small{font-size:11px;color:#748a8e}
 #externalForecast{margin-top:10px;min-height:20px}
+/* V6.6 - visual schedule picker shared by interview, enrollment, student transfer */
+.cal-weekly-picker{margin:14px 0 18px;min-width:0}
+.cal-wpicker-legend{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:11px;color:#55726d;margin-bottom:10px}
+.cal-wpicker-legend span{display:inline-flex;align-items:center;gap:5px}.cal-wpicker-legend strong{margin-left:auto;color:#1b6657}
+.cal-wpicker-dot{width:10px;height:10px;border-radius:3px;display:inline-block;border:1px solid #bdd5ca}.cal-wpicker-dot.available{background:#e4f2ec}.cal-wpicker-dot.selected{background:#14795d}.cal-wpicker-dot.occupied{background:#dde3e5}
+.cal-wpicker-scroll{overflow:auto;max-width:100%;border:1px solid #dce7e4;border-radius:11px;background:#fff}
+.cal-wpicker-inner{min-width:740px}.cal-wpicker-header,.cal-wpicker-body{display:grid;grid-template-columns:60px repeat(7,minmax(0,1fr))}
+.cal-wpicker-header{position:sticky;top:0;z-index:2;background:#f7faf8;border-bottom:1px solid #dce7e4}
+.cal-wpicker-header>*{text-align:center;padding:12px 4px;font-size:11px;color:#285448;border-right:1px solid #e5eeeb}.cal-wpicker-header>span{font-weight:500;color:#839994}
+.cal-wpicker-day,.cal-wpicker-time{position:relative;border-right:1px solid #e5eeeb}
+.cal-wpicker-rule{height:64px;border-bottom:1px solid #e9f0ee}
+.cal-wpicker-time span{display:block;height:64px;text-align:right;padding:0 7px;font-size:10px;color:#839994;transform:translateY(-6px)}
+.cal-wpicker-event{position:absolute;left:3px;right:3px;border-radius:7px;overflow:hidden;background:#e4f2ec;border-left:3px solid #5b9985;z-index:1}
+.cal-wpicker-event>button{height:100%;width:100%;border:0;background:transparent;padding:5px;text-align:left;cursor:pointer;color:#1c5f4e;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:2px}
+.cal-wpicker-event strong{font-size:12px}.cal-wpicker-event small{font-size:9px;line-height:1.2}
+.cal-wpicker-event.is-selected{background:#c2ebd8;border-color:#14795d;box-shadow:inset 0 0 0 1px #14795d}
+.cal-wpicker-event.is-busy{background:#e1e6e7;border-color:#a6b7b9}.cal-wpicker-event.is-busy button{color:#60787a;cursor:not-allowed}
+.cal-wpicker-event.is-locked button{cursor:default}.cal-wpicker-event input[type=checkbox]{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.cal-wpicker-validation{font-size:12px;min-height:18px;margin-top:8px;color:#697e78}.cal-wpicker-validation.is-error{color:#ab5436;font-weight:650}
+.cal-weekly-empty{border:1px dashed #c4d8d0;border-radius:9px;padding:18px;color:#66827a;font-size:13px}
+dialog:has(.cal-weekly-picker){width:min(1120px,calc(100vw - 26px))}
+.cal-student-transfer .cal-weekly-picker{margin-top:10px}
+/* Keep profile action menus above their accordion cards. */
+.cal-profile-accordion:has(.contract-actions-dropdown[open]),.cal-profile-accordion[open]:has(.contract-actions-dropdown[open]),.cal-profile-page:has(.contract-actions-dropdown[open]),.cal-profile-accordion-content:has(.contract-actions-dropdown[open]){overflow:visible!important;z-index:30;position:relative}
+.cal-profile-accordion .contract-actions-dropdown[open]{z-index:100}
+.contract-actions-dropdown.drop-up .contract-actions-popover{top:auto;bottom:calc(100% + 7px)}
+/* V6.6 - fixed-week occupancy and actual-week single lesson rescheduling */
+.cal-editor-event.cal-editor-occupied{background:#cae9de;border-left-color:#168268}
+.cal-editor-event.cal-editor-free{background:#e6eff0;border-left-color:#9ab4b9;color:#4c6971}
+.cal-editor-event .cal-editor-pupil{font-size:10px;font-weight:700;line-height:1.2;color:inherit;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;max-width:100%}
+.cal-roster-links{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0}.cal-roster-links>strong{width:100%;font-size:13px}
+.cal-picker-title{display:flex;align-items:center;justify-content:space-between;gap:12px}.cal-picker-title .form-section{border:0;padding:0;margin:0 0 10px}
+dialog:has(.cal-reschedule-modal){width:min(1120px,calc(100vw - 24px));max-height:94vh}
+.cal-reschedule-toolbar{display:flex;align-items:center;gap:11px;justify-content:center;margin:15px 0}.cal-reschedule-toolbar strong{font-size:13px;color:#2b6356}
+.cal-reschedule-day{position:relative;border-right:1px solid #e5eeeb}.cal-reschedule-day.is-blocked{background:#edf0f1}
+.cal-reschedule-item,.cal-reschedule-busy{position:absolute;left:3px;right:3px;border-radius:7px;overflow:hidden;font-size:10px}
+.cal-reschedule-item{z-index:2}.cal-reschedule-item button{display:flex;flex-direction:column;gap:3px;text-align:left;border:0;padding:5px;width:100%;height:100%;background:transparent;color:inherit;cursor:pointer}
+.cal-reschedule-item strong{font-size:11px}.cal-reschedule-item.available{background:#e4f2ec;border-left:3px solid #5b9985;color:#1a6350}
+.cal-reschedule-item.selected{background:#bee9d6;border:2px solid #14795d;color:#0c6249}
+.cal-reschedule-item.unavailable{background:#e1e6e7;color:#7d9092;border-left:3px solid #becbcf}.cal-reschedule-item.unavailable button{cursor:not-allowed}
+.cal-reschedule-busy{z-index:1;background:#dee5e6;color:#617f83;border-left:3px solid #9aafb0;padding:5px;display:flex;flex-direction:column}
+.cal-reschedule-selection{padding:12px 0;color:#2f6b5c;font-size:13px}
+.cal-reschedule-modal form>.field{display:block;margin-top:5px}
+.interview-actions-menu .contract-actions-popover{min-width:220px}
+@media(max-width:740px){.cal-picker-title{align-items:flex-start;flex-direction:column}.cal-wpicker-legend{gap:7px}.cal-reschedule-toolbar strong{font-size:11px}}

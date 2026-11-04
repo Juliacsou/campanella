@@ -1,9 +1,10 @@
+import {weeklyPickerMarkup,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 // Campanella V6.4 - agenda escolar e docente. Nao depende de AssinAPI / Drive.
 // A autorizacao, a validacao de sobreposicoes e a mudanca de estado acontecem nas RPCs SQL.
 export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg}){
  const weekNames=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
  const shortDays=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
- let state={selected:today(),mode:'week',teacher:'all',snapshot:null,loading:false,inviteToken:null,page:'agenda',settingsTab:'profile',studentId:null,studentProfile:null};
+ let state={selected:today(),mode:'week',teacher:'all',snapshot:null,loading:false,inviteToken:null,page:'agenda',settingsTab:'profile',studentId:null,studentProfile:null,rescheduleLesson:null,rescheduleDate:null,rescheduleSnapshot:null,rescheduleChoice:null,rescheduleNote:''};
  const call=async (method,params={})=>{const {data,error}=await sb.rpc(method,params);if(error)throw error;return data;};
  const iso=(d)=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
  const parse=(s)=>new Date((s||today())+'T12:00:00');
@@ -49,7 +50,10 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(!school())return;
   const args={p_school:school(),...monthBounds(),p_teacher:teacherMode()?ui.teacherId:null};
   state.loading=true;
-  try {state.snapshot=await call('calendar_overview',args);state.snapshotSchool=school();}
+  try {state.snapshot=await call('calendar_overview',args);state.snapshotSchool=school();
+    try{const roster=await call('calendar_weekly_roster',{p_school:school(),p_teacher:teacherMode()?ui.teacherId:null});state.snapshot.roster=Array.isArray(roster)?roster:[];}
+    catch(err){state.snapshot.roster=[];console.warn('Grade de alunos requer SQL V6.6',err.message);}
+  }
   finally{state.loading=false;}
  }
  async function loadSafe(){try{await load();}catch(e){console.warn('Calendario V6 indisponivel ate aplicar SQL 14',e);state.snapshot=null;}}
@@ -172,7 +176,9 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
     const m=asMinutes(slot.time),height=Math.max(17,(Number(slot.duration||60)/60)*70),top=((m-first)/60)*70;
     const ending=m+Number(slot.duration||60);
     const endTime=String(Math.floor(ending/60)).padStart(2,'0')+':'+String(ending%60).padStart(2,'0');
-    return `<button type="button" class="cal-editor-event ${Number(slot.duration||60)<30?'compact':''}" style="top:${top}px;height:${height}px" data-action="calSlotDetails" data-id="${safeAttr(slot.id)}" title="${safeAttr(weekNames[day]+' '+niceTime(slot.time)+' · '+slot.duration+' minutos')}"><strong>${safe(niceTime(slot.time))}–${safe(endTime)}</strong><span>${Number(slot.duration)} min</span></button>`;
+    const pupils=(data().roster||[]).filter(r=>r.slot_id===slot.id);
+    const pupilLabel=pupils.length?pupils.map(r=>safe(r.student_name)).join(' · '):'Disponível';
+    return `<button type="button" class="cal-editor-event ${pupils.length?'cal-editor-occupied':'cal-editor-free'} ${Number(slot.duration||60)<30?'compact':''}" style="top:${top}px;height:${height}px" data-action="calSlotDetails" data-id="${safeAttr(slot.id)}" title="${safeAttr(weekNames[day]+' '+niceTime(slot.time)+' · '+slot.duration+' minutos')}"><strong>${safe(niceTime(slot.time))}–${safe(endTime)}</strong><span>${Number(slot.duration)} min</span><small class="cal-editor-pupil">${pupilLabel}</small></button>`;
    }).join('')}</div></div>`;}).join('')}</div>`;
   return `<div class="cal-editor-scroll"><div class="cal-editor-inner" style="--cal-editor-height:${hours.length*70}px">${head}${body}</div></div>`;
  }
@@ -185,7 +191,8 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const slot=data().slots.find(s=>s.id===id&&s.active);
   if(!slot)throw new Error('Horário não encontrado.');
   const start=asMinutes(slot.time),end=start+Number(slot.duration||60),endTime=String(Math.floor(end/60)).padStart(2,'0')+':'+String(end%60).padStart(2,'0');
-  showModal(`<div class="eyebrow">${slot.slot_date?'Agenda · avulso':'Grade semanal'}</div><h2>${slot.slot_date?escapeDate(slot.slot_date):safe(weekNames[slot.weekday])} · ${safe(niceTime(slot.time))}</h2><div class="detail-grid"><div class="detail-item"><span>Professor</span><strong>${safe(teacherName(slot.teacher_id))}</strong></div><div class="detail-item"><span>Duração</span><strong>${Number(slot.duration)} min</strong></div><div class="detail-item"><span>Início</span><strong>${safe(niceTime(slot.time))}</strong></div><div class="detail-item"><span>Término</span><strong>${safe(endTime)}</strong></div></div><div class="form-footer"><button class="btn ghost" type="button" data-action="close">Fechar</button>${!slot.slot_date?control('calEditSlot','Editar horário',`data-id="${safeAttr(slot.id)}"`,''):''}${control('calRemoveSlot','Desativar horário',`data-id="${safeAttr(slot.id)}"`,'light')}</div>`);
+  const roster=(data().roster||[]).filter(r=>r.slot_id===slot.id);
+  showModal(`<div class="eyebrow">${slot.slot_date?'Agenda · avulso':'Grade semanal'}</div><h2>${slot.slot_date?escapeDate(slot.slot_date):safe(weekNames[slot.weekday])} · ${safe(niceTime(slot.time))}</h2><div class="detail-grid"><div class="detail-item"><span>Professor</span><strong>${safe(teacherName(slot.teacher_id))}</strong></div><div class="detail-item"><span>Duração</span><strong>${Number(slot.duration)} min</strong></div><div class="detail-item"><span>Início</span><strong>${safe(niceTime(slot.time))}</strong></div><div class="detail-item"><span>Término</span><strong>${safe(endTime)}</strong></div></div>${roster.length?`<div class="cal-roster-links"><strong>Alunos neste horário</strong>${roster.map(r=>`<button type="button" class="btn mini light" data-action="calStudentDetails" data-id="${safeAttr(r.contract_id)}">${safe(r.student_name)}</button>`).join('')}</div>`:''}<div class="form-footer"><button class="btn ghost" type="button" data-action="close">Fechar</button>${!slot.slot_date?control('calEditSlot','Editar horário',`data-id="${safeAttr(slot.id)}"`,''):''}${control('calRemoveSlot','Desativar horário',`data-id="${safeAttr(slot.id)}"`,'light')}</div>`);
  }
  function editSlot(id){
   const slot=data().slots.find(s=>s.id===id&&s.active&&s.slot_date===null);
@@ -245,12 +252,18 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  async function reload(){if(!teacherMode())await refresh();await load();if(state.studentId&&state.studentProfile){await openStudent(state.studentId,false);}renderCalendar();}
 
  function getFormPicker(teacherId,startDate,includeManualEnd=false,selectedIds=[],compact=false){
-  if(!teacherId)return `<div class="cal-enrollment" data-teacher=""><p class="form-note">Escolha um professor para visualizar os horários de aula.</p></div>`;
+  if(!teacherId)return `<div class="cal-enrollment" data-teacher=""><p class="muted">Selecione o professor responsável.</p></div>`;
   const slots=data().slots.filter(x=>x.teacher_id===teacherId&&x.active&&x.slot_date===null).sort((a,b)=>a.weekday-b.weekday||a.time.localeCompare(b.time));
-  const chosen=new Set(Array.isArray(selectedIds)?selectedIds:[]);
-  if(!slots.length)return `<div class="cal-enrollment" data-teacher="${safe(teacherId)}" data-no-slots="1"><h3 class="form-section">Calendário V6</h3><p class="form-note">Este professor ainda não cadastrou horários. O contrato poderá continuar pelo fluxo anterior, mas não será incluído no calendário inteligente até que a escola configure a grade.</p></div>`;
-  return `<div class="cal-enrollment" data-teacher="${safe(teacherId)}"><h3 class="form-section">Calendário inteligente de aulas</h3><div class="cal-form-slots">${slots.map(x=>`<label><input type="checkbox" name="cal_slot" value="${x.id}" ${chosen.has(x.id)||(!chosen.size&&slots.length===1)?'checked':''}><span>${weekNames[x.weekday]} às ${safe(x.time)} · ${x.duration} min</span></label>`).join('')}</div>${compact?'':`<label class="field"><span>Início da agenda</span><input type="date" name="cal_start_date" value="${safe(startDate||today())}" required></label>`}${includeManualEnd?`<label class="field"><span>Data final do contrato (opcional: ajuste manual)</span><input type="date" name="cal_manual_end" min="${safe(startDate||today())}"></label>`:''}<div class="cal-preview"><button class="btn mini light" type="button" data-action="calPreview">Calcular última aula</button><span data-cal-result class="form-note">O término será preenchido antes de salvar a matrícula.</span></div></div>`;
+  const chosen=(Array.isArray(selectedIds)?selectedIds:[]).filter(id=>slots.some(s=>s.id===id));
+  if(!chosen.length&&slots.length===1)chosen.push(slots[0].id);
+  if(!slots.length)return `<div class="cal-enrollment" data-teacher="${safeAttr(teacherId)}" data-no-slots="1"><p class="muted">Professor sem horários disponíveis. Cadastre a grade semanal antes de continuar.</p></div>`;
+  const locked=includeManualEnd&&chosen.length>0;
+  const roster=(data().roster||[]).filter(r=>r.teacher_id===teacherId);
+  const conflicts=roster.filter(r=>chosen.includes(r.slot_id));
+  const occupied=roster.map(r=>r.slot_id);
+  return `<div class="cal-enrollment" data-teacher="${safeAttr(teacherId)}" data-original-slots="${safeAttr(chosen.join(','))}"><div class="cal-picker-title"><h3 class="form-section">Horários semanais</h3>${locked?'<button type="button" class="btn mini light" data-action="calUnlockSchedule">Alterar horários</button>':''}</div>${weeklyPickerMarkup(slots,{name:'cal_slot',selected:chosen,occupied,locked})}${conflicts.length?'<p class="notice">Um horário pré-selecionado já está ocupado. Altere a seleção antes de criar a matrícula.</p>':''}${compact?'':`<label class="field"><span>Início da agenda</span><input type="date" name="cal_start_date" value="${safe(startDate||today())}" required></label>`}${includeManualEnd?`<label class="field"><span>Data final do contrato (opcional)</span><input type="date" name="cal_manual_end" min="${safe(startDate||today())}"></label>`:''}<div class="cal-preview"><button class="btn mini light" type="button" data-action="calPreview">Calcular última aula</button><span data-cal-result class="muted" aria-live="polite"></span></div></div>`;
  }
+
  function slotIdForSchedule(item,selectedIds=[]){
   const slot=data().slots.find(s=>selectedIds.includes(s.id)&&s.weekday===Number(item.day)&&niceTime(s.time)===niceTime(item.time));
   return slot?.id||null;
@@ -266,6 +279,8 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(!part||part.dataset.noSlots==='1')throw new Error('Antes de matricular, cadastre os horários semanais do professor e escolha os horários do aluno.');
   const checked=[...part.querySelectorAll('input[name="cal_slot"]:checked')];
   if(!checked.length)throw new Error('Selecione pelo menos um horário na agenda do professor.');
+  const expected=Number(form.elements.weekly_frequency?.value||form.dataset?.weeklyFrequency||terms.weekly_frequency||0);
+  if(expected>0&&checked.length!==expected)throw new Error(`Este pacote permite ${expected} aula(s) por semana. Selecione exatamente ${expected} horário(s).`);
   const slots=checked.map(c=>data().slots.find(s=>s.id===c.value));
   if(slots.some(s=>!s||s.teacher_id!==teacherId))throw new Error('Horário fora da agenda do professor selecionado');
   const start=form.elements.cal_start_date?.value||terms.start_date;
@@ -317,11 +332,41 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  function newBlock(){
   showModal(`<div class="eyebrow">Agenda V6</div><h2>Novo bloqueio</h2><form id="calBlockForm"><div class="form-grid"><label class="field wide"><span>Quem será afetado?</span><select name="teacher_id" ${teacherMode()?'disabled':''}>${teacherOptions(!teacherMode())}</select></label><label class="field"><span>Início</span><input name="from" type="date" value="${today()}" required></label><label class="field"><span>Fim</span><input name="to" type="date" value="${today()}" required></label><label class="field"><span>Hora inicial (opcional)</span><input name="start_time" type="time"></label><label class="field"><span>Hora final (opcional)</span><input name="end_time" type="time"></label><label class="field wide"><span>Motivo</span><select name="reason_preset">${blockReasons.map(x=>`<option value="${x}">${x}</option>`).join('')}</select></label><label class="field wide" data-custom-reason style="display:none"><span>Descreva o motivo</span><input name="reason_custom" maxlength="140" placeholder="Ex.: reunião pedagógica"></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Ver impacto e bloquear</button></div></form>`);
  }
- function reschedule(id){
+ async function reschedule(id){
   const l=lessonById(id);if(!l)throw new Error('Aula não encontrada.');
-  const slots=data().slots.filter(s=>s.teacher_id===l.teacher_id&&s.active&&s.duration===l.duration);
-  showModal(`<div class="eyebrow">Reagendamento individual</div><h2>${safe(l.student_name)} · aula ${l.lesson_number}</h2><form id="calRescheduleForm" data-id="${id}"><div class="form-grid"><label class="field"><span>Nova data</span><input name="date" type="date" min="${today()}" value="${l.date&&l.date>=today()?l.date:today()}" required></label><label class="field"><span>Novo início</span><input name="time" type="time" value="${niceTime(l.time)||'09:00'}" required></label><label class="field wide"><span>Observação (opcional)</span><input name="note" maxlength="300" placeholder="Combinado com o aluno"></label></div><p class="form-note">Horários cadastrados com duração de ${l.duration} min: ${slots.map(s=>`${s.slot_date?dateBR(s.slot_date):weekNames[s.weekday]} ${s.time}`).map(safe).join(' · ')||'Nenhum. Crie disponibilidade avulsa primeiro.'}</p><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Confirmar reagendamento</button></div></form>`);
+  state.rescheduleLesson=l;state.rescheduleDate=l.date&&l.date>=today()?l.date:today();state.rescheduleChoice=null;state.rescheduleNote='';
+  await loadRescheduleWeek();renderRescheduleModal();
  }
+ async function loadRescheduleWeek(){
+  const l=state.rescheduleLesson;if(!l)return;
+  const from=startOfWeek(state.rescheduleDate);
+  state.rescheduleSnapshot=await call('calendar_overview',{p_school:school(),p_teacher:l.teacher_id,p_from:from,p_to:shift(from,6)});
+ }
+ function renderRescheduleModal(){
+  const l=state.rescheduleLesson;if(!l)return;
+  const snapshot=state.rescheduleSnapshot||{slots:[],lessons:[],blocks:[]};
+  const first=startOfWeek(state.rescheduleDate),dates=Array.from({length:7},(_,i)=>shift(first,i));
+  const slots=(snapshot.slots||[]).filter(s=>s.active&&s.teacher_id===l.teacher_id&&Number(s.duration)===Number(l.duration));
+  const lessons=(snapshot.lessons||[]).filter(x=>x.id!==l.id&&x.teacher_id===l.teacher_id&&x.date&&['scheduled','reserved','completed','absent_consumed'].includes(x.status));
+  const blocks=snapshot.blocks||[],rangeStart=7*60,rangeEnd=22*60,oneHour=52,height=(rangeEnd-rangeStart)/60*oneHour;
+  const overlapping=(d,t,duration)=>lessons.some(x=>x.date===d&&asMinutes(x.time)<t+duration&&t<asMinutes(x.time)+Number(x.duration||60));
+  const columns=dates.map(d=>{
+   const day=Number(parse(d).getDay()),full=blocks.some(b=>d>=b.from&&d<=b.to&&(!b.teacher_id||b.teacher_id===l.teacher_id)&&isFullDayBlock(b));
+   const part=blocks.filter(b=>d>=b.from&&d<=b.to&&(!b.teacher_id||b.teacher_id===l.teacher_id)&&!isFullDayBlock(b));
+   const datedSlots=slots.filter(s=>(s.slot_date===d||s.slot_date===null&&s.weekday===day));
+   const events=datedSlots.map(s=>{
+    const t=asMinutes(s.time),top=(t-rangeStart)/60*oneHour,high=Math.max(24,Number(s.duration)/60*oneHour-2);
+    const busy=overlapping(d,t,Number(s.duration)),blocked=full||part.some(b=>t<asMinutes(b.end_time)&&t+Number(s.duration)>asMinutes(b.start_time)),past=d<today(),same=l.date===d&&niceTime(l.time)===niceTime(s.time),available=!busy&&!blocked&&!past&&!same;
+    const chosen=state.rescheduleChoice?.date===d&&state.rescheduleChoice?.time===niceTime(s.time);
+    const label=same?'Atual':busy?'Ocupado':blocked?'Bloqueado':past?'Passado':'Livre';
+    return `<div class="cal-reschedule-item ${chosen?'selected':available?'available':'unavailable'}" style="top:${top}px;height:${high}px"><button type="button" ${!available?'disabled':''} data-action="calRescheduleSelect" data-date="${d}" data-time="${safeAttr(niceTime(s.time))}" aria-pressed="${chosen?'true':'false'}"><strong>${safe(niceTime(s.time))}</strong><small>${safe(label)}</small></button></div>`;
+   }).join('');
+   const busyBlocks=lessons.filter(x=>x.date===d).map(x=>{const t=asMinutes(x.time),top=(t-rangeStart)/60*oneHour,high=Math.max(24,Number(x.duration||60)/60*oneHour-2);return `<div class="cal-reschedule-busy" style="top:${top}px;height:${high}px" title="Ocupado"><span>${safe(niceTime(x.time))}</span><small>Ocupado</small></div>`;}).join('');
+   return `<div class="cal-reschedule-day ${full?'is-blocked':''}" style="height:${height}px">${Array.from({length:(rangeEnd-rangeStart)/60},()=>'<div class="cal-wpicker-rule"></div>').join('')}${busyBlocks}${events}</div>`;
+  }).join('');
+  showModal(`<div class="cal-reschedule-modal"><div class="eyebrow">Reagendamento individual</div><h2>${safe(l.student_name)} · aula ${l.lesson_number}</h2><p class="muted">${safe(teacherName(l.teacher_id))} · ${Number(l.duration)} min · ${l.original_date?dateBR(l.original_date):l.date?dateBR(l.date):'Data pendente'}</p><div class="cal-reschedule-toolbar"><button type="button" class="btn mini ghost" data-action="calReschedulePrev" aria-label="Semana anterior">‹</button><strong>${dateBR(first)} — ${dateBR(shift(first,6))}</strong><button type="button" class="btn mini ghost" data-action="calRescheduleNext" aria-label="Próxima semana">›</button><button type="button" class="btn mini light" data-action="calRescheduleNextMonth">Próximo mês</button></div><form id="calRescheduleForm" data-id="${safeAttr(l.id)}"><div class="cal-wpicker-legend"><span><i class="cal-wpicker-dot available"></i> Livre</span><span><i class="cal-wpicker-dot occupied"></i> Ocupado / bloqueado</span><span><i class="cal-wpicker-dot selected"></i> Selecionado</span></div><div class="cal-wpicker-scroll"><div class="cal-wpicker-inner"><div class="cal-wpicker-header"><span>Horário</span>${dates.map(d=>`<strong>${shortDays[parse(d).getDay()]}<br>${dateBR(d)}</strong>`).join('')}</div><div class="cal-wpicker-body"><div class="cal-wpicker-time" style="height:${height}px">${Array.from({length:(rangeEnd-rangeStart)/60},(_,i)=>`<span>${String(7+i).padStart(2,'0')}:00</span>`).join('')}</div>${columns}</div></div></div><input type="hidden" name="date" value="${safeAttr(state.rescheduleChoice?.date||'')}"><input type="hidden" name="time" value="${safeAttr(state.rescheduleChoice?.time||'')}"><div class="cal-reschedule-selection">${state.rescheduleChoice?`Nova aula: <strong>${dateBR(state.rescheduleChoice.date)} às ${safe(state.rescheduleChoice.time)}</strong>`:'Selecione um horário livre no calendário.'}</div><label class="field"><span>Observação (opcional)</span><input name="note" maxlength="300" value="${safeAttr(state.rescheduleNote)}" placeholder="Combinado com o aluno"></label><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit" ${state.rescheduleChoice?'':'disabled'}>Confirmar reagendamento</button></div></form></div>`);
+ }
+
  function lessonDetail(id){
   const l=data().lessons.find(x=>x.id===id);if(!l)throw new Error('Aula não encontrada');
   showModal(`<div class="eyebrow">Aula ${l.lesson_number} de ${safe(l.total||'?')}</div><h2>${safe(l.student_name)}</h2><div class="detail-grid"><div class="detail-item"><span>Data</span><strong>${escapeDate(l.date)}</strong></div><div class="detail-item"><span>Horário</span><strong>${safe(niceTime(l.time)||'A definir')}</strong></div><div class="detail-item"><span>Professor</span><strong>${safe(teacherName(l.teacher_id))}</strong></div><div class="detail-item"><span>Status</span><strong>${safe(textStatus(l.status))}</strong></div></div><div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button>${['scheduled','needs_reschedule'].includes(l.status)?control('calReschedule','Reagendar',`data-id="${l.id}"`):''}${l.status==='scheduled'?control('calRecord','Registrar aula',`data-id="${l.id}"`,''):''}</div>`);
@@ -386,11 +431,14 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  }
 
  function studentSlotChoices(teacher,selectedIds=[]){
-  const slots=data().slots.filter(sl=>sl.teacher_id===teacher&&sl.active&&sl.slot_date===null)
-   .sort((a,b)=>a.weekday-b.weekday||niceTime(a.time).localeCompare(niceTime(b.time)));
-  const selected=new Set(selectedIds);
-  return slots.length?slots.map(slot=>`<label><input type="checkbox" name="cal_student_slot" value="${safeAttr(slot.id)}" ${selected.has(slot.id)?'checked':''}><span>${weekNames[slot.weekday]} às ${safe(niceTime(slot.time))} · ${Number(slot.duration)} min</span></label>`).join(''):'<p class="muted">Esse professor ainda não possui horários semanais ativos. Cadastre um horário antes de transferir o aluno.</p>';
+  const slots=data().slots.filter(sl=>sl.teacher_id===teacher&&sl.active&&sl.slot_date===null);
+  const oldId=state.studentProfile?.id;
+  const booked=(data().roster||[]).filter(r=>r.teacher_id===teacher&&r.student_id!==oldId).map(r=>r.slot_id);
+  const profile=state.studentProfile;
+  const count=profile?.slot_ids?.length||profile?.contracts?.find(c=>c.status==='signed')?.slots?.length||1;
+  return weeklyPickerMarkup(slots,{name:'cal_student_slot',selected:selectedIds,occupied:booked,limit:count});
  }
+
  function editStudentSlots(id){
   const profile=state.studentProfile;
   if(!profile||profile.id!==id)throw new Error('Abra o perfil do aluno antes de alterar os horários.');
@@ -400,8 +448,8 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const teachers=data().teachers.filter(t=>t.active||t.id===teacher).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
   const teacherField=canAdmin()?`<label class="field wide"><span>Professor responsável</span><select name="cal_student_teacher" required>${teachers.map(t=>`<option value="${safeAttr(t.id)}" ${t.id===teacher?'selected':''} ${t.active?'':'disabled'}>${safe(t.name)}</option>`).join('')}</select></label>`:`<div class="field wide"><span>Professor responsável</span><strong>${safe(teacherName(teacher))}</strong></div><input type="hidden" name="cal_student_teacher" value="${safeAttr(teacher)}">`;
   showModal(`<div class="eyebrow">Aluno · Agenda semanal</div><h2>Alterar professor e horários de ${safe(profile.name)}</h2>
-  <form id="calStudentSlotsForm" data-id="${safeAttr(id)}" data-teacher="${safeAttr(teacher)}"><div class="form-grid">${teacherField}</div><div class="form-section"><h3>Horários semanais do professor</h3><div class="cal-form-slots" id="calStudentSlotChoices">${studentSlotChoices(teacher,profile.slot_ids||[])}</div></div>
-  <p class="form-note">A mudança atualizará as aulas futuras deste aluno. Aulas realizadas e o contrato assinado permanecerão no histórico. Se mudar de professor, reagendamentos individuais futuros ficarão pendentes de nova combinação.</p>
+  <form id="calStudentSlotsForm" data-id="${safeAttr(id)}" data-teacher="${safeAttr(teacher)}"><div class="form-grid">${teacherField}</div><div class="form-section"><h3>Horários semanais do professor</h3><div class="cal-student-transfer" id="calStudentSlotChoices">${studentSlotChoices(teacher,profile.slot_ids||[])}</div></div>
+  <p class="muted">Apenas aulas futuras serão alteradas. O histórico e os contratos assinados serão preservados.</p>
   <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Revisar alteração</button></div></form>`);
  }
 
@@ -451,6 +499,21 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(name==='calCancelBlock'){if(!await window.campanellaConfirm('Cancelar este bloqueio? As aulas pendentes continuarão aguardando reagendamento individual.'))return;await call('calendar_cancel_block',{p_block:id});toast('Bloqueio cancelado. Aulas pendentes preservadas.');return reload();}
   if(name==='calRevokeTeacher'){if(!await window.campanellaConfirm('Revogar o acesso docente? O professor perderá o acesso à agenda, sem apagar aulas ou seu cadastro.'))return;await call('calendar_revoke_teacher_access',{p_school:school(),p_teacher:id});toast('Acesso revogado.');return refresh();}
   if(name==='calRemoveSlot'){if(!await window.campanellaConfirm('Desativar este horário? Horários com aulas futuras precisarão ser resolvidos antes.'))return;await call('calendar_deactivate_slot',{p_slot:id});toast('Horário desativado.');return reload();}
+  if(name==='calUnlockSchedule'){
+   const holder=element.closest('.cal-enrollment'),picker=holder?.querySelector('.cal-weekly-picker');
+   if(picker){picker.dataset.locked='0';picker.querySelectorAll('[data-weekly-slot-toggle]').forEach(b=>{if(!b.parentElement.classList.contains('is-busy'))b.disabled=false;b.parentElement.classList.remove('is-locked');});element.remove();}
+   return;
+  }
+  if(name==='calRescheduleSelect'){
+   state.rescheduleNote=element.closest('form')?.elements.note?.value||'';
+   state.rescheduleChoice={date:element.dataset.date,time:element.dataset.time};
+   renderRescheduleModal();return;
+  }
+  if(['calRescheduleNext','calReschedulePrev','calRescheduleNextMonth'].includes(name)){
+   state.rescheduleNote=element.closest('.cal-reschedule-modal')?.querySelector('[name="note"]')?.value||'';
+   state.rescheduleDate=name==='calRescheduleNextMonth'?monthShift(state.rescheduleDate,1):shift(state.rescheduleDate,name==='calRescheduleNext'?7:-7);state.rescheduleChoice=null;
+   await loadRescheduleWeek();renderRescheduleModal();return;
+  }
   if(name==='calMode'){state.mode=element.dataset.mode;return renderCalendar();}
   if(name==='calToday'){state.selected=today();await load();return renderCalendar();}
   if(name==='calPrev'||name==='calNext'){const step=name==='calNext'?1:-1;state.selected=state.mode==='day'?shift(state.selected,step):state.mode==='week'?shift(state.selected,step*7):monthShift(state.selected,step);await load();return renderCalendar();}
@@ -499,7 +562,8 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
    const teacherChanged=newTeacher!==oldTeacher;
    if(teacherChanged&&!canAdmin())throw new Error('Somente o administrador pode transferir alunos para outro professor.');
    const selected=[...f.querySelectorAll('input[name="cal_student_slot"]:checked')].map(el=>el.value);
-   if(!selected.length)throw new Error('Escolha pelo menos um horário do professor selecionado.');
+   const expectedCount=profile.slot_ids?.length||profile.contracts?.find(c=>c.status==='signed')?.slots?.length||1;
+   if(selected.length!==expectedCount)throw new Error(`Selecione ${expectedCount} horário(s) semanais, conforme o pacote atual.`);
    if(!teacherChanged&&selected.length===(profile.slot_ids||[]).length&&selected.every(v=>(profile.slot_ids||[]).includes(v))){closeModal();return;}
    const message=teacherChanged?
     `Transferir ${profile.name} de ${teacherName(oldTeacher)} para ${teacherName(newTeacher)}? As aulas futuras regulares passarão para os horários escolhidos do novo professor. Aulas já realizadas continuarão associadas ao professor anterior e os reagendamentos individuais futuros precisarão ser combinados novamente. Os contratos assinados não serão alterados.`:
@@ -546,7 +610,9 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
    closeModal();toast(`Bloqueio criado. ${result.pending} aula(s) para reagendar individualmente.`);return reload();
   }
   if(f.id==='calRescheduleForm'){
-   const v=f.elements;await call('calendar_reschedule',{p_lesson:f.dataset.id,p_date:v.date.value,p_time:v.time.value,p_note:v.note.value});
+   const v=f.elements;if(!v.date.value||!v.time.value||!state.rescheduleChoice)throw new Error('Selecione um horário livre no calendário.');
+   if(!await window.campanellaConfirm(`Reagendar esta aula para ${dateBR(v.date.value)} às ${v.time.value}?`, 'Confirmar nova aula'))return;
+   await call('calendar_reschedule',{p_lesson:f.dataset.id,p_date:v.date.value,p_time:v.time.value,p_note:v.note.value});
    closeModal();toast('Aula reagendada individualmente.');return reload();
   }
   if(f.id==='calRecordForm'){

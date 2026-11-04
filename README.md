@@ -1,3 +1,11 @@
+# Campanella V6.6 — Calendários visuais e ações integradas
+
+**Versão atual para homologação: V6.6.** Esta versão usa como base a V6.5 e exige que as migrações anteriores e a Edge Function `entrevista` atualizada da V6.5 já estejam instaladas. Consulte [`CHANGELOG_V6_6.md`](CHANGELOG_V6_6.md).
+
+**Entrega:** o ZIP contém somente o projeto, sem migrações SQL. Execute o `Campanella_V6_6_migracao.sql` entregue separadamente após backup do Supabase; ele acrescenta a consulta segura de alunos na grade semanal, sem modificar matrículas ou contratos existentes. Teste localmente antes de publicar no GitHub.
+
+---
+
 # Campanella V6.5 — Entrevistas com calendário integrado
 
 A atualização V6.5 separa o **professor entrevistador** do **professor responsável pelo aluno** e permite escolher dois ou mais horários recorrentes diretamente da grade deste último. Corrige também a incompatibilidade entre o formulário público da ficha e a Edge Function de entrevista.
@@ -8,7 +16,7 @@ A atualização V6.5 separa o **professor entrevistador** do **professor respons
 
 # Campanella — contexto técnico do projeto
 
-**Versão em homologação: V6.4 (perfil por seções e transferência docente).** Requer as migrações V6.0, V6.1 e V6.3 já instaladas e a **migração V6.4 fornecida em SQL separado**. Não publicar para escolas reais antes da homologação local das permissões e fluxos do Supabase.
+**Histórico da V6.4:** perfil por seções e transferência docente. Requer as migrações V6.0, V6.1 e V6.3 e a migração V6.4 entregue separadamente. Os arquivos históricos permanecem descritos abaixo; não publicar sem homologação.
 
 ## Produto atual
 

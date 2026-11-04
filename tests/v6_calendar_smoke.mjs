@@ -30,8 +30,8 @@ assert.ok(!sql.includes('CAMPANELLA_SIGNATURES_ENABLED'),'migracao nao reativa a
 assert.ok(app.includes('const EXTERNAL_SIGNATURE_ENABLED=false'),'AssinAPI e Drive desativados no frontend');
 assert.ok(app.includes('calendar.applyTerms(f'),'calculo antes de gerar termos');
 assert.ok(app.includes('calendar.autoPreview'),'formulario preenche automaticamente');
-assert.ok(html.includes('calendar-v6.css?v=6.2.0'),'stylesheet ligado');
-assert.ok(html.includes('app.js?v=6.2.0'),'versao publicada em cache');
+assert.ok(html.includes('calendar-v6.css?v=6.6.0'),'stylesheet ligado');
+assert.ok(html.includes('app.js?v=6.6.0'),'versao publicada em cache');
 assert.equal((sql.match(/\$\$/g)||[]).length%2,0,'SQL dollar quoting balanceado');
 }
 
