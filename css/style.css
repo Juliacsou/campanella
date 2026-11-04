@@ -298,3 +298,12 @@ dialog:has(.template-edit-modal) #modal-body{padding:29px 31px 27px}
 @keyframes busy-turn{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.busy-wheel{animation-duration:2s}}
 @media(max-width:650px){.contract-actions-popover{min-width:215px;}}
+
+.modal-alert-copy{white-space:pre-wrap;max-height:50vh;overflow:auto}
+
+/* V6.1 - confirmacoes internas, sem dialogos nativos de confirmacao */
+.camp-app-dialog{border:1px solid #dbe8e1;border-radius:17px;padding:0;max-width:min(470px,calc(100vw - 32px));width:100%;color:#213735;box-shadow:0 20px 55px #10292742}
+.camp-app-dialog::backdrop{background:#102b3299;backdrop-filter:blur(2px)}
+.camp-app-dialog-content{padding:24px;display:grid;gap:18px}
+.camp-app-dialog-content .modal-intro{font-size:13px;line-height:1.5;color:#536660}
+.camp-app-dialog-content .form-footer{margin:0;justify-content:flex-end}

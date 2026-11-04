@@ -163,11 +163,11 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    case 'crmScheduleInterview':return appointmentForm(id);
    case 'crmCancelInterview':return cancelInterviewForm(id);
    case 'crmCompleteInterview':return completeInterviewForm(id);
-   case 'crmNoShow':{const a=(db.crm_appointments||[]).find(z=>z.id===id);if(!a||!confirm('Registrar que a pessoa não compareceu à entrevista?'))return;await save('crm_appointments',{state:'no_show',finished_at:new Date().toISOString()},id);await log(a.lead_id,'appointment','Não compareceu à entrevista',dateTime(a.scheduled_at));await save('leads',{crm_stage:'marcar_entrevista'},a.lead_id);await reloadReopen(a.lead_id);toast('Não comparecimento registrado.');return;}
+   case 'crmNoShow':{const a=(db.crm_appointments||[]).find(z=>z.id===id);if(!a||!await window.campanellaConfirm('Registrar que a pessoa não compareceu à entrevista?'))return;await save('crm_appointments',{state:'no_show',finished_at:new Date().toISOString()},id);await log(a.lead_id,'appointment','Não compareceu à entrevista',dateTime(a.scheduled_at));await save('leads',{crm_stage:'marcar_entrevista'},a.lead_id);await reloadReopen(a.lead_id);toast('Não comparecimento registrado.');return;}
    case 'crmMoveStage':{const select=document.querySelector('.crm-side-card [name="crm_stage"]');if(!select)throw new Error('Etapa não selecionada');const l=lookup('leads',id);if(!l||l.status==='convertido')throw new Error('Lead matriculado não pode voltar ao funil');return updateLead(id,{crm_stage:select.value},'Etapa alterada',`${CRM_STAGES[l.crm_stage]} → ${CRM_STAGES[select.value]}`);}
    case 'crmWon':return archiveForm(id,'won');
    case 'crmLost':return archiveForm(id,'lost');
-   case 'crmReopen':if(!confirm('Reabrir este lead e retorná-lo ao funil principal?'))return;return updateLead(id,{crm_outcome:'open',crm_archived_at:null,crm_loss_reason:null,status:'novo'},'Oportunidade reaberta');
+   case 'crmReopen':if(!await window.campanellaConfirm('Reabrir este lead e retorná-lo ao funil principal?'))return;return updateLead(id,{crm_outcome:'open',crm_archived_at:null,crm_loss_reason:null,status:'novo'},'Oportunidade reaberta');
    case 'crmStartFiche':{const l=lookup('leads',id);if(l?.status==='convertido')throw new Error('Aluno já matriculado');if(!l.ficha_iniciada_at)await save('leads',{ficha_iniciada_at:new Date().toISOString(),ficha_status:'open'},id);await refresh();return ficheCreatedPopup(id);}
    case 'crmGoFiche':{const l=lookup('leads',id);closeModal();ui.page='interviews';ui.search=l.name.toLowerCase();return refresh();}
    case 'crmImport':return importHelp();

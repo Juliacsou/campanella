@@ -11,8 +11,9 @@ for(const name of ['leads','packages','interviews','students','contracts','teach
  assert.ok(migration.includes(`'${name}'`),`Tabela ausente da migracao: ${name}`);
 for(const sql of ['public.is_school_member','public.is_school_admin','public.manage_school_member','public.remove_school_member','public.finalize_enrollment','prevent_school_transfer','FOREIGN KEY(school_id,','campanella_template_school_select'])
  assert.ok(migration.includes(sql),`Regra SQL ausente: ${sql}`);
-for(const s of [".eq('school_id',permit.school_id)","school_id:permit.school_id"])
- assert.ok(edgeInterview.includes(s),'Entrevista externa nao filtra escola: '+s);
+// V6.1: entrevista usa token unico em vez de codigo do professor; vincula escola, lead e docente pelo convite.
+for(const s of [".eq('token_hash', tokenHash)",".eq('id', invite.school_id)",".eq('id', invite.lead_id)",".eq('id', invite.teacher_id)"])
+ assert.ok(edgeInterview.includes(s),'Entrevista externa nao restringe o convite a escola, aluno e docente: '+s);
 for(const s of ["select('id,school_id,kind", ".eq('school_id',c.school_id)"])
  assert.ok(edgeSignature.includes(s),'Assinatura externa nao filtra escola: '+s);
 for(const s of ['async function loadSchools','async function switchSchool','function schoolsView','account-popover','activate_school_license',"{onConflict:'school_id'}", "ui.schoolId+'/'+crypto.randomUUID()"])

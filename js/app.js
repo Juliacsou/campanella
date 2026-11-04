@@ -3,6 +3,7 @@ import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
 import {createCRM} from './crm.js';
+import {createCalendar} from './calendar-v6.js';
 import {parseCSV,isoDate} from './csv.js';
 import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js';
 // Campanella V4 - multi-escolas, licencas e administracao.
@@ -11,10 +12,10 @@ import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,only
 const SUPA_URL = 'https://tyxmskdgbnrcaacwwkhi.supabase.co';
 const KEY = 'sb_publishable_Q9UBmlwOl9S5Ew7UwLn_rw_U-iHrCqF';
 const sb=createClient(SUPA_URL,KEY);
-// Campanella V5.6: assinatura externa e backup Google sao experimentais e ficam desligados.
+// Campanella V6: calendario interno. As integracoes de assinaturas/Drive seguem suspensas.
 const EXTERNAL_SIGNATURE_ENABLED=false;
 const db={leads:[],interviews:[],packages:[],students:[],contracts:[],profiles:[],teachers:[],contract_types:[],school_settings:[],interview_invites:[],external_signatures:[],crm_followups:[],crm_appointments:[],crm_activities:[]};
-const ui={page:'dashboard',user:null,role:null,schoolId:null,schools:[],memberships:[],schoolMembers:[],isPlatformAdmin:false,schoolLicense:null,licenseActive:false,licenses:[],platformSchools:[],platformProfiles:[],platformKeys:[],platformEvents:[],platformRenewalKeys:[],platformSearch:'',platformFilter:'all',newlyIssuedKey:null,driveConnection:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',contractTab:'current',interviewTab:'current'};
+const ui={page:'dashboard',user:null,role:null,teacherId:null,teacherSchoolName:null,teacherAccess:[],schoolId:null,schools:[],memberships:[],schoolMembers:[],isPlatformAdmin:false,schoolLicense:null,licenseActive:false,licenses:[],platformSchools:[],platformProfiles:[],platformKeys:[],platformEvents:[],platformRenewalKeys:[],platformSearch:'',platformFilter:'all',newlyIssuedKey:null,driveConnection:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',studentId:null,studentReturnPage:'directory',contractTab:'current',interviewTab:'current'};
 const errors=e=>{console.error(e);toast(e?.message||String(e),true)};
 const canAdmin=()=>ui.role==='admin';
 let refreshVersion=0;
@@ -63,12 +64,33 @@ async function confirmExternalSignature(){
 function toast(msg,bad=false){const el=$('#toast');el.textContent=msg;el.style.background=bad?'#8a332d':'#163b38';el.classList.add('visible');clearTimeout(toast.timeout);toast.timeout=setTimeout(()=>el.classList.remove('visible'),3900)}
 function showModal(content){$('#modal-body').innerHTML=content;if(!$('#modal').open)$('#modal').showModal();}
 function closeModal(){$('#modal').close()}
+function escapeHtmlText(v){return safe(v==null?'':String(v)).replace(/\n/g,'<br>');}
+function toModalMessage(message){return Array.isArray(message)?message.join('\n'):String(message||'');}
+function independentDialog(body,buttons){
+ return new Promise(resolve=>{
+  const d=document.createElement('dialog');d.className='camp-app-dialog';
+  d.innerHTML=`<div class="camp-app-dialog-content">${body}<div class="form-footer">${buttons.map((b,i)=>`<button type="button" class="btn ${b.secondary?'ghost':''}" data-choice="${i}">${safe(b.label)}</button>`).join('')}</div></div>`;
+  const finish=v=>{if(d.open)d.close();d.remove();resolve(v)};
+  d.addEventListener('cancel',e=>{e.preventDefault();finish(false)},{once:true});
+  d.addEventListener('click',e=>{const el=e.target.closest('[data-choice]');if(el)finish(buttons[+el.dataset.choice].value)});
+  document.body.append(d);d.showModal();
+ });
+}
+function confirmModal(message,title='Confirmar ação',confirmLabel='Confirmar',cancelLabel='Cancelar'){
+ return independentDialog(`<h2>${safe(title)}</h2><p class="modal-intro modal-alert-copy">${escapeHtmlText(toModalMessage(message))}</p>`,[{label:cancelLabel,value:false,secondary:true},{label:confirmLabel,value:true}]);
+}
+function alertModal(message,title='Aviso',buttonLabel='Entendi'){
+ return independentDialog(`<h2>${safe(title)}</h2><div class="notice modal-alert-copy">${escapeHtmlText(toModalMessage(message))}</div>`,[{label:buttonLabel,value:true}]);
+}
+window.campanellaConfirm=confirmModal;
+window.campanellaAlert=alertModal;
 const heading=(eyebrow,title,sub,action='')=>`<header class="page-head"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p class="leadline">${sub}</p></div>${action}</header>`;
 const card=(title,body,extra='')=>`<section class="panel"><div class="panel-head"><h2>${title}</h2>${extra}</div>${body}</section>`;
 const empty=text=>`<div class="empty"><span class="empty-symbol">✳</span>${safe(text)}</div>`;
 const row=(columns)=>`<tr>${columns.map(c=>`<td>${c}</td>`).join('')}</tr>`;
 function table(headers,rows,placeholder='Nenhum registro encontrado'){return `<div class="table-wrap">${rows.length?`<table class="data-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`:empty(placeholder)}</div>`;}
 const crm=createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy:()=>appBusy});
+const calendar=createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg:(name,size)=>ico(name,size)});
 // SVGs internos: nao dependem de fontes de icones ou CDNs adicionais.
 const ICONS={
  dashboard:'<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
@@ -93,6 +115,7 @@ const ICONS={
  trash:'<path d="M3 6h18m-2 0-1 15H6L5 6m3 0V3h8v3m-6 4v7m4-7v7"/>',
  restore:'<path d="M3 12a9 9 0 1 0 3-6m-3-3v6h6"/>',
  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
  key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 10-10m-4 0h4v4m-5 2 2 2"/>'
 };
 const ico=(name,size=18)=>`<svg class="camp-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||ICONS.school}</svg>`;
@@ -100,16 +123,16 @@ const navGroups=[
  ['Início',[['dashboard','dashboard','Visão geral']]],
  ['Relacionamento',[['leads','leads','CRM · Leads'],['interviews','interviews','Fichas iniciais']]],
  ['Alunos',[['directory','directory','Alunos'],['students','students','Matrículas']]],
- ['Equipe e ensino',[['teachers','teachers','Professores']]],
+ ['Equipe e ensino',[['teachers','teachers','Professores'],['calendar','calendar','Calendário de aulas']]],
  ['Serviços e contratos',[['packages','packages','Pacotes'],['contracts','contracts','Contratos'],['templates','templates','Modelos de contratos']]]
 ];
 const nav=navGroups.flatMap(g=>g[1]);
 const displayName=()=>ui.user?.user_metadata?.full_name?.trim()||ui.user?.email?.split('@')[0]||'Minha conta';
 const avatarInitials=()=>displayName().split(/\s+/).slice(0,2).map(x=>x.charAt(0)).join('').toUpperCase();
 function accountMenu(){return `<details class="account-popover"><summary class="account-trigger"><span class="account-avatar">${safe(avatarInitials())}</span><span class="account-person"><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></span>${ico('chevron',15)}</summary><div class="account-dropdown" role="group" aria-label="Menu de conta"><div class="account-dropdown-top"><span class="account-avatar">${safe(avatarInitials())}</span><div><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></div></div><div class="account-dropdown-title">Alternar escola</div>${ui.schools.map(s=>`<button class="account-option" data-action="selectSchool" data-id="${safe(s.id)}"><span class="account-option-icon">${ico('school',17)}</span><span class="account-option-label">${safe(s.name)}${s.deletion_requested_at?'<small>Exclusão agendada</small>':''}</span>${ui.schoolId===s.id?ico('check',16):''}</button>`).join('')||'<p class="account-hint">Nenhuma escola cadastrada.</p>'}<button class="account-option account-create" data-action="showActivation">${ico('plus',17)}<span>Ativar outra escola</span></button><div class="account-divider"></div><button class="account-option" data-action="navigate" data-page="profile">${ico('profile',17)}<span>Meu perfil</span></button>${ui.schoolId?`<button class="account-option" data-action="navigate" data-page="settings">${ico('settings',17)}<span>Configurações da escola</span></button>`:''}<button class="account-option" data-action="navigate" data-page="schools">${ico('school',17)}<span>Minhas escolas</span></button>${ui.isPlatformAdmin?`<button class="account-option" data-action="navigate" data-page="licenses">${ico('licenses',17)}<span>Administração geral</span></button>`:''}<div class="account-divider"></div><button class="account-option account-logout" data-action="logout">${ico('logout',17)}<span>Sair da conta</span></button></div></details>`;}
-function shell(){const activeName=ui.page==='schools'?'Minhas escolas':ui.page.startsWith('profile')?'Meu perfil':ui.page.startsWith('settings')?'Configurações da escola':nav.find(x=>x[0]===ui.page)?.[2]||'Visão geral';return `<div class="shell"><aside class="sidebar"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Gestão de escolas</div></div></div><div class="sidebar-current"><span class="sidebar-current-label">ESCOLA ATIVA</span><span class="sidebar-current-name">${ico('school',16)} ${safe(currentSchool().name||'Nenhuma escola')}</span></div><div class="sidebar-menu">${navGroups.map(([title,links])=>`<section class="nav-section"><div class="nav-group">${title}</div><nav class="nav">${links.map(([key,iconName,label])=>`<button class="nav-btn ${ui.page===key?'active':''}" data-action="navigate" data-page="${key}"><span class="nav-ico">${ico(iconName,18)}</span><span>${label}</span></button>`).join('')}</nav></section>`).join('')}</div><div class="sidebar-bottom">${accountMenu()}</div></aside><div class="workspace"><div class="topbar"><span class="subtle">${safe(currentSchool().name)} <b> / ${safe(activeName)}</b></span><div class="topbar-right"><span class="topbar-chip">${ico('school',14)} ${safe(roleName(ui.role))}</span></div></div><main class="content" id="pageContent"></main></div></div>`;}
+function shell(){const activeName=ui.page==='student-profile'?'Perfil do aluno':ui.page==='schools'?'Minhas escolas':ui.page.startsWith('profile')?'Meu perfil':ui.page.startsWith('settings')?'Configurações da escola':nav.find(x=>x[0]===ui.page)?.[2]||'Visão geral';return `<div class="shell ${ui.page==='calendar'?'cal-admin-shell':''}"><aside class="sidebar"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Gestão de escolas</div></div></div><div class="sidebar-current"><span class="sidebar-current-label">ESCOLA ATIVA</span><span class="sidebar-current-name">${ico('school',16)} ${safe(currentSchool().name||'Nenhuma escola')}</span></div><div class="sidebar-menu">${navGroups.map(([title,links])=>`<section class="nav-section"><div class="nav-group">${title}</div><nav class="nav">${links.map(([key,iconName,label])=>`<button class="nav-btn ${ui.page===key?'active':''}" data-action="navigate" data-page="${key}"><span class="nav-ico">${ico(iconName,18)}</span><span>${label}</span></button>`).join('')}</nav></section>`).join('')}</div><div class="sidebar-bottom">${accountMenu()}</div></aside>${ui.page==='calendar'?calendar.adminNav():''}<div class="workspace"><div class="topbar"><span class="subtle">${safe(currentSchool().name)} <b> / ${safe(activeName)}</b></span><div class="topbar-right"><span class="topbar-chip">${ico('school',14)} ${safe(roleName(ui.role))}</span></div></div><main class="content" id="pageContent"></main></div></div>`;}
 function currentSchool(){return ui.schools.find(x=>x.id===ui.schoolId)||{};}
-function roleName(role){return role==='admin'?'Administrador':'Sem acesso';}
+function roleName(role){return role==='admin'?'Administrador':role==='teacher'?'Professor':'Sem acesso';}
 function schoolLicense(id){return ui.licenses.find(l=>l.school_id===id)||null;}
 function licenseSummary(l){if(!l)return '<span class="pill pill-void">Sem licença</span>';if(l.suspended_at)return '<span class="pill pill-void">Suspensa</span>';if(l.expires_on&&l.expires_on<today())return '<span class="pill pill-void">Vencida</span>';return `<span class="pill pill-signed">${l.kind==='cortesia'?'Cortesia':'Ativa'}</span>`;}
 function fullSchoolStatus(s){if(s?.deletion_requested_at)return '<span class="pill pill-void">Exclusão agendada</span>';return licenseSummary(schoolLicense(s?.id));}
@@ -141,7 +164,7 @@ async function switchSchool(id){
  await refresh();
 }
 
-function login(){return `<div class="login-wrap"><div class="login-art"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">School management</div></div></div><div><h1>Uma escola mais organizada. Uma experiência mais humana.</h1><p>Leads, entrevistas, matrículas e contratos em um só lugar.</p></div><div class="small">© Campanella · Plataforma interna</div></div><div class="login-area"><div class="login-card"><div class="eyebrow">Acesso da equipe</div><h2>Bem-vindo de volta</h2><p class="muted">Entre com seu e-mail e senha.</p><form id="loginForm" style="margin-top:28px;display:grid;gap:16px">${input('E-mail','email','','email')}${input('Senha','password','','password')}<button class="btn">Entrar no painel →</button></form><button type="button" class="auth-text-action" data-action="showForgotPassword">Esqueci minha senha</button><button type="button" class="auth-text-action" data-action="showSignup">Criar minha conta</button><p class="small muted" style="margin-top:22px">O cadastro é gratuito. É necessária uma chave para ativar cada escola.</p></div></div></div>`;}
+function login(){return `<div class="login-wrap"><div class="login-art"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">School management</div></div></div><div><h1>Uma escola mais organizada. Uma experiência mais humana.</h1><p>Leads, entrevistas, matrículas e contratos em um só lugar.</p></div><div class="small">© Campanella · Plataforma interna</div></div><div class="login-area"><div class="login-card"><div class="eyebrow">Acesso da equipe</div><h2>Bem-vindo de volta</h2><p class="muted">Entre com seu e-mail e senha.</p><form id="loginForm" style="margin-top:28px;display:grid;gap:16px">${input('E-mail','email','','email')}${input('Senha','password','','password')}<button class="btn">Entrar no painel →</button></form><button type="button" class="auth-text-action" data-action="showForgotPassword">Esqueci minha senha</button><button type="button" class="auth-text-action" data-action="showSignup">Criar conta de administrador</button><p class="small muted" style="margin-top:22px">O cadastro é gratuito. É necessária uma chave para ativar cada escola.</p></div></div></div>`;}
 
 function signupPage(){return authWrap(`<div class="eyebrow">Nova conta</div><h2>Cadastre-se no Campanella</h2><p class="muted">A conta é pessoal e poderá administrar várias escolas. Para criar cada escola você precisará de uma chave própria.</p><form id="signupForm" class="auth-form">${input('Seu nome completo','name','','text')}${input('E-mail','email','','email')}${input('Senha (mínimo 8 caracteres)','password','','password')}${input('Confirme a senha','password_confirm','','password')}<button class="btn">Criar conta →</button></form><button type="button" class="auth-text-action" data-action="backLogin">Já tenho conta · entrar</button>`);}
 function signupSuccessPage(){return authWrap(`<div class="eyebrow">Conta cadastrada</div><h2>Confirme seu e-mail</h2><p class="muted">Enviamos um link de confirmação, caso o cadastro tenha sido aceito. Após confirmar, entre normalmente e informe sua chave de ativação.</p><button type="button" class="btn" data-action="backLogin">Voltar ao login</button>`);}
@@ -177,20 +200,22 @@ async function initialize(){
  if(location.hash.startsWith('#pre-matricula/'))return publicStart(location.hash.slice(15));
  if(location.hash.startsWith('#assinar/'))return publicStart(location.hash.slice(9));
  if(location.hash.startsWith('#entrevista/'))return externalStart(location.hash.slice('#entrevista/'.length));
+ if(location.hash.startsWith('#professor/')){const {data:{session}}=await sb.auth.getSession();return calendar.inviteLanding(location.hash.slice('#professor/'.length),session);}
  if(passwordRecoveryRoute()){
   const {data:{session}}=await sb.auth.getSession();ui.user=null;
   $('#app').innerHTML=session?newPasswordPage():forgotPasswordPage('O link de recuperação está inválido ou expirou. Solicite um novo e-mail.');return;
  }
  const {data:{session},error}=await sb.auth.getSession();if(error)throw error;
  if(!session){ui.user=null;ui.schoolId=null;$('#app').innerHTML=login();return;}
- ui.user=session.user;const {data:isMaster,error:masterError}=await sb.rpc('is_platform_admin');if(masterError)throw masterError;ui.isPlatformAdmin=!!isMaster;
+ ui.user=session.user;await calendar.processPendingInvite();const {data:isMaster,error:masterError}=await sb.rpc('is_platform_admin');if(masterError)throw masterError;ui.isPlatformAdmin=!!isMaster;
  await loadSchools();if(ui.isPlatformAdmin)await loadPlatformData();
- if(!ui.schoolId){if(ui.isPlatformAdmin){ui.page='licenses';render();}else $('#app').innerHTML=noSchoolPage();return;}
+ if(!ui.schoolId){if(await calendar.enterTeacherIfApplicable()){calendar.renderCalendar();return;}if(ui.isPlatformAdmin){ui.page='licenses';render();}else $('#app').innerHTML=noSchoolPage();return;}
  await refresh();
  const driveReturn=new URLSearchParams(location.search).get('drive');
  if(driveReturn){toast(driveReturn==='connected'?'Google Drive conectado à escola.':'Não foi possível concluir a conexão com o Google Drive.',driveReturn!=='connected');history.replaceState({},'',location.pathname);}
 }
 async function refresh(){
+ if(ui.role==='teacher'){await calendar.load();calendar.renderCalendar();return;}
  const version=++refreshVersion,schoolId=ui.schoolId;
  if(!schoolId){if(ui.isPlatformAdmin){ui.page='licenses';render();}else $('#app').innerHTML=noSchoolPage();return;}
  await reloadLicenseState();if(!ui.licenseActive){for(const k of Object.keys(db))db[k]=[];render();return;}
@@ -219,10 +244,12 @@ async function refresh(){
  Object.assign(db,newData);
  // Integracao Google preservada no codigo, mas inativa para o produto atual.
  ui.driveConnection=null;
+ await calendar.loadSafe();
  render();
 }
 function render(){
  if(!ui.user)return;
+ if(ui.role==='teacher'){calendar.renderCalendar();return;}
  if(!ui.schoolId&&!ui.isPlatformAdmin){$('#app').innerHTML=noSchoolPage();return;}
  if(!ui.schoolId&&ui.isPlatformAdmin&&!ui.page.startsWith('profile')&&ui.page!=='licenses')ui.page='licenses';
  const globalView=ui.isPlatformAdmin&&(ui.page==='licenses'||!ui.schoolId);
@@ -230,10 +257,11 @@ function render(){
  if(ui.page==='licenses'&&ui.isPlatformAdmin){$('#pageContent').innerHTML=licensesView();return;}
  if(ui.page==='profile'||ui.page.startsWith('profile-')){$('#pageContent').innerHTML=profileView();return;}
  if(ui.page==='schools'){$('#pageContent').innerHTML=schoolsView();return;}
+ if(ui.page==='student-profile'){$('#pageContent').innerHTML=studentProfilePage();return;}
  if(ui.page==='settings-backup'&&!EXTERNAL_SIGNATURE_ENABLED)ui.page='settings';
  if(ui.page==='settings'||ui.page.startsWith('settings-')){$('#pageContent').innerHTML=settingsView();return;}
  if(!ui.licenseActive){$('#pageContent').innerHTML=licenseBlockView();return;}
- const func={dashboard,leads:crm.view,interviews:interviewsView,contracts:contractsView,students:studentsView,directory:directoryView,teachers:teachersView,packages:packagesView,templates:templatesView}[ui.page]||dashboard;
+ const func={dashboard,calendar:calendar.view,leads:crm.view,interviews:interviewsView,contracts:contractsView,students:studentsView,directory:directoryView,teachers:teachersView,packages:packagesView,templates:templatesView}[ui.page]||dashboard;
  $('#pageContent').innerHTML=func();
 }
 function enrollmentState(c){if(c.status==='closed'||c.status==='superseded')return 'closed';if(c.status!=='signed')return null;if(c.terms?.start_date>today())return 'scheduled';return diffDays(c.terms?.end_date||'')<0?'expired':'active';}
@@ -286,7 +314,7 @@ function interviewsView(){
 function ficheCreatedPopup(leadId){
  const l=lookup('leads',leadId);if(!l)return;
  const teachers=db.teachers.filter(t=>t.active!==false);
- showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">✓</div><div class="eyebrow">Etapa criada</div><h2>Ficha inicial preparada</h2><p class="modal-intro"><strong>${safe(l.name)}</strong> agora aparece em Fichas iniciais com o status <strong>A preencher</strong>. Você pode preencher ou enviar o link para o entrevistador.</p><div class="fiche-choice-grid"><div class="fiche-choice"><span class="fiche-choice-icon">▤</span><h3>Preencher agora</h3><p>Abra a ficha neste sistema e informe o curso e as condições da matrícula.</p><button type="button" class="btn" data-action="editInterview" data-id="${leadId}">Abrir ficha →</button></div><form id="quickInterviewInviteForm" class="fiche-choice" data-lead="${leadId}"><span class="fiche-choice-icon">↗</span><h3>Enviar ao entrevistador</h3><p>Escolha quem vai preencher. O link é protegido por um código cadastrado em Professores.</p><label class="field"><span>Professor entrevistador</span><select name="teacher_id" required><option value="">Selecione o professor</option>${options(teachers)}</select></label><button class="btn light" type="submit" ${teachers.length?'':'disabled'}>Gerar link para copiar →</button>${teachers.length?'':'<p class="small muted">Cadastre um professor antes de gerar o link.</p>'}</form></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Concluir depois</button></div></div>`);
+ showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">✓</div><div class="eyebrow">Etapa criada</div><h2>Ficha inicial preparada</h2><p class="modal-intro"><strong>${safe(l.name)}</strong> agora aparece em Fichas iniciais com o status <strong>A preencher</strong>. Você pode preencher ou enviar o link para o entrevistador.</p><div class="fiche-choice-grid"><div class="fiche-choice"><span class="fiche-choice-icon">▤</span><h3>Preencher agora</h3><p>Abra a ficha neste sistema e informe o curso e as condições da matrícula.</p><button type="button" class="btn" data-action="editInterview" data-id="${leadId}">Abrir ficha →</button></div><form id="quickInterviewInviteForm" class="fiche-choice" data-lead="${leadId}"><span class="fiche-choice-icon">↗</span><h3>Enviar ao entrevistador</h3><p>Escolha quem vai preencher. O link é individual e pode ser usado direto pelo professor.</p><label class="field"><span>Professor entrevistador</span><select name="teacher_id" required><option value="">Selecione o professor</option>${options(teachers)}</select></label><button class="btn light" type="submit" ${teachers.length?'':'disabled'}>Gerar link →</button>${teachers.length?'':'<p class="small muted">Cadastre um professor antes de gerar o link.</p>'}</form></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Concluir depois</button></div></div>`);
 }
 function normalSchedule(schedule,weeklyDays=[],lessonTime='18:00'){
  const src=Array.isArray(schedule)&&schedule.length?schedule:(weeklyDays||[]).map(day=>({day:Number(day),time:String(lessonTime||'18:00').slice(0,5)}));
@@ -454,6 +482,19 @@ async function confirmManualContract(id){
 
 function schoolSignatureModal(){if(!canAdmin())throw new Error('Apenas administradores podem configurar a assinatura.');const settings=db.school_settings[0]||{},pending=!!currentSchool().deletion_requested_at;showModal(`<div class="eyebrow">Serviços e contratos</div><h2>Assinatura da escola</h2><p class="modal-intro">Defina o responsável e a imagem de assinatura utilizada nos contratos da unidade.</p><form id="ownerForm" class="license-form">${input('Nome do responsável pela assinatura','owner_name',settings.owner_name||'')}<label class="field"><span>Assinatura PNG/JPG (até 90 KB)</span><input type="file" name="signature_file" accept="image/png,image/jpeg"></label><div class="signature-preview">${settings.owner_signature_png?`<img src="${safe(settings.owner_signature_png)}" alt="Assinatura cadastrada">`:'<span>Nenhuma assinatura cadastrada.</span>'}</div><div class="form-footer"><button class="btn" ${pending||!ui.licenseActive?'disabled':''}>Salvar assinatura</button></div></form>`);}
 function studentImportModal(){if(!canAdmin()||!ui.licenseActive)throw new Error('Importação indisponível para esta escola.');showModal(`<div class="eyebrow">Alunos</div><h2>Importar alunos via CSV</h2><p class="modal-intro">Importe até 200 alunos de uma vez. Confira o modelo para preencher as colunas corretamente.</p><a class="btn light" href="./modelo_importacao_alunos.csv" download>Baixar modelo CSV</a><form id="csvForm" class="license-form" style="margin-top:20px"><label class="field"><span>Arquivo CSV (até 300 KB)</span><input type="file" name="csv_file" accept=".csv,text/csv" required></label><div class="form-footer"><button class="btn" type="submit">Importar alunos</button></div></form><div id="csvResults"></div>`);}
+
+function teacherActionsMenu(t){
+ const items=[];
+ const opt=(action,label,kind='')=>items.push(`<button type="button" role="menuitem" data-action="${action}" data-id="${safe(t.id)}" class="contract-menu-item ${kind}">${safe(label)}</button>`);
+ opt('editTeacher','Editar');
+ if(t.active!==false&&t.email){
+  if(calendar.hasAccess(t.id))opt('calRevokeTeacher','Revogar acesso à agenda');
+  else opt('calInviteTeacher','Convidar para agenda');
+ }
+ opt('teacherToggle',t.active!==false?'Desativar':'Reativar');
+ opt('teacherRemove','Excluir','danger');
+ return `<details class="contract-actions-dropdown"><summary class="btn mini light" aria-label="Abrir ações do professor">Ações <span aria-hidden="true">⌄</span></summary><div class="contract-actions-popover" role="menu">${items.join('')}</div></details>`;
+}
 function contractsView(){
  const list=db.contracts.filter(c=>{
   if(ui.contractTab==='closed'&&!['closed','superseded'].includes(c.status))return false;
@@ -479,7 +520,7 @@ function contractForm(leadId){
  if(!i){toast('Preencha a ficha inicial antes de matricular.',true);return;}
  if(db.contracts.some(c=>c.interview_id===i.id&&c.status!=='void')){toast('Já existe um contrato para esta ficha.',true);return;}
  const kind=p?.kind==='dupla'?'dupla':l.guardian_name?'menor':'individual';
- showModal(`<h2>Iniciar pré-matrícula</h2><p class="modal-intro">${safe(l.name)} · ${safe(i.course||'Inglês')} · ${safe(p?.name||'Personalizado')}</p><form id="contractForm" data-lead="${leadId}" data-kind="${kind}"><div class="detail-grid"><div class="detail-item"><span>Vigência</span><strong>${dateBR(i.start_date)} a ${dateBR(i.end_date)}</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(i.total_amount)}</strong></div></div><div class="schedule-highlight"><b>Dias e horários acordados</b><p>${safe(formatSchedule(i.lesson_schedule,i.weekly_days,i.lesson_time))}</p></div><div class="form-grid" style="margin-top:18px"><label class="field wide"><span>Modelo do contrato</span><select name="type_option" id="contractType" required>${contractOptions(kind,p?.id)}</select></label></div><div id="contractExtraFields"></div><p class="form-note">${p?.contract_type_id?'O modelo associado ao pacote foi selecionado automaticamente.':'Nenhum modelo vinculado a este pacote. Escolha o contrato adequado.'} O aluno preencherá os dados pelo link, sem receber contrato ou assinar online. Depois, a escola gerará o PDF sem assinaturas.</p><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Criar contrato</button></div></form>`);renderContractExtra();
+ showModal(`<h2>Iniciar pré-matrícula</h2><p class="modal-intro">${safe(l.name)} · ${safe(i.course||'Inglês')} · ${safe(p?.name||'Personalizado')}</p><form id="contractForm" data-lead="${leadId}" data-kind="${kind}"><div class="detail-grid"><div class="detail-item"><span>Vigência</span><strong>${dateBR(i.start_date)} a ${dateBR(i.end_date)}</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(i.total_amount)}</strong></div></div><div class="schedule-highlight"><b>Professor</b><p>${safe(lookup('teachers',i.teacher_id)?.name||'—')} · Selecione os horários disponíveis na agenda abaixo.</p></div><div class="form-grid" style="margin-top:18px"><label class="field wide"><span>Modelo do contrato</span><select name="type_option" id="contractType" required>${contractOptions(kind,p?.id)}</select></label></div><div id="calPickerHost">${calendar.getFormPicker(i.teacher_id,i.start_date,true)}</div><div id="contractExtraFields"></div><p class="form-note">${p?.contract_type_id?'O modelo associado ao pacote foi selecionado automaticamente.':'Nenhum modelo vinculado a este pacote. Escolha o contrato adequado.'} O aluno preencherá os dados pelo link, sem receber contrato ou assinar online. Depois, a escola gerará o PDF sem assinaturas.</p><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Criar contrato</button></div></form>`);renderContractExtra();calendar.autoPreview($('#contractForm'));
 }
 function previewContract(id){const c=lookup('contracts',id),s=c.student_snapshot||lookup('students',c.student_id)||{};
  let html=c.signed_document_html||`<article class="legal-document">${renderContract(externalSignatureFor(c.id)?c:{...c,manualUnsigned:true,signed_at:null},s,{unsigned:!externalSignatureFor(c.id)})}</article>`;
@@ -498,29 +539,27 @@ function studentsView(){
  ${card('Matrículas',table(['Aluno','Pacote','Vigência','Matrícula','Ações'],list.map(c=>{const s=lookup('students',c.student_id);return row([safe(s?.full_name),safe(c.terms.package_name),`${dateBR(c.terms.start_date)} — ${dateBR(c.terms.end_date)}`,enrollmentTag(c),`<div class="actions"><button class="btn mini light" data-action="studentDetail" data-id="${s?.id}">Perfil</button>${['signed','closed','superseded'].includes(c.status)?`<button class="btn mini" data-action="renew" data-id="${c.id}">Rematricular</button>`:''}${c.status==='signed'?`<button class="btn mini danger" data-action="closeEnrollment" data-id="${c.id}">Encerrar</button>`:''}</div>`]);}),'Nenhuma matrícula neste filtro.'))}`;
 }
 
-function studentDetail(id){
- const s=lookup('students',id);if(!s)return toast('Aluno não encontrado.',true);
+async function studentDetail(id){
+ const s=lookup('students',id);if(!s)throw new Error('Aluno não encontrado.');
+ const origin=ui.page==='student-profile'?(ui.studentReturnPage||'directory'):ui.page;
+ // Perfil é uma pagina: nunca mostrar os dados do aluno em um modal.
+ closeModal();
+ await calendar.openStudent(id,false);
+ ui.studentReturnPage=origin;ui.studentId=id;ui.page='student-profile';render();
+}
+function studentProfilePage(){
+ const s=lookup('students',ui.studentId);if(!s)return '<section class="panel"><p>Aluno não encontrado.</p></section>';
  const all=db.contracts.filter(c=>c.student_id===s.id).sort((a,b)=>b.created_at.localeCompare(a.created_at));
- const current=all.find(c=>c.status==='signed'&&enrollmentState(c)==='active')||all.find(c=>c.status==='signed');
- const last=all.find(c=>['signed','closed','superseded'].includes(c.status));
- const t=(current||last)?.terms||{};
- const schedule=normalSchedule(s.current_schedule?.length?s.current_schedule:t.lesson_schedule,s.current_weekly_days?.length?s.current_weekly_days:t.weekly_days,s.current_lesson_time||t.lesson_time);const d=schedule.map(x=>x.day);
- const hour=s.current_lesson_time?.slice(0,5)||t.lesson_time?.slice(0,5)||'—';
- const info=(label,value)=>`<div class="detail-item"><span>${label}</span><strong>${safe(value??'—')}</strong></div>`;
- const currentState=current?enrollmentTag(current):'<span class="pill">Sem matrícula vigente</span>';
- const currentDay=formatSchedule(schedule);
- const scroll=$('#modal')?.scrollTop||0;
- showModal(`<div class="student-profile"><div class="profile-header"><div><div class="eyebrow">Cadastro de aluno</div><h2>${safe(s.full_name)}</h2><p class="modal-intro">Dados organizados e histórico de matrículas</p></div>${currentState}</div>
- <section class="profile-section"><div class="profile-section-head"><div><div class="eyebrow">01 · Cadastro</div><h3>Informações pessoais</h3></div><button class="btn mini light" data-action="editStudent" data-id="${s.id}">✎ Editar dados</button></div>
- <div class="profile-grid">${info('Nome completo',s.full_name)}${info('CPF',s.cpf)}${info('E-mail',s.email)}${info('Telefone',s.phone)}${info('Data de nascimento',dateBR(s.birth_date))}${info('CEP',s.cep)}<div class="detail-item grid-span-all"><span>Endereço</span><strong>${safe(s.address||'—')}</strong></div></div></section>
- ${s.is_minor?`<section class="profile-section responsible"><div class="profile-section-head"><div><div class="eyebrow">Responsável legal</div><h3>Dados do responsável</h3></div></div><div class="profile-grid">${info('Nome',s.guardian_name)}${info('CPF',s.guardian_cpf)}${info('E-mail',s.guardian_email)}${info('Telefone',s.guardian_phone)}${info('Data de nascimento',dateBR(s.guardian_birth_date))}${info('CEP',s.guardian_cep)}<div class="detail-item grid-span-all"><span>Endereço do responsável</span><strong>${safe(s.guardian_address||'—')}</strong></div></div></section>`:''}
- <section class="profile-section profile-contract"><div class="profile-section-head"><div><div class="eyebrow">02 · Curso e contrato</div><h3>${current?'Matrícula vigente':'Informações contratuais'}</h3></div>${current?`<button class="btn mini" data-action="renew" data-id="${current.id}">Rematricular</button>`:''}</div>
- ${last?`<div class="profile-grid">${info('Curso',t.course||'Inglês')}${info('Pacote',t.package_name)}${info('Professor',lookup('teachers',t.teacher_id)?.name||t.teacher_name||'—')}${info('Quantidade de aulas',t.lessons_count)}${info('Frequência',t.weekly_frequency?`${t.weekly_frequency}x por semana`:'—')}${info('Horário no contrato',formatSchedule(t.lesson_schedule,t.weekly_days,t.lesson_time))}${info('Vigência',`${dateBR(t.start_date)} a ${dateBR(t.end_date)}`)}${info('Valor total',money(t.total_amount))}${info('Parcelas',t.installments?`${t.installments}x de ${money(t.installment_amount)}`:'—')}</div>`:'<p class="muted">Aluno cadastrado sem contrato. Você pode gerar a matrícula quando desejar.</p>'}
- <div class="schedule-line"><div><div class="small muted">HORÁRIO ATUAL DO ALUNO · INDEPENDENTE DO CONTRATO</div><strong>${safe(currentDay)}</strong></div><button class="btn light" data-action="toggleSchedule">✎ Editar dias e horário</button></div>
- <div id="scheduleEditor" hidden><form id="scheduleForm" data-id="${s.id}"><h3>Alterar horário atual</h3><p class="small muted">Esta alteração não muda as condições do contrato assinado. A próxima rematrícula usará este horário.</p>${scheduleHTML(schedule)}<div class="form-footer"><button class="btn">Salvar horário</button></div></form></div></section>
- <section class="profile-section"><div class="profile-section-head"><div><div class="eyebrow">03 · Histórico</div><h3>Contratos anteriores e rematrículas</h3></div></div><div class="timeline">${all.map(c=>`<div class="timeline-item"><b>${safe(c.terms?.package_name||'Contrato')}</b> · ${enrollmentTag(c)}<p class="small muted">${dateBR(c.terms?.start_date)} — ${dateBR(c.terms?.end_date)} · ${money(c.terms?.total_amount)}</p><div class="actions">${contractActionsMenu(c)}</div></div>`).join('')||'<p class="muted">Sem contratos</p>'}</div>
- ${!all.length?`<div class="form-footer"><button class="btn" data-action="manualEnrollment" data-id="${s.id}">Criar matrícula para este aluno</button></div>`:''}</section></div>`);
- const modal=$('#modal');if(modal)modal.scrollTop=scroll;
+ const latest=all.find(c=>c.status==='signed')||all[0];
+ const curTeacher=s.calendar_teacher_id||latest?.terms?.teacher_id;
+ const info=(label,value)=>`<div class="detail-item"><span>${safe(label)}</span><strong>${safe(value??'—')}</strong></div>`;
+ const contact=s.is_minor?(s.guardian_phone||s.phone):s.phone;
+ return `${calendar.studentProfileView(true)}<div class="cal-admin-detail-extras">
+ <section class="panel cal-section"><div class="panel-head"><h2>Cadastro e responsável</h2><button class="btn mini light" type="button" data-action="editStudent" data-id="${s.id}">${ico('profile',14)} Editar dados</button></div>
+ <div class="profile-grid">${info('Aluno',s.full_name)}${info('Professor responsável',lookup('teachers',curTeacher)?.name||'Não definido')}${info('E-mail',s.email)}${info('Telefone',s.phone)}${info('Nascimento',dateBR(s.birth_date))}${info('CPF',s.cpf)}${s.is_minor?info('Responsável',s.guardian_name)+info('Telefone responsável',s.guardian_phone)+info('E-mail responsável',s.guardian_email):''}${info('Endereço',s.address)}</div>
+ </section><section class="panel cal-section"><div class="panel-head"><h2>Contratos e rematrículas</h2></div>
+ ${all.map(c=>`<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.terms?.package_name||'Contrato')} · ${safe(c.terms?.course||'Aulas')}</strong><small>${dateBR(c.terms?.start_date)} a ${dateBR(c.terms?.end_date)} · ${money(c.terms?.total_amount)} · ${safe(lookup('teachers',c.terms?.teacher_id)?.name||'')}</small></div><div class="cal-lesson-actions">${contractActionsMenu(c)}${c.status==='signed'?`<button class="btn mini light" data-action="renew" data-id="${c.id}">Rematricular</button>`:''}</div></div>`).join('')||'<p class="muted">Sem contratos.</p>'}
+ ${!all.length?`<div class="form-footer"><button class="btn" data-action="manualEnrollment" data-id="${s.id}">Criar matrícula</button></div>`:''}</section></div>`;
 }
 
 function renewForm(id){
@@ -531,13 +570,13 @@ function renewForm(id){
  <label class="field wide"><span>Modelo</span><select name="type_option" id="renewContractType">${contractOptions(s.is_minor?'menor':'individual',t.package_id)}</select></label>
  ${input('Quantidade de aulas','lessons_count',t.lessons_count,'number')}${input('Aulas por semana','weekly_frequency',t.weekly_frequency,'number')}${input('Data de início','start_date',start,'date')}
  ${input('Data final','end_date',t.end_date>start?t.end_date:'','date')}
- <div class="wide">${scheduleHTML(chosen)}</div>
+ <div class="wide" id="calPickerHost">${calendar.getFormPicker(t.teacher_id,start)}</div>
  ${input('Valor total (R$)','total_amount',t.total_amount,'number')}${input('Valor por extenso','total_extenso',t.total_extenso||amountWords(t.total_amount))}${input('Parcelas','installments',t.installments,'number')}
  <label class="field"><span>Valor da parcela (editável)</span><input name="installment_amount" type="number" step="0.01" value="${safe(t.installment_amount)}"></label>
  ${input('Primeiro vencimento','first_due_date',start,'date')}<label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${t.payment_method===x?'selected':''}>${x}</option>`).join('')}</select></label>
  </div><div id="contractExtraFields"></div>
  <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar rematrícula e preparar contrato</button></div></form>`);
- updateInstallment($('#renewForm'));renderContractExtra();
+ updateInstallment($('#renewForm'));renderContractExtra();calendar.autoPreview($('#renewForm'));
 }
 
 
@@ -599,16 +638,15 @@ function licensesView(){const schools=ui.platformSchools,keys=ui.platformKeys,re
 function teachersView(){
  const active=db.teachers.filter(t=>t.active!==false).length;
  const rows=db.teachers.slice().sort((a,b)=>(b.active!==false)-(a.active!==false)||a.name.localeCompare(b.name,'pt-BR'));
- return `${heading('Equipe','Professores','Cadastre nome e e-mail da equipe. Os e-mails servirão para futuros acessos e notificações.','<button class="btn" data-action="editTeacher">＋ Novo professor</button>')}
+ return `${heading('Equipe','Professores','Cadastre professores e gerencie o acesso deles à agenda.','<button class="btn" data-action="editTeacher">＋ Novo professor</button>')}
  <div class="teacher-stats"><div><strong>${active}</strong><span>Ativos</span></div><div><strong>${rows.length-active}</strong><span>Inativos</span></div><div><strong>${rows.length}</strong><span>Total</span></div></div>
  ${card('Equipe docente',table(['Professor','E-mail','Situação','Ações'],rows.map(t=>row([
   `<b>${safe(t.name)}</b>`,t.email?`<a href="mailto:${safe(t.email)}">${safe(t.email)}</a>`:'<span class="muted">Não cadastrado</span>',
   `<span class="pill ${t.active!==false?'pill-signed':''}">${t.active!==false?'Ativo':'Inativo'}</span>`,
-  `<div class="actions"><button class="btn mini light" data-action="editTeacher" data-id="${t.id}">Editar</button>${t.active!==false?`<button class="btn mini ghost" data-action="teacherCode" data-id="${t.id}">Código de entrevista</button>`:''}<button class="btn mini ${t.active!==false?'ghost':'light'}" data-action="teacherToggle" data-id="${t.id}">${t.active!==false?'Desativar':'Reativar'}</button><button class="btn mini danger" data-action="teacherRemove" data-id="${t.id}">Excluir</button></div>`
- ])),'Nenhum professor cadastrado.'))}<p class="form-note">Professores vinculados a entrevistas ou fichas serão desativados em vez de apagados, preservando o histórico.</p>`;
+  teacherActionsMenu(t)
+ ])),'Nenhum professor cadastrado.'))}<p class="form-note">Se houver histórico vinculado, o professor será desativado em vez de apagado.</p>`;
 }
-function teacherForm(id){const t=lookup('teachers',id)||{};showModal(`<div class="eyebrow">Equipe e ensino</div><h2>${id?'Editar professor':'Novo professor'}</h2><p class="modal-intro">O e-mail será utilizado futuramente para convites e notificações. Por enquanto, não cria acesso ao sistema.</p><form id="teacherForm" data-id="${safe(id||'')}"><div class="form-grid">${input('Nome completo','name',t.name)}${input('E-mail profissional','email',t.email||'','email')}<label class="field wide"><span>Situação</span><select name="active"><option value="true" ${t.active!==false?'selected':''}>Ativo</option><option value="false" ${t.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar professor</button></div></form>`);}
-function teacherCodeForm(id){const t=lookup('teachers',id);showModal(`<h2>Código de acesso</h2><p class="modal-intro">${safe(t?.name||'Professor')} · crie um código com pelo menos 8 caracteres. Compartilhe com o professor por outro canal, não inclua no link.</p><form id="teacherCodeForm" data-id="${id}">${input('Novo código de acesso','code','','password')}<div class="notice">Ao alterar o código, o anterior não funciona mais. Após cinco tentativas erradas, o link de entrevista fica bloqueado.</div><div class="form-footer"><button class="btn">Salvar código</button></div></form>`);}
+function teacherForm(id){const t=lookup('teachers',id)||{};showModal(`<div class="eyebrow">Equipe e ensino</div><h2>${id?'Editar professor':'Novo professor'}</h2><p class="modal-intro">O e-mail será utilizado para enviar um convite de acesso exclusivo ao calendário do professor.</p><form id="teacherForm" data-id="${safe(id||'')}"><div class="form-grid">${input('Nome completo','name',t.name)}${input('E-mail profissional','email',t.email||'','email')}<label class="field wide"><span>Situação</span><select name="active"><option value="true" ${t.active!==false?'selected':''}>Ativo</option><option value="false" ${t.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar professor</button></div></form>`);}
 async function createInterviewInviteLink(leadId,teacherId){
  if(!lookup('leads',leadId))throw new Error('Lead não encontrado.');
  if(!lookup('teachers',teacherId)?.active)throw new Error('Selecione um professor ativo.');
@@ -621,20 +659,22 @@ async function createInterviewInviteLink(leadId,teacherId){
 }
 function interviewInviteReady(link,leadId){
  const lead=lookup('leads',leadId);
- showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">↗</div><div class="eyebrow">Convite gerado</div><h2>Link para o entrevistador</h2><p class="modal-intro">Envie este link para preencher a ficha de <b>${safe(lead?.name||'lead')}</b>. O professor deverá informar seu código individual.</p><div class="link-field" id="generatedLink">${safe(link)}</div><p class="form-note">O convite é individual, válido por 14 dias e pode ser usado uma única vez. Compartilhe o código do professor separadamente.</p><div class="form-footer"><button class="btn ghost" type="button" data-action="close">Fechar</button><button class="btn" type="button" data-action="copyInterviewLink">Copiar link</button></div></div>`);
+ showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">↗</div><div class="eyebrow">Convite gerado</div><h2>Link para o entrevistador</h2><p class="modal-intro">Envie este link para preencher a ficha de <b>${safe(lead?.name||'lead')}</b>.</p><div class="link-field" id="generatedLink">${safe(link)}</div><p class="form-note">O convite é individual, válido por 14 dias e pode ser usado uma única vez.</p><div class="form-footer"><button class="btn ghost" type="button" data-action="close">Fechar</button><button class="btn" type="button" data-action="copyInterviewLink">Copiar link</button></div></div>`);
 }
 async function inviteInterview(leadId){const l=lookup('leads',leadId),i=db.interviews.find(x=>x.lead_id===leadId);if(!l)return;
- showModal(`<h2>Link para entrevistador</h2><p class="modal-intro">Ficha exclusiva para ${safe(l.name)}. O entrevistador usa o código que foi cadastrado em Professores.</p><form id="inviteInterviewForm" data-lead="${leadId}"><label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active),i?.teacher_id)}</select></label><p class="notice">Link válido por 14 dias, só para este lead; pode ser usado uma vez para enviar a ficha.</p><div class="form-footer"><button class="btn">Gerar link da entrevista</button></div></form>`);
+ showModal(`<h2>Link para entrevistador</h2><p class="modal-intro">Ficha exclusiva para ${safe(l.name)}.</p><form id="inviteInterviewForm" data-lead="${leadId}"><label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active),i?.teacher_id)}</select></label><p class="notice">Link válido por 14 dias, só para este lead; pode ser usado uma vez para enviar a ficha.</p><div class="form-footer"><button class="btn">Gerar link da entrevista</button></div></form>`);
 }
 
 function studentCategory(s){const cs=db.contracts.filter(c=>c.student_id===s.id);if(cs.some(c=>enrollmentState(c)==='active'))return 'active';if(cs.some(c=>enrollmentState(c)==='expired'))return 'expired';if(cs.some(c=>enrollmentState(c)==='closed'))return 'closed';return 'none';}
-function directoryView(){const list=db.students.filter(s=>[s.full_name,s.email,s.phone].join(' ').toLowerCase().includes(ui.search)&&studentCategory(s)===ui.studentTab);return `${heading('Cadastros','Alunos','Alunos ativos, expirados, antigos e sem contrato.',`<div class="actions"><button class="btn light" type="button" data-action="importStudents">${ico('plus',16)} Importar CSV</button><button class="btn" type="button" data-action="editStudent">${ico('plus',16)} Novo aluno</button></div>`)}<div class="tabs">${[['active','Alunos ativos'],['expired','Expirados'],['closed','Alunos antigos'],['none','Sem matrícula']].map(([v,label])=>`<button class="btn ${ui.studentTab===v?'':'light'}" data-action="studentTab" data-tab="${v}">${label}</button>`).join('')}</div><div class="toolbar"><input id="search" class="search" placeholder="Buscar nome, telefone ou e-mail" value="${safe(ui.search)}"></div>${card('Alunos',table(['Nome / contato','Último curso / pacote','Professor','Horário atual','Ações'],list.map(s=>{const c=db.contracts.filter(c=>c.student_id===s.id&&['signed','closed','superseded'].includes(c.status)).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];return row([`<b>${safe(s.full_name)}</b><div class="muted">${safe(s.email)} · ${safe(s.phone)}</div>`,c?`${safe(c.terms.course||'Inglês')} · ${safe(c.terms.package_name)}<div class="muted">${c.terms.lessons_count} aulas</div>`:'Sem contrato',safe(lookup('teachers',c?.terms?.teacher_id)?.name||c?.terms?.teacher_name||'—'),safe(formatSchedule(s.current_schedule?.length?s.current_schedule:c?.terms?.lesson_schedule,s.current_weekly_days||c?.terms?.weekly_days,s.current_lesson_time||c?.terms?.lesson_time)),`<button class="btn mini light" data-action="studentDetail" data-id="${s.id}">Abrir perfil</button>`]);}),'Nenhum aluno neste grupo.'))}`;}
+function directoryView(){const list=db.students.filter(s=>[s.full_name,s.email,s.phone].join(' ').toLowerCase().includes(ui.search)&&studentCategory(s)===ui.studentTab);return `${heading('Cadastros','Alunos','Alunos ativos, expirados, antigos e sem contrato.',`<div class="actions"><button class="btn light" type="button" data-action="importStudents">${ico('plus',16)} Importar CSV</button><button class="btn" type="button" data-action="editStudent">${ico('plus',16)} Novo aluno</button></div>`)}<div class="tabs">${[['active','Alunos ativos'],['expired','Expirados'],['closed','Alunos antigos'],['none','Sem matrícula']].map(([v,label])=>`<button class="btn ${ui.studentTab===v?'':'light'}" data-action="studentTab" data-tab="${v}">${label}</button>`).join('')}</div><div class="toolbar"><input id="search" class="search" placeholder="Buscar nome, telefone ou e-mail" value="${safe(ui.search)}"></div>${card('Alunos',table(['Nome / contato','Último curso / pacote','Professor','Horário atual','Ações'],list.map(s=>{const c=db.contracts.filter(c=>c.student_id===s.id&&['signed','closed','superseded'].includes(c.status)).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];return row([`<b>${safe(s.full_name)}</b><div class="muted">${safe(s.email)} · ${safe(s.phone)}</div>`,c?`${safe(c.terms.course||'Inglês')} · ${safe(c.terms.package_name)}<div class="muted">${c.terms.lessons_count} aulas</div>`:'Sem contrato',safe(lookup('teachers',s.calendar_teacher_id||c?.terms?.teacher_id)?.name||c?.terms?.teacher_name||'—'),safe(formatSchedule(c?.terms?.calendar_v6?calendar.scheduleForContract(c):(s.current_schedule?.length?s.current_schedule:c?.terms?.lesson_schedule),c?.terms?.calendar_v6?[]:(s.current_weekly_days||c?.terms?.weekly_days),c?.terms?.calendar_v6?'':(s.current_lesson_time||c?.terms?.lesson_time))),`<button class="btn mini light" data-action="studentDetail" data-id="${s.id}">Abrir perfil</button>`]);}),'Nenhum aluno neste grupo.'))}`;}
 function studentForm(id){const s=lookup('students',id)||{},minor=!!s.is_minor;
- showModal(`<h2>${id?'Editar aluno':'Cadastro manual de aluno'}</h2><p class="modal-intro">Preencha o cadastro. No fim, escolha se deseja também gerar um contrato.</p><form id="studentForm" data-id="${id||''}"><div class="form-grid">${input('Nome completo','full_name',s.full_name)}${input('CPF','cpf',s.cpf)}${input('E-mail','email',s.email,'email')}${input('Nascimento','birth_date',s.birth_date,'date')}${input('Telefone','phone',s.phone)}${input('CEP','cep',s.cep)}<div class="wide">${input('Endereço completo','address',s.address)}</div><label class="field wide checkrow"><input type="checkbox" name="is_minor" id="studentMinor" ${minor?'checked':''}> Menor de idade com responsável legal</label></div><div id="guardianFields">${guardianHTML(s,minor)}</div><h3 class="form-section">Horário atual</h3>${scheduleHTML(s.current_schedule,s.current_weekly_days||[],s.current_lesson_time?.slice(0,5)||'18:00')}
+ const v6Contract=id?db.contracts.find(c=>c.student_id===id&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status)):null;
+ const editSchedule=v6Contract?`<div class="student-calendar-state"><strong>Horário controlado pelo calendário</strong><span>${safe(formatSchedule(calendar.scheduleForContract(v6Contract)))}</span><span>Para alterar uma aula, use Calendário de aulas. A edição do cadastro não altera a agenda.</span></div>`:scheduleHTML(s.current_schedule,s.current_weekly_days||[],s.current_lesson_time?.slice(0,5)||'18:00');
+ showModal(`<h2>${id?'Editar aluno':'Cadastro manual de aluno'}</h2><p class="modal-intro">Preencha o cadastro. No fim, escolha se deseja também gerar um contrato.</p><form id="studentForm" data-id="${id||''}"><div class="form-grid">${input('Nome completo','full_name',s.full_name)}${input('CPF','cpf',s.cpf)}${input('E-mail','email',s.email,'email')}${input('Nascimento','birth_date',s.birth_date,'date')}${input('Telefone','phone',s.phone)}${input('CEP','cep',s.cep)}<div class="wide">${input('Endereço completo','address',s.address)}</div><label class="field wide checkrow"><input type="checkbox" name="is_minor" id="studentMinor" ${minor?'checked':''}> Menor de idade com responsável legal</label></div><div id="guardianFields">${guardianHTML(s,minor)}</div><h3 class="form-section">Professor responsável</h3><label class="field"><span>Professor</span><select name="calendar_teacher_id" ${v6Contract?'disabled':''} required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active),s.calendar_teacher_id||v6Contract?.terms?.teacher_id)}</select></label><h3 class="form-section">${v6Contract?'Horários da agenda':'Horário legado'}</h3>${editSchedule}
  ${!id?`<label class="checkrow" style="margin-top:16px"><input type="checkbox" name="create_contract"> Após cadastrar, preencher matrícula e contrato</label>`:''}
  <div class="form-footer"><button class="btn">Salvar cadastro</button></div></form>`);
 }
-function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;showModal(`<h2>Criar matrícula de ${safe(s.full_name)}</h2><p class="modal-intro">O aluno já está cadastrado. Gere um contrato agora ou feche para deixar sem matrícula.</p><form id="manualEnrollmentForm" data-student="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid"><label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active))}</select></label>${input('Curso','course','Inglês')}<label class="field wide"><span>Pacote (opcional)</span><select name="package_id" id="manualPackage">${weeksOrCustom()}${options(db.packages.filter(p=>p.active&&p.kind!=='dupla'))}</select></label>${input('Aulas','lessons_count','','number')}${input('Aulas por semana','weekly_frequency','2','number')}${input('Início','start_date',today(),'date')}${input('Final (manual)','end_date','','date')}<div class="wide">${scheduleHTML(s.current_schedule,s.current_weekly_days||[1,3],s.current_lesson_time?.slice(0,5)||'18:00')}</div>${input('Valor total','total_amount','','number')}${input('Parcelas','installments','6','number')}${input('Valor da parcela','installment_amount','','number')}${input('Primeiro vencimento','first_due_date',today(),'date')}<label class="field"><span>Pagamento</span><select name="payment_method"><option>Boleto</option><option>PIX</option><option>Cartão</option><option>Transferência</option></select></label><label class="field wide"><span>Modelo</span><select name="type_option" id="manualContractType">${contractOptions(s.is_minor?'menor':'individual',null)}</select></label></div><div id="contractExtraFields"></div><div class="form-footer"><button type="button" class="btn ghost" data-action="studentDetail" data-id="${id}">Agora não</button><button class="btn">Salvar dados e preparar contrato</button></div></form>`);renderContractExtra();}
+function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;showModal(`<h2>Criar matrícula de ${safe(s.full_name)}</h2><p class="modal-intro">O aluno já está cadastrado. Gere um contrato agora ou feche para deixar sem matrícula.</p><form id="manualEnrollmentForm" data-student="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid"><label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active),s.calendar_teacher_id)}</select></label>${input('Curso','course','Inglês')}<label class="field wide"><span>Pacote (opcional)</span><select name="package_id" id="manualPackage">${weeksOrCustom()}${options(db.packages.filter(p=>p.active&&p.kind!=='dupla'))}</select></label>${input('Aulas','lessons_count','','number')}${input('Aulas por semana','weekly_frequency','2','number')}${input('Início','start_date',today(),'date')}${input('Final (manual)','end_date','','date')}<div class="wide" id="calPickerHost">${calendar.getFormPicker(s.calendar_teacher_id||'',today())}</div>${input('Valor total','total_amount','','number')}${input('Parcelas','installments','6','number')}${input('Valor da parcela','installment_amount','','number')}${input('Primeiro vencimento','first_due_date',today(),'date')}<label class="field"><span>Pagamento</span><select name="payment_method"><option>Boleto</option><option>PIX</option><option>Cartão</option><option>Transferência</option></select></label><label class="field wide"><span>Modelo</span><select name="type_option" id="manualContractType">${contractOptions(s.is_minor?'menor':'individual',null)}</select></label></div><div id="contractExtraFields"></div><div class="form-footer"><button type="button" class="btn ghost" data-action="studentDetail" data-id="${id}">Agora não</button><button class="btn">Salvar dados e preparar contrato</button></div></form>`);renderContractExtra();calendar.autoPreview($('#manualEnrollmentForm'));}
 
 function guardianHTML(s,minor){return minor?`<h3 class="form-section">Responsável</h3><div class="form-grid">${input('Nome do responsável','guardian_name',s.guardian_name)}${input('Data nascimento','guardian_birth_date',s.guardian_birth_date,'date')}${input('CPF','guardian_cpf',s.guardian_cpf)}${input('Telefone','guardian_phone',s.guardian_phone)}${input('E-mail','guardian_email',s.guardian_email,'email')}${input('CEP','guardian_cep',s.guardian_cep)}<div class="wide">${input('Endereço','guardian_address',s.guardian_address)}</div></div>`:'';}
 const BUILTIN_FIELDS=CONTRACT_RESERVED;
@@ -733,14 +773,14 @@ function downloadHTML(content,filename){const a=document.createElement('a'),url=
 
 async function save(table,payload,id){if(!ui.schoolId)throw new Error('Selecione uma escola.');const record=id?payload:{...payload,school_id:ui.schoolId};let q=id?sb.from(table).update(record).eq('id',id).eq('school_id',ui.schoolId).select():sb.from(table).insert(record).select();const {data,error}=await q;if(error)throw error;if(!data?.length)throw new Error('Operação não autorizada ou não concluída.');return data[0];}
 function financialFields(f,lessonCount,expectedFrequency){
- const schedule=readSchedule(f,expectedFrequency);
+ const schedule=f.querySelector('.cal-enrollment:not([data-no-slots])')?[]:readSchedule(f,expectedFrequency);
  const start=f.elements.start_date.value,end=f.elements.end_date.value;
  if(!start||!end||end<start)throw new Error('Informe uma data final válida, igual ou posterior ao início.');
  const total=Number(f.elements.total_amount.value),n=Number(f.elements.installments.value),part=Math.round(total/n*100)/100;
  if(!Number.isFinite(total)||total<0||!Number.isInteger(n)||n<1||n>48)throw new Error('Confira valor total e número de parcelas.');
  const cents=Math.round(total*100),firstCents=cents-Math.round(cents/n)*(n-1);
  if(firstCents<0)throw new Error('Revise os valores das parcelas.');
- return {lesson_schedule:schedule,weekly_days:schedule.map(x=>x.day),lesson_time:schedule[0].time,start_date:start,end_date:end,total_amount:total,total_extenso:amountWords(total),installments:n,installment_amount:part,first_installment_amount:firstCents/100,first_due_date:f.elements.first_due_date.value,payment_method:f.elements.payment_method.value};
+ return {lesson_schedule:schedule,weekly_days:schedule.map(x=>x.day),lesson_time:schedule[0]?.time||null,start_date:start,end_date:end,total_amount:total,total_extenso:amountWords(total),installments:n,installment_amount:part,first_installment_amount:firstCents/100,first_due_date:f.elements.first_due_date.value,payment_method:f.elements.payment_method.value};
 }
 function buildTerms(i,p){const count=i.lessons_count??p?.lessons_count,freq=i.weekly_frequency??p?.weekly_frequency;
  return {package_id:p?.id||null,package_name:p?.name||'Personalizado',course:i.course||'Inglês',teacher_id:i.teacher_id,teacher_name:lookup('teachers',i.teacher_id)?.name||'',lessons_count:count,weekly_frequency:freq,weekly_days:i.weekly_days,lesson_time:i.lesson_time,lesson_schedule:normalSchedule(i.lesson_schedule,i.weekly_days,i.lesson_time),start_date:i.start_date,end_date:i.end_date,total_amount:i.total_amount,total_extenso:i.total_extenso,installments:i.installments,installment_amount:i.installment_amount,first_installment_amount:i.first_installment_amount??i.installment_amount,first_due_date:i.first_due_date,payment_method:i.payment_method};
@@ -810,7 +850,7 @@ async function downloadDocx(id){const c=lookup('contracts',id),s=c.student_snaps
 }
 
 document.addEventListener('click',e=>{if(!e.target.closest('.account-popover'))document.querySelectorAll('.account-popover[open]').forEach(d=>d.removeAttribute('open'));if(!e.target.closest('.contract-actions-dropdown'))document.querySelectorAll('.contract-actions-dropdown[open]').forEach(d=>d.removeAttribute('open'));});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.account-popover[open]').forEach(d=>d.removeAttribute('open'));});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.account-popover[open]').forEach(d=>d.removeAttribute('open'));if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('.cal-editor-target')){e.preventDefault();e.target.click();}});
 document.addEventListener('click',async e=>{
  const x=e.target.closest('[data-action]');if(!x||appBusy)return;
  document.querySelectorAll('.contract-actions-dropdown[open]').forEach(d=>{if(!d.contains(x))d.removeAttribute('open');});
@@ -818,11 +858,12 @@ document.addEventListener('click',async e=>{
  x.closest('.contract-actions-dropdown')?.removeAttribute('open');
  startBusy();
  try{
+ if(action.startsWith('cal'))return calendar.action(action,x,e);
  if(action==='close')return closeModal();
  if(action==='showSignup'){$('#app').innerHTML=signupPage();return;}
  if(action==='showForgotPassword'){$('#app').innerHTML=forgotPasswordPage();return;}
  if(action==='backLogin'){if(passwordRecoveryRoute())await sb.auth.signOut();history.replaceState({},'',location.pathname);ui.user=null;$('#app').innerHTML=login();return;}
- if(action==='navigate'){if(page==='licenses'&&!ui.isPlatformAdmin)throw new Error('Acesso negado.');if((page==='settings'||page.startsWith('settings-')||['templates','teachers','packages'].includes(page))&&ui.schoolId&&!canAdmin())throw new Error('Área restrita.');ui.page=page;if(page!=='licenses')ui.newlyIssuedKey=null;ui.search='';ui.expiry='all';if(page==='licenses')await loadPlatformData();return render();}
+ if(action==='navigate'){if(ui.role==='teacher'&&page!=='calendar')throw new Error('Acesso restrito ao professor.');if(page==='licenses'&&!ui.isPlatformAdmin)throw new Error('Acesso negado.');if((page==='settings'||page.startsWith('settings-')||['templates','teachers','packages'].includes(page))&&ui.schoolId&&!canAdmin())throw new Error('Área restrita.');ui.page=page;if(page==='calendar')await calendar.load();if(page!=='licenses')ui.newlyIssuedKey=null;ui.search='';ui.expiry='all';if(page==='licenses')await loadPlatformData();return render();}
  if(action==='logout'){refreshVersion++;await sb.auth.signOut();ui.user=null;ui.role=null;ui.schoolId=null;ui.isPlatformAdmin=false;ui.newlyIssuedKey=null;ui.page='dashboard';return initialize();}
  if(action==='selectSchool')return switchSchool(id);
  if(action==='showActivation')return activationModal();
@@ -831,14 +872,14 @@ document.addEventListener('click',async e=>{
  if(action==='platformSchoolDetail'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return platformSchoolDetail(id);}
  if(action==='issueRenewal'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return schoolRenewalForm(id);}
  if(action==='deleteSchool'){if(!canAdmin())throw new Error('Acesso restrito');return showModal(`<div class="eyebrow">Zona de perigo</div><h2>Excluir ${safe(currentSchool().name)}?</h2><p class="modal-intro">Os cadastros serão bloqueados imediatamente. Você poderá restaurar a escola durante 30 dias; após isso, a exclusão definitiva eliminará os registros e os arquivos da unidade.</p><form id="deleteSchoolForm"><label class="field"><span>Digite exatamente: <strong>${safe(currentSchool().name)}</strong></span><input name="confirm_name" required autocomplete="off"></label><div class="form-footer"><button class="btn ghost" type="button" data-action="close">Cancelar</button><button class="btn danger" type="submit">Agendar exclusão</button></div></form>`);}
- if(action==='restoreSchool'){const schoolId=id||ui.schoolId;if(!confirm('Cancelar a exclusão e restaurar esta escola?'))return;const {error}=await sb.rpc('cancel_school_deletion',{p_school:schoolId});if(error)throw error;await loadSchools(ui.schoolId);if(ui.isPlatformAdmin)await loadPlatformData();toast('Exclusão cancelada.');return ui.schoolId?refresh():render();}
+ if(action==='restoreSchool'){const schoolId=id||ui.schoolId;if(!await window.campanellaConfirm('Cancelar a exclusão e restaurar esta escola?'))return;const {error}=await sb.rpc('cancel_school_deletion',{p_school:schoolId});if(error)throw error;await loadSchools(ui.schoolId);if(ui.isPlatformAdmin)await loadPlatformData();toast('Exclusão cancelada.');return ui.schoolId?refresh():render();}
  if(action==='issueLicense'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return licenseCreateForm();}
  if(action==='manageLicense'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return licenseManageForm(id);}
  if(action==='platformTransfer'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return platformTransferForm(id);}
  if(action==='copyIssuedKey'){if(ui.newlyIssuedKey){await navigator.clipboard.writeText(ui.newlyIssuedKey);toast('Chave copiada.');}return;}
  if(action==='hideIssuedKey'){ui.newlyIssuedKey=null;return render();}
- if(action==='revokeRenewal'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');if(!confirm('Revogar esta chave de renovação?'))return;const {error}=await sb.rpc('revoke_school_renewal_key',{p_key:id});if(error)throw error;await loadPlatformData();toast('Chave revogada.');return render();}
- if(action==='revokeKey'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');if(!confirm('Revogar esta chave? Ela não poderá mais ser usada.'))return;const {error}=await sb.rpc('revoke_license_key',{p_key_id:id});if(error)throw error;await loadPlatformData();toast('Chave revogada.');return render();}
+ if(action==='revokeRenewal'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');if(!await window.campanellaConfirm('Revogar esta chave de renovação?'))return;const {error}=await sb.rpc('revoke_school_renewal_key',{p_key:id});if(error)throw error;await loadPlatformData();toast('Chave revogada.');return render();}
+ if(action==='revokeKey'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');if(!await window.campanellaConfirm('Revogar esta chave? Ela não poderá mais ser usada.'))return;const {error}=await sb.rpc('revoke_license_key',{p_key_id:id});if(error)throw error;await loadPlatformData();toast('Chave revogada.');return render();}
  if(action==='renameSchool'){if(!canAdmin())throw new Error('Apenas administradores.');return renameSchoolForm();}
   if(action==='editLead')return leadForm(id);
  if(action==='editPackage')return packageForm(id);
@@ -847,13 +888,13 @@ document.addEventListener('click',async e=>{
  if(action==='navigateFiche'){const lead=lookup('leads',id),interview=db.interviews.find(i=>i.lead_id===id);ui.page='interviews';ui.search=lead?.name?.toLowerCase()||'';ui.interviewTab=lead?(['lost','archived'].includes(ficheStage(lead,interview))?ficheStage(lead,interview):'current'):'current';return render();}
  if(action==='newContract')return contractForm(id);
  if(action==='studentDetail')return studentDetail(id);
+ if(action==='studentProfileBack'){ui.page=ui.studentReturnPage||'directory';ui.studentId=null;return render();}
  if(action==='editStudent')return studentForm(id);
  if(action==='editTeacher')return teacherForm(id);
- if(action==='teacherCode')return teacherCodeForm(id);
- if(action==='teacherToggle'){const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');if(!confirm(`${t.active!==false?'Desativar':'Reativar'} ${t.name}?`))return;await save('teachers',{active:t.active===false},id);toast(t.active!==false?'Professor desativado.':'Professor reativado.');return refresh();}
+ if(action==='teacherToggle'){const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');if(!await window.campanellaConfirm(`${t.active!==false?'Desativar':'Reativar'} ${t.name}?`))return;await save('teachers',{active:t.active===false},id);toast(t.active!==false?'Professor desativado.':'Professor reativado.');return refresh();}
  if(action==='teacherRemove'){const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');const linked=db.interviews.some(i=>i.teacher_id===id)||db.interview_invites.some(i=>i.teacher_id===id)||(db.crm_appointments||[]).some(i=>i.teacher_id===id)||db.contracts.some(c=>c.terms?.teacher_id===id);
-  if(linked){if(!confirm(`O professor ${t.name} possui histórico. Ele será DESATIVADO para preservar contratos e entrevistas. Continuar?`))return;await save('teachers',{active:false},id);toast('Professor desativado. Histórico preservado.');return refresh();}
-  if(!confirm(`Excluir DEFINITIVAMENTE o professor ${t.name}? Esta ação não pode ser desfeita.`))return;
+  if(linked){if(!await window.campanellaConfirm(`O professor ${t.name} possui histórico. Ele será DESATIVADO para preservar contratos e entrevistas. Continuar?`))return;await save('teachers',{active:false},id);toast('Professor desativado. Histórico preservado.');return refresh();}
+  if(!await window.campanellaConfirm(`Excluir DEFINITIVAMENTE o professor ${t.name}? Esta ação não pode ser desfeita.`,'Excluir professor','Excluir'))return;
   const {error}=await sb.from('teachers').delete().eq('school_id',ui.schoolId).eq('id',id);if(error){if(error.code==='23503'){await save('teachers',{active:false},id);toast('Professor vinculado a histórico: desativado em vez de excluído.');return refresh();}throw error;}
   toast('Professor excluído.');return refresh();}
 
@@ -865,25 +906,25 @@ document.addEventListener('click',async e=>{
  if(action==='contractTab'){ui.contractTab=x.dataset.tab;ui.contractStatus='all';ui.expiry='all';return render();}
  if(action==='studentTab'){ui.studentTab=x.dataset.tab;return render();}
  if(action==='interviewStage'){const stage=x.dataset.stage;if(!['open','lost','archived'].includes(stage))return;const lead=lookup('leads',id),item=db.interviews.find(i=>i.lead_id===id);if(!lead||lead.status==='convertido')throw new Error('Lead indisponível.');if(item)await save('interviews',{pipeline_status:stage,archived_at:stage==='archived'?new Date().toISOString():null},item.id);await save('leads',{ficha_status:stage,status:stage==='lost'?'perdido':stage==='open'?(item?'entrevistado':'novo'):lead.status},id);toast(stage==='archived'?'Ficha arquivada':stage==='lost'?'Desistência registrada':'Ficha retomada');return refresh();}
- if(action==='closeEnrollment'){if(!confirm('Encerrar esta matrícula? O contrato permanecerá no histórico.'))return;const {error}=await sb.rpc('close_enrollment',{p_contract_id:id});if(error)throw error;toast('Matrícula encerrada e preservada no histórico.');await refresh();return;}
+ if(action==='closeEnrollment'){if(!await window.campanellaConfirm('Encerrar esta matrícula? O contrato permanecerá no histórico.'))return;const {error}=await sb.rpc('close_enrollment',{p_contract_id:id});if(error)throw error;toast('Matrícula encerrada e preservada no histórico.');await refresh();return;}
  if(action==='copyInterviewLink'){await navigator.clipboard.writeText($('#generatedLink').textContent);toast('Link de entrevista copiado.');return;}
  if(action==='editContractType')return typeForm(id);
  if(action==='viewContractType')return viewContractType(id);
  if(action==='toggleContractType'){const t=lookup('contract_types',id);if(!t)return;if(!t.active&&!analyzeContractMarkers(t.body_text||'',t.kind).valid)throw new Error('Corrija o DOCX antes de ativar este modelo. Abra Editar e confira a lista de campos.');await save('contract_types',{active:!t.active},id);toast('Disponibilidade alterada.');return refresh();}
- if(action==='removeContractType'){const t=lookup('contract_types',id);if(!t)return;const inUse=db.contracts.some(c=>c.contract_type_id===id);if(!confirm(inUse?'Modelo utilizado em contratos. Deseja desativá-lo para novas matrículas?':'Excluir definitivamente o modelo? Contratos já gerados não são alterados.'))return;if(inUse){await save('contract_types',{active:false},id);}else{for(const pkg of db.packages.filter(p=>p.contract_type_id===id))await save('packages',{contract_type_id:null},pkg.id);const {error}=await sb.from('contract_types').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;}toast('Modelo atualizado.');return refresh();}
+ if(action==='removeContractType'){const t=lookup('contract_types',id);if(!t)return;const inUse=db.contracts.some(c=>c.contract_type_id===id);if(!await window.campanellaConfirm(inUse?'Modelo utilizado em contratos. Deseja desativá-lo para novas matrículas?':'Excluir definitivamente o modelo? Contratos já gerados não são alterados.'))return;if(inUse){await save('contract_types',{active:false},id);}else{for(const pkg of db.packages.filter(p=>p.contract_type_id===id))await save('packages',{contract_type_id:null},pkg.id);const {error}=await sb.from('contract_types').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;}toast('Modelo atualizado.');return refresh();}
  if(action==='previewContract')return previewContract(id);
  if(action==='renew')return renewForm(id);
  if(action==='externalSend'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Assinatura eletrônica indisponível nesta versão.');return externalSendForm(id);}
  if(action==='externalStatus'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração desativada.');const result=await v5Request('contract-signing',{action:'status',contractId:id});toast(`AssinAPI: ${result.providerStatus||result.localStatus||'pendente'}`);await refresh();return;}
- if(action==='externalCancel'){if(!confirm('Cancelar a solicitação de assinatura na AssinAPI?'))return;await v5Request('contract-signing',{action:'cancel',contractId:id});toast('Assinatura cancelada.');return refresh();}
- if(action==='externalRemind'){if(!confirm('Reenviar lembrete de assinatura?'))return;await v5Request('contract-signing',{action:'remind',contractId:id});toast('Lembrete enviado.');return;}
+ if(action==='externalCancel'){if(!await window.campanellaConfirm('Cancelar a solicitação de assinatura na AssinAPI?'))return;await v5Request('contract-signing',{action:'cancel',contractId:id});toast('Assinatura cancelada.');return refresh();}
+ if(action==='externalRemind'){if(!await window.campanellaConfirm('Reenviar lembrete de assinatura?'))return;await v5Request('contract-signing',{action:'remind',contractId:id});toast('Lembrete enviado.');return;}
  if(action==='externalCopy'){const item=externalSignatureFor(id);if(!item?.signing_url)throw new Error('Link não disponível.');await navigator.clipboard.writeText(item.signing_url);toast('Link copiado.');return;}
  if(action==='externalShareWhatsApp'){const item=externalSignatureFor(id),c=lookup('contracts',id);if(!item?.signing_url||!c)throw new Error('Link n\u00e3o dispon\u00edvel.');openWhatsApp(c,item.signing_url);return;}
  if(action==='externalDownload')return externalDownload(id,'signed');
  if(action==='externalEvidence')return externalDownload(id,'certificate');
  if(action==='externalBackup'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração desativada.');await v5Request('google-drive-backup',{contractId:id});toast('Backup concluído no Google Drive.');await refresh();return;}
  if(action==='driveConnect'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração com Drive indisponível nesta versão.');const r=await v5Request('google-drive-oauth',{action:'start',schoolId:ui.schoolId});if(!/^https:\/\/accounts\.google\.com\//.test(r.authorizationUrl))throw new Error('Autorização Google inválida.');location.assign(r.authorizationUrl);return;}
- if(action==='driveDisconnect'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração com Drive indisponível nesta versão.');if(!confirm('Desconectar o Drive desta escola? Os arquivos já enviados não serão apagados.'))return;await v5Request('google-drive-oauth',{action:'disconnect',schoolId:ui.schoolId});toast('Drive desconectado.');return refresh();}
+ if(action==='driveDisconnect'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração com Drive indisponível nesta versão.');if(!await window.campanellaConfirm('Desconectar o Drive desta escola? Os arquivos já enviados não serão apagados.'))return;await v5Request('google-drive-oauth',{action:'disconnect',schoolId:ui.schoolId});toast('Drive desconectado.');return refresh();}
  if(action==='manualDownload')return await downloadManualContract(id);
  if(action==='manualConfirm')return await confirmManualContract(id);
  if(action==='sendContract'){await sendLink(id);return;}
@@ -891,9 +932,9 @@ document.addEventListener('click',async e=>{
  if(action==='proof')return exportProof(id);
  if(action==='copyGenerated'){await navigator.clipboard.writeText($('#generatedLink').textContent);await save('contracts',{status:'sent',sent_at:new Date().toISOString()},id);toast('Link de matr\u00edcula copiado.');closeModal();return refresh();}
  if(action==='shareWhatsApp'){const link=$('#generatedLink')?.textContent||'',c=lookup('contracts',id);if(!c)throw new Error('Contrato n\u00e3o encontrado.');openWhatsApp(c,link);await save('contracts',{status:'sent',sent_at:new Date().toISOString()},id);closeModal();toast('WhatsApp aberto com a mensagem pronta para envio.');return refresh();}
- if(action==='removeLead'){if(!confirm('Excluir este lead? Contratos e fichas existentes impedem exclusão.'))return;const {error}=await sb.from('leads').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;toast('Lead excluído.');return refresh();}
- if(action==='removePackage'){if(!confirm('Excluir pacote? Pacotes utilizados não podem ser excluídos.'))return;const {error}=await sb.from('packages').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;toast('Pacote excluído.');return refresh();}
- if(action==='voidContract'){if(!confirm('Cancelar contrato e invalidar seu link?'))return;const {error}=await sb.rpc('void_manual_contract',{p_contract_id:id});if(error)throw error;toast('Contrato cancelado.');return refresh();}
+ if(action==='removeLead'){if(!await window.campanellaConfirm('Excluir este lead? Contratos e fichas existentes impedem exclusão.','Excluir lead','Excluir'))return;const {error}=await sb.from('leads').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;toast('Lead excluído.');return refresh();}
+ if(action==='removePackage'){if(!await window.campanellaConfirm('Excluir pacote? Pacotes utilizados não podem ser excluídos.','Excluir pacote','Excluir'))return;const {error}=await sb.from('packages').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;toast('Pacote excluído.');return refresh();}
+ if(action==='voidContract'){if(!await window.campanellaConfirm('Cancelar contrato e invalidar seu link?'))return;const {error}=await sb.rpc('void_manual_contract',{p_contract_id:id});if(error)throw error;toast('Contrato cancelado.');return refresh();}
  }catch(error){errors(error)}finally{finishBusy()}
 });
 document.addEventListener('input',e=>{
@@ -906,6 +947,7 @@ document.addEventListener('input',e=>{
  if(['total_amount','installments','installment_amount'].includes(e.target.name)&&['interviewForm','renewForm','manualEnrollmentForm','externalInterviewForm'].includes(e.target.form?.id))updateInstallment(e.target.form,e.target.name);
 });
 document.addEventListener('change',async e=>{
+ if(e.target.id==='calTeacherFilter'||['end_date','cal_manual_end','cal_slot','cal_start_date'].includes(e.target.name)||(['start_date','lessons_count'].includes(e.target.name)&&e.target.form?.querySelector('.cal-enrollment'))||(e.target.name==='teacher_id'&&e.target.form?.id==='manualEnrollmentForm')){try{await calendar.change(e.target);}catch(err){errors(err);}return;}
  if(e.target.name==='docx_file'&&e.target.form?.id==='typeForm'){
   const file=e.target.files?.[0];if(!file){renderDocxReport(null);return;}
   const report=$('#docxValidation');if(report)report.textContent='Analisando campos e marcadores do DOCX…';
@@ -941,10 +983,11 @@ document.addEventListener('submit',async event=>{
  const f=event.target;if(!f.id)return;event.preventDefault();if(appBusy)return;const btn=f.querySelector('button[type="submit"],button:not([type])');if(btn)btn.disabled=true;
  if(f.id!=='signForm')startBusy();
  try{
+ if(f.id.startsWith('cal')){await calendar.submit(f);return;}
  if(f.id==='externalSignForm'){await externalSend(f);return;}
  if(f.id==='externalCodeForm'){await externalVerify(f.elements.code.value);return;}
  if(f.id==='externalInterviewForm'){await externalSave(f);return;}
- if(f.id==='profileForm'){const name=f.elements.full_name.value.trim();if(name.length<2||name.length>120)throw new Error('Informe um nome válido.');const {data,error}=await sb.auth.updateUser({data:{full_name:name}});if(error)throw error;ui.user=data.user;toast('Perfil atualizado.');return render();}
+ if(f.id==='profileForm'){const name=f.elements.full_name.value.trim();if(name.length<2||name.length>120)throw new Error('Informe um nome válido.');if(ui.role==='teacher')await calendar.updateTeacherProfile(name);const {data,error}=await sb.auth.updateUser({data:{full_name:name}});if(error)throw error;ui.user=data.user;toast('Perfil atualizado.');return render();}
  if(f.id==='profilePasswordForm'){const pwd=f.elements.password.value;if(pwd.length<8||pwd!==f.elements.password_confirm.value)throw new Error('A senha precisa ter pelo menos 8 caracteres e a confirmação deve coincidir.');const {data,error}=await sb.auth.updateUser({password:pwd});if(error)throw error;if(data?.user)ui.user=data.user;f.reset();toast('Senha atualizada.');return;}
  if(f.id==='schoolDetailsForm'){const d=formData(f);const {error}=await sb.rpc('update_school_details',{p_school:ui.schoolId,p_name:d.name,p_email:d.contact_email||'',p_phone:d.contact_phone||'',p_address:d.address||''});if(error)throw error;await loadSchools(ui.schoolId);toast('Informações da escola atualizadas.');return render();}
  if(f.id==='deleteSchoolForm'){const {error}=await sb.rpc('schedule_school_deletion',{p_school:ui.schoolId,p_confirm_name:f.elements.confirm_name.value});if(error)throw error;closeModal();await loadSchools(ui.schoolId);toast('Exclusão agendada por 30 dias.');return refresh();}
@@ -961,7 +1004,7 @@ document.addEventListener('submit',async event=>{
  if(f.id==='manageLicenseForm'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');const d=formData(f),args={p_school:f.dataset.school,p_action:d.action,p_days:d.action==='extend'?Number(d.days):null,p_expires_on:d.action==='set_date'?d.expires_on:null,p_note:d.note.trim()||null};
   const {error}=await sb.rpc('manage_school_license',args);if(error)throw error;closeModal();await loadSchools(ui.schoolId);await loadPlatformData();await reloadLicenseState();toast('Licença atualizada.');return ui.schoolId?refresh():render();}
  if(f.id==='transferAdminForm'||f.id==='platformTransferForm'){const email=f.elements.email.value.trim(),schoolId=f.id==='transferAdminForm'?ui.schoolId:f.dataset.school;
-  if(!confirm('Confirmar transferência da administração? O administrador anterior perderá o acesso a esta escola.'))return;
+  if(!await window.campanellaConfirm('Confirmar transferência da administração? O administrador anterior perderá o acesso a esta escola.'))return;
   const {error}=await sb.rpc('transfer_school_admin',{p_school:schoolId,p_email:email});if(error)throw error;closeModal();await loadSchools();if(ui.isPlatformAdmin)await loadPlatformData();toast('Administração transferida.');return ui.schoolId?refresh():render();}
  if(f.id==='loginForm'){const {error}=await sb.auth.signInWithPassword({email:f.elements.email.value,password:f.elements.password.value});if(error)throw error;await initialize();return;}
  if(f.id==='forgotPasswordForm'){
@@ -979,9 +1022,6 @@ document.addEventListener('submit',async event=>{
   const {error}=await sb.auth.updateUser({password});if(error)throw error;
   await sb.auth.signOut();history.replaceState({},'',location.pathname);ui.user=null;ui.role=null;
   $('#app').innerHTML=login();toast('Senha atualizada! Entre com sua nova senha.');return;
- }
- if(f.id==='teacherCodeForm'){
-  const {error}=await sb.rpc('set_teacher_access_code',{p_teacher:f.dataset.id,p_code:f.elements.code.value});if(error)throw error;toast('Código salvo. Envie-o ao professor separadamente.');closeModal();return refresh();
  }
  if(f.id==='inviteInterviewForm'||f.id==='quickInterviewInviteForm'){
   const leadId=f.dataset.lead,teacherId=f.elements.teacher_id.value;
@@ -1003,7 +1043,7 @@ document.addEventListener('submit',async event=>{
    if(minor&&(!r.responsavel_nome||!cpfValid(r.responsavel_cpf)||!r.responsavel_telefone||!r.responsavel_email||!r.responsavel_endereco||onlyDigits(r.responsavel_cep).length!==8||!gBirth))throw new Error('Dados do responsável incompletos');
    await save('students',{full_name:r.nome_completo,cpf,email:r.email,birth_date:birth,phone:r.telefone,address:r.endereco,cep:onlyDigits(r.cep),is_minor:minor,guardian_name:minor?r.responsavel_nome:null,guardian_birth_date:minor?gBirth:null,guardian_cpf:minor?onlyDigits(r.responsavel_cpf):null,guardian_phone:minor?r.responsavel_telefone:null,guardian_email:minor?r.responsavel_email:null,guardian_address:minor?r.responsavel_endereco:null,guardian_cep:minor?onlyDigits(r.responsavel_cep):null});seen.add(cpf);imported++;
   }catch(err){report.push(`Linha ${r.line}: ${err.message}`);}}
-  closeModal();toast(`${imported} aluno(s) importados; ${report.length} linha(s) rejeitadas.`);await refresh();if(report.length)alert(report.slice(0,25).join('\n'));return;
+  closeModal();toast(`${imported} aluno(s) importados; ${report.length} linha(s) rejeitadas.`);await refresh();if(report.length)await window.campanellaAlert(report.slice(0,25).join('\n'),'Importação com pendências');return;
  }
  if(f.id==='renameSchoolForm'){
   if(!canAdmin())throw new Error('Acesso negado.');
@@ -1020,21 +1060,25 @@ document.addEventListener('submit',async event=>{
   await save('interviews',{lead_id:f.dataset.lead,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,interviewer_id:ui.user.id,teacher_id:f.elements.teacher_id.value,course:f.elements.course.value.trim(),pipeline_status:'open',archived_at:null,...values,notes:f.elements.notes.value},f.dataset.id||undefined);toast('Ficha inicial salva.');
  }
  else if(f.id==='contractForm'){
-  const lead=f.dataset.lead,i=db.interviews.find(v=>v.lead_id===lead),p=lookup('packages',i.package_id),snapshot=snapshotFromForm(f,null,buildTerms(i,p));
+  const lead=f.dataset.lead,i=db.interviews.find(v=>v.lead_id===lead),p=lookup('packages',i.package_id);
+  const plannedTerms=await calendar.applyTerms(f,buildTerms(i,p));
+  const snapshot=snapshotFromForm(f,null,plannedTerms);
   if(((p?.kind||'individual')==='dupla')!==(snapshot.kind==='dupla'))throw new Error('Modalidade incompatível com o pacote.');
   const created=await save('contracts',{lead_id:lead,interview_id:i.id,...snapshot,created_by:ui.user.id});toast('Pré-matrícula iniciada. Compartilhe o link de cadastro.');await refresh();if(created.kind!=='dupla'){await sendLink(created.id);return;}
  }
  else if(f.id==='renewForm'){
+  await calendar.ensureEnrollmentDates(f);
   const original=lookup('contracts',f.dataset.original),p=lookup('packages',f.elements.package_id.value);if(!original)throw new Error('Contrato anterior indisponível.');
   if(p?.kind==='dupla')throw new Error('Rematrícula de dupla ainda não implementada.');
   const count=Number(f.elements.lessons_count.value),freq=Number(f.elements.weekly_frequency.value);
   if(!Number.isInteger(count)||count<1||count>500||!Number.isInteger(freq)||freq<1||freq>7)throw new Error('Confira quantidade e frequência.');
   const fields=financialFields(f,count,freq),terms={...original.terms,...fields,package_id:p?.id||null,package_name:p?.name||'Personalizado',lessons_count:count,weekly_frequency:freq};
-  const snapshot=snapshotFromForm(f,null,terms);
+  const snapshot=snapshotFromForm(f,null,await calendar.applyTerms(f,terms));
   const s=lookup('students',original.student_id);if(!s)throw new Error('Aluno original indisponível.');
   const renewed=await save('contracts',{lead_id:original.lead_id,student_id:original.student_id,previous_contract_id:original.id,...snapshot,status:'pre_enrolled',student_snapshot:{...s,custom_fields:{...snapshot.terms.custom_fields}},created_by:ui.user.id});closeModal();await refresh();toast('Rematrícula preparada: baixe o contrato sem assinaturas na lista de contratos.');ui.page='contracts';render();return;
  }
  else if(f.id==='manualEnrollmentForm'){
+  await calendar.ensureEnrollmentDates(f);
   const student=lookup('students',f.dataset.student),p=lookup('packages',f.elements.package_id.value);if(!student)throw new Error('Aluno não encontrado.');
   const count=Number(f.elements.lessons_count.value),freq=Number(f.elements.weekly_frequency.value);
   if(!Number.isInteger(count)||count<1||count>500||!Number.isInteger(freq)||freq<1||freq>7)throw new Error('Confira quantidade e frequência.');
@@ -1046,7 +1090,7 @@ document.addEventListener('submit',async event=>{
   const values={lead_id:leadId,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,interviewer_id:ui.user.id,teacher_id:f.elements.teacher_id.value,course:f.elements.course.value.trim(),...fields};
   interview=await save('interviews',values,interview?.id);
   const terms={...fields,package_id:p?.id||null,package_name:p?.name||'Personalizado',course:values.course,teacher_id:values.teacher_id,teacher_name:lookup('teachers',values.teacher_id)?.name||'',lessons_count:count,weekly_frequency:freq};
-  const snap=snapshotFromForm(f,null,terms);
+  const snap=snapshotFromForm(f,null,await calendar.applyTerms(f,terms));
   const enrollment=await save('contracts',{lead_id:leadId,student_id:student.id,interview_id:interview.id,...snap,status:'pre_enrolled',student_snapshot:{...student,custom_fields:{...snap.terms.custom_fields}},created_by:ui.user.id});closeModal();await refresh();toast('Cadastro pronto. Gere o contrato sem assinaturas na área Contratos.');ui.page='contracts';render();return;
  }
  else if(f.id==='teacherForm'){
@@ -1059,12 +1103,16 @@ document.addEventListener('submit',async event=>{
   const d=formData(f),minor=!!f.elements.is_minor.checked;
   if(!cpfValid(d.cpf)||minor&&!cpfValid(d.guardian_cpf))throw new Error('CPF inválido.');const bd=new Date(d.birth_date+'T12:00:00Z');if(!Number.isFinite(bd.valueOf())||d.birth_date>today())throw new Error('Nascimento inválido.');const [y,m,day]=today().split('-').map(Number),[sy,sm,sd]=d.birth_date.split('-').map(Number);const age=y-sy-(m<sm||(m===sm&&day<sd)?1:0);if(minor!==(age<18))throw new Error('Marque responsável para alunos menores de 18 anos; maiores são seus próprios responsáveis.');
   if(minor&&(!d.guardian_name||!d.guardian_email))throw new Error('Preencha os dados do responsável.');
-  const selected=readSchedule(f,null,true);
-  const payload={full_name:d.full_name.trim(),cpf:onlyDigits(d.cpf),email:d.email.trim(),birth_date:d.birth_date,phone:d.phone,address:d.address,cep:onlyDigits(d.cep),is_minor:minor,current_schedule:selected,current_weekly_days:selected.map(x=>x.day),current_lesson_time:selected[0]?.time||null,
+  const calendarManaged=!!f.dataset.id&&db.contracts.some(c=>c.student_id===f.dataset.id&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status));
+  const selected=calendarManaged?null:readSchedule(f,null,true);
+  const teacherForStudent=calendarManaged?db.contracts.find(c=>c.student_id===f.dataset.id&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status))?.terms?.teacher_id:f.elements.calendar_teacher_id?.value;
+  if(!teacherForStudent)throw new Error('Associe o aluno a um professor da escola.');
+  const payload={calendar_teacher_id:teacherForStudent,full_name:d.full_name.trim(),cpf:onlyDigits(d.cpf),email:d.email.trim(),birth_date:d.birth_date,phone:d.phone,address:d.address,cep:onlyDigits(d.cep),is_minor:minor,...(calendarManaged?{}:{current_schedule:selected,current_weekly_days:selected.map(x=>x.day),current_lesson_time:selected[0]?.time||null}),
   guardian_name:minor?d.guardian_name:null,guardian_birth_date:minor?d.guardian_birth_date:null,guardian_cpf:minor?onlyDigits(d.guardian_cpf):null,guardian_phone:minor?d.guardian_phone:null,guardian_email:minor?d.guardian_email:null,guardian_address:minor?d.guardian_address:null,guardian_cep:minor?onlyDigits(d.guardian_cep):null};
   const saved=await save('students',payload,f.dataset.id||undefined);toast('Aluno salvo.');await refresh();if(!f.dataset.id&&f.elements.create_contract?.checked){manualEnrollmentForm(saved.id);return;}if(f.dataset.id){studentDetail(saved.id);return;}closeModal();return;
  }
  else if(f.id==='scheduleForm'){
+  if(db.contracts.some(c=>c.student_id===f.dataset.id&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status)))throw new Error('Esta matrícula usa o calendário V6. Reagende cada aula no calendário para evitar divergências.');
   const schedule=readSchedule(f);
   await save('students',{current_schedule:schedule,current_weekly_days:schedule.map(x=>x.day),current_lesson_time:schedule[0].time},f.dataset.id);toast('Horário atual alterado sem modificar contratos.');await refresh();studentDetail(f.dataset.id);return;
  }
@@ -1096,21 +1144,19 @@ document.addEventListener('submit',async event=>{
 
 function formDataExtras(f){const o={};for(const [key,value] of new FormData(f).entries()){if(key.startsWith('extra_'))o[key.slice(6)]=String(value).trim();}return o;}
 
-// Área de entrevista sem login do sistema: acessível SOMENTE pelo token e código do professor.
-let externalToken='',externalCode='',externalData=null;
-async function externalAPI(payload){const res=await fetch(`${SUPA_URL}/functions/v1/entrevista`,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({token:externalToken,code:externalCode,...payload})});const data=await res.json().catch(()=>({error:'Resposta inválida'}));if(!res.ok)throw new Error(data.error||'Erro no formulário da entrevista');return data;}
-function externalStart(token){externalToken=token;ui.user=null;$('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Ficha inicial</div></div></div></header><main class="sign-main"><section class="sign-panel"><h2>Acesso do entrevistador</h2><p class="muted">Insira o código individual definido pela administração. Este link permite preencher apenas a ficha do lead indicado.</p><form id="externalCodeForm">${input('Código de acesso','code','','password')}<div class="form-footer"><button class="btn">Entrar na ficha →</button></div></form></section></main></div>`;}
-async function externalVerify(code){externalCode=code;externalData=await externalAPI({action:'lookup'});externalRender();}
+// Área pública da ficha inicial: acessível pelo link exclusivo gerado pela escola.
+let externalToken='',externalData=null;
+async function externalAPI(payload){const res=await fetch(`${SUPA_URL}/functions/v1/entrevista`,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({token:externalToken,...payload})});const data=await res.json().catch(()=>({error:'Resposta inválida'}));if(!res.ok)throw new Error(data.error||'Erro no formulário da entrevista');return data;}
+async function externalStart(token){externalToken=token;externalData=null;ui.user=null;$('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Ficha inicial</div></div></div></header><main class="sign-main"><section class="sign-panel"><div class="busy-wheel" aria-hidden="true"></div><h2>Carregando ficha…</h2></section></main></div>`;try{externalData=await externalAPI({action:'lookup'});externalRender();}catch(error){const main=$('.sign-main');if(main)main.innerHTML=`<section class="sign-panel"><h2>Link indisponível</h2><p>${safe(error.message)}</p></section>`;}}
 function externalRender(){const d=externalData,i=d.interview||{},p=d.packages.find(x=>x.id===i.package_id)||d.packages[0];const brand=$('.sign-top .brand-sub');if(brand)brand.textContent=d.school_name||'Ficha inicial';
- $('.sign-main').innerHTML=`<h1>Ficha inicial</h1><p class="leadline">Lead: <b>${safe(d.lead.name)}</b> · ${safe(d.lead.phone)}<br>Entrevistador: <b>${safe(d.teacher.name)}</b></p><section class="sign-panel"><form id="externalInterviewForm"><div class="form-grid">${input('Curso','course',i.course||'Inglês')}<label class="field wide"><span>Pacote escolhido</span><select id="externalPackage" name="package_id">${weeksOrCustom()}${options(d.packages,i.package_id||p?.id)}</select></label>${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}${input('Data início','start_date',i.start_date||today(),'date')}${input('Data final (manual)','end_date',i.end_date||'','date')}<div class="wide">${scheduleHTML(i.lesson_schedule,i.weekly_days||[1,3],i.lesson_time?.slice(0,5)||'18:00')}</div>${input('Valor total R$','total_amount',i.total_amount??p?.default_total??'','number')}${input('Parcelas','installments',i.installments||6,'number')}${input('Valor da parcela R$','installment_amount',i.installment_amount||'','number')}${input('Primeiro vencimento','first_due_date',i.first_due_date||today(),'date')}<label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${x===i.payment_method?'selected':''}>${x}</option>`).join('')}</select></label><label class="field wide"><span>Observações</span><textarea name="notes">${safe(i.notes||'')}</textarea></label></div><p class="form-note">Você pode editar valor total ou parcela. A data final é manual. Confira tudo antes de concluir: o link será usado uma única vez.</p><div class="form-footer"><button class="btn">Salvar ficha e finalizar entrevista</button></div></form></section>`;updateInstallment($('#externalInterviewForm'));
-}
+ $('.sign-main').innerHTML=`<h1>Ficha inicial</h1><p class="leadline">Lead: <b>${safe(d.lead.name)}</b> · ${safe(d.lead.phone)}<br>Professor: <b>${safe(d.teacher.name)}</b></p><section class="sign-panel"><form id="externalInterviewForm"><div class="form-grid">${input('Curso','course',i.course||'Inglês')}<label class="field wide"><span>Pacote escolhido</span><select id="externalPackage" name="package_id">${weeksOrCustom()}${options(d.packages,i.package_id||p?.id)}</select></label>${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}${input('Data início','start_date',i.start_date||today(),'date')}${input('Data final (manual)','end_date',i.end_date||'','date')}<div class="wide">${scheduleHTML(i.lesson_schedule,i.weekly_days||[1,3],i.lesson_time?.slice(0,5)||'18:00')}</div>${input('Valor total R$','total_amount',i.total_amount??p?.default_total??'','number')}${input('Parcelas','installments',i.installments||6,'number')}${input('Valor da parcela R$','installment_amount',i.installment_amount||'','number')}${input('Primeiro vencimento','first_due_date',i.first_due_date||today(),'date')}<label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${x===i.payment_method?'selected':''}>${x}</option>`).join('')}</select></label><label class="field wide"><span>Observações</span><textarea name="notes">${safe(i.notes||'')}</textarea></label></div><div class="form-footer"><button class="btn">Salvar ficha</button></div></form></section>`;updateInstallment($('#externalInterviewForm'));}
 async function externalSave(f){const d=formData(f),p=externalData.packages.find(x=>x.id===d.package_id),count=Number(d.lessons_count),freq=Number(d.weekly_frequency);
  if(!Number.isInteger(count)||count<1||count>500||!Number.isInteger(freq)||freq<1||freq>7)throw new Error('Quantidade e frequência inválidas.');
  const schedule=readSchedule(f,freq);
  if(!d.end_date||d.end_date<d.start_date)throw new Error('Data final inválida.');
  const total=Number(d.total_amount),part=Number(d.installment_amount),n=Number(d.installments);if(!Number.isFinite(total)||total<0||!Number.isFinite(part)||part<0||!Number.isInteger(n)||n<1||n>48)throw new Error('Confira total e parcelas.');
  const data={...d,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,lesson_schedule:schedule,weekly_days:schedule.map(x=>x.day),lesson_time:schedule[0].time,total_amount:total,installments:n,installment_amount:part,total_extenso:amountWords(total)};
- await externalAPI({action:'save',form:data});$('.sign-main').innerHTML='<section class="sign-panel"><h1>Ficha salva!</h1><p>Obrigado. A administração poderá gerar o contrato e enviar o link de matrícula para o aluno.</p><p class="muted">Este link de entrevista já foi utilizado.</p></section>';
+ await externalAPI({action:'save',form:data});$('.sign-main').innerHTML='<section class="sign-panel"><h1>Ficha salva!</h1><p>Obrigado. A administração poderá gerar o contrato e seguir com a matrícula.</p><p class="muted">Este link já foi utilizado.</p></section>';
 }
 
 let publicToken='',publicData=null;
@@ -1143,7 +1189,7 @@ async function completePreEnrollment(f){
  history.replaceState({},'',location.pathname+'#pre-matricula-concluida');
  $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div></header><main class="sign-main"><section class="sign-panel"><div class="eyebrow">Cadastro recebido</div><h1>Pré-matrícula concluída!</h1><p class="leadline">Seus dados foram enviados à escola. A administração preparará o contrato e combinará com você a assinatura por outro meio.</p><div class="notice">Nenhum contrato foi assinado nesta etapa. Aguarde as orientações da escola.</div></section></main></div>`;
 }
-window.addEventListener('hashchange',()=>{if(location.hash.startsWith('#assinar/')||location.hash.startsWith('#pre-matricula/')||location.hash.startsWith('#entrevista/'))location.reload()});
+window.addEventListener('hashchange',()=>{if(location.hash.startsWith('#assinar/')||location.hash.startsWith('#pre-matricula/')||location.hash.startsWith('#entrevista/')||location.hash.startsWith('#professor/'))location.reload()});
 sb.auth.onAuthStateChange((event)=>{
  if(event==='PASSWORD_RECOVERY'){
   history.replaceState({},'',location.pathname+'?recuperar=1');
