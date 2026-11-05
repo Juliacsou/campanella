@@ -1,0 +1,1348 @@
+/**
+ * CAMPANELLA V7 — VISION UI DESIGN SYSTEM
+ * Complete Dark & Light Mode System
+ * Inspired by Vision UI Dashboard (Deep Navy, Electric Blue, Glassmorphism)
+ */
+
+/* ==========================================================================
+   1. DESIGN TOKENS (DARK & LIGHT)
+   ========================================================================== */
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Backgrounds */
+  --camp-bg: #060B1F;
+  --camp-bg-secondary: #080F2B;
+  --camp-bg-radial: radial-gradient(at 85% 0%, rgba(0, 117, 255, 0.16) 0px, transparent 55%),
+                    radial-gradient(at 5% 45%, rgba(117, 81, 255, 0.11) 0px, transparent 50%),
+                    radial-gradient(at 50% 90%, rgba(33, 212, 253, 0.06) 0px, transparent 40%);
+  
+  /* Surfaces */
+  --camp-surface: #0B1437;
+  --camp-surface-raised: #101C44;
+  --camp-surface-floating: #12204E;
+  --camp-surface-card: rgba(11, 20, 55, 0.88);
+  --camp-surface-card-border: rgba(255, 255, 255, 0.08);
+
+  /* Inputs & Interactive Controls */
+  --camp-input: #0C1735;
+  --camp-input-focus: #101E48;
+  --camp-input-border: rgba(255, 255, 255, 0.12);
+  --camp-hover: rgba(255, 255, 255, 0.06);
+  --camp-hover-strong: rgba(0, 117, 255, 0.15);
+
+  /* Brand Accents */
+  --camp-primary: #0075FF;
+  --camp-primary-hover: #1687FF;
+  --camp-primary-glow: rgba(0, 117, 255, 0.38);
+  --camp-cyan: #21D4FD;
+  --camp-purple: #7551FF;
+
+  /* Typography */
+  --camp-text: #FFFFFF;
+  --camp-text-secondary: #A0AEC0;
+  --camp-text-muted: #718096;
+  --camp-text-disabled: #4A5568;
+
+  /* Semantic Feedback */
+  --camp-success: #01B574;
+  --camp-success-bg: rgba(1, 181, 116, 0.15);
+  --camp-success-border: rgba(1, 181, 116, 0.35);
+  --camp-warning: #FFB547;
+  --camp-warning-bg: rgba(255, 181, 71, 0.15);
+  --camp-warning-border: rgba(255, 181, 71, 0.35);
+  --camp-danger: #F56565;
+  --camp-danger-bg: rgba(245, 101, 101, 0.15);
+  --camp-danger-border: rgba(245, 101, 101, 0.35);
+  --camp-info: #21D4FD;
+  --camp-info-bg: rgba(33, 212, 253, 0.15);
+  --camp-info-border: rgba(33, 212, 253, 0.35);
+
+  /* Borders & Dividers */
+  --camp-border: rgba(255, 255, 255, 0.08);
+  --camp-border-subtle: rgba(255, 255, 255, 0.05);
+  --camp-border-strong: rgba(255, 255, 255, 0.18);
+
+  /* Shadows */
+  --camp-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --camp-shadow-card: 0 8px 32px rgba(0, 0, 0, 0.38);
+  --camp-shadow-floating: 0 20px 48px rgba(0, 0, 0, 0.6);
+  --camp-shadow-btn: 0 4px 15px rgba(0, 117, 255, 0.35);
+
+  /* Gradients */
+  --camp-gradient-primary: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%);
+  --camp-gradient-surface: linear-gradient(127deg, rgba(16, 28, 68, 0.94) 0%, rgba(11, 20, 55, 0.88) 100%);
+  --camp-gradient-sidebar: linear-gradient(180deg, #0B1437 0%, #060B1F 100%);
+  --camp-gradient-icon: linear-gradient(135deg, #0075FF 0%, #7551FF 100%);
+
+  /* Scrollbars */
+  --camp-scrollbar-thumb: rgba(255, 255, 255, 0.18);
+  --camp-scrollbar-track: rgba(6, 11, 31, 0.7);
+
+  /* Bridge to existing legacy variables */
+  --c-ink: #FFFFFF;
+  --c-green: #0075FF;
+  --c-border: rgba(255, 255, 255, 0.08);
+  --c-soft: #101C44;
+  --crm-stroke: rgba(255, 255, 255, 0.08);
+  --crm-forest: #0075FF;
+  --crm-muted: #A0AEC0;
+  --crm-bg: #060B1F;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Backgrounds */
+  --camp-bg: #F5F7FC;
+  --camp-bg-secondary: #EDF2FA;
+  --camp-bg-radial: radial-gradient(at 85% 0%, rgba(0, 102, 230, 0.08) 0px, transparent 55%),
+                    radial-gradient(at 5% 45%, rgba(104, 68, 214, 0.05) 0px, transparent 50%),
+                    radial-gradient(at 50% 90%, rgba(8, 127, 163, 0.04) 0px, transparent 40%);
+  
+  /* Surfaces */
+  --camp-surface: #FFFFFF;
+  --camp-surface-raised: #FFFFFF;
+  --camp-surface-floating: #FFFFFF;
+  --camp-surface-card: #FFFFFF;
+  --camp-surface-card-border: #E1E7F0;
+
+  /* Inputs & Interactive Controls */
+  --camp-input: #F8FAFD;
+  --camp-input-focus: #FFFFFF;
+  --camp-input-border: #D8E0EE;
+  --camp-hover: #F0F4FA;
+  --camp-hover-strong: rgba(0, 102, 230, 0.08);
+
+  /* Brand Accents */
+  --camp-primary: #0066E6;
+  --camp-primary-hover: #0052BD;
+  --camp-primary-glow: rgba(0, 102, 230, 0.25);
+  --camp-cyan: #087FA3;
+  --camp-purple: #6844D6;
+
+  /* Typography */
+  --camp-text: #1A2340;
+  --camp-text-secondary: #52617A;
+  --camp-text-muted: #64748B;
+  --camp-text-disabled: #A0AEC0;
+
+  /* Semantic Feedback */
+  --camp-success: #087F5B;
+  --camp-success-bg: rgba(8, 127, 91, 0.1);
+  --camp-success-border: rgba(8, 127, 91, 0.3);
+  --camp-warning: #9A5700;
+  --camp-warning-bg: rgba(154, 87, 0, 0.1);
+  --camp-warning-border: rgba(154, 87, 0, 0.3);
+  --camp-danger: #C53030;
+  --camp-danger-bg: rgba(197, 48, 48, 0.1);
+  --camp-danger-border: rgba(197, 48, 48, 0.3);
+  --camp-info: #087FA3;
+  --camp-info-bg: rgba(8, 127, 163, 0.1);
+  --camp-info-border: rgba(8, 127, 163, 0.3);
+
+  /* Borders & Dividers */
+  --camp-border: #E1E7F0;
+  --camp-border-subtle: #EDF2F7;
+  --camp-border-strong: #CCD7E7;
+
+  /* Shadows */
+  --camp-shadow-sm: 0 2px 6px rgba(30, 55, 100, 0.05);
+  --camp-shadow-card: 0 8px 24px rgba(30, 55, 100, 0.08);
+  --camp-shadow-floating: 0 20px 48px rgba(30, 55, 100, 0.15);
+  --camp-shadow-btn: 0 4px 14px rgba(0, 102, 230, 0.22);
+
+  /* Gradients */
+  --camp-gradient-primary: linear-gradient(135deg, #0066E6 0%, #087FA3 100%);
+  --camp-gradient-surface: linear-gradient(127deg, #FFFFFF 0%, #F8FAFD 100%);
+  --camp-gradient-sidebar: linear-gradient(180deg, #FFFFFF 0%, #F5F7FC 100%);
+  --camp-gradient-icon: linear-gradient(135deg, #0066E6 0%, #6844D6 100%);
+
+  /* Scrollbars */
+  --camp-scrollbar-thumb: rgba(30, 55, 100, 0.2);
+  --camp-scrollbar-track: rgba(245, 247, 252, 0.85);
+
+  /* Bridge to existing legacy variables */
+  --c-ink: #1A2340;
+  --c-green: #0066E6;
+  --c-border: #E1E7F0;
+  --c-soft: #F8FAFD;
+  --crm-stroke: #E1E7F0;
+  --crm-forest: #0066E6;
+  --crm-muted: #52617A;
+  --crm-bg: #F5F7FC;
+}
+
+:root {
+  --camp-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --camp-radius-xs: 6px;
+  --camp-radius-sm: 8px;
+  --camp-radius-md: 12px;
+  --camp-radius-lg: 16px;
+  --camp-radius-xl: 20px;
+  --camp-radius-pill: 9999px;
+  --camp-transition: background-color 0.18s ease, border-color 0.18s ease, color 0.15s ease, box-shadow 0.18s ease;
+}
+
+/* ==========================================================================
+   2. GLOBAL BASE & TYPOGRAPHY
+   ========================================================================== */
+
+html {
+  font-family: var(--camp-font);
+  background-color: var(--camp-bg) !important;
+  color: var(--camp-text) !important;
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  background-color: var(--camp-bg) !important;
+  background-image: var(--camp-bg-radial) !important;
+  background-attachment: fixed !important;
+  color: var(--camp-text) !important;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--camp-text) !important;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+p {
+  color: var(--camp-text-secondary);
+}
+
+.muted, .subtle {
+  color: var(--camp-text-muted) !important;
+}
+
+.eyebrow {
+  color: var(--camp-cyan) !important;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+}
+
+[data-theme="light"] .eyebrow {
+  color: var(--camp-primary) !important;
+}
+
+.leadline {
+  color: var(--camp-text-secondary) !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--camp-scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--camp-scrollbar-thumb);
+  border-radius: var(--camp-radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--camp-primary);
+}
+
+/* ==========================================================================
+   3. THEME TOGGLE BUTTON COMPONENT
+   ========================================================================== */
+
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--camp-surface-raised);
+  border: 1px solid var(--camp-border);
+  color: var(--camp-text);
+  padding: 8px 14px;
+  border-radius: var(--camp-radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--camp-transition);
+  outline: none;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--camp-hover);
+  border-color: var(--camp-primary);
+  transform: translateY(-1px);
+}
+
+.theme-toggle-btn:focus-visible {
+  outline: 2px solid var(--camp-primary);
+  outline-offset: 2px;
+}
+
+.theme-toggle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--camp-cyan);
+}
+
+[data-theme="light"] .theme-toggle-icon {
+  color: var(--camp-primary);
+}
+
+/* ==========================================================================
+   4. SHELL, SIDEBAR & HEADER (VISION UI PREMIUM)
+   ========================================================================== */
+
+.shell {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  min-height: 100vh;
+  background: transparent;
+}
+
+.sidebar {
+  background: var(--camp-gradient-sidebar) !important;
+  border-right: 1px solid var(--camp-border) !important;
+  color: var(--camp-text) !important;
+  padding: 24px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  box-sizing: border-box;
+  backdrop-filter: blur(20px);
+  z-index: 20;
+}
+
+[data-theme="dark"] .sidebar {
+  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="light"] .sidebar {
+  box-shadow: 4px 0 24px rgba(30, 55, 100, 0.05);
+}
+
+.sidebar .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 10px 14px;
+  border-bottom: 1px solid var(--camp-border);
+}
+
+.sidebar .mark {
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--camp-radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--camp-font);
+  font-weight: 800;
+  font-size: 20px;
+  box-shadow: 0 4px 18px var(--camp-primary-glow) !important;
+}
+
+.sidebar .brand-title {
+  color: var(--camp-text) !important;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.8px;
+}
+
+.sidebar .brand-sub {
+  color: var(--camp-text-muted) !important;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.sidebar-current {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-current-label {
+  font-size: 9.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--camp-text-muted);
+  font-weight: 800;
+}
+
+.sidebar-current-name {
+  color: var(--camp-text);
+  font-size: 12.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sidebar-menu {
+  flex: 1;
+  overflow-y: auto;
+  margin-right: -4px;
+  padding-right: 4px;
+}
+
+.nav-section {
+  margin-bottom: 16px;
+}
+
+.nav-group {
+  color: var(--camp-text-muted) !important;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 800;
+  padding: 4px 12px 8px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-btn {
+  color: var(--camp-text-secondary) !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--camp-radius-md) !important;
+  background: transparent !important;
+  padding: 10px 14px !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: var(--camp-transition);
+  text-align: left;
+  width: 100%;
+}
+
+.nav-btn .nav-ico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--camp-radius-sm);
+  background: var(--camp-surface-raised);
+  color: var(--camp-text-secondary);
+  transition: var(--camp-transition);
+}
+
+.nav-btn:hover {
+  background: var(--camp-hover) !important;
+  color: var(--camp-text) !important;
+}
+
+.nav-btn:hover .nav-ico {
+  color: var(--camp-primary);
+  background: var(--camp-hover-strong);
+}
+
+.nav-btn.active {
+  background: var(--camp-surface-raised) !important;
+  border-color: var(--camp-border-strong) !important;
+  color: var(--camp-text) !important;
+  font-weight: 700 !important;
+  box-shadow: var(--camp-shadow-sm) !important;
+}
+
+.nav-btn.active .nav-ico {
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 10px var(--camp-primary-glow);
+}
+
+.sidebar-bottom {
+  border-top: 1px solid var(--camp-border) !important;
+  padding-top: 14px;
+}
+
+/* User Account Trigger & Dropdown */
+.account-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--camp-radius-md);
+  cursor: pointer;
+  background: var(--camp-surface-raised);
+  border: 1px solid var(--camp-border);
+  color: var(--camp-text);
+  transition: var(--camp-transition);
+}
+
+.account-trigger:hover {
+  background: var(--camp-hover);
+  border-color: var(--camp-border-strong);
+}
+
+.account-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--camp-radius-sm);
+  background: var(--camp-gradient-icon) !important;
+  color: #FFFFFF !important;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+}
+
+.account-person b {
+  display: block;
+  font-size: 12.5px;
+  color: var(--camp-text);
+}
+
+.account-person small {
+  display: block;
+  font-size: 10.5px;
+  color: var(--camp-text-muted);
+}
+
+.account-dropdown {
+  background: var(--camp-surface-floating) !important;
+  border: 1px solid var(--camp-border-strong) !important;
+  border-radius: var(--camp-radius-lg) !important;
+  box-shadow: var(--camp-shadow-floating) !important;
+  backdrop-filter: blur(24px);
+  padding: 12px;
+  color: var(--camp-text) !important;
+}
+
+.account-dropdown-top {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 8px 12px;
+  border-bottom: 1px solid var(--camp-border);
+}
+
+.account-dropdown-title {
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--camp-text-muted);
+  font-weight: 800;
+  margin: 10px 8px 6px;
+}
+
+.account-option {
+  color: var(--camp-text-secondary) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: var(--camp-radius-sm) !important;
+  padding: 8px 10px !important;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--camp-transition);
+}
+
+.account-option:hover {
+  background: var(--camp-hover) !important;
+  color: var(--camp-text) !important;
+}
+
+.account-divider {
+  height: 1px;
+  background: var(--camp-border) !important;
+  margin: 8px 0;
+}
+
+/* Workspace & Topbar */
+.workspace {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 36px;
+  border-bottom: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-card) !important;
+  backdrop-filter: blur(16px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topbar .subtle {
+  font-size: 13px;
+  color: var(--camp-text-secondary) !important;
+}
+
+.topbar .subtle b {
+  color: var(--camp-text) !important;
+  font-weight: 700;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-chip {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  color: var(--camp-text-secondary) !important;
+  padding: 6px 12px;
+  border-radius: var(--camp-radius-pill);
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.content {
+  max-width: 1440px;
+  padding: 32px 36px 60px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   5. BUTTONS & ACTIONS
+   ========================================================================== */
+
+.btn {
+  border: 1px solid transparent !important;
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  border-radius: var(--camp-radius-md) !important;
+  padding: 10px 18px !important;
+  font-weight: 700 !important;
+  font-size: 13px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--camp-shadow-btn) !important;
+  transition: var(--camp-transition);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--camp-primary-glow) !important;
+  filter: brightness(1.05);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn.ghost {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  color: var(--camp-text) !important;
+  box-shadow: none !important;
+}
+
+.btn.ghost:hover {
+  background: var(--camp-hover) !important;
+  border-color: var(--camp-border-strong) !important;
+}
+
+.btn.light {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  color: var(--camp-text) !important;
+  box-shadow: none !important;
+}
+
+.btn.light:hover {
+  background: var(--camp-hover) !important;
+  border-color: var(--camp-primary) !important;
+  color: var(--camp-primary) !important;
+}
+
+.btn.danger {
+  background: var(--camp-danger-bg) !important;
+  border: 1px solid var(--camp-danger-border) !important;
+  color: var(--camp-danger) !important;
+  box-shadow: none !important;
+}
+
+.btn.danger:hover {
+  background: var(--camp-danger) !important;
+  color: #FFFFFF !important;
+  border-color: var(--camp-danger) !important;
+}
+
+.btn.mini {
+  font-size: 11.5px;
+  padding: 6px 11px !important;
+  border-radius: var(--camp-radius-sm) !important;
+}
+
+/* ==========================================================================
+   6. CARDS, METRICS & PANELS
+   ========================================================================== */
+
+.panel,
+.metric,
+.settings-section,
+.profile-section,
+.crm-workspace,
+.crm-metric,
+.crm-section,
+.crm-side-card,
+.onb-panel,
+.cal-metrics>div,
+.sign-panel {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg) !important;
+  box-shadow: var(--camp-shadow-card) !important;
+  backdrop-filter: blur(20px);
+  transition: var(--camp-transition);
+  color: var(--camp-text) !important;
+}
+
+.panel:hover,
+.metric:hover,
+.crm-metric:hover {
+  border-color: var(--camp-border-strong) !important;
+}
+
+.panel-head,
+.crm-due-head,
+.onb-panel-head,
+.settings-section-head,
+.profile-section-head {
+  padding: 20px 24px !important;
+  border-bottom: 1px solid var(--camp-border) !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-body {
+  padding: 20px 24px;
+}
+
+/* Metric Highlight Cards */
+.metric-grid,
+.crm-metrics,
+.cal-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.cal-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.metric,
+.crm-metric {
+  padding: 22px !important;
+  min-height: 125px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric::after,
+.crm-metric::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 90px;
+  height: 90px;
+  background: radial-gradient(circle, var(--camp-primary-glow) 0%, transparent 70%);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.metric-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--camp-radius-md);
+  background: var(--camp-gradient-icon) !important;
+  color: #FFFFFF !important;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  box-shadow: 0 4px 15px var(--camp-primary-glow);
+}
+
+.metric-value,
+.crm-metric strong,
+.cal-metrics strong {
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  color: var(--camp-text) !important;
+  margin: 10px 0 2px;
+  letter-spacing: -1px;
+}
+
+.metric-label,
+.crm-metric span,
+.cal-metrics span {
+  font-size: 12px;
+  color: var(--camp-text-secondary) !important;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   7. FORMS, INPUTS & CONTROLS
+   ========================================================================== */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--camp-text-secondary) !important;
+}
+
+.field input,
+.field select,
+.field textarea,
+.search,
+.crm-filters input,
+.crm-filters select,
+.toolbar select,
+.cal-teacher-picker select {
+  padding: 12px 14px !important;
+  border: 1px solid var(--camp-input-border) !important;
+  background: var(--camp-input) !important;
+  color: var(--camp-text) !important;
+  border-radius: var(--camp-radius-md) !important;
+  width: 100%;
+  min-width: 0;
+  outline: 0;
+  transition: var(--camp-transition);
+  box-sizing: border-box;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.search:focus,
+.crm-filters input:focus,
+.crm-filters select:focus,
+.toolbar select:focus,
+.cal-teacher-picker select:focus {
+  border-color: var(--camp-primary) !important;
+  background: var(--camp-input-focus) !important;
+  box-shadow: 0 0 0 3px var(--camp-primary-glow) !important;
+}
+
+.field input::placeholder,
+.field textarea::placeholder,
+.search::placeholder {
+  color: var(--camp-text-muted) !important;
+}
+
+.form-section {
+  border-top: 1px solid var(--camp-border) !important;
+  padding-top: 18px;
+  margin-top: 20px;
+}
+
+.form-note {
+  color: var(--camp-text-secondary) !important;
+  font-size: 12px;
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  padding: 12px 16px;
+  border-radius: var(--camp-radius-md);
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   8. TABLES & LISTINGS
+   ========================================================================== */
+
+.data-table,
+.crm-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+  color: var(--camp-text-secondary) !important;
+}
+
+.data-table th,
+.crm-table th {
+  font-size: 10.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--camp-text-muted) !important;
+  font-weight: 800;
+  background: var(--camp-surface-raised) !important;
+  padding: 14px 20px !important;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--camp-border) !important;
+}
+
+.data-table td,
+.crm-table td {
+  padding: 16px 20px !important;
+  border-top: 1px solid var(--camp-border) !important;
+  vertical-align: middle;
+  color: var(--camp-text-secondary) !important;
+}
+
+.data-table td:first-child,
+.crm-table td strong {
+  font-weight: 700;
+  color: var(--camp-text) !important;
+}
+
+.data-table tr:hover td,
+.crm-table tr:hover td {
+  background: var(--camp-hover) !important;
+  color: var(--camp-text) !important;
+}
+
+/* Status Pills */
+.pill {
+  display: inline-flex;
+  border-radius: var(--camp-radius-pill) !important;
+  padding: 5px 11px !important;
+  font-size: 10.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.pill-entrevistado, .pill-signed, .pill-convertido {
+  background: var(--camp-success-bg) !important;
+  color: var(--camp-success) !important;
+  border: 1px solid var(--camp-success-border) !important;
+}
+
+.pill-sent, .pill-warning {
+  background: var(--camp-warning-bg) !important;
+  color: var(--camp-warning) !important;
+  border: 1px solid var(--camp-warning-border) !important;
+}
+
+.pill-void, .pill-perdido, .pill-danger {
+  background: var(--camp-danger-bg) !important;
+  color: var(--camp-danger) !important;
+  border: 1px solid var(--camp-danger-border) !important;
+}
+
+.pill-superseded, .pill-draft {
+  background: var(--camp-surface-raised) !important;
+  color: var(--camp-text-secondary) !important;
+  border: 1px solid var(--camp-border) !important;
+}
+
+/* ==========================================================================
+   9. MODALS, DIALOGS & OVERLAYS
+   ========================================================================== */
+
+dialog {
+  border: 1px solid var(--camp-border-strong) !important;
+  border-radius: var(--camp-radius-xl) !important;
+  background: var(--camp-surface-floating) !important;
+  color: var(--camp-text) !important;
+  box-shadow: var(--camp-shadow-floating) !important;
+  padding: 28px;
+  width: min(740px, calc(100% - 32px));
+  max-height: 88vh;
+  overflow-y: auto;
+  backdrop-filter: blur(28px);
+}
+
+dialog::backdrop {
+  background: rgba(4, 8, 24, 0.78) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+dialog .close {
+  position: absolute;
+  right: 18px;
+  top: 16px;
+  border: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-raised) !important;
+  color: var(--camp-text-secondary) !important;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 20px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: var(--camp-transition);
+}
+
+dialog .close:hover {
+  background: var(--camp-hover) !important;
+  color: var(--camp-text) !important;
+  border-color: var(--camp-border-strong) !important;
+}
+
+/* Busy overlay and Toast */
+#busyOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 8, 24, 0.75) !important;
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+}
+
+.busy-card {
+  background: var(--camp-surface-floating) !important;
+  border: 1px solid var(--camp-border-strong) !important;
+  border-radius: var(--camp-radius-lg) !important;
+  padding: 24px 32px;
+  color: var(--camp-text) !important;
+  box-shadow: var(--camp-shadow-floating) !important;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-weight: 600;
+}
+
+.busy-wheel {
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--camp-border-strong);
+  border-top-color: var(--camp-primary);
+  border-radius: 50%;
+  animation: camp-spin 0.8s linear infinite;
+}
+
+@keyframes camp-spin {
+  to { transform: rotate(360deg); }
+}
+
+#toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--camp-surface-floating) !important;
+  color: var(--camp-text) !important;
+  border: 1px solid var(--camp-border-strong) !important;
+  padding: 14px 20px;
+  border-radius: var(--camp-radius-md);
+  z-index: 1100;
+  box-shadow: var(--camp-shadow-floating);
+  font-weight: 600;
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  transform: translateY(8px);
+}
+
+#toast.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   10. CRM KANBAN, TABS & DETAIL VIEW
+   ========================================================================== */
+
+.crm-root {
+  color: var(--camp-text) !important;
+}
+
+.crm-tabs {
+  border-bottom: 1px solid var(--camp-border) !important;
+}
+
+.crm-tabs button {
+  color: var(--camp-text-secondary) !important;
+}
+
+.crm-tabs button.active {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  color: var(--camp-primary) !important;
+  font-weight: 700;
+}
+
+.crm-toggle {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+}
+
+.crm-toggle button {
+  color: var(--camp-text-secondary) !important;
+}
+
+.crm-toggle button.active {
+  background: var(--camp-primary) !important;
+  color: #FFFFFF !important;
+}
+
+.crm-board-col {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg);
+  padding: 14px;
+}
+
+.crm-board-col header,
+.crm-board-col-title {
+  color: var(--camp-text) !important;
+}
+
+.crm-board-col.is-drag-over {
+  border-color: var(--camp-primary) !important;
+  box-shadow: 0 0 0 2px var(--camp-primary-glow) !important;
+  background: var(--camp-surface-raised) !important;
+}
+
+.crm-lead-card {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md) !important;
+  padding: 14px;
+  transition: var(--camp-transition);
+}
+
+.crm-lead-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--camp-primary) !important;
+  box-shadow: var(--camp-shadow-card);
+}
+
+.crm-lead-top strong {
+  color: var(--camp-text) !important;
+  font-size: 13.5px;
+}
+
+.crm-badge {
+  background: var(--camp-surface) !important;
+  border: 1px solid var(--camp-border) !important;
+  color: var(--camp-text-secondary) !important;
+}
+
+.crm-detail {
+  background: var(--camp-surface-floating) !important;
+  color: var(--camp-text) !important;
+}
+
+.crm-detail-top,
+.crm-detail-actions {
+  background: var(--camp-surface-raised) !important;
+  border-bottom: 1px solid var(--camp-border) !important;
+}
+
+.crm-data-item,
+.crm-info-grid>div {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+}
+
+.crm-data-item strong {
+  color: var(--camp-text) !important;
+}
+
+.crm-priority-box {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+}
+
+.crm-box-title {
+  color: var(--camp-text) !important;
+}
+
+/* ==========================================================================
+   11. CALENDAR PEDAGÓGICO & PORTAL DO PROFESSOR
+   ========================================================================== */
+
+.cal-switcher {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+}
+
+.cal-switcher button {
+  color: var(--camp-text-secondary) !important;
+}
+
+.cal-switcher .selected {
+  background: var(--camp-primary) !important;
+  color: #FFFFFF !important;
+}
+
+.cal-lesson {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-left: 3px solid var(--camp-primary) !important;
+  border-radius: var(--camp-radius-md);
+}
+
+.cal-lesson.is-pending {
+  border-left-color: var(--camp-warning) !important;
+  background: var(--camp-warning-bg) !important;
+}
+
+.cal-lesson-time {
+  color: var(--camp-text) !important;
+}
+
+.cal-week-grid {
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg);
+  background: var(--camp-surface-card) !important;
+  overflow: hidden;
+}
+
+.cal-week-grid-head {
+  background: var(--camp-surface-raised) !important;
+  border-bottom: 1px solid var(--camp-border) !important;
+}
+
+.cal-week-card {
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  border-radius: var(--camp-radius-sm);
+  box-shadow: 0 4px 12px var(--camp-primary-glow);
+}
+
+.cal-week-card.done {
+  background: var(--camp-success) !important;
+}
+
+.cal-month-day {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  color: var(--camp-text) !important;
+}
+
+.cal-month-day.is-today {
+  border-color: var(--camp-primary) !important;
+  box-shadow: 0 0 10px var(--camp-primary-glow);
+}
+
+/* ==========================================================================
+   12. ONBOARDING & IMPORT WIZARD
+   ========================================================================== */
+
+.onb-top {
+  border-bottom: 1px solid var(--camp-border) !important;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.onb-step {
+  border: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-raised) !important;
+  border-radius: var(--camp-radius-md);
+}
+
+.onb-step.active {
+  border-color: var(--camp-primary) !important;
+  box-shadow: 0 0 15px var(--camp-primary-glow) !important;
+}
+
+.onb-guidance {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+}
+
+.onb-entry {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg);
+  color: var(--camp-text) !important;
+  transition: var(--camp-transition);
+}
+
+.onb-entry:hover {
+  transform: translateY(-2px);
+  border-color: var(--camp-primary) !important;
+  box-shadow: var(--camp-shadow-card);
+}
+
+.onb-record {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+}
+
+/* ==========================================================================
+   13. PAPER DOCUMENT ISOLATION (LEGAL INTEGRITY)
+   ========================================================================== */
+/* Legal contracts and printable paperwork retain pristine paper styling in both modes */
+.legal-document,
+.doc-frame {
+  background: #FFFFFF !important;
+  color: #1A2340 !important;
+  border-radius: var(--camp-radius-md);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.legal-document h2,
+.legal-document h3,
+.legal-document p,
+.legal-document strong {
+  color: #1A2340 !important;
+}
+
+.legal-document h3 {
+  background: #EEF2F6 !important;
+}
+
+.signature-summary {
+  border-color: #E2E8F0 !important;
+}
+
+/* ==========================================================================
+   14. REDUCED MOTION PREFERENCE
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -3,15 +3,29 @@
 <head>
  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
  <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex, nofollow">
- <title>Campanella · CRM e Matrículas V6.9 · Gestão multi-escolas</title>
+ <title>Campanella · CRM e Matrículas V7.0 · Gestão multi-escolas</title>
+ <script>
+  (function() {
+    try {
+      var saved = localStorage.getItem('campanella:theme');
+      var theme = (saved === 'light' || saved === 'dark') ? saved : 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.style.colorScheme = theme;
+    } catch(e) {}
+  })();
+ </script>
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
  <link rel="stylesheet" href="./css/style.css?v=6.7.0">
+ <link rel="stylesheet" href="./css/crm.css?v=6.18.0">
+ <link rel="stylesheet" href="./css/calendar-v6.css?v=6.14.0">
+ <link rel="stylesheet" href="./css/onboarding-v67.css?v=6.10.0">
+ <link rel="stylesheet" href="./css/vision-theme.css?v=7.0.0">
  <script defer src="https://unpkg.com/pizzip@3.2.0/dist/pizzip.js"></script>
  <script defer src="https://unpkg.com/docxtemplater@3.71.0/build/docxtemplater.js"></script>
  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
  <script type="module" src="./js/app.js?v=6.18.0"></script>
-<link rel="stylesheet" href="./css/crm.css?v=6.18.0">
-<link rel="stylesheet" href="./css/calendar-v6.css?v=6.14.0">
-<link rel="stylesheet" href="./css/onboarding-v67.css?v=6.10.0">
 </head>
 <body>
  <div id="app" aria-live="polite"><div class="boot"><span class="mark">C</span><p><span class="busy-wheel" aria-hidden="true" style="margin:0 auto"></span>Carregando Campanella…</p></div></div>
