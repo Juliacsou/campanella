@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const filepath=process.argv[2];
+if(!filepath)throw new Error('Uso: node tests/v6_7_sql_contract_smoke.mjs /caminho/Campanella_V6_7_migracao.sql');
+const sql=readFileSync(filepath,'utf8');
+assert.match(sql,/ALTER TABLE public\.students ALTER COLUMN cpf DROP NOT NULL/);
+assert.match(sql,/ALTER TABLE public\.students ALTER COLUMN email DROP NOT NULL/);
+assert.match(sql,/onboarding_import_students\(p_school uuid,p_rows jsonb\)/);
+assert.match(sql,/calendar_preview\(p_school,teacher_id,pstart,nlessons,slot_list\)/);
+assert.match(sql,/Horario do CSV nao corresponde a grade ativa do professor/);
+assert.match(sql,/Horario escolhido ja possui aluno/);
+assert.match(sql,/chosen.weekday=EXTRACT\(DOW FROM l.scheduled_date\)/);
+assert.match(sql,/is_school_admin\(p_school\)/);
+assert.match(sql,/IF EXISTS\(SELECT 1 FROM public\.contracts/);
+assert.match(sql,/status.*'pre_enrolled'/s);
+assert.doesNotMatch(sql,/DROP TABLE|TRUNCATE TABLE|DELETE FROM public\.students/i);
+console.log('OK: SQL V6.7 contem autorizacao, verificacao de CPF, escola, slots, disponibilidade, pacote e preservacao das tabelas.');

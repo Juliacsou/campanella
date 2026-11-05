@@ -1,3 +1,11 @@
+# Campanella V6.7 — Assistente de implantacao
+
+**Versao atual para testes locais: V6.7.** Inclui um guia em Configuracoes da escola para importar alunos com nome + telefone e preparar matriculas em lote, validando professor, horarios e frequencia na grade real. Veja [CHANGELOG_V6_7.md](CHANGELOG_V6_7.md).
+
+**Migracao:** instalar apenas `Campanella_V6_7_migracao.sql` **separadamente**, apos backup e apos as migracoes V6.0 a V6.6. **O ZIP nao contem SQL**. Nao publicar antes da homologacao de RLS e conflitos de horarios no Supabase.
+
+---
+
 # Campanella V6.6 — Calendários visuais e ações integradas
 
 **Versão atual para homologação: V6.6.** Esta versão usa como base a V6.5 e exige que as migrações anteriores e a Edge Function `entrevista` atualizada da V6.5 já estejam instaladas. Consulte [`CHANGELOG_V6_6.md`](CHANGELOG_V6_6.md).
