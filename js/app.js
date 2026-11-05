@@ -6,7 +6,7 @@ import {createCRM} from './crm.js';
 import {createCalendar} from './calendar-v6.js?v=6.6.0';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
-import {createOnboarding} from './onboarding-v67.js?v=6.8.0';
+import {createOnboarding} from './onboarding-v67.js?v=6.9.0';
 import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js';
 // Campanella V4 - multi-escolas, licencas e administracao.
 // Esta e uma chave publica, segura para uso em frontend com RLS corretamente configurado.
@@ -593,7 +593,7 @@ const profileSections=[
 ];
 const schoolSections=[
  ['settings-identity','school','Informações da escola','Nome, contato e endereço'],
- ['settings-import','students','Importar alunos e matrículas','Assistente de implantação da escola'],
+ ['settings-import','students','Importação de Alunos e Matrículas','Importe alunos, complete cadastros e matricule em lote'],
  ['settings-license','key','Licença e ativação','Validade e código de renovação'],
  ['settings-admin','profile','Administrador responsável','Transferência de administração'],
  // ['settings-backup','school','Backup no Google Drive','Conectar o Drive desta escola'], // recurso preservado para uso futuro

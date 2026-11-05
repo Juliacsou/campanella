@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import {createOnboarding} from '../js/onboarding-v67.js';
+import {safe} from '../js/utils.js';
+const school='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const students=[];let events=[],downloaded=[],dialog=[];
+let fileCounter=0;const blobs=new Map();URL.createObjectURL=blob=>{const id='blob:mock/'+(++fileCounter);blobs.set(id,blob);return id;};URL.revokeObjectURL=()=>{};
+globalThis.document={createElement:()=>({set href(h){this.h=h},set download(n){this.n=n},click(){downloaded.push({name:this.n,blob:blobs.get(this.h)})}})};
+const db={students,contracts:[],teachers:[],packages:[],contract_types:[]};
+const sb={rpc:async(fn,params)=>{assert.equal(fn,'onboarding_import_students');assert.equal(params.p_school,school);const linhas=[];let criados=0,completados=0,existentes=0,erros=0;
+for(const r of params.p_rows){events.push({name:fn,row:r});
+if(r.nome_completo==='Falha Servidor'){erros++;linhas.push({linha:r.linha,resultado:'erro',motivo:'Cadastro ambíguo'});continue;}
+const original=students.find(s=>s.id===r.aluno_id)||students.find(s=>s.full_name===r.nome_completo&&s.phone===r.telefone);
+if(original){original.email ||=r.email||null;original.birth_date ||=r.data_nascimento||null;original.cpf ||=r.cpf||null;original.address ||=r.endereco||null;original.cep ||=r.cep||null;completados++;linhas.push({linha:r.linha,resultado:'completado'});}
+else{const id='11111111-1111-4111-8111-'+String(students.length+1).padStart(12,'0');students.push({id,school_id:school,full_name:r.nome_completo,phone:r.telefone,cpf:r.cpf||null,email:r.email||null,birth_date:r.data_nascimento||null,cep:r.cep||null,address:r.endereco||null,is_minor:false});criados++;linhas.push({linha:r.linha,resultado:'criado'});}}
+return {data:{criados,completados,existentes,erros,linhas},error:null};}};
+const ui={schoolId:school,page:'settings-import'};
+let confirms=[];
+const onb=createOnboarding({db,ui,sb,calendar:{getOnboardingSnapshot:()=>({slots:[],roster:[]}),openStudent:async()=>{}},canAdmin:()=>true,render:()=>{},refresh:async()=>{},safe,ico:()=>'',today:()=> '2026-11-04',dateBR:x=>x,cpfValid:v=>['52998224725','11144477735'].includes(v),amountWords:()=>'',confirm:async(message,title)=>{confirms.push(title);return true;},toast:()=>{}});
+let html=onb.view();assert.match(html,/Começar nova importação de alunos/);assert.match(html,/Cadastrar matrículas em massa/);assert.match(html,/Completar cadastros em massa/);assert.doesNotMatch(html,/professores ativos/);
+await onb.action('onbStart',{dataset:{}});
+html=onb.view();assert.match(html,/1\. Enviar arquivo/);assert.match(html,/5<\/span><b>Matrículas/);
+const csv=['nome_completo;telefone;cpf;email;cep;data_nascimento;endereco','Ana Completa;11987654321;52998224725;ana@example.com;01001000;2000-01-01;Rua A','Bruno Basico;11977776666;;;;;','Erro CPF;11911112222;12345;;;;','Falha Servidor;11922223333;;f@example.com;01001000;2000-01-01;Rua C'].join('\n');
+await onb.submit({id:'onbStudentUpload',elements:{file:{files:[{size:csv.length,text:async()=>csv}]}}});
+html=onb.view();assert.match(html,/4<\/strong><span>encontrados/);assert.match(html,/Erro CPF/);assert.match(html,/Falha Servidor/);
+await onb.action('onbNextFromUpload',{dataset:{}});html=onb.view();assert.match(html,/2\. Erros encontrados/);assert.match(html,/O que fazer com erros/);
+await onb.action('onbDownloadErrorRows',{dataset:{}});assert.equal(downloaded.at(-1).name,'alunos_com_erros.csv');assert.match(await downloaded.at(-1).blob.text(),/linha_csv/);assert.match(onb.view(),/Importar depois/);
+await onb.action('onbOpenRow',{dataset:{line:'4'}});onb.change({target:{dataset:{onbEditLine:'4',onbEditField:'cpf'},value:''}});await onb.action('onbFinishRow',{dataset:{line:'4'}});
+html=onb.view();assert.doesNotMatch(html,/CPF inválido/);assert.match(html,/Nenhum erro pendente/);
+await onb.action('onbStep',{dataset:{step:'incomplete'}});html=onb.view();assert.match(html,/3\. Cadastros incompletos/);assert.match(html,/Bruno Basico/);
+await onb.action('onbDownloadBasicRows',{dataset:{}});assert.match(await downloaded.at(-1).blob.text(),/linha_csv/);assert.match(onb.view(),/Completar depois/);
+const fill=['aluno_id;nome_completo;telefone;cpf;email;data_nascimento;cep;endereco;linha_csv',';Bruno Basico;11977776666;11144477735;bruno@example.com;2000-01-01;01001000;Rua B;3'].join('\n');
+await onb.submit({id:'onbFixIncompleteUpload',elements:{file:{files:[{size:fill.length,text:async()=>fill}]}}});
+html=onb.view();assert.doesNotMatch(html,/Bruno Basico<\/b>/);
+await onb.action('onbStep',{dataset:{step:'review'}});html=onb.view();assert.match(html,/4\. Cadastro final/);assert.match(html,/Cadastrar sem matrícula/);assert.match(html,/Matricular alunos com cadastro completo/);
+await onb.action('onbFinishNoEnroll',{dataset:{}});
+assert.match(onb.view(),/1 aluno\(s\) com erro/);
+await onb.action('onbFinishNoEnroll',{dataset:{}});
+assert.equal(students.length,3);assert.equal(ui.page,'settings-import');assert.match(onb.view(),/O que você deseja fazer/);assert.ok(confirms.some(x=>/Confirmar cadastro/.test(x)));
+await onb.action('onbStandaloneComplete',{dataset:{}});assert.match(onb.view(),/Completar cadastros em massa/);
+await onb.action('onbDownloadIncomplete',{dataset:{}});assert.equal(downloaded.at(-1).name,'alunos_para_completar.csv');
+await onb.action('onbStandaloneEnroll',{dataset:{}});assert.match(onb.view(),/Cadastrar matrículas em massa/);assert.match(onb.view(),/agenda do professor/);
+console.log('OK: V6.9 três entradas, cinco etapas, correção manual, exportação, reimportação com linha_csv, cadastro final, menu de matrículas e complementação.');

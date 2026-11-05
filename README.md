@@ -1,3 +1,5 @@
+**Versão V6.9:** consulte `CHANGELOG_V6_9.md` para o novo assistente de Importação de Alunos e Matrículas. Sem migração SQL adicional.
+
 # Campanella V6.8
 
 Atualização do assistente de implantação: prévia completa de CSV, correção manual de erros, recuperação de rejeitados, complementação por `aluno_id` e quatro etapas separadas. Veja `CHANGELOG_V6_8.md`. **Sem novo SQL; exige as migrações instaladas até V6.7.**
