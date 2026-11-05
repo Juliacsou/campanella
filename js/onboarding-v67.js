@@ -1,4 +1,4 @@
-// Campanella V6.9 - implantacao assistida, recuperacao de erros e complementacao segura.
+// Campanella V6.10 - assistente acessivel, hierarquia de instrucoes e rolagem por etapa.
 // Importacoes sempre limitadas a uma unica escola. Confirmacoes e gravacoes no Supabase.
 import {parseCSV,isoDate} from './csv.js';
 
@@ -49,7 +49,23 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   return fields;
  };
  const slotData=()=>calendar.getOnboardingSnapshot?.()||{slots:[],roster:[],blocks:[]};
- const panel=(title,html)=>`<section class="panel onb-panel"><div class="panel-head"><h2>${safe(title)}</h2></div><div class="onb-panel-inner">${html}</div></section>`;
+ const stepDescriptions={
+  '1':'Primeiro confira a lista e identifique os dados que precisam de revisão.',
+  '2':'Resolva os erros antes de cadastrar os alunos afetados.',
+  '3':'Complete os dados quando puder. Cadastros básicos podem ser salvos sem matrícula.',
+  '4':'Confira o que será cadastrado antes de gravar os dados.',
+  '5':'Escolha como matricular os alunos e confira a agenda dos professores.'
+ };
+ const panel=(title,html)=>{const match=title.match(/^([1-5])\.\s/);
+  const step=match?.[1];
+  return `<section class="panel onb-panel"><div class="panel-head onb-panel-head"><div class="onb-heading-group">${step?`<span class="onb-section-number" aria-hidden="true">${step.padStart(2,'0')}</span>`:''}<div><h2>${safe(title)}</h2>${step?`<p class="onb-heading-help">${stepDescriptions[step]}</p>`:''}</div></div></div><div class="onb-panel-inner">${html}</div></section>`;
+ };
+ // Rolagem apenas quando o usuario muda de etapa; editar uma linha mantem sua posicao.
+ const renderStep=()=>{render();if(typeof window!=='undefined'&&typeof window.requestAnimationFrame==='function'){
+  window.requestAnimationFrame(()=>{const top=document.querySelector('.onb-wizard .onb-top');if(top&&typeof top.scrollIntoView==='function')top.scrollIntoView({block:'start',behavior:'auto'});});
+ }};
+ const goToStep=step=>{state.step=step;state.openedLine=null;state.editStudentId=null;renderStep();};
+ const note=(type,title,message)=>`<div class="onb-guidance onb-guidance--${type}" ${type==='warning'?'role="note"':''}><span class="onb-guidance-mark" aria-hidden="true">${type==='warning'?'!':type==='success'?'✓':'i'}</span><div><strong>${title}</strong><p>${message}</p></div></div>`;
  const row=(cols)=>`<tr>${cols.map(x=>`<td>${x}</td>`).join('')}</tr>`;
  const grid=(heads,rows,scroll=false)=>`<div class="table-wrap"${scroll?' style="max-height:540px;overflow:auto"':''}><table class="data-table"><thead${scroll?' style="position:sticky;top:0;z-index:1;background:#f8faf9"':''}><tr>${heads.map(h=>`<th>${safe(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
  const statusText=r=>r?'':' ';
@@ -59,7 +75,7 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
  const reportForMode=()=>state.fileMode==='complete'?state.completionReport:state.studentReport;
  const setReportForMode=report=>{if(state.fileMode==='complete')state.completionReport=report;else state.studentReport=report;};
  const metric=(n,label)=>`<div><strong>${n}</strong><span>${label}</span></div>`;
- const section=(title,text,buttons)=>`<div class="onb-choice"><div><h3>${title}</h3><p>${text}</p></div><div class="onb-actions">${buttons}</div></div>`;
+ const section=(title,text,buttons,variant='')=>`<section class="onb-choice ${variant?'onb-choice--'+variant:''}"><div class="onb-choice-content"><h3>${title}</h3><p>${text}</p></div>${buttons?`<div class="onb-actions">${buttons}</div>`:''}</section>`;
  const counts=()=>{const rows=previewData().filter(x=>!x.completed);return {rows,errors:rows.filter(x=>x.issues.length),basic:rows.filter(x=>!x.issues.length&&x.incomplete&&!x.deferred),complete:rows.filter(x=>!x.issues.length&&!x.incomplete&&!x.deferred),valid:rows.filter(x=>!x.issues.length&&!x.deferred)};};
  function view(){
   if(state.schoolId!==ui.schoolId)Object.assign(state,freshState());
@@ -73,10 +89,10 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   return `<div class="onb-wizard">${head}${notices()}${state.step==='upload'?studentsStep():state.step==='errors'?errorsStep():state.step==='incomplete'?incompleteStep():state.step==='review'?reviewStep():enrollmentsStep(pend,ready,false)}</div>`;
  }
  function homeStep(){
-  return panel('O que você deseja fazer?',`<div class="onb-entry-grid">
-   <button type="button" class="onb-entry" data-action="onbStart"><span>${ico('students',25)}</span><b>Começar nova importação de alunos</b><small>Enviar um arquivo, corrigir dados e cadastrar alunos.</small><span class="onb-entry-arrow">→</span></button>
-   <button type="button" class="onb-entry" data-action="onbStandaloneEnroll"><span>${ico('calendar',25)}</span><b>Cadastrar matrículas em massa</b><small>Importar uma planilha de matrículas preparada anteriormente.</small><span class="onb-entry-arrow">→</span></button>
-   <button type="button" class="onb-entry" data-action="onbStandaloneComplete"><span>${ico('profile',25)}</span><b>Completar cadastros em massa</b><small>Atualizar alunos existentes usando o CSV com identificadores.</small><span class="onb-entry-arrow">→</span></button></div>
+  return panel('O que você deseja fazer?',`${note('info','Escolha por onde começar','Você pode importar novos alunos, completar cadastros existentes ou preparar matrículas. Cada opção funciona separadamente.')}<div class="onb-entry-grid">
+   <button type="button" class="onb-entry" data-action="onbStart"><span>${ico('students',25)}</span><b>Começar nova importação de alunos</b><small>Envie um arquivo e acompanhe as cinco etapas até a confirmação final.</small><span class="onb-entry-arrow">→</span></button>
+   <button type="button" class="onb-entry" data-action="onbStandaloneEnroll"><span>${ico('calendar',25)}</span><b>Cadastrar matrículas em massa</b><small>Envie a planilha de matrículas que você preparou anteriormente.</small><span class="onb-entry-arrow">→</span></button>
+   <button type="button" class="onb-entry" data-action="onbStandaloneComplete"><span>${ico('profile',25)}</span><b>Completar cadastros em massa</b><small>Atualize alunos já cadastrados sem criar registros duplicados.</small><span class="onb-entry-arrow">→</span></button></div>
    ${state.lastFlowReport?`<div class="onb-finish-notice"><b>Última importação</b>${reportPanel(state.lastFlowReport)}<div class="onb-actions">${button('onbStandaloneComplete','Completar cadastros')}${button('onbStandaloneEnroll','Matricular alunos')}</div></div>`:''}`);
  }
  function rowRecords(infos,label){return `<div class="onb-records" aria-label="${label}">${infos.map(info=>{
@@ -159,45 +175,52 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
  function studentsStep(){
   const all=state.studentsFile.length?previewData():[],errors=all.filter(x=>x.issues.length),incomplete=all.filter(x=>!x.issues.length&&x.incomplete),complete=all.filter(x=>!x.issues.length&&!x.incomplete);
   const report=state.studentReport?reportPanel(state.studentReport):'';
-  return panel('1. Enviar arquivo de alunos',`${button('onbDownloadTemplate','Baixar modelo CSV')}
+  return panel('1. Enviar arquivo de alunos',`${note('info','Como começar','Envie seu arquivo CSV. Para um cadastro básico, só precisamos do nome completo e telefone com DDD. Você poderá completar os demais dados depois.')}
+   <div class="onb-action-header"><div><h3>1. Escolha seu arquivo</h3><p>Se não tiver um CSV pronto, baixe o modelo simples e preencha os dados que sua escola possui.</p></div>${button('onbDownloadTemplate','Baixar modelo CSV')}</div>
    <form id="onbStudentUpload" class="onb-upload"><label class="field"><span>Selecionar CSV de alunos</span><input type="file" name="file" accept=".csv,text/csv" required></label><button type="submit" class="btn">Conferir arquivo</button></form>
-   ${all.length?`<section class="onb-preview"><h3>Visão geral do arquivo</h3><div class="onb-metrics">${metric(all.length,'encontrados')}${metric(complete.length,'completos')}${metric(incomplete.length,'incompletos')}${metric(errors.length,'com erros')}</div>
+   ${all.length?`<section class="onb-preview"><div class="onb-section-title"><h3>2. Confira os alunos encontrados</h3><p>Veja o status de cada registro. Nenhum aluno será cadastrado antes da confirmação na etapa 4.</p></div><div class="onb-metrics">${metric(all.length,'encontrados')}${metric(complete.length,'completos')}${metric(incomplete.length,'incompletos')}${metric(errors.length,'com erros')}</div>
    <details class="onb-mapping"><summary>Conferir colunas do arquivo</summary><div class="onb-map-grid">${Object.keys(aliases).map(f=>`<label class="field"><span>${safe(fieldLabels[f])}</span><select data-onb-map="${f}"><option value="">Não importar</option>${state.studentsHeaders.map(h=>`<option value="${safe(h)}" ${state.map[f]===h?'selected':''}>${safe(h)}</option>`).join('')}</select></label>`).join('')}</div></details>
    ${rowRecords(all,'Todos os alunos do arquivo')}<div class="onb-actions">${button('onbClearStudents','Trocar arquivo')}${button('onbNextFromUpload','Continuar: revisar erros','','')}</div></section>`:''}${report}`);
  }
  function errorsStep(){
   const c=counts();
-  return panel('2. Erros encontrados',`<div class="onb-metrics">${metric(c.errors.length,'precisam de correção')}${metric(c.complete.length+c.basic.length,'sem erros')}</div>
-    ${c.errors.length?`<h3>Alunos com erros</h3>${rowRecords(c.errors,'Alunos com erros')}
-    <h3>O que fazer com erros?</h3>
-    ${section('Editar os erros','Clique em Editar ao lado de cada aluno. Quando for corrigido, ele sai desta lista.',button('onbBlankAll','Limpar campos opcionais inválidos'))}
-    ${section('Editar em massa','Baixe o CSV com os erros, corrija e envie novamente aqui ou depois.',`${button('onbDownloadErrorRows','Baixar planilha com erros')}
-     <form id="onbFixErrorsUpload" class="onb-upload"><label class="field"><span>CSV corrigido</span><input type="file" name="file" accept=".csv,text/csv" required></label><button class="btn" type="submit">Conferir correções</button></form>
+  return panel('2. Erros encontrados',`${c.errors.length?note('warning',`${c.errors.length} aluno(s) precisam de revisão`,'Os alunos com erro ainda não podem ser cadastrados. Você pode corrigir os registros agora, por planilha ou continuar sem eles.'):
+   note('success','Tudo certo!','Nenhum erro pendente neste arquivo. Você pode continuar.')}
+    <div class="onb-metrics">${metric(c.errors.length,'precisam de correção')}${metric(c.complete.length+c.basic.length,'sem erros')}</div>
+    ${c.errors.length?`<div class="onb-section-title"><h3>Alunos com erros</h3><p>Clique em <strong>Editar</strong> para corrigir o problema. O aluno sairá desta lista quando estiver válido.</p></div>${rowRecords(c.errors,'Alunos com erros')}
+    <div class="onb-section-title"><h3>O que fazer com erros?</h3><p>Escolha uma das opções abaixo. Você não precisa corrigir todos os alunos de uma só vez.</p></div>
+    ${section('1. Corrigir no Campanella','Use o botão Editar ao lado de cada aluno para preencher ou ajustar somente os campos com erro. Os demais dados são preservados.',
+      `<div class="onb-blank-action"><div><strong>Limpar campos opcionais inválidos</strong><p>Os campos opcionais com erro, como CPF ou CEP inválidos, <strong>ficarão em branco</strong>. Os demais dados serão mantidos e esses alunos poderão ser cadastrados como <strong>incompletos</strong>, para completar depois. Nome e telefone continuam obrigatórios.</p></div>${button('onbBlankAll','Deixar campos inválidos em branco')}</div>`)}
+    ${section('2. Corrigir por planilha','Baixe apenas os alunos com erros, corrija os dados no arquivo e envie novamente. Você também pode guardar o CSV e continuar depois.',`${button('onbDownloadErrorRows','Baixar planilha com erros')}
+     <form id="onbFixErrorsUpload" class="onb-upload"><label class="field"><span>Enviar CSV com as correções</span><input type="file" name="file" accept=".csv,text/csv" required></label><button class="btn" type="submit">Conferir correções</button></form>
      ${state.errorsDownloaded?button('onbErrorsLater','Importar depois'):''}`)}
-    ${section('Pular esta etapa','Os alunos com erro não serão cadastrados. Você poderá importar um novo CSV posteriormente.',button('onbSkipErrors','Pular etapa'))}`:
+    ${section('3. Continuar sem os alunos com erro','Esses alunos NÃO serão cadastrados nesta importação. Para não perder o controle dos registros, recomendamos baixar a planilha com erros antes de continuar.',button('onbSkipErrors','Pular etapa'),'caution')}`:
     '<div class="onb-good">Nenhum erro pendente neste arquivo.</div>'}
     <div class="form-footer">${button('onbStep','Voltar','data-step="upload"')}${button('onbStep','Continuar: cadastros incompletos','data-step="incomplete"','')}</div>`);
  }
  function incompleteStep(){
   const c=counts();
-  return panel('3. Cadastros incompletos',`<div class="onb-metrics">${metric(c.basic.length,'incompletos')}${metric(c.complete.length,'completos')}${metric(c.errors.length,'com erro — não serão importados')}</div>
-   ${c.basic.length?`<h3>Alunos com informações faltantes</h3>${rowRecords(c.basic,'Alunos com cadastro incompleto')}
-   <h3>O que fazer com cadastros incompletos?</h3>
-   ${section('Editar os cadastros','Complete os dados em Editar. O aluno aparecerá na lista de completos quando estiver pronto.','')}
-   ${section('Editar em massa','Baixe a planilha e preencha os dados que faltam. Você pode reenviá-la agora ou completar os cadastros depois.',`${button('onbDownloadBasicRows','Baixar planilha de incompletos')}
-    <form id="onbFixIncompleteUpload" class="onb-upload"><label class="field"><span>CSV preenchido</span><input type="file" name="file" accept=".csv,text/csv" required></label><button class="btn" type="submit">Conferir correções</button></form>
-    ${state.incompleteDownloaded?`${button('onbCompleteLater','Completar depois')}<p class="onb-muted">Após cadastrar os alunos, baixe a planilha com aluno_id na opção Completar cadastros em massa, para retomar em outra sessão.</p>`:''}`)}
-   ${section('Pular esta etapa','Os alunos com cadastro incompleto serão cadastrados, mas ainda não poderão ser matriculados.',button('onbSkipIncomplete','Pular etapa'))}`:
+  return panel('3. Cadastros incompletos',`${note('info','O que é um cadastro incompleto?','O aluno tem nome e telefone válidos, mas ainda faltam dados para a matrícula ou contrato. Ele pode ser cadastrado agora e complementado depois.')}
+   <div class="onb-metrics">${metric(c.basic.length,'incompletos')}${metric(c.complete.length,'completos')}${metric(c.errors.length,'com erro — não serão importados')}</div>
+   ${c.basic.length?`<div class="onb-section-title"><h3>Alunos com informações faltantes</h3><p>Clique em <strong>Editar</strong> para completar os dados. Quando o cadastro ficar completo, o aluno sairá desta lista.</p></div>${rowRecords(c.basic,'Alunos com cadastro incompleto')}
+   <div class="onb-section-title"><h3>O que fazer com cadastros incompletos?</h3><p>Você pode completar os dados agora ou continuar com os cadastros básicos.</p></div>
+   ${section('1. Completar no Campanella','Clique em Editar ao lado de cada aluno. Os dados já existentes não serão apagados.','')}
+   ${section('2. Completar por planilha','Baixe uma planilha com os cadastros incompletos, preencha as informações e envie o arquivo corrigido.',`${button('onbDownloadBasicRows','Baixar planilha de incompletos')}
+    <form id="onbFixIncompleteUpload" class="onb-upload"><label class="field"><span>Enviar CSV preenchido</span><input type="file" name="file" accept=".csv,text/csv" required></label><button class="btn" type="submit">Conferir correções</button></form>
+    ${state.incompleteDownloaded?`${button('onbCompleteLater','Completar depois')}<p class="onb-muted">Para retomar outro dia, baixe a planilha com aluno_id na opção Completar cadastros em massa após finalizar a importação.</p>`:''}`)}
+   ${section('3. Cadastrar e completar depois','Os alunos incompletos serão cadastrados normalmente, mas só poderão ser matriculados quando os dados obrigatórios estiverem completos.',button('onbSkipIncomplete','Pular etapa'),'caution')}`:
    '<div class="onb-good">Todos os alunos sem erros possuem cadastro completo.</div>'}
    <div class="form-footer">${button('onbStep','Voltar','data-step="errors"')}${button('onbStep','Continuar: cadastro final','data-step="review"','')}</div>`);
  }
  function reviewStep(){
   const c=counts(),done=previewData().filter(x=>x.completed),eligible=c.valid.length;
-  return panel('4. Cadastro final',`<div class="onb-metrics">${metric(c.complete.length,'completos')}${metric(c.basic.length,'incompletos')}${metric(c.errors.length,'não serão cadastrados')}${done.length?metric(done.length,'já importados'):''}</div>
-   <h3>Cadastros completos</h3>${rowRecords(c.complete,'Alunos completos')}
-   <h3>Cadastros incompletos</h3>${rowRecords(c.basic,'Alunos incompletos')}
+  return panel('4. Cadastro final',`${note('info','Revise antes de cadastrar','Esta é a última conferência. Os alunos só serão gravados no sistema quando você escolher uma das opções no final da página.')}
+   <div class="onb-metrics">${metric(c.complete.length,'completos')}${metric(c.basic.length,'incompletos')}${metric(c.errors.length,'não serão cadastrados')}${done.length?metric(done.length,'já importados'):''}</div>
+   <div class="onb-section-title"><h3>Cadastros completos</h3><p>Alunos com dados suficientes para seguir para a etapa de matrícula, sujeitos às verificações de contrato e agenda.</p></div>${rowRecords(c.complete,'Alunos completos')}
+   <div class="onb-section-title"><h3>Cadastros incompletos</h3><p>Serão cadastrados com os dados disponíveis, mas ainda precisarão ser complementados antes da matrícula.</p></div>${rowRecords(c.basic,'Alunos incompletos')}
    ${c.basic.length?`<div class="onb-actions">${button('onbStep','Voltar e completar dados','data-step="incomplete"')}</div>`:''}
-   ${c.errors.length?`<div class="onb-alert">${c.errors.length} aluno(s) com erro ficarão fora. ${button('onbStep','Revisar erros','data-step="errors"')}</div>`:''}
+   ${c.errors.length?note('warning',`${c.errors.length} aluno(s) com erro ficarão de fora`,'Esses registros ainda têm erros e não serão cadastrados.')+`<div class="onb-actions">${button('onbStep','Revisar erros','data-step="errors"')}</div>`:''}
+   <div class="onb-section-title"><h3>Como deseja concluir?</h3><p>Escolha uma das duas opções. Ambas cadastram os alunos válidos; a segunda também abre a etapa de matrículas.</p></div>
    <div class="onb-final-actions">
    ${section('Cadastrar sem matrícula',`${eligible} aluno(s) serão cadastrados agora. Você poderá matriculá-los depois.`,button('onbFinishNoEnroll','Cadastrar sem matrícula','',''))}
    ${section('Matricular alunos com cadastro completo','Cadastre os alunos e siga para a preparação de matrículas.',button('onbFinishEnroll','Cadastrar e seguir para matrículas','',''))}</div>
@@ -205,7 +228,7 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
  }
  function completeStep(pend){
   const report=state.completionReport?reportPanel(state.completionReport):'';
-  return panel('Completar cadastros em massa',`<div class="onb-metrics">${metric(pend.length,'alunos com dados pendentes')}</div>
+  return panel('Completar cadastros em massa',`${note('info','Complete alunos já cadastrados','Baixe a planilha com o identificador aluno_id, preencha apenas os campos necessários e envie o arquivo. O Campanella atualiza o aluno existente, sem criar outro.')}<div class="onb-metrics">${metric(pend.length,'alunos com dados pendentes')}</div>
    <div class="onb-actions">${button('onbDownloadIncomplete','Baixar alunos incompletos (com ID)')}</div>
    ${pend.length?`<div class="onb-records" aria-label="Cadastros incompletos existentes">${pend.map(s=>`<div class="onb-record"><div class="onb-record-summary"><div class="onb-record-main"><b>${safe(s.full_name)}</b><small>Falta: ${safe(missing(s).join(', '))}</small></div>${button('onbEditExisting','Editar',`data-id="${safe(s.id)}"`)}</div>${state.editStudentId===s.id?existingStudentEditor(s):''}</div>`).join('')}</div>`:'<div class="onb-good">Todos os cadastros estão completos.</div>'}
    <form id="onbCompletionUpload" class="onb-upload"><label class="field"><span>Enviar CSV com aluno_id</span><input type="file" name="file" accept=".csv,text/csv" required></label><button class="btn" type="submit">Conferir arquivo</button></form>
@@ -222,13 +245,13 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
  function enrollmentsStep(pend,ready,standalone=false){
   const report=state.enrollReport?reportPanel(state.enrollReport):'';
   const warning=pend.length?`<details class="onb-mapping"><summary>${pend.length} aluno(s) com dados faltantes</summary>${grid(['Aluno','Informações faltantes'],pend.map(s=>row([safe(s.full_name),safe(missing(s).join(', '))])),true)}</details>`:'';
-  return panel(standalone?'Cadastrar matrículas em massa':'5. Matricular alunos',`<div class="onb-metrics">${metric(ready.length,'prontos para matrícula')}${metric(pend.length,'com cadastro incompleto')}</div>
+  return panel(standalone?'Cadastrar matrículas em massa':'5. Matricular alunos',`${note('info','Duas formas de matricular','Escolha Matricular ao lado de um aluno ou prepare vários de uma vez usando a planilha. Alunos incompletos ficam disponíveis para completar depois.')}<div class="onb-metrics">${metric(ready.length,'prontos para matrícula')}${metric(pend.length,'com cadastro incompleto')}</div>
    <h3>Alunos prontos para matrícula</h3>
    <div class="onb-records" aria-label="Alunos prontos para matrícula">${ready.map(s=>`<div class="onb-record"><div class="onb-record-summary"><div class="onb-record-main"><b>${safe(s.full_name)}</b><small>${safe(s.phone||'—')}</small></div>${button('manualEnrollment','Matricular',`data-id="${safe(s.id)}"`)}</div></div>`).join('')||'<div class="onb-empty">Nenhum aluno pronto no momento.</div>'}</div>
    ${warning}
-   <h3>Matrícula em massa</h3><div class="onb-actions">${button('onbDownloadReady','Baixar planilha de matrículas')}${button('onbDownloadSlots','Consultar horários dos professores')}</div>
+   <div class="onb-section-title"><h3>Matrícula em massa</h3><p>Baixe o modelo, informe professor, pacote e horários cadastrados na grade do professor. Depois envie o CSV preenchido.</p></div><div class="onb-actions">${button('onbDownloadReady','Baixar planilha de matrículas')}${button('onbDownloadSlots','Consultar horários dos professores')}</div>
    <form id="onbEnrollmentUpload" class="onb-upload"><label class="field"><span>CSV com as matrículas preenchidas</span><input type="file" name="file" accept=".csv,text/csv" required></label><button class="btn" type="submit">Conferir matrículas</button></form>
-   <div class="onb-alert">A matrícula será rejeitada se o horário não existir ou estiver ocupado na agenda do professor. Nenhuma matrícula é marcada como assinada automaticamente.</div>
+   ${note('warning','Confira os horários antes de importar','Se um horário não existir na agenda do professor, estiver ocupado ou bloqueado, a matrícula será rejeitada. O sistema também verificará a disponibilidade ao salvar. Contratos não serão marcados como assinados.')}
    ${enrollmentPreview()}${report}
    <div class="form-footer">${!standalone?button('onbStep','Voltar','data-step="review"'):''}${button('onbHome','Concluir / importar matrículas depois','','')}</div>`);
  }
@@ -242,7 +265,7 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
  function enrollmentPreview(){
   if(!state.enrollPreview)return '';
   const preview=state.enrollPreview,bad=preview.filter(x=>x.error),valid=preview.filter(x=>!x.error);
-  return `<section class="onb-preview"><h3>Prévia das matrículas</h3><div class="onb-results-count"><strong>${valid.length}</strong> pronta(s) · ${bad.length} com erro(s)</div>
+  return `<section class="onb-preview"><div class="onb-section-title"><h3>Prévia das matrículas</h3><p>Confira as linhas abaixo antes de confirmar. Os registros com erro não serão enviados.</p></div><div class="onb-results-count"><strong>${valid.length}</strong> pronta(s) · ${bad.length} com erro(s)</div>
    ${grid(['Linha','Aluno','Professor','Horários','Validação'],preview.map(x=>row([safe(x.line),safe(x.name),safe(x.teacher||'—'),safe(x.hours||'—'),x.error?`<span class="onb-error">${safe(x.error)}</span>`:'<span class="pill pill-signed">Conferido</span>'])),true)}
    <div class="form-footer">${button('onbClearEnrollments','Trocar arquivo')}${button('onbDownloadErrors','Baixar erros')}${valid.length?button('onbConfirmEnrollments',`Preparar ${valid.length} matrícula(s)`,'',''):''}</div>
    <p class="muted">Somente as linhas válidas serão preparadas. Confirme após verificar os horários dos professores.</p></section>`;
@@ -371,16 +394,16 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
  }
  async function action(action,button){
   const line=Number(button?.dataset?.line);const field=button?.dataset?.field;
-  if(action==='onbHome'){if(state.studentsFile.length&&state.step!=='enrollments'&&!state.studentsCommitted&&previewData().some(x=>!x.completed)){if(!await confirm('Há dados ainda não cadastrados neste arquivo. Você poderá voltar sem perder enquanto mantiver a página aberta, mas eles não estarão salvos no banco. Continuar?','Sair da importação'))return;}state.step='home';render();return;}
-  if(action==='onbStart'){Object.assign(state,freshState());state.step='upload';render();return;}
-  if(action==='onbStandaloneComplete'){state.step='complete';state.fileMode='complete';state.studentsFile=[];state.editStudentId=null;render();return;}
-  if(action==='onbStandaloneEnroll'){state.step='enrollments';state.studentsFile=[];render();return;}
+  if(action==='onbHome'){if(state.studentsFile.length&&state.step!=='enrollments'&&!state.studentsCommitted&&previewData().some(x=>!x.completed)){if(!await confirm('Há dados ainda não cadastrados neste arquivo. Você poderá voltar sem perder enquanto mantiver a página aberta, mas eles não estarão salvos no banco. Continuar?','Sair da importação'))return;}goToStep('home');return;}
+  if(action==='onbStart'){Object.assign(state,freshState());goToStep('upload');return;}
+  if(action==='onbStandaloneComplete'){state.fileMode='complete';state.studentsFile=[];state.editStudentId=null;goToStep('complete');return;}
+  if(action==='onbStandaloneEnroll'){state.studentsFile=[];goToStep('enrollments');return;}
   if(action==='onbStep'){
    const target=button.dataset.step;
    if(['errors','incomplete','review'].includes(target)&&!state.studentsFile.length)throw Error('Envie um CSV primeiro.');if(target==='enrollments'&&!state.studentsCommitted)throw Error('Conclua a etapa Cadastro final antes de preparar matrículas.');
-   state.step=target==='students'?'upload':target;state.openedLine=null;state.editStudentId=null;render();return;
+   goToStep(target==='students'?'upload':target);return;
   }
-  if(action==='onbNextFromUpload'){if(!state.studentsFile.length)throw Error('Envie o arquivo antes de continuar.');if(!state.map.nome_completo||!state.map.telefone)throw Error('Selecione as colunas de nome e telefone.');state.step='errors';render();return;}
+  if(action==='onbNextFromUpload'){if(!state.studentsFile.length)throw Error('Envie o arquivo antes de continuar.');if(!state.map.nome_completo||!state.map.telefone)throw Error('Selecione as colunas de nome e telefone.');goToStep('errors');return;}
   if(action==='onbDownloadErrorRows'||action==='onbDownloadBasicRows'){
    const infos=previewData().filter(x=>!x.completed&&(action==='onbDownloadErrorRows'?x.issues.length:!x.issues.length&&x.incomplete&&!x.deferred));
    if(!infos.length)return toast('Não há registros para baixar.');
@@ -393,12 +416,12 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
    const c=counts();
    if(!await confirm(`${c.errors.length} aluno(s) com erros não serão cadastrados. Sem baixar a planilha de erros, você poderá perder o controle de quais ficaram de fora. Deseja continuar?`,'Pular erros da importação'))return;
    for(const info of c.errors)state.deferredLines.add(info.row.linha);
-   state.step='incomplete';render();return;
+   goToStep('incomplete');return;
   }
   if(action==='onbSkipIncomplete'||action==='onbCompleteLater'){
    const c=counts();
    if(!await confirm(`${c.basic.length} aluno(s) serão cadastrados incompletos e ainda não poderão ser matriculados. Continuar?`,'Continuar com cadastros incompletos'))return;
-   state.completionLater=true;state.step='review';render();return;
+   state.completionLater=true;goToStep('review');return;
   }
   if(action==='onbIndividualEnroll'){
    const id=button?.dataset?.id;
@@ -408,11 +431,11 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   if(action==='onbFinishNoEnroll'||action==='onbFinishEnroll'){
    const c=counts();if(!c.valid.length&&!previewData().some(x=>x.completed))throw Error('Não há alunos prontos para cadastrar.');
    if(!await confirm(`Cadastrar ${c.valid.length} aluno(s) válido(s)? ${c.errors.length} com erro ficarão de fora.`,'Confirmar cadastro'))return;
-   if(c.valid.length){const result=await commitStudentImport();if(result?.erros){state.step='review';render();toast(`${result.erros} aluno(s) não foram cadastrados. Revise-os antes de concluir.`);return;}}
+   if(c.valid.length){const result=await commitStudentImport();if(result?.erros){goToStep('review');toast(`${result.erros} aluno(s) não foram cadastrados. Revise-os antes de concluir.`);return;}}
    state.lastFlowReport=state.studentReport;state.studentsCommitted=true;
-   if(action==='onbFinishEnroll'){state.step='enrollments';toast('Cadastros salvos. Agora escolha as matrículas.');}
-   else {state.step='home';toast('Importação concluída. Os alunos foram cadastrados sem matrícula.');}
-   render();return;
+   if(action==='onbFinishEnroll'){toast('Cadastros salvos. Agora escolha as matrículas.');goToStep('enrollments');}
+   else {toast('Importação concluída. Os alunos foram cadastrados sem matrícula.');goToStep('home');}
+   return;
   }
   if(action==='onbOpenSlots'){ui.page='calendar';await calendar.load();await calendar.action('calTeacherPage',{dataset:{page:'slots'}});return;}
   if(action==='onbDownloadTemplate'){download(csvExport(baseFields,[{nome_completo:'',telefone:''}]),'modelo_alunos_simples.csv');return;}
@@ -426,7 +449,7 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   if(action==='onbDeferRow'){if(state.deferredLines.has(line))state.deferredLines.delete(line);else state.deferredLines.add(line);render();return;}
   if(action==='onbDeferAll'){for(const r of previewData())if(r.issues.length&&!r.completed)state.deferredLines.add(r.row.linha);render();return;}
   if(action==='onbBlankField'){if(!optFields.includes(field))throw Error('Esse campo é obrigatório.');state.studentEdits[String(line)]={...(state.studentEdits[String(line)]||{}),[field]:''};render();return;}
-  if(action==='onbBlankAll'){for(const x of previewData())for(const issue of x.issues){if(!issue.required&&optFields.includes(issue.field))state.studentEdits[String(x.row.linha)]={...(state.studentEdits[String(x.row.linha)]||{}),[issue.field]:''};}render();return;}
+  if(action==='onbBlankAll'){if(!await confirm('Os campos opcionais inválidos serão deixados em branco. Nome, telefone e demais dados válidos serão preservados. Os alunos afetados poderão seguir como cadastros incompletos. Deseja continuar?','Deixar dados inválidos em branco'))return;for(const x of previewData())for(const issue of x.issues){if(!issue.required&&optFields.includes(issue.field))state.studentEdits[String(x.row.linha)]={...(state.studentEdits[String(x.row.linha)]||{}),[issue.field]:''};}render();return;}
   if(action==='onbEditExisting'){state.editStudentId=button.dataset.id;render();return;}
   if(action==='onbCloseExisting'){state.editStudentId=null;render();return;}
   if(action==='onbDownloadRejected'){

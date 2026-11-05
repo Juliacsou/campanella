@@ -1,3 +1,11 @@
+## Campanella V6.10 — UX da importação de alunos e matrículas
+
+- Todas as páginas do assistente de importação têm títulos, instruções e escolhas mais fáceis de localizar.
+- A opção de limpar dados opcionais inválidos explica que esses campos ficarão vazios e os alunos passarão a cadastros incompletos; há confirmação antes da limpeza.
+- Ao mudar de etapa, a página volta ao topo automaticamente.
+- Mudanças somente na interface do assistente (JS e CSS). A V6.10 não exige novo SQL.
+- Continuam válidas as instalações de banco feitas para V6.7 e as integrações preservadas da V6.9.
+
 **Versão V6.9:** consulte `CHANGELOG_V6_9.md` para o novo assistente de Importação de Alunos e Matrículas. Sem migração SQL adicional.
 
 # Campanella V6.8

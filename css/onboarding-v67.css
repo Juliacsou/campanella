@@ -92,3 +92,60 @@
 .onb-wizard h3{margin-bottom:0}
 @media(max-width:1050px){.onb-entry-grid{grid-template-columns:1fr}.onb-entry{min-height:140px}.onb-final-actions{grid-template-columns:1fr}.onb-wizard .onb-stages{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:620px){.onb-wizard .onb-stages{grid-template-columns:repeat(2,minmax(0,1fr))}.onb-choice{padding:14px}.onb-entry{min-height:120px}}
+
+
+/* V6.10 | Hierarquia visual baseada na Central de Ajuda, em todas as etapas da importacao */
+.onb-wizard{gap:24px;color:#193c34}
+.onb-wizard .onb-top{scroll-margin-top:20px}
+.onb-wizard .onb-top h2{font-size:clamp(24px,2.35vw,32px);font-weight:850;letter-spacing:-.9px;line-height:1.2}
+.onb-wizard .onb-top .eyebrow{font-size:11px;letter-spacing:1.45px}
+.onb-wizard .onb-panel{box-shadow:0 4px 18px #143e2808}
+.onb-wizard .onb-panel-head{padding:26px 30px;align-items:start;background:#fff;border-color:#e5ede8}
+.onb-heading-group{display:flex;align-items:flex-start;gap:18px;min-width:0}
+.onb-section-number{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;background:#e4f3e9;color:#176b50;border-radius:12px;font-size:16px;font-weight:850}
+.onb-heading-group h2{font-size:clamp(20px,2vw,24px);font-weight:850;letter-spacing:-.65px;line-height:1.28;margin:1px 0 8px;color:#173e30}
+.onb-heading-help{font-size:13px;color:#60776d;line-height:1.6;max-width:780px}
+.onb-wizard .onb-panel-inner{gap:22px;padding:25px 30px 30px}
+.onb-guidance{display:flex;align-items:flex-start;gap:14px;border:1px solid #d3e8da;background:#f1f8f3;border-radius:12px;padding:17px 19px;color:#225741}
+.onb-guidance-mark{display:grid;place-items:center;width:25px;height:25px;flex:0 0 25px;background:#d9efe0;color:#1b6b4c;border-radius:50%;font-size:15px;font-weight:850}
+.onb-guidance>div{min-width:0}.onb-guidance strong{display:block;font-size:14px;font-weight:800;line-height:1.45;color:#214e3b}
+.onb-guidance p{font-size:13px;line-height:1.65;color:#4c705c;margin:4px 0 0}
+.onb-guidance--warning{background:#fff8ea;border-color:#ebd09b;color:#78551b}
+.onb-guidance--warning .onb-guidance-mark{background:#f4dfb5;color:#825819}
+.onb-guidance--warning strong{color:#795016}.onb-guidance--warning p{color:#765c2f}
+.onb-guidance--success{background:#edfaf2;border-color:#b9e0c7}
+.onb-section-title{display:grid;gap:8px;padding-top:4px;min-width:0}
+.onb-section-title h3{font-size:19px;color:#193e33;font-weight:800;letter-spacing:-.35px;line-height:1.3;margin:0}
+.onb-section-title p{font-size:13px;color:#61776c;line-height:1.6;margin:0;max-width:780px}
+.onb-wizard .onb-preview{padding:22px 23px;gap:20px}
+.onb-action-header{display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap}
+.onb-action-header>div{display:grid;gap:6px;max-width:680px}
+.onb-action-header h3{font-size:18px;margin:0;color:#1d4935}
+.onb-action-header p{color:#657d71;font-size:13px;line-height:1.55;margin:0}
+.onb-choice{padding:22px 23px;gap:16px;border:1px solid #d8e8dc;box-shadow:0 2px 8px #163e3005}
+.onb-choice-content{display:grid;gap:7px}
+.onb-choice h3{font-size:17px;font-weight:800;color:#153e31;line-height:1.35;margin:0}
+.onb-choice p{font-size:13px;line-height:1.7;color:#556f62;margin:0;max-width:900px}
+.onb-choice--caution{background:#fffcf6;border-color:#ebd7af}
+.onb-choice--caution h3{color:#7b561b}
+.onb-choice--caution p{color:#765f3b}
+.onb-blank-action{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;border:1px solid #e1eae4;background:#f7faf8;border-radius:12px;padding:17px 18px;width:100%}
+.onb-blank-action strong{display:block;color:#245d48;font-size:14px;margin-bottom:6px}
+.onb-blank-action p{font-size:13px;color:#5a7165;margin:0;line-height:1.65}
+.onb-blank-action p strong{display:inline;font-size:inherit;margin:0;color:#28533f}
+.onb-blank-action .btn{justify-self:end;max-width:260px}
+.onb-wizard .onb-records{border-color:#d7e7dd}
+.onb-wizard .onb-record-main b{font-size:14px}
+.onb-wizard .onb-record-main small{font-size:12px;line-height:1.6}
+.onb-wizard .onb-error{font-weight:750}
+.onb-wizard .onb-record-status{font-size:11px}
+.onb-wizard .onb-metrics>div{padding:18px 17px;background:#f2f8f4;border-color:#dcece1}
+.onb-wizard .onb-metrics strong{font-size:27px;letter-spacing:-.5px}
+.onb-wizard .onb-metrics span{font-size:12px;color:#607b6a}
+.onb-wizard .onb-upload{padding:19px;border-width:1.5px}
+.onb-wizard .onb-upload>.field span{font-size:13px;color:#2d5849}
+.onb-wizard .onb-upload .btn{min-height:44px}
+.onb-wizard .onb-final-actions .onb-choice{height:100%;align-content:space-between}
+.onb-wizard .onb-btn:focus-visible,.onb-wizard .onb-stage:focus-visible,.onb-wizard .onb-entry:focus-visible{outline:3px solid #2d9875;outline-offset:3px}
+@media(max-width:800px){.onb-wizard .onb-panel-head{padding:20px 18px}.onb-wizard .onb-panel-inner{padding:18px 16px 24px}.onb-blank-action{grid-template-columns:1fr}.onb-blank-action .btn{justify-self:start;max-width:100%}}
+@media(max-width:540px){.onb-heading-group{gap:12px}.onb-section-number{width:38px;height:38px;flex-basis:38px}.onb-heading-group h2{font-size:20px}.onb-choice{padding:16px 15px}.onb-choice h3{font-size:16px}.onb-section-title h3{font-size:17px}.onb-guidance{padding:14px 12px;gap:10px}.onb-wizard .onb-metrics>div{padding:13px 10px}.onb-wizard .onb-metrics strong{font-size:22px}}

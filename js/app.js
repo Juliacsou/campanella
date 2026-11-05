@@ -6,7 +6,7 @@ import {createCRM} from './crm.js';
 import {createCalendar} from './calendar-v6.js?v=6.6.0';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
-import {createOnboarding} from './onboarding-v67.js?v=6.9.0';
+import {createOnboarding} from './onboarding-v67.js?v=6.10.0';
 import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js';
 // Campanella V4 - multi-escolas, licencas e administracao.
 // Esta e uma chave publica, segura para uso em frontend com RLS corretamente configurado.
