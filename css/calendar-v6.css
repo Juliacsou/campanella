@@ -303,3 +303,29 @@ dialog:has(.cal-reschedule-modal){width:min(1120px,calc(100vw - 24px));max-heigh
 .cal-reschedule-modal form>.field{display:block;margin-top:5px}
 .interview-actions-menu .contract-actions-popover{min-width:220px}
 @media(max-width:740px){.cal-picker-title{align-items:flex-start;flex-direction:column}.cal-wpicker-legend{gap:7px}.cal-reschedule-toolbar strong{font-size:11px}}
+/* Vigencia de alteracao de horario do aluno (a partir de data X ou periodo temporario X..Y) */
+.cal-schedule-mode-box{margin:16px 0 8px;padding:16px;background:#f5faf9;border:1px solid #d5e6e2;border-radius:12px;display:flex;flex-direction:column;gap:12px}
+.cal-schedule-mode-dates{margin-top:2px}
+.cal-until-checkbox{display:inline-flex;align-items:center;gap:9px;cursor:pointer;font-size:13px;font-weight:500;color:#1b4d42;user-select:none}
+.cal-until-checkbox input[type="checkbox"]{width:17px;height:17px;accent-color:#14795d;cursor:pointer;flex-shrink:0}
+.cal-schedule-mode-summary{font-size:13px;line-height:1.45;color:#1d584b;background:#e6f4ef;border-left:3px solid #1b7f68;padding:10px 12px;border-radius:8px}
+.cal-temp-schedule-banner{margin-top:10px;padding:10px 14px;background:#eef8f5;border:1px solid #bde0d6;border-left:4px solid #167c64;border-radius:9px;font-size:13px;color:#184f43}
+.cal-temp-badge{display:inline-flex;align-items:center;padding:2px 8px;margin-left:6px;border-radius:999px;background:#e1f3ec;color:#146c56;font-size:11px;font-weight:600;vertical-align:middle}
+.cal-lesson-main strong{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.cal-lessons-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid #e6eceb;padding-bottom:12px}
+.cal-lessons-tab{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:9px;border:1px solid #d5e4e0;background:#f6faf9;color:#336157;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.cal-lessons-tab:hover{background:#eaf4f1;border-color:#9bc5ba}
+.cal-lessons-tab.is-active{background:#176b58;border-color:#176b58;color:#fff}
+.cal-lessons-tab.is-active .cal-count{background:rgba(255,255,255,.22);color:#fff}
+.cal-pending-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cal-skip-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 16px;margin:12px 0;background:#eef8f5;border:1px solid #c5e4db;border-left:4px solid #167c64;border-radius:10px}
+.cal-skip-banner>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.cal-skip-banner strong{font-size:13px;color:#154d40}
+.cal-skip-banner small{font-size:12px;color:#4a6f66;line-height:1.4}
+@media(max-width:640px){.cal-skip-banner{flex-direction:column;align-items:flex-start}}
+/* Entrevistas comerciais de leads no calendario do professor */
+.cal-week-card.interview{background:#fef6e8;border-left:3px solid #d48324;color:#6c400b}
+.cal-week-card.interview.done{background:#eef5f1;border-left-color:#3a8368;color:#275a47}
+.cal-lesson.is-interview{background:#fefbf5;border-left:4px solid #d48324}
+.cal-status-interview{color:#b06814;font-weight:700}
+.cal-month-interview{color:#b06814!important;font-weight:700}

@@ -2,8 +2,8 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
-import {createCRM} from './crm.js';
-import {createCalendar} from './calendar-v6.js?v=6.6.0';
+import {createCRM} from './crm.js?v=6.18.0';
+import {createCalendar} from './calendar-v6.js?v=6.14.0';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
 import {createOnboarding} from './onboarding-v67.js?v=6.10.0';
@@ -16,7 +16,7 @@ const KEY = 'sb_publishable_Q9UBmlwOl9S5Ew7UwLn_rw_U-iHrCqF';
 const sb=createClient(SUPA_URL,KEY);
 // Campanella V6: calendario interno. As integracoes de assinaturas/Drive seguem suspensas.
 const EXTERNAL_SIGNATURE_ENABLED=false;
-const db={leads:[],interviews:[],packages:[],students:[],contracts:[],profiles:[],teachers:[],contract_types:[],school_settings:[],interview_invites:[],external_signatures:[],crm_followups:[],crm_appointments:[],crm_activities:[]};
+const db={leads:[],interviews:[],packages:[],students:[],contracts:[],profiles:[],teachers:[],contract_types:[],school_settings:[],interview_invites:[],external_signatures:[],crm_followups:[],crm_appointments:[],crm_activities:[],crm_pipeline_columns:[],crm_tags:[]};
 const ui={page:'dashboard',user:null,role:null,teacherId:null,teacherSchoolName:null,teacherAccess:[],schoolId:null,schools:[],memberships:[],schoolMembers:[],isPlatformAdmin:false,schoolLicense:null,licenseActive:false,licenses:[],platformSchools:[],platformProfiles:[],platformKeys:[],platformEvents:[],platformRenewalKeys:[],platformSearch:'',platformFilter:'all',newlyIssuedKey:null,driveConnection:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',studentId:null,studentReturnPage:'directory',contractTab:'current',interviewTab:'current'};
 const errors=e=>{console.error(e);toast(e?.message||String(e),true)};
 const canAdmin=()=>ui.role==='admin';
@@ -92,7 +92,7 @@ const empty=text=>`<div class="empty"><span class="empty-symbol">✳</span>${saf
 const row=(columns)=>`<tr>${columns.map(c=>`<td>${c}</td>`).join('')}</tr>`;
 function table(headers,rows,placeholder='Nenhum registro encontrado'){return `<div class="table-wrap">${rows.length?`<table class="data-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`:empty(placeholder)}</div>`;}
 const crm=createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy:()=>appBusy});
-const calendar=createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg:(name,size)=>ico(name,size)});
+const calendar=createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg:(name,size)=>ico(name,size),openLead:(id)=>{closeModal();ui.page='leads';render();crm.openLead(id);}});
 initWeeklyPicker();
 // SVGs internos: nao dependem de fontes de icones ou CDNs adicionais.
 const ICONS={
@@ -229,6 +229,7 @@ async function refresh(){
  const schoolMembers=members||[];
  const myMember=schoolMembers.find(m=>m.user_id===ui.user?.id);
  if(!myMember){await loadSchools();if(!ui.schoolId){$('#app').innerHTML=noSchoolPage();return;}ui.page='dashboard';return refresh();}
+ try{await sb.rpc('crm_sync_pipeline',{p_school:schoolId});}catch(e){console.warn('Sync pipeline:',e?.message);}
  const newData={};
  for(const k of Object.keys(db)){
   const all=[];const pageSize=500;const maxPages=(['leads','students','contracts','interviews'].includes(k)||k.startsWith('crm_'))?20:1;
@@ -317,8 +318,8 @@ function interviewsView(){
 
 function ficheCreatedPopup(leadId){
  const l=lookup('leads',leadId);if(!l)return;
- const teachers=db.teachers.filter(t=>t.active!==false);
- showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">✓</div><div class="eyebrow">Etapa criada</div><h2>Ficha inicial preparada</h2><p class="modal-intro"><strong>${safe(l.name)}</strong> agora aparece em Fichas iniciais com o status <strong>A preencher</strong>. Você pode preencher ou enviar o link para o entrevistador.</p><div class="fiche-choice-grid"><div class="fiche-choice"><span class="fiche-choice-icon">▤</span><h3>Preencher agora</h3><p>Abra a ficha neste sistema e informe o curso e as condições da matrícula.</p><button type="button" class="btn" data-action="editInterview" data-id="${leadId}">Abrir ficha →</button></div><form id="quickInterviewInviteForm" class="fiche-choice" data-lead="${leadId}"><span class="fiche-choice-icon">↗</span><h3>Enviar ao entrevistador</h3><p>Escolha quem vai preencher. O link é individual e pode ser usado direto pelo professor.</p><label class="field"><span>Professor entrevistador</span><select name="teacher_id" required><option value="">Selecione o professor</option>${options(teachers)}</select></label><button class="btn light" type="submit" ${teachers.length?'':'disabled'}>Gerar link →</button>${teachers.length?'':'<p class="small muted">Cadastre um professor antes de gerar o link.</p>'}</form></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Concluir depois</button></div></div>`);
+ const teachers=db.teachers.filter(t=>t.active!==false);const scheduledTeacher=(db.crm_appointments||[]).find(a=>a.lead_id===leadId&&a.state==='scheduled')?.teacher_id||'';
+ showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">✓</div><div class="eyebrow">Etapa criada</div><h2>Ficha inicial preparada</h2><p class="modal-intro"><strong>${safe(l.name)}</strong> agora aparece em Fichas iniciais com o status <strong>A preencher</strong>. Você pode preencher ou enviar o link para o entrevistador.</p><div class="fiche-choice-grid"><div class="fiche-choice"><span class="fiche-choice-icon">▤</span><h3>Preencher agora</h3><p>Abra a ficha neste sistema e informe o curso e as condições da matrícula.</p><button type="button" class="btn" data-action="editInterview" data-id="${leadId}">Abrir ficha →</button></div><form id="quickInterviewInviteForm" class="fiche-choice" data-lead="${leadId}"><span class="fiche-choice-icon">↗</span><h3>Enviar ao entrevistador</h3><p>Escolha quem vai preencher. O link é individual e pode ser usado direto pelo professor.</p><label class="field"><span>Professor entrevistador</span><select name="teacher_id" required><option value="">Selecione o professor</option>${options(teachers,scheduledTeacher)}</select></label><button class="btn light" type="submit" ${teachers.length?'':'disabled'}>Gerar link →</button>${teachers.length?'':'<p class="small muted">Cadastre um professor antes de gerar o link.</p>'}</form></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Concluir depois</button></div></div>`);
 }
 function normalSchedule(schedule,weeklyDays=[],lessonTime='18:00'){
  const src=Array.isArray(schedule)&&schedule.length?schedule:(weeklyDays||[]).map(day=>({day:Number(day),time:String(lessonTime||'18:00').slice(0,5)}));
@@ -364,8 +365,9 @@ function onPackageSelection(form,p){
 function interviewForm(leadId){
  const l=lookup('leads',leadId),i=db.interviews.find(x=>x.lead_id===leadId)||{},p=lookup('packages',i.package_id);
  if(!l)throw new Error('Interessado não encontrado.');
- const responsible=i.teacher_id||'';
- const interviewer=i.interviewer_teacher_id||i.teacher_id||'';
+ const scheduledTeacher=(db.crm_appointments||[]).find(a=>a.lead_id===leadId&&a.state==='scheduled')?.teacher_id||'';
+ const responsible=i.teacher_id||scheduledTeacher||'';
+ const interviewer=i.interviewer_teacher_id||scheduledTeacher||i.teacher_id||'';
  showModal(`<h2>Ficha inicial</h2><p class="modal-intro"><b>${safe(l.name)}</b> · condições da matrícula.</p><form id="interviewForm" data-id="${i.id||''}" data-lead="${leadId}"><div class="form-grid">
  <label class="field"><span>Professor entrevistador</span><select name="interviewer_teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active!==false||t.id===interviewer),interviewer)}</select></label>
  <label class="field"><span>Professor responsável pelas aulas</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active!==false||t.id===responsible),responsible)}</select></label>
@@ -967,7 +969,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',async e=>{
  if(e.target.matches('[data-onb-map], [data-onb-edit-line]')){onboarding.change(e);return;}
- if(e.target.id==='calTeacherFilter'||e.target.name==='cal_student_teacher'||['end_date','cal_manual_end','cal_slot','cal_start_date'].includes(e.target.name)||(['start_date','lessons_count'].includes(e.target.name)&&e.target.form?.querySelector('.cal-enrollment'))||(e.target.name==='teacher_id'&&e.target.form?.id==='manualEnrollmentForm')){try{await calendar.change(e.target);}catch(err){errors(err);}return;}
+ if(e.target.id==='calTeacherFilter'||e.target.form?.id==='calStudentSlotsForm'||e.target.name==='cal_student_teacher'||['end_date','cal_manual_end','cal_slot','cal_start_date'].includes(e.target.name)||(['start_date','lessons_count'].includes(e.target.name)&&e.target.form?.querySelector('.cal-enrollment'))||(e.target.name==='teacher_id'&&e.target.form?.id==='manualEnrollmentForm')){try{await calendar.change(e.target);}catch(err){errors(err);}return;}
  if(e.target.name==='docx_file'&&e.target.form?.id==='typeForm'){
   const file=e.target.files?.[0];if(!file){renderDocxReport(null);return;}
   const report=$('#docxValidation');if(report)report.textContent='Analisando campos e marcadores do DOCX…';

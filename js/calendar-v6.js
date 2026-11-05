@@ -1,7 +1,7 @@
 import {weeklyPickerMarkup,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 // Campanella V6.4 - agenda escolar e docente. Nao depende de AssinAPI / Drive.
 // A autorizacao, a validacao de sobreposicoes e a mudanca de estado acontecem nas RPCs SQL.
-export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg}){
+export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg,openLead}){
  const weekNames=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
  const shortDays=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
  let state={selected:today(),mode:'week',teacher:'all',snapshot:null,loading:false,inviteToken:null,page:'agenda',settingsTab:'profile',studentId:null,studentProfile:null,rescheduleLesson:null,rescheduleDate:null,rescheduleSnapshot:null,rescheduleChoice:null,rescheduleNote:''};
@@ -25,7 +25,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  const navIcon=(name)=>typeof iconSvg==='function'?iconSvg(name,18):'<svg class="camp-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>';
  function adminNav(){return `<aside class="cal-secondary-sidebar"><h2>Calendário</h2><nav aria-label="Áreas do calendário">${navItems.filter(([id])=>id!=='settings').map(([id,icon,label])=>`<button type="button" class="${state.page===id?'active':''}" data-action="calTeacherPage" data-page="${id}"><span class="cal-nav-icon" aria-hidden="true">${navIcon(icon)}</span>${label}</button>`).join('')}</nav></aside>`;}
  const weekRangeLabel=(start)=>`${dateBR(start)} · ${dateBR(shift(start,6))}`;
- const data=()=>state.snapshot||{teachers:[],slots:[],blocks:[],lessons:[],students:[],teacher_access:[]};
+ const data=()=>state.snapshot||{teachers:[],slots:[],blocks:[],lessons:[],interviews:[],students:[],teacher_access:[]};
  const studentForContract=(id)=>data().students.find(x=>x.contract_id===id);
  const studentForStudentId=(id)=>data().students.find(x=>x.student_id===id);
  const classForContract=(id)=>data().lessons.filter(x=>x.contract_id===id && x.status!=='cancelled').sort((a,b)=>(a.date||'9999-12-31').localeCompare(b.date||'9999-12-31')||String(a.time||'').localeCompare(String(b.time||'')));
@@ -42,6 +42,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  const control=(action,label,extra='',cls='light')=>`<button type="button" class="btn mini ${cls}" data-action="${action}" ${extra}>${label}</button>`;
  const escapeDate=(s)=>s?dateBR(s):'A reagendar';
  const sessionsFor=(date,teacher=null)=>data().lessons.filter(l=>l.date===date&&(!teacher||l.teacher_id===teacher)&&l.status!=='cancelled').sort((a,b)=>niceTime(a.time).localeCompare(niceTime(b.time)));
+ const interviewsFor=(date,teacher=null)=>(data().interviews||[]).filter(a=>a.date===date&&(!teacher||a.teacher_id===teacher)&&['scheduled','completed'].includes(a.state)).sort((a,b)=>niceTime(a.time).localeCompare(niceTime(b.time)));
  const blocksFor=(date,teacher=null)=>data().blocks.filter(b=>date>=b.from&&date<=b.to&&(!teacher||!b.teacher_id||b.teacher_id===teacher));
  const startOfWeek=(s)=>shift(s,-parse(s).getDay());
  const monthBounds=()=>{const start=iso(new Date(parse(state.selected).getFullYear(),parse(state.selected).getMonth(),1));return {p_from:shift(start,-35),p_to:shift(monthShift(start,2),-1)};};
@@ -103,41 +104,45 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   return `<div class="shell cal-teacher-shell"><aside class="sidebar"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Portal do professor</div></div></div><div class="sidebar-current"><span class="sidebar-current-label">ESCOLA</span><span class="sidebar-current-name">${safe(ui.teacherSchoolName||'Minha escola')}</span>${ui.teacherAccess?.length>1?`<div class="cal-school-picker">${ui.teacherAccess.map(m=>`<button type="button" class="btn mini ${ui.schoolId===m.school_id?'':'light'}" data-action="calSwitchTeacherSchool" data-id="${m.school_id}">${safe(m.school_name)}</button>`).join('')}</div>`:''}</div><nav class="nav cal-teacher-nav">${navItems.map(([key,icon,label])=>`<button class="nav-btn ${state.page===key?'active':''}" data-action="calTeacherPage" data-page="${key}"><span class="cal-nav-icon" aria-hidden="true">${navIcon(icon)}</span><span>${label}</span></button>`).join('')}</nav><div class="sidebar-bottom"><div class="small muted" style="padding:14px">${safe(ui.user?.email||'')}</div><button class="btn mini light" style="margin:10px" data-action="logout">Sair da conta</button></div></aside><div class="workspace"><div class="topbar"><b>${safe(teacherPageTitle())}</b><span class="topbar-chip">Professor</span></div><main id="pageContent" class="content"></main></div></div>`;
  }
  function dayCard(l){
-  const actions=(l.status==='scheduled'||l.status==='needs_reschedule')?`<details class="contract-actions-dropdown"><summary class="btn mini light">Ações <span aria-hidden="true">⌄</span></summary><div class="contract-actions-popover" role="menu"><button type="button" role="menuitem" class="contract-menu-item" data-action="calReschedule" data-id="${l.id}">Reagendar</button>${l.status==='scheduled'?`<button type="button" role="menuitem" class="contract-menu-item" data-action="calRecord" data-id="${l.id}">Registrar aula</button>`:''}</div></details>`:'';
+  const actions=(l.status==='scheduled'||l.status==='needs_reschedule')?`<details class="contract-actions-dropdown"><summary class="btn mini light">Ações <span aria-hidden="true">⌄</span></summary><div class="contract-actions-popover" role="menu"><button type="button" role="menuitem" class="contract-menu-item" data-action="calReschedule" data-id="${l.id}">Reagendar para data</button><button type="button" role="menuitem" class="contract-menu-item" data-action="calSkipLesson" data-id="${l.id}">Pular data (jogar p/ o final)</button>${l.status==='scheduled'?`<button type="button" role="menuitem" class="contract-menu-item" data-action="calRecord" data-id="${l.id}">Registrar aula</button>`:''}</div></details>`:'';
   const name=safe(l.student_name||'Aluno');
   return `<div class="cal-lesson ${l.status==='needs_reschedule'?'is-pending':''}"><div class="cal-lesson-time">${safe(niceTime(l.time)||'—')}<small>${l.duration} min</small></div><div class="cal-lesson-text"><strong>${name}</strong><span>Aula ${l.lesson_number}/${safe(l.total||'?')} · ${safe(teacherName(l.teacher_id))}</span><small class="cal-status cal-status-${safe(l.status)}">${safe(textStatus(l.status))}</small></div><div class="cal-lesson-actions">${actions}</div></div>`;
  }
+ function interviewDayCard(iv){return `<div class="cal-lesson is-interview"><div class="cal-lesson-time">${safe(niceTime(iv.time)||'—')}<small>${Number(iv.duration||30)} min</small></div><div class="cal-lesson-text"><strong>Entrevista · ${safe(iv.student_name||'Lead')}</strong><span>${safe(iv.service||'Entrevista comercial')} · ${safe(teacherName(iv.teacher_id))}</span><small class="cal-status cal-status-interview">${iv.state==='completed'?'Entrevista realizada':'Entrevista agendada'}</small></div><div class="cal-lesson-actions">${control('calInterview','Ver entrevista',`data-id="${safeAttr(iv.id)}"`,'light')}</div></div>`;}
  function dayView(){
-  const teacher=selectedTeacher();const selected=state.selected,lessons=sessionsFor(selected,teacher),blocks=blocksFor(selected,teacher);
+  const teacher=selectedTeacher();const selected=state.selected,lessons=sessionsFor(selected,teacher),interviews=interviewsFor(selected,teacher),blocks=blocksFor(selected,teacher);
+  const combined=[...lessons.map(l=>({kind:'lesson',time:niceTime(l.time),item:l})),...interviews.map(iv=>({kind:'interview',time:niceTime(iv.time),item:iv}))].sort((a,b)=>a.time.localeCompare(b.time));
   const fullDay=blocks.some(isFullDayBlock);
   const oneOffs=data().slots.filter(s=>s.active&&s.slot_date===selected&&(!teacher||s.teacher_id===teacher)&&!lessons.some(l=>l.teacher_id===s.teacher_id&&asMinutes(l.time)<asMinutes(s.time)+Number(s.duration||60)&&asMinutes(s.time)<asMinutes(l.time)+Number(l.duration||60)));
-  return `<div class="cal-day ${fullDay?'is-blocked':''}"><h3>${safe(parse(selected).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}))}</h3>${blocks.length?`<div class="cal-block-alert">${navIcon('lock')} ${blocks.map(x=>safe(x.reason)).join(' · ')}</div>`:''}${lessons.length?lessons.map(dayCard).join(''):'<p class="muted">Nenhuma aula agendada para este dia.</p>'}
+  return `<div class="cal-day ${fullDay?'is-blocked':''}"><h3>${safe(parse(selected).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}))}</h3>${blocks.length?`<div class="cal-block-alert">${navIcon('lock')} ${blocks.map(x=>safe(x.reason)).join(' · ')}</div>`:''}${combined.length?combined.map(x=>x.kind==='interview'?interviewDayCard(x.item):dayCard(x.item)).join(''):'<p class="muted">Nenhuma aula agendada para este dia.</p>'}
   ${oneOffs.length?`<div class="cal-oneoff-list"><h4>Horários avulsos disponíveis</h4>${oneOffs.map(s=>`<button type="button" class="cal-oneoff-chip" data-action="calSlotDetails" data-id="${safeAttr(s.id)}">${safe(niceTime(s.time))} · ${Number(s.duration)} min · ${safe(teacherName(s.teacher_id))}</button>`).join('')}</div>`:''}</div>`;
  }
  function weekView(){
   const dates=Array.from({length:7},(_,i)=>shift(startOfWeek(state.selected),i));
   const teacher=selectedTeacher();
   const lessonPool=dates.flatMap(d=>sessionsFor(d,teacher));
+  const interviewPool=dates.flatMap(d=>interviewsFor(d,teacher));
   const slotPool=data().slots.filter(s=>s.active&&(teacher===null||s.teacher_id===teacher)&&((s.slot_date&&dates.includes(s.slot_date))||(s.slot_date===null&&dates.some(d=>parse(d).getDay()===s.weekday))));
   let min=8*60,max=20*60;
   for(const l of lessonPool){const start=asMinutes(l.time);if(start!=null){min=Math.min(min,start-60);max=Math.max(max,start+Number(l.duration||60)+60);}}
+  for(const iv of interviewPool){const start=asMinutes(iv.time);if(start!=null){min=Math.min(min,start-60);max=Math.max(max,start+Number(iv.duration||30)+60);}}
   for(const s of slotPool){const start=asMinutes(s.time);if(start!=null){min=Math.min(min,start-60);max=Math.max(max,start+Number(s.duration||60)+60);}}
   min=Math.max(6*60,Math.floor(min/60)*60);max=Math.min(23*60,Math.ceil(max/60)*60);if(max-min<8*60)max=min+8*60;
   const hours=Array.from({length:Math.max(1,Math.round((max-min)/60))},(_,i)=>min+i*60);
   const total=max-min;
-  return `<div class="cal-week-grid" style="--cal-hours:${hours.length};--cal-minutes:${min};--cal-total:${total}"><div class="cal-week-grid-head"><div class="cal-week-time-spacer"></div>${dates.map(d=>`<button type="button" class="cal-week-head-day ${d===today()?'is-today':''}" data-action="calOpenDay" data-date="${d}"><b>${shortDays[parse(d).getDay()]}</b><span>${dateBR(d)}</span></button>`).join('')}</div><div class="cal-week-grid-body"><div class="cal-week-time-col">${hours.map(h=>`<div class="cal-week-time-label">${String(Math.floor(h/60)).padStart(2,'0')}:00</div>`).join('')}</div>${dates.map(d=>{const lessons=sessionsFor(d,teacher);const blocks=blocksFor(d,teacher);const full=blocks.filter(isFullDayBlock);const partial=blocks.filter(b=>!isFullDayBlock(b));const datedSlots=slotPool.filter(s=>s.slot_date===d&&!lessons.some(l=>l.teacher_id===s.teacher_id&&asMinutes(l.time)<asMinutes(s.time)+Number(s.duration||60)&&asMinutes(s.time)<asMinutes(l.time)+Number(l.duration||60)));return `<div class="cal-week-day-col ${full.length?'blocked-full':''}">${full.length?`<div class="cal-week-all-day">${full.map(b=>safe(b.reason)).join(' · ')}</div>`:'<div class="cal-week-all-day empty">Disponível</div>'}<div class="cal-week-body-inner cal-readonly" aria-label="Aulas de ${dateBR(d)}">${hours.map(()=>`<div class="cal-week-hour-line"></div>`).join('')}${datedSlots.map(s=>{const start=asMinutes(s.time);const top=((start-min)/total)*100;const height=Math.max(4,(Number(s.duration||60)/total)*100);return `<button type="button" class="cal-week-oneoff" style="top:${top}%;height:${height}%" data-action="calSlotDetails" data-id="${safeAttr(s.id)}"><strong>${safe(niceTime(s.time))} · Avulso</strong><span>${safe(teacherName(s.teacher_id))}</span></button>`;}).join('')}${partial.map(b=>{const start=asMinutes(b.start_time),end=asMinutes(b.end_time);if(start==null||end==null)return '';const top=((start-min)/total)*100;const height=Math.max(3,((end-start)/total)*100);return `<div class="cal-week-block-band" style="top:${top}%;height:${height}%">${safe(b.reason)}</div>`;}).join('')}${lessons.map(l=>{const start=asMinutes(l.time);const top=((start-min)/total)*100;const height=Math.max(8,(Number(l.duration||60)/total)*100);return `<button type="button" class="cal-week-card ${l.status==='completed'?'done':''} ${l.status==='needs_reschedule'?'pending':''}" style="top:${top}%;height:${height}%" data-action="calLesson" data-id="${l.id}"><strong>${safe(l.student_name)}</strong><span>${safe(niceTime(l.time))} · Aula ${l.lesson_number}</span><small>${safe(textStatus(l.status))}</small></button>`;}).join('')}</div></div>`;}).join('')}</div></div>`;
+  return `<div class="cal-week-grid" style="--cal-hours:${hours.length};--cal-minutes:${min};--cal-total:${total}"><div class="cal-week-grid-head"><div class="cal-week-time-spacer"></div>${dates.map(d=>`<button type="button" class="cal-week-head-day ${d===today()?'is-today':''}" data-action="calOpenDay" data-date="${d}"><b>${shortDays[parse(d).getDay()]}</b><span>${dateBR(d)}</span></button>`).join('')}</div><div class="cal-week-grid-body"><div class="cal-week-time-col">${hours.map(h=>`<div class="cal-week-time-label">${String(Math.floor(h/60)).padStart(2,'0')}:00</div>`).join('')}</div>${dates.map(d=>{const lessons=sessionsFor(d,teacher);const interviews=interviewsFor(d,teacher);const blocks=blocksFor(d,teacher);const full=blocks.filter(isFullDayBlock);const partial=blocks.filter(b=>!isFullDayBlock(b));const datedSlots=slotPool.filter(s=>s.slot_date===d&&!lessons.some(l=>l.teacher_id===s.teacher_id&&asMinutes(l.time)<asMinutes(s.time)+Number(s.duration||60)&&asMinutes(s.time)<asMinutes(l.time)+Number(l.duration||60)));return `<div class="cal-week-day-col ${full.length?'blocked-full':''}">${full.length?`<div class="cal-week-all-day">${full.map(b=>safe(b.reason)).join(' · ')}</div>`:'<div class="cal-week-all-day empty">Disponível</div>'}<div class="cal-week-body-inner cal-readonly" aria-label="Aulas de ${dateBR(d)}">${hours.map(()=>`<div class="cal-week-hour-line"></div>`).join('')}${datedSlots.map(s=>{const start=asMinutes(s.time);const top=((start-min)/total)*100;const height=Math.max(4,(Number(s.duration||60)/total)*100);return `<button type="button" class="cal-week-oneoff" style="top:${top}%;height:${height}%" data-action="calSlotDetails" data-id="${safeAttr(s.id)}"><strong>${safe(niceTime(s.time))} · Avulso</strong><span>${safe(teacherName(s.teacher_id))}</span></button>`;}).join('')}${partial.map(b=>{const start=asMinutes(b.start_time),end=asMinutes(b.end_time);if(start==null||end==null)return '';const top=((start-min)/total)*100;const height=Math.max(3,((end-start)/total)*100);return `<div class="cal-week-block-band" style="top:${top}%;height:${height}%">${safe(b.reason)}</div>`;}).join('')}${lessons.map(l=>{const start=asMinutes(l.time);const top=((start-min)/total)*100;const height=Math.max(8,(Number(l.duration||60)/total)*100);return `<button type="button" class="cal-week-card ${l.status==='completed'?'done':''} ${l.status==='needs_reschedule'?'pending':''}" style="top:${top}%;height:${height}%" data-action="calLesson" data-id="${l.id}"><strong>${safe(l.student_name)}</strong><span>${safe(niceTime(l.time))} · Aula ${l.lesson_number}</span><small>${safe(textStatus(l.status))}</small></button>`;}).join('')}${interviews.map(iv=>{const start=asMinutes(iv.time);const top=((start-min)/total)*100;const height=Math.max(7,(Number(iv.duration||30)/total)*100);return `<button type="button" class="cal-week-card interview ${iv.state==='completed'?'done':''}" style="top:${top}%;height:${height}%" data-action="calInterview" data-id="${safeAttr(iv.id)}"><strong>Entrevista · ${safe(iv.student_name)}</strong><span>${safe(niceTime(iv.time))} · ${Number(iv.duration||30)} min</span><small>${iv.state==='completed'?'Realizada':'Entrevista'}</small></button>`;}).join('')}</div></div>`;}).join('')}</div></div>`;
  }
  function monthView(){
   const month=parse(state.selected);month.setDate(1);
   const first=shift(iso(month),-month.getDay());const teacher=selectedTeacher();
   return `<div class="cal-month"><div class="cal-month-weekdays">${shortDays.map(x=>`<b>${x}</b>`).join('')}</div><div class="cal-month-grid">${Array.from({length:42},(_,i)=>{
-   const d=shift(first,i),n=sessionsFor(d,teacher),bl=blocksFor(d,teacher),oneOffs=data().slots.filter(s=>s.active&&s.slot_date===d&&(!teacher||s.teacher_id===teacher)),other=parse(d).getMonth()!==month.getMonth(),full=bl.some(isFullDayBlock);
-   return `<button type="button" class="cal-month-day ${other?'other':''} ${d===state.selected?'chosen':''} ${d===today()?'is-today':''} ${full?'full-blocked':''}" data-action="calOpenDay" data-date="${d}"><b>${parse(d).getDate()}</b>${bl.length?`<small class="cal-month-block">${safe(bl[0].reason.slice(0,16))}</small>`:''}${n.length?`<small>${n.length} aula${n.length===1?'':'s'}</small>`:''}${oneOffs.length?`<small>${oneOffs.length} horário(s) avulso(s)</small>`:''}</button>`;
+   const d=shift(first,i),n=sessionsFor(d,teacher),ivs=interviewsFor(d,teacher),bl=blocksFor(d,teacher),oneOffs=data().slots.filter(s=>s.active&&s.slot_date===d&&(!teacher||s.teacher_id===teacher)),other=parse(d).getMonth()!==month.getMonth(),full=bl.some(isFullDayBlock);
+   return `<button type="button" class="cal-month-day ${other?'other':''} ${d===state.selected?'chosen':''} ${d===today()?'is-today':''} ${full?'full-blocked':''}" data-action="calOpenDay" data-date="${d}"><b>${parse(d).getDate()}</b>${bl.length?`<small class="cal-month-block">${safe(bl[0].reason.slice(0,16))}</small>`:''}${n.length?`<small>${n.length} aula${n.length===1?'':'s'}</small>`:''}${ivs.length?`<small class="cal-month-interview">${ivs.length} entrevista${ivs.length===1?'':'s'}</small>`:''}${oneOffs.length?`<small>${oneOffs.length} horário(s) avulso(s)</small>`:''}</button>`;
   }).join('')}</div></div><div class="cal-month-details">${dayView()}</div>`;
  }
  function pendingView(){
   const teacher=selectedTeacher(),pending=data().lessons.filter(l=>l.status==='needs_reschedule'&&(!teacher||l.teacher_id===teacher));
-  return `<section class="panel cal-section"><div class="panel-head"><h2>Aulas para reagendar <span class="cal-count">${pending.length}</span></h2></div>${pending.length?pending.map(l=>`<div class="cal-pending"><div><strong>${safe(l.student_name)}</strong><small>Aula ${l.lesson_number} · ${safe(teacherName(l.teacher_id))} · era ${escapeDate(l.original_date)} às ${safe(niceTime(l.original_time))}</small></div>${control('calReschedule','Reagendar',`data-id="${l.id}"`,'light')}</div>`).join(''):'<p class="muted">Nenhuma aula pendente de reagendamento.</p>'}</section>`;
+  return `<section class="panel cal-section"><div class="panel-head"><h2>Aulas para reagendar <span class="cal-count">${pending.length}</span></h2></div>${pending.length?pending.map(l=>`<div class="cal-pending"><div><strong>${safe(l.student_name)}</strong><small>Aula ${l.lesson_number} · ${safe(teacherName(l.teacher_id))} · era ${l.original_date?`${safe(weekNames[parse(l.original_date).getDay()])}, ${dateBR(l.original_date)}`:'A reagendar'} às ${safe(niceTime(l.original_time))}</small></div><div class="cal-pending-actions">${control('calReschedule','Reagendar para data',`data-id="${l.id}"`,'light')}${control('calSkipLesson','Pular data',`data-id="${l.id}"`,'ghost')}</div></div>`).join(''):'<p class="muted">Nenhuma aula pendente de reagendamento.</p>'}</section>`;
  }
  function studentsView(){
   const teacher=selectedTeacher(),items=data().students.filter(s=>!teacher||s.teacher_id===teacher);
@@ -348,8 +353,9 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const first=startOfWeek(state.rescheduleDate),dates=Array.from({length:7},(_,i)=>shift(first,i));
   const slots=(snapshot.slots||[]).filter(s=>s.active&&s.teacher_id===l.teacher_id&&Number(s.duration)===Number(l.duration));
   const lessons=(snapshot.lessons||[]).filter(x=>x.id!==l.id&&x.teacher_id===l.teacher_id&&x.date&&['scheduled','reserved','completed','absent_consumed'].includes(x.status));
+  const interviews=(snapshot.interviews||[]).filter(a=>a.teacher_id===l.teacher_id&&a.date&&a.state==='scheduled');
   const blocks=snapshot.blocks||[],rangeStart=7*60,rangeEnd=22*60,oneHour=52,height=(rangeEnd-rangeStart)/60*oneHour;
-  const overlapping=(d,t,duration)=>lessons.some(x=>x.date===d&&asMinutes(x.time)<t+duration&&t<asMinutes(x.time)+Number(x.duration||60));
+  const overlapping=(d,t,duration)=>lessons.some(x=>x.date===d&&asMinutes(x.time)<t+duration&&t<asMinutes(x.time)+Number(x.duration||60))||interviews.some(a=>a.date===d&&asMinutes(a.time)<t+duration&&t<asMinutes(a.time)+Number(a.duration||30));
   const columns=dates.map(d=>{
    const day=Number(parse(d).getDay()),full=blocks.some(b=>d>=b.from&&d<=b.to&&(!b.teacher_id||b.teacher_id===l.teacher_id)&&isFullDayBlock(b));
    const part=blocks.filter(b=>d>=b.from&&d<=b.to&&(!b.teacher_id||b.teacher_id===l.teacher_id)&&!isFullDayBlock(b));
@@ -361,15 +367,35 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
     const label=same?'Atual':busy?'Ocupado':blocked?'Bloqueado':past?'Passado':'Livre';
     return `<div class="cal-reschedule-item ${chosen?'selected':available?'available':'unavailable'}" style="top:${top}px;height:${high}px"><button type="button" ${!available?'disabled':''} data-action="calRescheduleSelect" data-date="${d}" data-time="${safeAttr(niceTime(s.time))}" aria-pressed="${chosen?'true':'false'}"><strong>${safe(niceTime(s.time))}</strong><small>${safe(label)}</small></button></div>`;
    }).join('');
-   const busyBlocks=lessons.filter(x=>x.date===d).map(x=>{const t=asMinutes(x.time),top=(t-rangeStart)/60*oneHour,high=Math.max(24,Number(x.duration||60)/60*oneHour-2);return `<div class="cal-reschedule-busy" style="top:${top}px;height:${high}px" title="Ocupado"><span>${safe(niceTime(x.time))}</span><small>Ocupado</small></div>`;}).join('');
+   const busyBlocks=[...lessons.filter(x=>x.date===d).map(x=>({time:x.time,duration:x.duration||60,label:'Ocupado'})),...interviews.filter(a=>a.date===d).map(a=>({time:a.time,duration:a.duration||30,label:'Entrevista'}))].map(x=>{const t=asMinutes(x.time),top=(t-rangeStart)/60*oneHour,high=Math.max(24,Number(x.duration||60)/60*oneHour-2);return `<div class="cal-reschedule-busy" style="top:${top}px;height:${high}px" title="${safeAttr(x.label)}"><span>${safe(niceTime(x.time))}</span><small>${safe(x.label)}</small></div>`;}).join('');
    return `<div class="cal-reschedule-day ${full?'is-blocked':''}" style="height:${height}px">${Array.from({length:(rangeEnd-rangeStart)/60},()=>'<div class="cal-wpicker-rule"></div>').join('')}${busyBlocks}${events}</div>`;
   }).join('');
-  showModal(`<div class="cal-reschedule-modal"><div class="eyebrow">Reagendamento individual</div><h2>${safe(l.student_name)} · aula ${l.lesson_number}</h2><p class="muted">${safe(teacherName(l.teacher_id))} · ${Number(l.duration)} min · ${l.original_date?dateBR(l.original_date):l.date?dateBR(l.date):'Data pendente'}</p><div class="cal-reschedule-toolbar"><button type="button" class="btn mini ghost" data-action="calReschedulePrev" aria-label="Semana anterior">‹</button><strong>${dateBR(first)} — ${dateBR(shift(first,6))}</strong><button type="button" class="btn mini ghost" data-action="calRescheduleNext" aria-label="Próxima semana">›</button><button type="button" class="btn mini light" data-action="calRescheduleNextMonth">Próximo mês</button></div><form id="calRescheduleForm" data-id="${safeAttr(l.id)}"><div class="cal-wpicker-legend"><span><i class="cal-wpicker-dot available"></i> Livre</span><span><i class="cal-wpicker-dot occupied"></i> Ocupado / bloqueado</span><span><i class="cal-wpicker-dot selected"></i> Selecionado</span></div><div class="cal-wpicker-scroll"><div class="cal-wpicker-inner"><div class="cal-wpicker-header"><span>Horário</span>${dates.map(d=>`<strong>${shortDays[parse(d).getDay()]}<br>${dateBR(d)}</strong>`).join('')}</div><div class="cal-wpicker-body"><div class="cal-wpicker-time" style="height:${height}px">${Array.from({length:(rangeEnd-rangeStart)/60},(_,i)=>`<span>${String(7+i).padStart(2,'0')}:00</span>`).join('')}</div>${columns}</div></div></div><input type="hidden" name="date" value="${safeAttr(state.rescheduleChoice?.date||'')}"><input type="hidden" name="time" value="${safeAttr(state.rescheduleChoice?.time||'')}"><div class="cal-reschedule-selection">${state.rescheduleChoice?`Nova aula: <strong>${dateBR(state.rescheduleChoice.date)} às ${safe(state.rescheduleChoice.time)}</strong>`:'Selecione um horário livre no calendário.'}</div><label class="field"><span>Observação (opcional)</span><input name="note" maxlength="300" value="${safeAttr(state.rescheduleNote)}" placeholder="Combinado com o aluno"></label><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit" ${state.rescheduleChoice?'':'disabled'}>Confirmar reagendamento</button></div></form></div>`);
+  showModal(`<div class="cal-reschedule-modal"><div class="eyebrow">Reagendamento individual</div><h2>${safe(l.student_name)} · aula ${l.lesson_number}</h2><p class="muted">${safe(teacherName(l.teacher_id))} · ${Number(l.duration)} min · ${l.original_date?dateBR(l.original_date):l.date?dateBR(l.date):'Data pendente'}</p><div class="cal-skip-banner"><div><strong>Prefere apenas pular esta data?</strong><small>A aula desta data será pulada e uma nova aula será adicionada automaticamente ao final do pacote, respeitando o dia da semana e o horário habituais do aluno.</small></div><button type="button" class="btn mini light" data-action="calSkipLesson" data-id="${safeAttr(l.id)}">Pular data (jogar p/ o final)</button></div><div class="cal-reschedule-toolbar"><button type="button" class="btn mini ghost" data-action="calReschedulePrev" aria-label="Semana anterior">‹</button><strong>${dateBR(first)} — ${dateBR(shift(first,6))}</strong><button type="button" class="btn mini ghost" data-action="calRescheduleNext" aria-label="Próxima semana">›</button><button type="button" class="btn mini light" data-action="calRescheduleNextMonth">Próximo mês</button></div><form id="calRescheduleForm" data-id="${safeAttr(l.id)}"><div class="cal-wpicker-legend"><span><i class="cal-wpicker-dot available"></i> Livre</span><span><i class="cal-wpicker-dot occupied"></i> Ocupado / bloqueado</span><span><i class="cal-wpicker-dot selected"></i> Selecionado</span></div><div class="cal-wpicker-scroll"><div class="cal-wpicker-inner"><div class="cal-wpicker-header"><span>Horário</span>${dates.map(d=>`<strong>${shortDays[parse(d).getDay()]}<br>${dateBR(d)}</strong>`).join('')}</div><div class="cal-wpicker-body"><div class="cal-wpicker-time" style="height:${height}px">${Array.from({length:(rangeEnd-rangeStart)/60},(_,i)=>`<span>${String(7+i).padStart(2,'0')}:00</span>`).join('')}</div>${columns}</div></div></div><input type="hidden" name="date" value="${safeAttr(state.rescheduleChoice?.date||'')}"><input type="hidden" name="time" value="${safeAttr(state.rescheduleChoice?.time||'')}"><div class="cal-reschedule-selection">${state.rescheduleChoice?`Nova aula: <strong>${dateBR(state.rescheduleChoice.date)} às ${safe(state.rescheduleChoice.time)}</strong>`:'Selecione um horário livre no calendário.'}</div><label class="field"><span>Observação (opcional)</span><input name="note" maxlength="300" value="${safeAttr(state.rescheduleNote)}" placeholder="Combinado com o aluno"></label><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button type="button" class="btn light" data-action="calSkipLesson" data-id="${safeAttr(l.id)}">Pular data</button><button class="btn" type="submit" ${state.rescheduleChoice?'':'disabled'}>Confirmar reagendamento</button></div></form></div>`);
  }
 
+ async function skipLesson(id){
+  const l=lessonById(id);if(!l)throw new Error('Aula não encontrada.');
+  const noteInput=typeof document!=='undefined'&&document.querySelector?document.querySelector('.cal-reschedule-modal [name="note"]'):null;
+  const note=noteInput?.value?.trim()||'';
+  const preview=await call('calendar_skip_lesson',{p_lesson:id,p_note:note||null,p_dry_run:true});
+  const newDateStr=preview?.new_date?`${weekNames[parse(preview.new_date).getDay()]}, ${dateBR(preview.new_date)}`:'o final do cronograma';
+  const newTimeStr=preview?.new_time?` às ${niceTime(preview.new_time)}`:'';
+  const oldDateStr=(l.date||l.original_date)?`${dateBR(l.date||l.original_date)}${(l.time||l.original_time)?' às '+niceTime(l.time||l.original_time):''}`:'data bloqueada';
+  const msg=`Pular a aula de ${l.student_name} (${oldDateStr}) e adicionar uma nova aula no final do pacote em ${newDateStr}${newTimeStr}?\n\nO dia da semana e o horário habituais do aluno serão respeitados.`;
+  if(!await window.campanellaConfirm(msg,'Pular data e adicionar no final','Confirmar e pular data'))return;
+  const res=await call('calendar_skip_lesson',{p_lesson:id,p_note:note||null,p_dry_run:false});
+  closeModal();
+  toast(`Data pulada. Nova aula adicionada no final em ${dateBR(res?.new_date||preview?.new_date)} às ${niceTime(res?.new_time||preview?.new_time)}.`);
+  return reload();
+ }
+ function interviewDetail(id){
+  const iv=(data().interviews||[]).find(x=>x.id===id);if(!iv)throw new Error('Entrevista não encontrada no calendário.');
+  const wa=whatsappLink(iv.phone);
+  showModal(`<div class="eyebrow">Entrevista Comercial · Lead</div><h2>${safe(iv.student_name||'Lead')}</h2><div class="detail-grid"><div class="detail-item"><span>Data</span><strong>${safe(weekNames[parse(iv.date).getDay()])}, ${dateBR(iv.date)}</strong></div><div class="detail-item"><span>Horário</span><strong>${safe(niceTime(iv.time))} (${Number(iv.duration||30)} min)</strong></div><div class="detail-item"><span>Professor designado</span><strong>${safe(teacherName(iv.teacher_id))}</strong></div><div class="detail-item"><span>Serviço de interesse</span><strong>${safe(iv.service||'—')}</strong></div><div class="detail-item"><span>Telefone</span><strong>${safe(iv.phone||'—')}</strong></div><div class="detail-item"><span>Status</span><strong>${iv.state==='completed'?'Entrevista realizada':'Entrevista agendada'}</strong></div></div>${iv.note?`<p class="form-note" style="margin-top:12px"><strong>Observação:</strong> ${safe(iv.note)}</p>`:''}<div class="form-footer"><button class="btn ghost" type="button" data-action="close">Fechar</button>${wa?`<a class="btn light" href="${safeAttr(wa)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>`:''}${!teacherMode()&&typeof openLead==='function'?control('calOpenInterviewLead','Abrir lead / Ficha inicial',`data-id="${safeAttr(iv.lead_id)}"`,'light'):''}${iv.state==='scheduled'?control('calCompleteInterview','Marcar entrevista como realizada',`data-id="${safeAttr(iv.id)}"`,''):''}</div>`);
+ }
  function lessonDetail(id){
   const l=data().lessons.find(x=>x.id===id);if(!l)throw new Error('Aula não encontrada');
-  showModal(`<div class="eyebrow">Aula ${l.lesson_number} de ${safe(l.total||'?')}</div><h2>${safe(l.student_name)}</h2><div class="detail-grid"><div class="detail-item"><span>Data</span><strong>${escapeDate(l.date)}</strong></div><div class="detail-item"><span>Horário</span><strong>${safe(niceTime(l.time)||'A definir')}</strong></div><div class="detail-item"><span>Professor</span><strong>${safe(teacherName(l.teacher_id))}</strong></div><div class="detail-item"><span>Status</span><strong>${safe(textStatus(l.status))}</strong></div></div><div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button>${['scheduled','needs_reschedule'].includes(l.status)?control('calReschedule','Reagendar',`data-id="${l.id}"`):''}${l.status==='scheduled'?control('calRecord','Registrar aula',`data-id="${l.id}"`,''):''}</div>`);
+  showModal(`<div class="eyebrow">Aula ${l.lesson_number} de ${safe(l.total||'?')}</div><h2>${safe(l.student_name)}</h2><div class="detail-grid"><div class="detail-item"><span>Data</span><strong>${escapeDate(l.date)}</strong></div><div class="detail-item"><span>Horário</span><strong>${safe(niceTime(l.time)||'A definir')}</strong></div><div class="detail-item"><span>Professor</span><strong>${safe(teacherName(l.teacher_id))}</strong></div><div class="detail-item"><span>Status</span><strong>${safe(textStatus(l.status))}</strong></div></div><div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button>${['scheduled','needs_reschedule'].includes(l.status)?control('calSkipLesson','Pular data',`data-id="${l.id}"`,'ghost'):''}${['scheduled','needs_reschedule'].includes(l.status)?control('calReschedule','Reagendar',`data-id="${l.id}"`):''}${l.status==='scheduled'?control('calRecord','Registrar aula',`data-id="${l.id}"`,''):''}</div>`);
  }
  function lessonById(id){return data().lessons.find(l=>l.id===id)||state.studentProfile?.contracts?.flatMap(c=>(c.lessons||[]).map(l=>({...l,lesson_number:l.number,student_name:state.studentProfile.name,contract_id:c.id,total:c.total}))).find(l=>l.id===id);}
  function scheduleForContract(contract){
@@ -383,7 +409,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(!id)throw new Error('Aluno não identificado.');
   if(!state.snapshot||state.snapshotSchool!==school())await load();
   const profile=await call('calendar_student_profile',{p_school:school(),p_student:id});
-  state.studentId=id;state.studentProfile=profile;
+  if(state.studentId!==id)state.studentLessonsTab='future';state.studentId=id;state.studentProfile=profile;
   if(show){if(teacherMode()){state.page='student-profile';renderCalendar();}else{ui.studentReturnPage=ui.page;ui.studentId=id;ui.page='student-profile';render();}}
   return profile;
  }
@@ -405,19 +431,31 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const slotTags=[...new Map((profile.current_slots?.length?profile.current_slots:contracts.flatMap(c=>c.slots||[])).map(s=>[s.id,s])).values()]
     .sort((a,b)=>a.weekday-b.weekday||niceTime(a.time).localeCompare(niceTime(b.time)))
     .map(s=>`<span class="cal-student-slot">${safe(shortDays[s.weekday])} · ${safe(niceTime(s.time))} (${Number(s.duration)} min)</span>`).join('');
+  const habitualSlotIds=new Set(profile.slot_ids||[]);
+  const tempFutureLessons=future.filter(l=>!l.manual_override&&((l.slot_id&&habitualSlotIds.size&&!habitualSlotIds.has(l.slot_id))||(l.history||[]).some(h=>h.event==='student_schedule_temp_changed'&&h.new_date===l.date)));
+  const tempBanner=(()=>{
+   if(!tempFutureLessons.length)return '';
+   const firstTemp=tempFutureLessons[0],lastTemp=tempFutureLessons[tempFutureLessons.length-1];
+   const afterReturn=future.find(l=>!l.manual_override&&l.date>lastTemp.date&&(!l.slot_id||habitualSlotIds.has(l.slot_id)));
+   const slotDesc=[...new Set(tempFutureLessons.map(l=>`${shortDays[parse(l.date).getDay()]} · ${niceTime(l.time)}`))].join(', ');
+   const periodDesc=firstTemp.date===lastTemp.date?`em <strong>${dateBR(firstTemp.date)}</strong>`:`de <strong>${dateBR(firstTemp.date)}</strong> até <strong>${dateBR(lastTemp.date)}</strong>`;
+   const returnDesc=afterReturn?` · volta ao horário habitual em <strong>${dateBR(afterReturn.date)}</strong>`:'';
+   return `<div class="cal-temp-schedule-banner"><strong>Alteração programada:</strong> ${safe(slotDesc)} (${tempFutureLessons.length} aula${tempFutureLessons.length===1?'':'s'} ${periodDesc}${returnDesc})</div>`;
+  })();
   const allLessonRows=rows=>rows.length?rows.map(l=>{
    const detail=(l.history||[]).length?`<details class="cal-lesson-history"><summary>Histórico de alterações (${l.history.length})</summary>${l.history.map(h=>`<div>${h.at?new Date(h.at).toLocaleDateString('pt-BR'):''} · ${safe(h.event)}${h.old_date?` · ${dateBR(h.old_date)}${h.old_time?' '+safe(niceTime(h.old_time)):''}`:''}${h.new_date?` → ${dateBR(h.new_date)}${h.new_time?' '+safe(niceTime(h.new_time)):''}`:''}${h.note?` · ${safe(h.note)}`:''}</div>`).join('')}</details>`:'';
-   return `<div class="cal-lesson-row"><span class="cal-lesson-number">#${Number(l.number)}</span><div class="cal-lesson-main"><strong>${l.date?dateBR(l.date):'Data a definir'} ${l.time?'· '+safe(niceTime(l.time)):''}</strong><small>${safe(l.teacher_name||teacherName(l.teacher_id))} · ${safe(l.contract.course||'Aulas')} · ${Number(l.duration)} min · ${safe(textStatus(l.status))}</small>${detail}</div><div class="cal-lesson-actions">${['scheduled','needs_reschedule','reserved'].includes(l.status)?control('calReschedule','Reagendar',`data-id="${safeAttr(l.id)}"`,'light'):''}${l.status==='scheduled'?control('calRecord','Registrar',`data-id="${safeAttr(l.id)}"`,'light'):''}</div></div>`;
+   const isTemp=!l.manual_override&&((l.slot_id&&habitualSlotIds.size&&!habitualSlotIds.has(l.slot_id))||(l.history||[]).some(h=>h.event==='student_schedule_temp_changed'&&h.new_date===l.date));
+   return `<div class="cal-lesson-row"><span class="cal-lesson-number">#${Number(l.number)}</span><div class="cal-lesson-main"><strong>${l.date?`${safe(weekNames[parse(l.date).getDay()])}, ${dateBR(l.date)}`:'Data a definir'} ${l.time?'· '+safe(niceTime(l.time)):''}${isTemp?' <span class="cal-temp-badge">Horário temporário</span>':''}</strong><small>${safe(l.teacher_name||teacherName(l.teacher_id))} · ${safe(l.contract.course||'Aulas')} · ${Number(l.duration)} min · ${safe(textStatus(l.status))}</small>${detail}</div><div class="cal-lesson-actions">${['scheduled','needs_reschedule','reserved'].includes(l.status)?control('calReschedule','Reagendar',`data-id="${safeAttr(l.id)}"`,'light'):''}${['scheduled','needs_reschedule','reserved'].includes(l.status)?control('calSkipLesson','Pular data',`data-id="${safeAttr(l.id)}"`,'ghost'):''}${l.status==='scheduled'?control('calRecord','Registrar',`data-id="${safeAttr(l.id)}"`,'light'):''}</div></div>`;
   }).join(''):'<p class="muted">Nenhuma aula neste grupo.</p>';
   const total=contracts.reduce((n,c)=>n+Number(c.total||0),0);
   const basic=admin&&adminSections?.registration?adminSections.registration:`<section class="panel cal-section cal-profile-registration"><div class="panel-head"><h2>Dados cadastrais</h2></div><div class="profile-grid"><div class="detail-item"><span>Nome</span><strong>${safe(profile.name)}</strong></div><div class="detail-item"><span>Professor responsável</span><strong>${safe(teacherName(topTeacher))}</strong></div><div class="detail-item"><span>Telefone</span><strong>${safe(profile.phone||'—')}</strong></div><div class="detail-item"><span>E-mail</span><strong>${safe(profile.email||'—')}</strong></div></div></section>`;
   const contractCards=admin&&adminSections?.contracts?adminSections.contracts:contracts.map(c=>`<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.course||'Aulas')} · ${safe(c.package||'Pacote')}</strong><small>${safe(c.teacher_name||teacherName(c.teacher_id))} · ${c.start?dateBR(c.start):'—'} a ${c.contract_end?dateBR(c.contract_end):'—'} · ${safe(c.status)}</small></div></div>`).join('')||'<p class="muted">Sem matrículas vinculadas.</p>';
   const accordion=(title,subtitle,content,icon)=>`<details class="panel cal-profile-accordion"><summary class="cal-profile-accordion-toggle"><span class="cal-profile-accordion-icon">${navIcon(icon)}</span><span class="cal-profile-accordion-title"><strong>${title}</strong><small>${subtitle}</small></span><span class="cal-profile-accordion-chevron" aria-hidden="true"></span></summary><div class="cal-profile-accordion-content">${content}</div></details>`;
   const scheduleCards=`<div class="cal-profile-metrics"><div><strong>${total}</strong><span>Aulas contratadas</span></div><div><strong>${completed.length}</strong><span>Realizadas</span></div><div><strong>${future.length}</strong><span>Futuras</span></div><div><strong>${pending.length}</strong><span>A reagendar</span></div></div>
-   <section class="cal-profile-subsection"><div class="panel-head"><h2>Horários semanais atuais</h2>${contracts.some(c=>c.status==='signed')?control('calEditStudentSlots','Alterar professor e horários',`data-id="${safeAttr(profile.id)}"`,'light'):''}</div><div class="cal-student-slots">${slotTags||'<span class="muted">Não há horário fixo associado nesta matrícula.</span>'}</div>${planned?`<p class="form-note">${planned} aula(s) anterior(es) sem registro de realização.</p>`:''}</section>
-   <section class="cal-profile-subsection"><div class="panel-head"><h2>Próximas aulas <span class="cal-count">${future.length}</span></h2></div>${allLessonRows(future)}</section>
-   ${pending.length?`<section class="cal-profile-subsection"><div class="panel-head"><h2>Aulas para reagendar <span class="cal-count">${pending.length}</span></h2></div>${allLessonRows(pending)}</section>`:''}
-   <section class="cal-profile-subsection"><div class="panel-head"><h2>Histórico de aulas e presenças <span class="cal-count">${past.length}</span></h2></div>${allLessonRows(past)}</section>`;
+   <section class="cal-profile-subsection"><div class="panel-head"><h2>Horários semanais atuais</h2>${contracts.some(c=>c.status==='signed')?control('calEditStudentSlots','Alterar professor e horários',`data-id="${safeAttr(profile.id)}"`,'light'):''}</div><div class="cal-student-slots">${slotTags||'<span class="muted">Não há horário fixo associado nesta matrícula.</span>'}</div>${tempBanner}${planned?`<p class="form-note">${planned} aula(s) anterior(es) sem registro de realização.</p>`:''}</section>
+   <section class="cal-profile-subsection cal-lessons-tabs-section"><div class="cal-lessons-tabs" role="tablist"><button type="button" class="cal-lessons-tab ${(state.studentLessonsTab||'future')==='future'?'is-active':''}" data-action="calStudentLessonsTab" data-tab="future">Próximas aulas <span class="cal-count">${future.length}</span></button><button type="button" class="cal-lessons-tab ${state.studentLessonsTab==='past'?'is-active':''}" data-action="calStudentLessonsTab" data-tab="past">Datas passadas <span class="cal-count">${past.length}</span></button>${pending.length?`<button type="button" class="cal-lessons-tab ${state.studentLessonsTab==='pending'?'is-active':''}" data-action="calStudentLessonsTab" data-tab="pending">Para reagendar <span class="cal-count">${pending.length}</span></button>`:''}</div><div data-lessons-tab-panel="future" style="display:${(state.studentLessonsTab||'future')==='future'?'block':'none'}"><div class="panel-head"><h2>Próximas aulas <span class="cal-count">${future.length}</span></h2></div>${allLessonRows(future)}</div><div data-lessons-tab-panel="past" style="display:${state.studentLessonsTab==='past'?'block':'none'}"><div class="panel-head"><h2>Datas passadas · Histórico de aulas e presenças <span class="cal-count">${past.length}</span></h2></div>${allLessonRows(past)}</div>${pending.length?`<div data-lessons-tab-panel="pending" style="display:${state.studentLessonsTab==='pending'?'block':'none'}"><div class="panel-head"><h2>Aulas para reagendar <span class="cal-count">${pending.length}</span></h2></div>${allLessonRows(pending)}</div>`:''}</section>`;
+
+
   return `<div class="cal-profile-page"><header class="page-head cal-profile-head"><div><button type="button" class="btn mini ghost" data-action="${admin?'studentProfileBack':'calStudentBack'}">${navIcon('arrow')} Voltar</button><p class="eyebrow">Perfil do aluno</p><h1>${safe(profile.name)}</h1></div><div class="cal-profile-contact">${wa?`<a class="btn light" href="${safeAttr(wa)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>`:''}${phone?`<a class="btn ghost" href="tel:${safeAttr(phone)}">Ligar</a>`:''}${profile.email?`<a class="btn ghost" href="mailto:${safeAttr(profile.email)}">E-mail</a>`:''}</div></header>
   ${basic}
   ${accordion('Contratos e Matrículas',`${adminSections?.contractCount??contracts.length} matrícula(s) vinculada(s)`,contractCards,'school')}
@@ -439,6 +477,39 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   return weeklyPickerMarkup(slots,{name:'cal_student_slot',selected:selectedIds,occupied:booked,limit:count});
  }
 
+ function updateStudentScheduleModeUI(form){
+  if(!form||form.id!=='calStudentSlotsForm'||!form.elements?.cal_from_date)return;
+  const hasUntil=!!form.elements?.cal_has_until_date?.checked;
+  const untilField=form.querySelector?.('#calUntilDateField');
+  const untilInput=form.elements?.cal_until_date;
+  const fromVal=form.elements?.cal_from_date?.value||today();
+  if(untilField?.style)untilField.style.display=hasUntil?'flex':'none';
+  if(untilInput){
+   untilInput.min=fromVal||today();
+   if(hasUntil&&(!untilInput.value||untilInput.value<fromVal))untilInput.value=fromVal;
+  }
+  const untilVal=untilInput?.value||'';
+  const summary=form.querySelector?.('#calScheduleModeSummary');
+  if(!summary)return;
+  const checked=[...(form.querySelectorAll?.('input[name="cal_student_slot"]:checked')||[])].map(el=>data().slots.find(s=>s.id===el.value)).filter(Boolean);
+  const chosenLabel=checked.length?checked.map(s=>`${shortDays[s.weekday]} às ${niceTime(s.time)}`).join(' e '):'o(s) horário(s) selecionado(s)';
+  const habitualSlots=(state.studentProfile?.current_slots||[]).map(s=>`${shortDays[s.weekday]} às ${niceTime(s.time)}`).join(' e ')||'o horário atual';
+  if(!hasUntil){
+   if(!fromVal||fromVal<=today()){
+    summary.innerHTML=`Todas as próximas aulas regulares passarão definitivamente para <strong>${safe(chosenLabel)}</strong>.`;
+   }else{
+    summary.innerHTML=`As aulas anteriores a <strong>${dateBR(fromVal)}</strong> permanecem em <strong>${safe(habitualSlots)}</strong>. A partir de <strong>${dateBR(fromVal)}</strong>, passam definitivamente para <strong>${safe(chosenLabel)}</strong>.`;
+   }
+  }else if(fromVal&&untilVal&&fromVal===untilVal){
+   const d=parse(fromVal),dow=d.getDay(),mon=shift(fromVal,dow===0?-6:1-dow),sun=shift(mon,6),nextMon=shift(mon,7);
+   summary.innerHTML=`Alteração temporária somente na semana de <strong>${dateBR(mon)} a ${dateBR(sun)}</strong> para <strong>${safe(chosenLabel)}</strong>. A partir de <strong>${dateBR(nextMon)}</strong>, volta automaticamente para <strong>${safe(habitualSlots)}</strong>.`;
+  }else if(fromVal&&untilVal){
+   summary.innerHTML=`Alteração temporária: de <strong>${dateBR(fromVal)}</strong> até <strong>${dateBR(untilVal)}</strong> as aulas serão em <strong>${safe(chosenLabel)}</strong>. Após essa data, voltam automaticamente para <strong>${safe(habitualSlots)}</strong>.`;
+  }else{
+   summary.textContent='Informe a data de início e a data de fim dessa alteração.';
+  }
+ }
+
  function editStudentSlots(id){
   const profile=state.studentProfile;
   if(!profile||profile.id!==id)throw new Error('Abra o perfil do aluno antes de alterar os horários.');
@@ -449,6 +520,17 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const teacherField=canAdmin()?`<label class="field wide"><span>Professor responsável</span><select name="cal_student_teacher" required>${teachers.map(t=>`<option value="${safeAttr(t.id)}" ${t.id===teacher?'selected':''} ${t.active?'':'disabled'}>${safe(t.name)}</option>`).join('')}</select></label>`:`<div class="field wide"><span>Professor responsável</span><strong>${safe(teacherName(teacher))}</strong></div><input type="hidden" name="cal_student_teacher" value="${safeAttr(teacher)}">`;
   showModal(`<div class="eyebrow">Aluno · Agenda semanal</div><h2>Alterar professor e horários de ${safe(profile.name)}</h2>
   <form id="calStudentSlotsForm" data-id="${safeAttr(id)}" data-teacher="${safeAttr(teacher)}"><div class="form-grid">${teacherField}</div><div class="form-section"><h3>Horários semanais do professor</h3><div class="cal-student-transfer" id="calStudentSlotChoices">${studentSlotChoices(teacher,profile.slot_ids||[])}</div></div>
+  <div class="cal-schedule-mode-box">
+   <div class="form-grid cal-schedule-mode-dates" id="calScheduleModeDates">
+    <label class="field" data-mode-field="from"><span>Data de início da alteração</span><input type="date" name="cal_from_date" min="${safeAttr(today())}" value="${safeAttr(today())}" required></label>
+    <label class="field" id="calUntilDateField" data-mode-field="until" style="display:none"><span>Data de fim da alteração</span><input type="date" name="cal_until_date" min="${safeAttr(today())}" value="${safeAttr(shift(today(),14))}"></label>
+   </div>
+   <label class="cal-until-checkbox">
+    <input type="checkbox" name="cal_has_until_date" value="1">
+    <span>Definir data de fim (alteração temporária — volta ao horário atual depois)</span>
+   </label>
+   <div class="cal-schedule-mode-summary" id="calScheduleModeSummary">Todas as próximas aulas regulares passarão definitivamente para os horários selecionados.</div>
+  </div>
   <p class="muted">Apenas aulas futuras serão alteradas. O histórico e os contratos assinados serão preservados.</p>
   <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Revisar alteração</button></div></form>`);
  }
@@ -472,6 +554,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(name==='calSwitchInviteAccount'){await sb.auth.signOut();return inviteLanding(state.inviteToken,null);}
   if(name==='calTeacherHome')return reload();
   if(name==='calTeacherPage'){state.page=element.dataset.page||'agenda';state.studentProfile=null;state.studentId=null;if(state.page==='slots'&&!teacherMode()&&state.teacher==='all'){state.teacher=data().teachers.find(t=>t.active)?.id||'all';}return renderCalendar();}
+  if(name==='calStudentLessonsTab'){const tab=element.dataset.tab||'future';state.studentLessonsTab=tab;const root=element.closest?.('.cal-lessons-tabs-section');if(root){root.querySelectorAll('[data-action="calStudentLessonsTab"]').forEach(b=>b.classList.toggle('is-active',b.dataset.tab===tab));root.querySelectorAll('[data-lessons-tab-panel]').forEach(p=>{p.style.display=p.dataset.lessonsTabPanel===tab?'block':'none';});}return;}
   if(name==='calTeacherSettingsTab'){state.settingsTab=element.dataset.tab||'profile';return renderCalendar();}
   if(name==='calSendPasswordRecovery'){const email=ui.user?.email;if(!email)throw new Error('E-mail de acesso indisponível');const url=new URL(location.href);url.hash='';url.search='?recuperar=1';const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:url.toString()});if(error)throw error;toast('Enviamos as instruções para o e-mail cadastrado.');return;}
   if(name==='calStudentDetails')return studentDetail(id);
@@ -493,7 +576,11 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   }
   if(name==='calNewBlock')return newBlock();
   if(name==='calLesson')return lessonDetail(id);
+  if(name==='calInterview')return interviewDetail(id);
+  if(name==='calOpenInterviewLead'){if(typeof openLead==='function')return openLead(id);return;}
+  if(name==='calCompleteInterview'){if(!await window.campanellaConfirm('Confirmar que a entrevista com este lead foi realizada?','Concluir entrevista','Confirmar realização'))return;await call('calendar_complete_interview',{p_appointment:id});closeModal();toast('Entrevista marcada como realizada.');return reload();}
   if(name==='calReschedule')return reschedule(id);
+  if(name==='calSkipLesson')return skipLesson(id);
   if(name==='calRecord')return record(id);
   if(name==='calPreview')return previewForm(element);
   if(name==='calCancelBlock'){if(!await window.campanellaConfirm('Cancelar este bloqueio? As aulas pendentes continuarão aguardando reagendamento individual.'))return;await call('calendar_cancel_block',{p_block:id});toast('Bloqueio cancelado. Aulas pendentes preservadas.');return reload();}
@@ -525,8 +612,10 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(element.name==='cal_student_teacher'&&element.form?.id==='calStudentSlotsForm'){
    const host=element.form.querySelector('#calStudentSlotChoices');
    if(host)host.innerHTML=studentSlotChoices(element.value,element.value===element.form.dataset.teacher?(state.studentProfile?.slot_ids||[]):[]);
+   updateStudentScheduleModeUI(element.form);
    return;
   }
+  if(['cal_has_until_date','cal_from_date','cal_until_date','cal_student_slot'].includes(element.name)&&element.form?.id==='calStudentSlotsForm'){updateStudentScheduleModeUI(element.form);return;}
   if(element.name==='teacher_id'&&element.form?.id==='manualEnrollmentForm'){updateFormPicker(element.form);return autoPreview(element.form);}
   if(element.name==='start_date'&&element.form?.elements.cal_start_date){element.form.elements.cal_start_date.value=element.value;return autoPreview(element.form);}
   if(['cal_slot','cal_start_date','lessons_count'].includes(element.name))return autoPreview(element.form);
@@ -564,12 +653,28 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
    const selected=[...f.querySelectorAll('input[name="cal_student_slot"]:checked')].map(el=>el.value);
    const expectedCount=profile.slot_ids?.length||profile.contracts?.find(c=>c.status==='signed')?.slots?.length||1;
    if(selected.length!==expectedCount)throw new Error(`Selecione ${expectedCount} horário(s) semanais, conforme o pacote atual.`);
-   if(!teacherChanged&&selected.length===(profile.slot_ids||[]).length&&selected.every(v=>(profile.slot_ids||[]).includes(v))){closeModal();return;}
+   const rawFrom=f.elements.cal_from_date?.value||'';
+   const hasUntil=!!f.elements.cal_has_until_date?.checked;
+   const rawUntil=f.elements.cal_until_date?.value||'';
+   let fromDate=null,untilDate=null;
+   if(rawFrom&&rawFrom<today())throw new Error('A data de início não pode ser anterior a hoje.');
+   if(hasUntil){
+    if(!rawFrom||!rawUntil)throw new Error('Informe a data de início e a data de fim dessa alteração.');
+    if(rawUntil<rawFrom)throw new Error('A data de fim não pode ser anterior à data de início.');
+    fromDate=rawFrom;untilDate=rawUntil;
+   }else if(rawFrom&&rawFrom>today()){
+    fromDate=rawFrom;
+   }
+   const hasDiffFutureLessons=(profile.contracts||[]).some(c=>c.status==='signed'&&(c.lessons||[]).some(l=>['scheduled','reserved'].includes(l.status)&&l.date>=today()&&!l.manual_override&&((l.slot_id&&!selected.includes(l.slot_id))||(l.teacher_id&&l.teacher_id!==newTeacher))));
+   if(!fromDate&&!untilDate&&!teacherChanged&&!hasDiffFutureLessons&&selected.length===(profile.slot_ids||[]).length&&selected.every(v=>(profile.slot_ids||[]).includes(v))){closeModal();return;}
+   const periodNote=untilDate?(fromDate===untilDate?` somente na semana de ${dateBR(fromDate)} (voltando ao horário habitual na semana seguinte)`:` de ${dateBR(fromDate)} até ${dateBR(untilDate)} (voltando ao horário habitual depois)`):fromDate?` a partir de ${dateBR(fromDate)}`:'';
    const message=teacherChanged?
-    `Transferir ${profile.name} de ${teacherName(oldTeacher)} para ${teacherName(newTeacher)}? As aulas futuras regulares passarão para os horários escolhidos do novo professor. Aulas já realizadas continuarão associadas ao professor anterior e os reagendamentos individuais futuros precisarão ser combinados novamente. Os contratos assinados não serão alterados.`:
-    `Alterar os horários semanais de ${profile.name}? As aulas futuras regulares serão recalculadas nos horários escolhidos. Aulas realizadas e reagendamentos individuais serão preservados. Os demais alunos não serão afetados.`;
+    `Transferir ${profile.name} de ${teacherName(oldTeacher)} para ${teacherName(newTeacher)}${periodNote}? As aulas futuras regulares passarão para os horários escolhidos do novo professor. Aulas já realizadas continuarão associadas ao professor anterior e os reagendamentos individuais futuros precisarão ser combinados novamente. Os contratos assinados não serão alterados.`:
+    `Alterar os horários semanais de ${profile.name}${periodNote}? As aulas futuras regulares serão recalculadas nos horários escolhidos. Aulas realizadas e reagendamentos individuais serão preservados. Os demais alunos não serão afetados.`;
    if(!await window.campanellaConfirm(message,teacherChanged?'Transferir professor responsável':'Alterar agenda do aluno',teacherChanged?'Confirmar transferência':'Confirmar alteração'))return;
-   const result=await call('calendar_update_student_schedule',{p_school:school(),p_student:profile.id,p_teacher:newTeacher,p_slots:selected});
+   const rpcArgs={p_school:school(),p_student:profile.id,p_teacher:newTeacher,p_slots:selected};
+   if(fromDate){rpcArgs.p_from_date=fromDate;rpcArgs.p_until_date=untilDate;}
+   const result=await call('calendar_update_student_schedule',rpcArgs);
    closeModal();toast(`${Number(result.updated)||0} aula(s) atualizada(s)${Number(result.pending)||0?` · ${Number(result.pending)} pendente(s) de reagendamento`:''}.`);
    await reload();
    // A troca de professor revoga o acesso do antigo docente a este perfil.
