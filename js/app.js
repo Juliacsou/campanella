@@ -94,7 +94,6 @@ function table(headers,rows,placeholder='Nenhum registro encontrado'){return `<d
 const crm=createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy:()=>appBusy});
 const calendar=createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg:(name,size)=>ico(name,size)});
 initWeeklyPicker();
-const onboarding=createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe,ico,today,dateBR,cpfValid,amountWords,confirm:confirmModal,toast});
 // SVGs internos: nao dependem de fontes de icones ou CDNs adicionais.
 const ICONS={
  dashboard:'<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
@@ -123,6 +122,7 @@ const ICONS={
  key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 10-10m-4 0h4v4m-5 2 2 2"/>'
 };
 const ico=(name,size=18)=>`<svg class="camp-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||ICONS.school}</svg>`;
+const onboarding=createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe,ico,today,dateBR,cpfValid,amountWords,confirm:confirmModal,toast});
 const navGroups=[
  ['Início',[['dashboard','dashboard','Visão geral']]],
  ['Relacionamento',[['leads','leads','CRM · Leads'],['interviews','interviews','Fichas iniciais']]],
