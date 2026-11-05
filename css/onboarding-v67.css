@@ -1,11 +1,11 @@
-/* Campanella V6.7 - assistente de implantacao */
+/* Campanella V6.8 - assistente de implantacao */
 .onb-wizard{display:grid;gap:20px;min-width:0}
 .onb-top{display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .onb-top h2{font-size:clamp(21px,2.3vw,28px);margin:2px 0 8px;color:#112d30}
 .onb-top p{margin:0}
 .onb-summary{display:grid;gap:1px;min-width:130px;text-align:center;background:#ecf6f1;padding:13px 22px;border-radius:14px;color:#0e6f58}
 .onb-summary b{font-size:27px}.onb-summary small{font-size:12px}
-.onb-stages{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.onb-stages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .onb-stage{cursor:pointer;display:flex;align-items:center;gap:12px;min-width:0;text-align:left;border:1px solid #dae7e3;border-radius:14px;padding:14px;background:#fff;color:#35534f}
 .onb-stage span{flex:0 0 auto;background:#edf3f1;color:#255e53;width:30px;height:30px;border-radius:100%;display:grid;place-content:center;font-weight:750}
 .onb-stage b{font-size:13px;line-height:1.3}
@@ -37,3 +37,35 @@
 .onb-panel .data-table{font-size:13px;min-width:520px}
 .onb-panel .form-footer{margin-top:8px}
 @media(max-width:750px){.onb-stages{grid-template-columns:1fr}.onb-stage{padding:10px 12px}.onb-panel-inner{padding:16px}.onb-metrics{gap:8px}.onb-metrics>div{padding:11px 9px}.onb-metrics strong{font-size:20px}.onb-metrics span{font-size:11px}.onb-upload{align-items:stretch}.onb-upload .btn{width:100%}}
+
+/* Importacao V6.8: visualizar, corrigir e retomar sem perder o arquivo */
+.onb-wizard .onb-top{margin-bottom:0}
+.onb-records{max-height:510px;overflow-y:auto;overscroll-behavior:contain;border:1px solid #d8e7e1;border-radius:13px;background:#fff}
+.onb-record{border-bottom:1px solid #e3ebe7}.onb-record:last-child{border-bottom:0}
+.onb-record-summary{display:flex;align-items:center;gap:12px;padding:14px 16px;min-width:0}
+.onb-record-no{flex:0 0 29px;color:#80908d;font-size:12px}
+.onb-record-main{flex:1;min-width:0;display:grid;gap:3px;overflow-wrap:anywhere}
+.onb-record-main b{font-size:13px;color:#1b3330}
+.onb-record-main small{font-size:12px;color:#72817d}
+.onb-record-main small.onb-error{color:#9c4330}
+.onb-record-status{border-radius:99px;white-space:nowrap;padding:5px 9px;font-size:11px;font-weight:700}
+.onb-record-status.success{color:#136b52;background:#def5e9}
+.onb-record-status.error{color:#a24527;background:#fff0e3}
+.onb-record-status.neutral{color:#5b6e6a;background:#eef4f2}
+.onb-record .btn{flex-shrink:0}
+.onb-correction{display:grid;gap:14px;padding:18px;background:#f7faf8;border-top:1px solid #dce9e2}
+.onb-edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.onb-edit-grid .field{margin:0}.onb-edit-grid .field span{font-size:12px}
+.onb-edit-grid input{width:100%;background:white}
+.onb-edit-grid input[aria-invalid="true"]{border-color:#bc6d46}
+.onb-issue-list{display:grid;gap:8px}
+.onb-issue{border-left:3px solid #c58652;background:#fff7ed;padding:10px 12px;font-size:12px;color:#87502d;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.onb-mapping{border:1px solid #dbe8e1;border-radius:10px;padding:13px;background:#fafcfb}
+.onb-mapping summary{cursor:pointer;font-weight:650;color:#235d50}
+.onb-mapping .onb-map-grid{padding-top:12px}
+.onb-preview-title{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.onb-report-counts{margin-top:2px}
+@media(max-width:800px){.onb-stages{grid-template-columns:repeat(2,minmax(0,1fr))}.onb-record-summary{flex-wrap:wrap;padding:12px}.onb-record-status{margin-left:auto}}
+@media(max-width:520px){.onb-stages{grid-template-columns:1fr 1fr}.onb-stage b{font-size:11px}.onb-record-summary .btn{width:100%}.onb-record-no{flex-basis:18px}.onb-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.onb-issue{flex-direction:column;align-items:flex-start}}
+
+@media(min-width:900px){.onb-preview .onb-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}

@@ -1,3 +1,7 @@
+# Campanella V6.8
+
+Atualização do assistente de implantação: prévia completa de CSV, correção manual de erros, recuperação de rejeitados, complementação por `aluno_id` e quatro etapas separadas. Veja `CHANGELOG_V6_8.md`. **Sem novo SQL; exige as migrações instaladas até V6.7.**
+
 # Campanella V6.7 — Assistente de implantacao
 
 **Versao atual para testes locais: V6.7.** Inclui um guia em Configuracoes da escola para importar alunos com nome + telefone e preparar matriculas em lote, validando professor, horarios e frequencia na grade real. Veja [CHANGELOG_V6_7.md](CHANGELOG_V6_7.md).

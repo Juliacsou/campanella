@@ -6,7 +6,7 @@ import {createCRM} from './crm.js';
 import {createCalendar} from './calendar-v6.js?v=6.6.0';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
-import {createOnboarding} from './onboarding-v67.js?v=6.7.0';
+import {createOnboarding} from './onboarding-v67.js?v=6.8.0';
 import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js';
 // Campanella V4 - multi-escolas, licencas e administracao.
 // Esta e uma chave publica, segura para uso em frontend com RLS corretamente configurado.
@@ -966,7 +966,7 @@ document.addEventListener('input',e=>{
  if(['total_amount','installments','installment_amount'].includes(e.target.name)&&['interviewForm','renewForm','manualEnrollmentForm','externalInterviewForm'].includes(e.target.form?.id))updateInstallment(e.target.form,e.target.name);
 });
 document.addEventListener('change',async e=>{
- if(e.target.matches('[data-onb-map]')){onboarding.change(e);return;}
+ if(e.target.matches('[data-onb-map], [data-onb-edit-line]')){onboarding.change(e);return;}
  if(e.target.id==='calTeacherFilter'||e.target.name==='cal_student_teacher'||['end_date','cal_manual_end','cal_slot','cal_start_date'].includes(e.target.name)||(['start_date','lessons_count'].includes(e.target.name)&&e.target.form?.querySelector('.cal-enrollment'))||(e.target.name==='teacher_id'&&e.target.form?.id==='manualEnrollmentForm')){try{await calendar.change(e.target);}catch(err){errors(err);}return;}
  if(e.target.name==='docx_file'&&e.target.form?.id==='typeForm'){
   const file=e.target.files?.[0];if(!file){renderDocxReport(null);return;}
