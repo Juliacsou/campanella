@@ -3125,58 +3125,732 @@ dialog .close:hover {
 }
 
 /* ==========================================================================
-   14. CENTRAL DE AJUDA & CONTRATOS DOCX
+   14. CENTRAL DE AJUDA, TUTORIAL DE CONTRATOS & PÁGINAS PÚBLICAS
    ========================================================================== */
 
+/* Layout e Topbar da Central de Ajuda */
 .guide-top {
   background: var(--camp-surface-card) !important;
   border-bottom: 1px solid var(--camp-border) !important;
+  box-shadow: var(--camp-shadow-card) !important;
+}
+
+.guide-top-inner {
+  height: 76px;
+  max-width: 1360px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 34px;
+}
+
+.guide-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.guide-brand .logo {
+  display: grid;
+  place-items: center;
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  height: 40px;
+  width: 40px;
+  border-radius: var(--camp-radius-md);
+  font: 700 24px Georgia, serif;
+  box-shadow: 0 4px 14px var(--camp-primary-glow);
+}
+
+.guide-brand strong {
+  font-size: 15px;
+  letter-spacing: 1.2px;
+  display: block;
+  color: var(--camp-text) !important;
+}
+
+.guide-brand small {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--camp-cyan) !important;
+  text-transform: uppercase;
+}
+
+[data-theme="light"] .guide-brand small {
+  color: var(--camp-primary) !important;
+}
+
+.back {
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--camp-text-secondary) !important;
+  transition: var(--camp-transition);
+}
+
+.back:hover {
+  color: var(--camp-primary) !important;
+}
+
+.guide-layout {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 36px 34px;
+  display: grid;
+  grid-template-columns: 244px minmax(0, 1fr);
+  gap: 34px;
+  align-items: start;
 }
 
 .guide-sidebar {
   border: 1px solid var(--camp-border) !important;
   background: var(--camp-surface-card) !important;
   border-radius: var(--camp-radius-lg) !important;
+  box-shadow: var(--camp-shadow-card) !important;
+  padding: 22px 20px;
+}
+
+.guide-nav-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--camp-text-muted) !important;
+  margin-bottom: 12px;
+}
+
+.guide-nav {
+  display: grid;
+  gap: 4px;
+}
+
+.guide-nav a {
+  padding: 10px 12px;
+  border-radius: var(--camp-radius-sm);
+  color: var(--camp-text-secondary) !important;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 12px;
+  transition: var(--camp-transition);
+}
+
+.guide-nav a:hover {
+  background: var(--camp-hover) !important;
+  color: var(--camp-text) !important;
+}
+
+.guide-side-note {
+  border-top: 1px solid var(--camp-border) !important;
+  margin-top: 18px;
+  padding-top: 20px;
+  color: var(--camp-text-secondary) !important;
+}
+
+.guide-side-note strong {
+  font-size: 13px;
+  color: var(--camp-text) !important;
+}
+
+.guide-side-note p {
+  font-size: 12px;
+  color: var(--camp-text-secondary) !important;
+  margin: 6px 0 14px;
+}
+
+.guide-side-note a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--camp-surface-raised) !important;
+  color: var(--camp-cyan) !important;
+  border: 1px solid var(--camp-border) !important;
+  padding: 10px 14px;
+  font-size: 12px;
+  text-decoration: none;
+  border-radius: var(--camp-radius-sm);
+  font-weight: 750;
+  transition: var(--camp-transition);
+}
+
+[data-theme="light"] .guide-side-note a {
+  color: var(--camp-primary) !important;
+}
+
+.guide-side-note a:hover {
+  background: var(--camp-hover) !important;
+  border-color: var(--camp-primary) !important;
 }
 
 .guide-hero {
-  background: var(--camp-surface-card) !important;
+  background: var(--camp-gradient-card) !important;
   border: 1px solid var(--camp-border) !important;
-  border-radius: var(--camp-radius-lg);
+  border-radius: var(--camp-radius-lg) !important;
+  padding: 40px 44px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--camp-shadow-card) !important;
 }
 
-.role-card,
-.base-field-line,
-.guide-tip,
+.guide-overline {
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 1.5px;
+  color: var(--camp-cyan) !important;
+  text-transform: uppercase;
+}
+
+[data-theme="light"] .guide-overline {
+  color: var(--camp-primary) !important;
+}
+
+.guide-hero h1 {
+  font-size: clamp(26px, 3.2vw, 38px);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin: 14px 0;
+  color: var(--camp-text) !important;
+}
+
+.guide-hero p {
+  font-size: 15px;
+  color: var(--camp-text-secondary) !important;
+  max-width: 680px;
+}
+
+.guide-hero-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.guide-hero-footer span {
+  padding: 6px 12px;
+  border-radius: var(--camp-radius-pill);
+  background: rgba(0, 117, 255, 0.16) !important;
+  border: 1px solid rgba(0, 117, 255, 0.28);
+  font-size: 11.5px;
+  font-weight: 750;
+  color: var(--camp-text) !important;
+}
+
+/* Steps do Tutorial */
+.step {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 22px;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg) !important;
+  padding: 28px 32px;
+  margin-top: 20px;
+  background: var(--camp-surface-card) !important;
+  box-shadow: var(--camp-shadow-card) !important;
+  color: var(--camp-text) !important;
+}
+
+.step-number {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--camp-radius-md);
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 850;
+  box-shadow: 0 4px 12px var(--camp-primary-glow);
+}
+
+.step h2 {
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  margin: 6px 0 10px;
+  color: var(--camp-text) !important;
+}
+
+.step p {
+  color: var(--camp-text-secondary) !important;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Syntax Showcase & Formula */
 .syntax-showcase {
   background: var(--camp-surface-raised) !important;
   border: 1px solid var(--camp-border) !important;
   border-radius: var(--camp-radius-md);
   color: var(--camp-text) !important;
+  overflow: hidden;
+  margin: 18px 0;
 }
 
-.template-editor {
-  background: var(--camp-input) !important;
-  color: var(--camp-text) !important;
-  border: 1px solid var(--camp-input-border) !important;
-  border-radius: var(--camp-radius-md);
-  padding: 14px;
+.syntax-header {
+  padding: 10px 16px;
+  background: var(--camp-surface-card) !important;
+  border-bottom: 1px solid var(--camp-border) !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--camp-text-muted) !important;
 }
 
 .syntax-formula {
   background: var(--camp-surface-raised) !important;
   color: var(--camp-cyan) !important;
   border: 1px solid var(--camp-border) !important;
+  padding: 16px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 16px;
+  font-weight: 750;
+  text-align: center;
+}
+
+.syntax-delim {
+  color: var(--camp-text-muted) !important;
 }
 
 .syntax-name {
   background: rgba(0, 117, 255, 0.22) !important;
+  color: var(--camp-cyan) !important;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+[data-theme="light"] .syntax-name {
   color: var(--camp-primary) !important;
+}
+
+.syntax-slash {
+  color: var(--camp-warning) !important;
+  padding: 0 4px;
 }
 
 .syntax-who {
   background: rgba(117, 81, 255, 0.22) !important;
   color: var(--camp-purple) !important;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.syntax-legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.25fr;
+  gap: 0;
+  border-top: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-card) !important;
+}
+
+.syntax-legend > div {
+  padding: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.syntax-legend > div + div {
+  border-left: 1px solid var(--camp-border) !important;
+}
+
+.syntax-legend strong {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+  color: var(--camp-text) !important;
+}
+
+.syntax-legend small {
+  display: block;
+  color: var(--camp-text-secondary) !important;
+  font-size: 11px;
+}
+
+/* Role Definitions */
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.role-card {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+  padding: 18px;
+  color: var(--camp-text) !important;
+}
+
+.role-card h4 {
+  font-size: 14px;
+  margin: 10px 0 6px;
+  color: var(--camp-text) !important;
+}
+
+.role-card p {
+  color: var(--camp-text-secondary) !important;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.role-token {
+  display: inline-flex;
+  color: var(--camp-cyan) !important;
+  background: rgba(0, 117, 255, 0.16) !important;
+  border: 1px solid rgba(0, 117, 255, 0.25);
+  border-radius: var(--camp-radius-pill);
+  padding: 4px 10px;
+  font-weight: 750;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+[data-theme="light"] .role-token {
+  color: var(--camp-primary) !important;
+}
+
+.role-card:last-child .role-token {
+  background: rgba(117, 81, 255, 0.16) !important;
+  color: var(--camp-purple) !important;
+  border-color: rgba(117, 81, 255, 0.25);
+}
+
+/* Base Field Lists */
+.base-field-list {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 20px;
+}
+
+.base-field-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+  background: var(--camp-surface-raised) !important;
+  color: var(--camp-text) !important;
+}
+
+.base-field-line strong {
+  display: block;
+  color: var(--camp-text) !important;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.base-field-line code {
+  display: block;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  color: var(--camp-cyan) !important;
+  background: var(--camp-surface) !important;
+  border: 1px solid var(--camp-border);
+  padding: 4px 8px;
+  border-radius: var(--camp-radius-sm);
+}
+
+[data-theme="light"] .base-field-line code {
+  color: var(--camp-primary) !important;
+}
+
+.copy {
+  color: var(--camp-text) !important;
+  background: var(--camp-surface) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-sm);
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: var(--camp-transition);
+}
+
+.copy:hover {
+  background: var(--camp-hover) !important;
+  border-color: var(--camp-primary) !important;
+}
+
+/* Marker Builder Interativo */
+.marker-builder {
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg);
+  background: var(--camp-surface-card) !important;
+  margin: 22px 0;
+  padding: 24px;
+  box-shadow: var(--camp-shadow-card) !important;
+}
+
+.builder-heading h3 {
+  font-size: 18px;
+  color: var(--camp-text) !important;
+  margin: 0 0 6px;
+}
+
+.builder-heading p {
+  color: var(--camp-text-secondary) !important;
+  font-size: 12.5px;
+}
+
+.builder-tag {
+  font-size: 10px;
+  color: var(--camp-cyan) !important;
+  padding: 5px 10px;
+  background: rgba(0, 117, 255, 0.16) !important;
+  border: 1px solid rgba(0, 117, 255, 0.25);
+  border-radius: var(--camp-radius-pill);
+  font-weight: 800;
+}
+
+[data-theme="light"] .builder-tag {
+  color: var(--camp-primary) !important;
+}
+
+.builder-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.builder-field label {
+  font-size: 11.5px;
+  font-weight: 750;
+  color: var(--camp-text) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.builder-field input,
+.builder-field select {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--camp-input-border) !important;
+  border-radius: var(--camp-radius-sm);
+  background: var(--camp-input) !important;
+  color: var(--camp-text) !important;
+  font-size: 13px;
+  outline: none;
+}
+
+.builder-field input:focus,
+.builder-field select:focus {
+  border-color: var(--camp-primary) !important;
+  box-shadow: 0 0 0 2px var(--camp-primary-glow);
+}
+
+.builder-field small {
+  font-size: 11px;
+  color: var(--camp-text-muted) !important;
+  margin-top: 4px;
+}
+
+.builder-output {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+  color: var(--camp-text) !important;
+}
+
+.output-caption {
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 1px;
+  color: var(--camp-text-muted) !important;
+  margin-bottom: 6px;
+}
+
+.builder-output code {
+  color: var(--camp-cyan) !important;
+  font-size: 16px;
+  font-weight: 750;
+}
+
+[data-theme="light"] .builder-output code {
+  color: var(--camp-primary) !important;
+}
+
+.copy-primary {
+  border: 0;
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  border-radius: var(--camp-radius-pill);
+  padding: 10px 18px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px var(--camp-primary-glow);
+  transition: var(--camp-transition);
+}
+
+.copy-primary:hover:not(:disabled) {
+  box-shadow: 0 6px 18px var(--camp-primary-glow);
+  transform: translateY(-1px);
+}
+
+.copy-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* FAQ Details */
+.faq details {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md) !important;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  transition: var(--camp-transition);
+}
+
+.faq details[open] {
+  border-color: var(--camp-primary) !important;
+}
+
+.faq summary {
+  color: var(--camp-text) !important;
+  font-weight: 750;
+  cursor: pointer;
+  font-size: 13.5px;
+}
+
+.faq p {
+  color: var(--camp-text-secondary) !important;
+  font-size: 12.5px;
+  margin-top: 10px;
+  line-height: 1.55;
+}
+
+.guide-footer {
+  border-top: 1px solid var(--camp-border) !important;
+  margin-top: 36px;
+  padding: 24px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--camp-text-muted) !important;
+  font-size: 12px;
+}
+
+.guide-footer a {
+  color: var(--camp-cyan) !important;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+[data-theme="light"] .guide-footer a {
+  color: var(--camp-primary) !important;
+}
+
+/* ==========================================================================
+   PÁGINAS PÚBLICAS & CONFIRMAÇÃO (FICHA INICIAL & PRÉ-MATRÍCULA)
+   ========================================================================== */
+
+.sign-page {
+  min-height: 100vh;
+  background: var(--camp-bg) !important;
+  color: var(--camp-text) !important;
+}
+
+.sign-top {
+  background: var(--camp-surface-floating) !important;
+  color: var(--camp-text) !important;
+  padding: 16px max(24px, calc((100% - 990px) / 2)) !important;
+  border-bottom: 1px solid var(--camp-border) !important;
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sign-top .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sign-top .brand-sub {
+  color: var(--camp-cyan) !important;
+}
+
+[data-theme="light"] .sign-top .brand-sub {
+  color: var(--camp-primary) !important;
+}
+
+.sign-main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 20px 60px !important;
+}
+
+.sign-main h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--camp-text) !important;
+  margin: 6px 0 10px;
+}
+
+.sign-panel {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg) !important;
+  padding: 28px !important;
+  margin-bottom: 20px;
+  box-shadow: var(--camp-shadow-card) !important;
+  color: var(--camp-text) !important;
+}
+
+.sign-panel h2 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--camp-text) !important;
+  margin-bottom: 12px;
+}
+
+.sign-step {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--camp-cyan) !important;
+  margin-bottom: 8px;
+}
+
+[data-theme="light"] .sign-step {
+  color: var(--camp-primary) !important;
+}
+
+.sign-button {
+  font-size: 14px !important;
+  width: 100%;
+  padding: 14px 24px !important;
+  margin-top: 22px;
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  border: 0 !important;
+  border-radius: var(--camp-radius-pill) !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 15px var(--camp-primary-glow) !important;
+  cursor: pointer;
+  transition: var(--camp-transition);
+}
+
+.sign-button:hover {
+  box-shadow: 0 6px 22px var(--camp-primary-glow) !important;
+  transform: translateY(-1px);
 }
 
 /* DOCX Validation Report */
