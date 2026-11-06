@@ -9853,3 +9853,73 @@ body,
     0 22px 42px -10px rgba(234, 88, 12, 0.25),
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.12) !important;
 }
+
+/* ==========================================================================
+   35. OFFICIAL CAMPANELLA LOGO & BRAND INTEGRATION
+   ========================================================================== */
+
+/* 35.1 Logo container sizing and layout in sidebar & auth */
+.sidebar .brand,
+.login-art .brand,
+.guide-brand,
+.brand {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 4px 6px 16px !important;
+  border-bottom: none !important;
+  text-decoration: none !important;
+  min-height: 48px !important;
+}
+
+.brand-logo {
+  height: 42px !important;
+  width: auto !important;
+  max-width: 195px !important;
+  object-fit: contain !important;
+  display: block !important;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.brand-logo:hover {
+  transform: scale(1.03) !important;
+}
+
+/* 35.2 Light Mode: Colorful Horizontal Logo */
+[data-theme="light"] .brand-logo-light {
+  display: block !important;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.05)) !important;
+}
+
+[data-theme="light"] .brand-logo-dark {
+  display: none !important;
+}
+
+/* 35.3 Dark Mode: White Horizontal Logo */
+:root:not([data-theme="light"]) .brand-logo-light,
+[data-theme="dark"] .brand-logo-light {
+  display: none !important;
+}
+
+:root:not([data-theme="light"]) .brand-logo-dark,
+[data-theme="dark"] .brand-logo-dark {
+  display: block !important;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6)) !important;
+}
+
+/* 35.4 Boot Screen Logo Emblem */
+.boot-mark.brand-logo-light,
+.boot-mark.brand-logo-dark {
+  width: 58px !important;
+  height: 58px !important;
+  object-fit: contain !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Hide old provisional mark element and text in sidebar when image logo is present */
+.sidebar .brand > .mark,
+.sidebar .brand > div > .brand-title,
+.sidebar .brand > div > .brand-sub {
+  display: none !important;
+}
