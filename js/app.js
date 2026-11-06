@@ -124,7 +124,7 @@ const ICONS={
  moon:'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'
 };
 const ico=(name,size=18)=>`<svg class="camp-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||ICONS.school}</svg>`;
-function currentTheme(){try{return document.documentElement.getAttribute('data-theme')||localStorage.getItem('campanella:theme')||'dark';}catch(e){return 'dark';}}
+function currentTheme(){try{return document.documentElement.getAttribute('data-theme')||localStorage.getItem('campanella:theme')||'light';}catch(e){return 'light';}}
 function themeToggleMarkup(){
  const isDark=currentTheme()==='dark';
  return `<button type="button" class="theme-toggle-btn" data-action="toggleTheme" aria-label="Alternar para modo ${isDark?'claro':'escuro'}" title="Alternar tema (${isDark?'Modo Escuro':'Modo Claro'})"><span class="theme-toggle-icon">${isDark?ico('sun',16):ico('moon',16)}</span><span>${isDark?'Modo Claro':'Modo Escuro'}</span></button>`;

@@ -16,18 +16,18 @@
   --camp-bg: #060B26;
   --camp-bg-secondary: #0B1437;
   --camp-bg-radial:
-    radial-gradient(circle at 82% 8%, rgba(0, 117, 255, 0.28) 0%, rgba(0, 117, 255, 0.08) 32%, transparent 56%),
-    radial-gradient(circle at 14% 34%, rgba(117, 81, 255, 0.20) 0%, rgba(88, 44, 255, 0.06) 26%, transparent 50%),
-    radial-gradient(ellipse at 50% 55%, rgba(0, 117, 255, 0.18) 0%, rgba(14, 28, 90, 0.10) 38%, transparent 68%),
-    radial-gradient(circle at 88% 85%, rgba(0, 117, 255, 0.26) 0%, rgba(33, 212, 253, 0.09) 30%, transparent 58%),
-    radial-gradient(circle at 18% 90%, rgba(33, 212, 253, 0.18) 0%, rgba(0, 117, 255, 0.05) 26%, transparent 52%),
-    linear-gradient(150deg, #060B26 0%, #080F35 35%, #09123D 60%, #060B2A 85%, #05081E 100%);
+    radial-gradient(circle at 82% 8%, rgba(5, 150, 105, 0.28) 0%, rgba(5, 150, 105, 0.08) 32%, transparent 56%),
+    radial-gradient(circle at 14% 34%, rgba(13, 148, 136, 0.20) 0%, rgba(13, 148, 136, 0.06) 26%, transparent 50%),
+    radial-gradient(ellipse at 50% 55%, rgba(5, 150, 105, 0.18) 0%, rgba(10, 38, 28, 0.10) 38%, transparent 68%),
+    radial-gradient(circle at 88% 85%, rgba(5, 150, 105, 0.26) 0%, rgba(16, 185, 129, 0.09) 30%, transparent 58%),
+    radial-gradient(circle at 18% 90%, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.05) 26%, transparent 52%),
+    linear-gradient(150deg, #05130F 0%, #071C16 35%, #09241C 60%, #061813 85%, #04100C 100%);
   
   /* Surfaces — Vision UI Signature Glassmorphism */
   --camp-surface: #0B1437;
   --camp-surface-raised: #111C44;
   --camp-surface-floating: #12204E;
-  --camp-surface-card: linear-gradient(127.09deg, rgba(8, 14, 48, 0.94) 0%, rgba(6, 11, 40, 0.88) 100%);
+  --camp-surface-card: linear-gradient(127.09deg, rgba(6, 22, 18, 0.94) 0%, rgba(4, 16, 12, 0.88) 100%);
   --camp-surface-card-border: none;
 
   /* Inputs & Interactive Controls */
@@ -35,14 +35,14 @@
   --camp-input-focus: rgba(20, 30, 60, 0.85);
   --camp-input-border: rgba(255, 255, 255, 0.12);
   --camp-hover: rgba(255, 255, 255, 0.06);
-  --camp-hover-strong: rgba(0, 117, 255, 0.18);
+  --camp-hover-strong: rgba(5, 150, 105, 0.18);
 
   /* Brand Accents — Vision UI Electric Blue & Cyan */
-  --camp-primary: #0075FF;
-  --camp-primary-hover: #1687FF;
-  --camp-primary-glow: rgba(0, 117, 255, 0.45);
-  --camp-cyan: #21D4FD;
-  --camp-purple: #7551FF;
+  --camp-primary: #059669;
+  --camp-primary-hover: #047857;
+  --camp-primary-glow: rgba(5, 150, 105, 0.45);
+  --camp-cyan: #34D399;
+  --camp-purple: #0D9488;
 
   /* Typography — Vision UI High-Contrast White & Muted Slate */
   --camp-text: #FFFFFF;
@@ -60,8 +60,8 @@
   --camp-danger: #E31A1A;
   --camp-danger-bg: rgba(227, 26, 26, 0.22);
   --camp-danger-border: transparent;
-  --camp-info: #0075FF;
-  --camp-info-bg: rgba(0, 117, 255, 0.22);
+  --camp-info: #059669;
+  --camp-info-bg: rgba(5, 150, 105, 0.22);
   --camp-info-border: transparent;
 
   /* Borders & Dividers — Vision UI is Borderless */
@@ -76,13 +76,13 @@
   --camp-shadow-card: 0px 20px 27px 0px rgba(0, 0, 0, 0.25);
   --camp-shadow-card-hover: 0px 24px 35px 0px rgba(0, 0, 0, 0.38);
   --camp-shadow-floating: 0 20px 48px rgba(0, 0, 0, 0.6);
-  --camp-shadow-btn: 0px 4px 14px 0px rgba(0, 117, 255, 0.45);
+  --camp-shadow-btn: 0px 4px 14px 0px rgba(5, 150, 105, 0.4);
 
   /* Gradients */
-  --camp-gradient-primary: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%);
-  --camp-gradient-surface: linear-gradient(127.09deg, rgba(8, 14, 48, 0.94) 0%, rgba(6, 11, 40, 0.88) 100%);
+  --camp-gradient-primary: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  --camp-gradient-surface: linear-gradient(127.09deg, rgba(6, 22, 18, 0.94) 0%, rgba(4, 16, 12, 0.88) 100%);
   --camp-gradient-sidebar: linear-gradient(180deg, #0B1437 0%, #060B26 100%);
-  --camp-gradient-icon: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%);
+  --camp-gradient-icon: linear-gradient(135deg, #059669 0%, #34D399 100%);
 
   /* Scrollbars */
   --camp-scrollbar-thumb: rgba(255, 255, 255, 0.18);
@@ -90,11 +90,11 @@
 
   /* Bridge to existing legacy variables */
   --c-ink: #FFFFFF;
-  --c-green: #0075FF;
+  --c-green: #059669;
   --c-border: transparent;
   --c-soft: #101C44;
   --crm-stroke: transparent;
-  --crm-forest: #0075FF;
+  --crm-forest: #059669;
   --crm-muted: #A0AEC0;
   --crm-bg: #060B26;
 }
@@ -103,11 +103,11 @@
   color-scheme: light;
 
   /* Backgrounds */
-  --camp-bg: #F5F7FC;
-  --camp-bg-secondary: #EDF2FA;
-  --camp-bg-radial: radial-gradient(at 85% 0%, rgba(0, 102, 230, 0.08) 0px, transparent 55%),
-                    radial-gradient(at 5% 45%, rgba(104, 68, 214, 0.05) 0px, transparent 50%),
-                    radial-gradient(at 50% 90%, rgba(8, 127, 163, 0.04) 0px, transparent 40%);
+  --camp-bg: #F6FAF7;
+  --camp-bg-secondary: #EDF5F0;
+  --camp-bg-radial: radial-gradient(at 85% 0%, rgba(5, 150, 105, 0.08) 0px, transparent 55%),
+                    radial-gradient(at 5% 45%, rgba(13, 148, 136, 0.05) 0px, transparent 50%),
+                    radial-gradient(at 50% 90%, rgba(13, 148, 136, 0.04) 0px, transparent 40%);
   
   /* Surfaces */
   --camp-surface: #FFFFFF;
@@ -117,18 +117,18 @@
   --camp-surface-card-border: transparent;
 
   /* Inputs & Interactive Controls */
-  --camp-input: #F8FAFD;
+  --camp-input: #F3F8F5;
   --camp-input-focus: #FFFFFF;
-  --camp-input-border: #D8E0EE;
-  --camp-hover: #F0F4FA;
-  --camp-hover-strong: rgba(0, 102, 230, 0.08);
+  --camp-input-border: #D1E3D8;
+  --camp-hover: #EBF4EE;
+  --camp-hover-strong: rgba(5, 150, 105, 0.08);
 
   /* Brand Accents */
-  --camp-primary: #0066E6;
-  --camp-primary-hover: #0052BD;
-  --camp-primary-glow: rgba(0, 102, 230, 0.25);
-  --camp-cyan: #087FA3;
-  --camp-purple: #6844D6;
+  --camp-primary: #059669;
+  --camp-primary-hover: #047857;
+  --camp-primary-glow: rgba(5, 150, 105, 0.28);
+  --camp-cyan: #10B981;
+  --camp-purple: #0D9488;
 
   /* Typography */
   --camp-text: #1A2340;
@@ -146,8 +146,8 @@
   --camp-danger: #C53030;
   --camp-danger-bg: rgba(197, 48, 48, 0.12);
   --camp-danger-border: transparent;
-  --camp-info: #087FA3;
-  --camp-info-bg: rgba(8, 127, 163, 0.12);
+  --camp-info: #059669;
+  --camp-info-bg: rgba(5, 150, 105, 0.12);
   --camp-info-border: transparent;
 
   /* Borders & Dividers — Vision UI is Borderless */
@@ -162,13 +162,13 @@
   --camp-shadow-card: 0px 20px 27px 0px rgba(112, 144, 176, 0.08);
   --camp-shadow-card-hover: 0px 24px 35px 0px rgba(112, 144, 176, 0.14);
   --camp-shadow-floating: 0 20px 48px rgba(30, 55, 100, 0.15);
-  --camp-shadow-btn: 0 4px 14px rgba(0, 102, 230, 0.22);
+  --camp-shadow-btn: 0 4px 14px rgba(5, 150, 105, 0.28);
 
   /* Gradients */
-  --camp-gradient-primary: linear-gradient(135deg, #0066E6 0%, #087FA3 100%);
-  --camp-gradient-surface: linear-gradient(127deg, #FFFFFF 0%, #F8FAFD 100%);
-  --camp-gradient-sidebar: linear-gradient(180deg, #FFFFFF 0%, #F5F7FC 100%);
-  --camp-gradient-icon: linear-gradient(135deg, #0066E6 0%, #6844D6 100%);
+  --camp-gradient-primary: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  --camp-gradient-surface: linear-gradient(127deg, #FFFFFF 0%, #F5F9F6 100%);
+  --camp-gradient-sidebar: linear-gradient(180deg, #FFFFFF 0%, #F6FAF7 100%);
+  --camp-gradient-icon: linear-gradient(135deg, #059669 0%, #34D399 100%);
 
   /* Scrollbars */
   --camp-scrollbar-thumb: rgba(30, 55, 100, 0.2);
@@ -176,13 +176,13 @@
 
   /* Bridge to existing legacy variables */
   --c-ink: #1A2340;
-  --c-green: #0066E6;
+  --c-green: #059669;
   --c-border: transparent;
-  --c-soft: #F8FAFD;
+  --c-soft: #F3F8F5;
   --crm-stroke: transparent;
-  --crm-forest: #0066E6;
+  --crm-forest: #059669;
   --crm-muted: #52617A;
-  --crm-bg: #F5F7FC;
+  --crm-bg: #F6FAF7;
 }
 
 :root {
@@ -511,14 +511,14 @@ textarea:focus-visible {
 .cal-secondary-sidebar nav button.active {
   background: var(--camp-primary) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px 0 rgba(0, 117, 255, 0.4) !important;
+  box-shadow: 0 4px 14px 0 rgba(5, 150, 105, 0.4) !important;
   font-weight: 700 !important;
 }
 
 [data-theme="light"] .cal-secondary-sidebar nav button.active {
   background: var(--camp-primary) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px 0 rgba(0, 102, 230, 0.3) !important;
+  box-shadow: 0 4px 14px 0 rgba(5, 150, 105, 0.3) !important;
 }
 
 .cal-admin-shell > .workspace {
@@ -616,12 +616,12 @@ textarea:focus-visible {
 }
 
 .sidebar-current-name svg {
-  color: var(--camp-cyan, #21D4FD) !important;
-  stroke: var(--camp-cyan, #21D4FD) !important;
+  color: var(--camp-cyan, #10B981) !important;
+  stroke: var(--camp-cyan, #10B981) !important;
   width: 17px !important;
   height: 17px !important;
   flex-shrink: 0 !important;
-  filter: drop-shadow(0 0 6px rgba(33, 212, 253, 0.4)) !important;
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.4)) !important;
 }
 
 .sidebar-menu {
@@ -926,7 +926,7 @@ button.btn {
   gap: 8px;
   align-items: center;
   justify-content: center;
-  box-shadow: 0px 4px 14px 0px rgba(0, 117, 255, 0.45) !important;
+  box-shadow: 0px 4px 14px 0px rgba(5, 150, 105, 0.45) !important;
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
   cursor: pointer;
   text-decoration: none;
@@ -937,7 +937,7 @@ button.btn {
 .btn:hover,
 .crm-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0px 6px 20px 0px rgba(0, 117, 255, 0.65) !important;
+  box-shadow: 0px 6px 20px 0px rgba(5, 150, 105, 0.65) !important;
   filter: brightness(1.08);
 }
 
@@ -945,7 +945,7 @@ button.btn {
 .crm-btn:active,
 .home-shortcut:active {
   transform: translateY(0) scale(0.98) !important;
-  box-shadow: 0px 2px 8px 0px rgba(0, 117, 255, 0.4) !important;
+  box-shadow: 0px 2px 8px 0px rgba(5, 150, 105, 0.4) !important;
 }
 
 .btn:disabled,
@@ -988,7 +988,7 @@ button.btn {
 [data-theme="light"] .tabs .btn.light {
   background: #FFFFFF !important;
   border: none !important;
-  color: #0066E6 !important;
+  color: #059669 !important;
   box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.06) !important;
 }
 
@@ -1012,9 +1012,9 @@ button.btn {
 [data-theme="light"] .btn.subtle:hover,
 [data-theme="light"] .crm-btn:not(.primary):hover,
 [data-theme="light"] .tabs .btn.light:hover {
-  background: #F0F4FA !important;
+  background: #EBF4EE !important;
   border: none !important;
-  color: #0066E6 !important;
+  color: #059669 !important;
 }
 
 /* Botão Danger */
@@ -1134,7 +1134,7 @@ button.btn {
 .cal-calendar,
 .cal-student-card,
 .cal-settings-layout {
-  background: linear-gradient(127.09deg, rgba(8, 14, 48, 0.94) 0%, rgba(6, 11, 40, 0.88) 100%) !important;
+  background: linear-gradient(127.09deg, rgba(6, 22, 18, 0.94) 0%, rgba(4, 16, 12, 0.88) 100%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -1263,12 +1263,12 @@ button.btn {
   min-width: 44px !important;
   min-height: 44px !important;
   border-radius: 12px !important;
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   display: inline-grid !important;
   place-items: center !important;
   font-size: 18px !important;
-  box-shadow: 0px 4px 14px 0px rgba(0, 117, 255, 0.45) !important;
+  box-shadow: 0px 4px 14px 0px rgba(5, 150, 105, 0.45) !important;
   box-sizing: border-box !important;
 }
 
@@ -1376,23 +1376,23 @@ button.btn {
 
 .tabs .btn:not(.light),
 .tabs button.active {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
   outline: none !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
 }
 
 [data-theme="light"] .tabs .btn,
 [data-theme="light"] .tabs button {
-  background: #F0F4FA !important;
+  background: #EBF4EE !important;
   border: none !important;
   color: #52617A !important;
 }
 
 [data-theme="light"] .tabs .btn:not(.light),
 [data-theme="light"] .tabs button.active {
-  background: linear-gradient(135deg, #0066E6 0%, #087FA3 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
 }
@@ -1617,10 +1617,10 @@ button.btn {
 .crm-badge.crm-soft,
 .pill-primary,
 .pill-info {
-  background: rgba(0, 117, 255, 0.22) !important;
-  color: #21D4FD !important;
+  background: rgba(5, 150, 105, 0.22) !important;
+  color: #10B981 !important;
   border: none !important;
-  box-shadow: 0 2px 10px rgba(0, 117, 255, 0.25) !important;
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.25) !important;
 }
 
 /* Neutral (Pure Glassmorphism — ZERO STROKE BORDER) */
@@ -1988,7 +1988,7 @@ dialog .close:hover {
 .crm-tabs button span {
   font-size: 11px;
   margin-left: 6px;
-  background: rgba(0, 117, 255, 0.16);
+  background: rgba(5, 150, 105, 0.16);
   color: var(--camp-primary);
   padding: 2px 7px;
   border-radius: var(--camp-radius-pill);
@@ -2164,7 +2164,7 @@ dialog .close:hover {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: rgba(0, 117, 255, 0.14) !important;
+  background: rgba(5, 150, 105, 0.14) !important;
   border: none !important;
   border-radius: var(--camp-radius-pill);
   padding: 2px 8px;
@@ -2217,7 +2217,7 @@ dialog .close:hover {
 .crm-lead-card:focus {
   transform: translateY(-2px);
   border-color: transparent !important;
-  box-shadow: 0 8px 24px rgba(0, 117, 255, 0.28) !important;
+  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.28) !important;
   outline: none;
 }
   outline: none;
@@ -2251,7 +2251,7 @@ dialog .close:hover {
   border-radius: var(--camp-radius-pill);
   font-size: 10.5px;
   font-weight: 750;
-  background: rgba(0, 117, 255, 0.14) !important;
+  background: rgba(5, 150, 105, 0.14) !important;
   color: var(--camp-text) !important;
   border: none !important;
 }
@@ -2495,7 +2495,7 @@ dialog .close:hover {
 
 .crm-tag-toggle.is-active {
   border-color: var(--camp-primary) !important;
-  background: rgba(0, 117, 255, 0.22) !important;
+  background: rgba(5, 150, 105, 0.22) !important;
   color: var(--camp-text) !important;
   box-shadow: 0 0 10px var(--camp-primary-glow);
 }
@@ -2754,7 +2754,7 @@ dialog .close:hover {
 }
 
 .crm-mini-head-day.is-selected {
-  background: rgba(0, 117, 255, 0.18) !important;
+  background: rgba(5, 150, 105, 0.18) !important;
 }
 
 .crm-mini-head-day.is-selected strong {
@@ -2785,7 +2785,7 @@ dialog .close:hover {
 }
 
 .crm-mini-day-col.is-chosen-day {
-  background: rgba(0, 117, 255, 0.04) !important;
+  background: rgba(5, 150, 105, 0.04) !important;
 }
 
 .crm-mini-hour-rule {
@@ -2812,7 +2812,7 @@ dialog .close:hover {
 }
 
 .crm-mini-event.is-interview {
-  background: rgba(33, 212, 253, 0.24) !important;
+  background: rgba(16, 185, 129, 0.24) !important;
   border-left: 3px solid var(--camp-cyan) !important;
   color: var(--camp-text) !important;
 }
@@ -2824,7 +2824,7 @@ dialog .close:hover {
 }
 
 .crm-mini-event.is-selected {
-  background: rgba(0, 117, 255, 0.32) !important;
+  background: rgba(5, 150, 105, 0.32) !important;
   border: 2px dashed var(--camp-primary) !important;
   color: #FFFFFF !important;
 }
@@ -3312,7 +3312,7 @@ dialog .close:hover {
 
 [data-theme="light"] .cal-slot-chip {
   color: var(--camp-primary) !important;
-  background: rgba(0, 102, 230, 0.1) !important;
+  background: rgba(5, 150, 105, 0.1) !important;
 }
 
 .cal-student-slot {
@@ -3978,7 +3978,7 @@ dialog .close:hover {
 .guide-hero-footer span {
   padding: 6px 12px;
   border-radius: var(--camp-radius-pill);
-  background: rgba(0, 117, 255, 0.16) !important;
+  background: rgba(5, 150, 105, 0.16) !important;
   border: none !important;
   font-size: 11.5px;
   font-weight: 750;
@@ -4065,7 +4065,7 @@ dialog .close:hover {
 }
 
 .syntax-name {
-  background: rgba(0, 117, 255, 0.22) !important;
+  background: rgba(5, 150, 105, 0.22) !important;
   color: var(--camp-cyan) !important;
   padding: 4px 8px;
   border-radius: 4px;
@@ -4081,7 +4081,7 @@ dialog .close:hover {
 }
 
 .syntax-who {
-  background: rgba(117, 81, 255, 0.22) !important;
+  background: rgba(13, 148, 136, 0.22) !important;
   color: var(--camp-purple) !important;
   padding: 4px 8px;
   border-radius: 4px;
@@ -4151,7 +4151,7 @@ dialog .close:hover {
 .role-token {
   display: inline-flex;
   color: var(--camp-cyan) !important;
-  background: rgba(0, 117, 255, 0.16) !important;
+  background: rgba(5, 150, 105, 0.16) !important;
   border: none !important;
   border-radius: var(--camp-radius-pill);
   padding: 4px 10px;
@@ -4165,7 +4165,7 @@ dialog .close:hover {
 }
 
 .role-card:last-child .role-token {
-  background: rgba(117, 81, 255, 0.16) !important;
+  background: rgba(13, 148, 136, 0.16) !important;
   color: var(--camp-purple) !important;
   border-color: transparent !important;
 }
@@ -4254,7 +4254,7 @@ dialog .close:hover {
   font-size: 10px;
   color: var(--camp-cyan) !important;
   padding: 5px 10px;
-  background: rgba(0, 117, 255, 0.16) !important;
+  background: rgba(5, 150, 105, 0.16) !important;
   border: none !important;
   border-radius: var(--camp-radius-pill);
   font-weight: 800;
@@ -4553,7 +4553,7 @@ dialog .close:hover {
   border-radius: var(--camp-radius-pill);
   font-size: 11px;
   font-family: monospace;
-  background: rgba(0, 117, 255, 0.16) !important;
+  background: rgba(5, 150, 105, 0.16) !important;
   color: var(--camp-cyan) !important;
   border: none !important;
 }
@@ -4727,7 +4727,7 @@ dialog .close:hover {
 
 .template-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(0, 117, 255, 0.22) !important;
+  box-shadow: 0 8px 28px rgba(5, 150, 105, 0.22) !important;
 }
 
 .template-card-top {
@@ -4852,7 +4852,7 @@ dialog .close:hover {
 }
 
 [data-theme="light"] .detail-item {
-  background: #F8FAFD !important;
+  background: #F3F8F5 !important;
   box-shadow: 0 2px 8px rgba(112, 144, 176, 0.06) !important;
 }
 
@@ -5141,7 +5141,7 @@ table tr:hover td {
 
 /* --- 19.3 Calendar View Full Reskinning --- */
 .cal-secondary-sidebar {
-  background: rgba(6, 11, 40, 0.88) !important;
+  background: rgba(4, 16, 12, 0.88) !important;
   backdrop-filter: blur(40px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
   border: none !important;
@@ -5183,13 +5183,13 @@ table tr:hover td {
 }
 
 .cal-secondary-sidebar nav button.active {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px 0 rgba(0, 117, 255, 0.45) !important;
+  box-shadow: 0 4px 14px 0 rgba(5, 150, 105, 0.45) !important;
 }
 
 .cal-calendar {
-  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5232,9 +5232,9 @@ table tr:hover td {
 }
 
 .cal-switcher button.selected {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 2px 8px rgba(0, 117, 255, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4) !important;
 }
 
 .cal-week-grid {
@@ -5280,19 +5280,19 @@ table tr:hover td {
   border: none !important;
   outline: none !important;
   border-radius: 10px !important;
-  background: linear-gradient(135deg, rgba(0, 117, 255, 0.35) 0%, rgba(33, 212, 253, 0.3) 100%) !important;
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.35) 0%, rgba(16, 185, 129, 0.3) 100%) !important;
   color: #FFFFFF !important;
   padding: 8px 10px !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.25) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25) !important;
   cursor: pointer !important;
   transition: transform 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 .cal-week-card:hover {
   transform: translateY(-2px) scale(1.02) !important;
-  box-shadow: 0 6px 18px rgba(0, 117, 255, 0.45) !important;
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45) !important;
   border: none !important;
 }
 
@@ -5310,13 +5310,13 @@ table tr:hover td {
 
 .cal-week-card.interview,
 .cal-week-card.is-interview {
-  background: linear-gradient(135deg, rgba(117, 81, 255, 0.35) 0%, rgba(200, 80, 255, 0.3) 100%) !important;
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.35) 0%, rgba(200, 80, 255, 0.3) 100%) !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(117, 81, 255, 0.25) !important;
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25) !important;
 }
 
 .cal-week-card.done {
-  background: linear-gradient(135deg, rgba(0, 117, 255, 0.35) 0%, rgba(33, 212, 253, 0.25) 100%) !important;
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.35) 0%, rgba(16, 185, 129, 0.25) 100%) !important;
   border: none !important;
   color: #FFFFFF !important;
 }
@@ -5361,7 +5361,7 @@ table tr:hover td {
 .cal-month-day:hover {
   background: rgba(255, 255, 255, 0.07) !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.35) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35) !important;
 }
 
 .cal-month-day.other {
@@ -5371,15 +5371,15 @@ table tr:hover td {
 
 .cal-month-day.chosen {
   border: none !important;
-  box-shadow: 0 0 16px rgba(0, 117, 255, 0.5) !important;
+  box-shadow: 0 0 16px rgba(5, 150, 105, 0.5) !important;
 }
 
 .cal-month-day.is-today b {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   padding: 3px 8px !important;
   border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(0, 117, 255, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4) !important;
 }
 
 .cal-month-day b {
@@ -5389,7 +5389,7 @@ table tr:hover td {
 }
 
 .cal-month-day small {
-  color: #21D4FD !important;
+  color: #10B981 !important;
   font-size: 10px !important;
 }
 
@@ -5448,10 +5448,10 @@ table tr:hover td {
 }
 
 .crm-tabs button.active {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
 }
 
 .crm-tabs button span {
@@ -5464,7 +5464,7 @@ table tr:hover td {
 }
 
 .crm-workspace {
-  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5480,7 +5480,7 @@ table tr:hover td {
 }
 
 .crm-board-col {
-  background: rgba(6, 11, 40, 0.65) !important;
+  background: rgba(4, 16, 12, 0.65) !important;
   border: none !important;
   outline: none !important;
   border-radius: 16px !important;
@@ -5497,8 +5497,8 @@ table tr:hover td {
 }
 
 .crm-board-col header b {
-  background: rgba(0, 117, 255, 0.2) !important;
-  color: #21D4FD !important;
+  background: rgba(5, 150, 105, 0.2) !important;
+  color: #10B981 !important;
   border-radius: 8px !important;
 }
 
@@ -5547,15 +5547,15 @@ table tr:hover td {
 }
 
 .crm-help-note {
-  background: rgba(0, 117, 255, 0.12) !important;
-  border-left: 3px solid #0075FF !important;
+  background: rgba(5, 150, 105, 0.12) !important;
+  border-left: 3px solid #059669 !important;
   border-radius: 10px !important;
   color: #E2E8F0 !important;
 }
 
 /* --- 19.5 Fichas Iniciais, Matrículas & Pacotes --- */
 .fiche-choice {
-  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5576,10 +5576,10 @@ table tr:hover td {
 }
 
 .notice {
-  background: rgba(0, 117, 255, 0.08) !important;
+  background: rgba(5, 150, 105, 0.08) !important;
   border: none !important;
   outline: none !important;
-  border-left: 4px solid #0075FF !important;
+  border-left: 4px solid #059669 !important;
   border-radius: 12px !important;
   padding: 14px 18px !important;
   color: #E2E8F0 !important;
@@ -5623,7 +5623,7 @@ table tr:hover td {
 }
 
 .preferences-nav {
-  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5665,14 +5665,14 @@ table tr:hover td {
 }
 
 .preferences-nav-item.selected {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4) !important;
   font-weight: 750 !important;
 }
 
 .preferences-tile {
-  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5698,7 +5698,7 @@ table tr:hover td {
 }
 
 .school-hero {
-  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5732,7 +5732,7 @@ table tr:hover td {
 }
 
 .school-card {
-  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5757,7 +5757,7 @@ table tr:hover td {
 }
 
 .school-card.is-current {
-  box-shadow: 0 0 24px rgba(0, 117, 255, 0.4) !important;
+  box-shadow: 0 0 24px rgba(5, 150, 105, 0.4) !important;
 }
 
 /* --- 19.7 Dropdowns & Action Popovers --- */
@@ -5795,7 +5795,7 @@ table tr:hover td {
 }
 
 .contract-menu-item:hover {
-  background: rgba(0, 117, 255, 0.18) !important;
+  background: rgba(5, 150, 105, 0.18) !important;
   color: #FFFFFF !important;
 }
 
@@ -5815,16 +5815,16 @@ table tr:hover td {
 #noSchoolPage {
   background-color: #060B26 !important;
   background-image: 
-    radial-gradient(at 82% 1%, rgba(0, 117, 255, 0.3) 0px, transparent 50%),
-    radial-gradient(at 5% 42%, rgba(117, 81, 255, 0.25) 0px, transparent 45%),
-    radial-gradient(at 95% 85%, rgba(33, 212, 253, 0.18) 0px, transparent 50%),
-    radial-gradient(at 20% 90%, rgba(0, 117, 255, 0.15) 0px, transparent 40%) !important;
+    radial-gradient(at 82% 1%, rgba(5, 150, 105, 0.3) 0px, transparent 50%),
+    radial-gradient(at 5% 42%, rgba(13, 148, 136, 0.25) 0px, transparent 45%),
+    radial-gradient(at 95% 85%, rgba(16, 185, 129, 0.18) 0px, transparent 50%),
+    radial-gradient(at 20% 90%, rgba(5, 150, 105, 0.15) 0px, transparent 40%) !important;
   min-height: 100vh !important;
 }
 
 .login-card,
 .auth-card {
-  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 24px !important;
@@ -5844,7 +5844,7 @@ table tr:hover td {
 
 .busy-wheel {
   border-color: rgba(255, 255, 255, 0.15) !important;
-  border-top-color: #0075FF !important;
+  border-top-color: #059669 !important;
 }
 
 /* ==========================================================================
@@ -5856,10 +5856,10 @@ table tr:hover td {
   z-index: 99999 !important;
   background: #060B26 !important;
   background-image: 
-    radial-gradient(at 82% 1%, rgba(0, 117, 255, 0.35) 0px, transparent 50%),
-    radial-gradient(at 5% 42%, rgba(117, 81, 255, 0.28) 0px, transparent 45%),
-    radial-gradient(at 95% 85%, rgba(33, 212, 253, 0.22) 0px, transparent 50%),
-    radial-gradient(at 20% 90%, rgba(0, 117, 255, 0.18) 0px, transparent 40%) !important;
+    radial-gradient(at 82% 1%, rgba(5, 150, 105, 0.35) 0px, transparent 50%),
+    radial-gradient(at 5% 42%, rgba(13, 148, 136, 0.28) 0px, transparent 45%),
+    radial-gradient(at 95% 85%, rgba(16, 185, 129, 0.22) 0px, transparent 50%),
+    radial-gradient(at 20% 90%, rgba(5, 150, 105, 0.18) 0px, transparent 40%) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -5882,7 +5882,7 @@ table tr:hover td {
   height: 460px;
   top: -100px;
   right: -80px;
-  background: radial-gradient(circle, rgba(0, 117, 255, 0.45) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(5, 150, 105, 0.45) 0%, transparent 70%);
   animation: bootOrbFloat1 9s ease-in-out infinite alternate;
 }
 
@@ -5891,7 +5891,7 @@ table tr:hover td {
   height: 420px;
   bottom: -80px;
   left: -90px;
-  background: radial-gradient(circle, rgba(117, 81, 255, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(13, 148, 136, 0.4) 0%, transparent 70%);
   animation: bootOrbFloat2 11s ease-in-out infinite alternate;
 }
 
@@ -5900,7 +5900,7 @@ table tr:hover td {
   height: 320px;
   bottom: 15%;
   right: 15%;
-  background: radial-gradient(circle, rgba(33, 212, 253, 0.3) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 70%);
   animation: bootOrbFloat1 8s ease-in-out infinite alternate-reverse;
 }
 
@@ -5927,7 +5927,7 @@ table tr:hover td {
   padding: 44px 40px !important;
   width: min(420px, calc(100vw - 36px)) !important;
   text-align: center !important;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 40px rgba(0, 117, 255, 0.25) !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 40px rgba(5, 150, 105, 0.25) !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -5953,7 +5953,7 @@ table tr:hover td {
   position: absolute !important;
   inset: -10px !important;
   border-radius: 26px !important;
-  background: radial-gradient(circle, rgba(0, 117, 255, 0.6) 0%, rgba(33, 212, 253, 0.2) 60%, transparent 100%) !important;
+  background: radial-gradient(circle, rgba(5, 150, 105, 0.6) 0%, rgba(16, 185, 129, 0.2) 60%, transparent 100%) !important;
   filter: blur(14px) !important;
   animation: bootGlowPulse 2.4s ease-in-out infinite;
   pointer-events: none !important;
@@ -5963,7 +5963,7 @@ table tr:hover td {
   position: absolute !important;
   inset: -4px !important;
   border-radius: 24px !important;
-  border: 1.5px solid rgba(33, 212, 253, 0.5) !important;
+  border: 1.5px solid rgba(16, 185, 129, 0.5) !important;
   animation: bootRingExpand 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
   pointer-events: none !important;
 }
@@ -5985,14 +5985,14 @@ table tr:hover td {
   width: 68px !important;
   height: 68px !important;
   border-radius: 20px !important;
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   display: inline-grid !important;
   place-items: center !important;
   font-family: var(--camp-font), 'Plus Jakarta Sans', sans-serif !important;
   font-size: 32px !important;
   font-weight: 800 !important;
-  box-shadow: 0 8px 30px rgba(0, 117, 255, 0.65) !important;
+  box-shadow: 0 8px 30px rgba(5, 150, 105, 0.65) !important;
   border: none !important;
 }
 
@@ -6013,7 +6013,7 @@ table tr:hover td {
   font-weight: 750 !important;
   text-transform: uppercase !important;
   letter-spacing: 1.8px !important;
-  color: #21D4FD !important;
+  color: #10B981 !important;
   margin: 0 0 26px 0 !important;
   opacity: 0.9 !important;
 }
@@ -6036,8 +6036,8 @@ table tr:hover td {
   height: 100% !important;
   width: 50% !important;
   border-radius: 99px !important;
-  background: linear-gradient(90deg, #0075FF 0%, #21D4FD 50%, #7551FF 100%) !important;
-  box-shadow: 0 0 12px rgba(33, 212, 253, 0.8) !important;
+  background: linear-gradient(90deg, #059669 0%, #10B981 50%, #0D9488 100%) !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.8) !important;
   animation: bootBarSweep 2s ease-in-out infinite;
 }
 
@@ -6063,8 +6063,8 @@ table tr:hover td {
   height: 15px !important;
   border-radius: 50% !important;
   border: 2px solid rgba(255, 255, 255, 0.12) !important;
-  border-top-color: #0075FF !important;
-  border-right-color: #21D4FD !important;
+  border-top-color: #059669 !important;
+  border-right-color: #10B981 !important;
   animation: bootSpin 0.85s linear infinite !important;
 }
 
@@ -6151,19 +6151,19 @@ button.btn.mini.light,
 .account-avatar,
 .sidebar .mark,
 .mark {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   border-radius: 12px !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4) !important;
 }
 
 /* Onboarding Stage numbers */
 .onb-stage.current span,
 .onb-stage span {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 2px 8px rgba(0, 117, 255, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4) !important;
 }
 
 /* Inherited SVG icon colors in sidebar & dropdowns */
@@ -6181,20 +6181,20 @@ button.btn.mini.light,
 .eyebrow,
 .account-create,
 .docx-report-heading.is-ok b {
-  color: #21D4FD !important;
+  color: #10B981 !important;
 }
 
 [data-theme="light"] .eyebrow,
 [data-theme="light"] .account-create {
-  color: #0066E6 !important;
+  color: #059669 !important;
 }
 
 /* --- Calendar Vision UI Electric Blue Overrides --- */
 .cal-secondary-sidebar nav button.active {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
 }
 
 .cal-secondary-sidebar nav button:hover {
@@ -6203,24 +6203,24 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-secondary-sidebar nav button:hover {
-  background: #F0F4FA !important;
-  color: #0066E6 !important;
+  background: #EBF4EE !important;
+  color: #059669 !important;
 }
 
 .cal-status,
 .cal-status-scheduled,
 .cal-status-completed {
-  color: #21D4FD !important;
+  color: #10B981 !important;
 }
 
 [data-theme="light"] .cal-status,
 [data-theme="light"] .cal-status-scheduled,
 [data-theme="light"] .cal-status-completed {
-  color: #0066E6 !important;
+  color: #059669 !important;
 }
 
 .cal-progress span {
-  background: linear-gradient(90deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(90deg, #059669 0%, #10B981 100%) !important;
   border-radius: 15px !important;
 }
 
@@ -6230,8 +6230,8 @@ button.btn.mini.light,
 .cal-slot-chip,
 .cal-student-slot,
 .cal-profile-page .cal-count {
-  background: rgba(0, 117, 255, 0.16) !important;
-  color: #21D4FD !important;
+  background: rgba(5, 150, 105, 0.16) !important;
+  color: #10B981 !important;
   border: none !important;
 }
 
@@ -6240,15 +6240,15 @@ button.btn.mini.light,
 .cal-reschedule-item.selected,
 .cal-lessons-tab.is-active,
 .cal-settings-nav button.selected {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
 }
 
 .cal-editor-event.cal-editor-occupied {
-  background: rgba(0, 117, 255, 0.35) !important;
-  border-left: 3px solid #21D4FD !important;
+  background: rgba(5, 150, 105, 0.35) !important;
+  border-left: 3px solid #10B981 !important;
   color: #FFFFFF !important;
 }
 
@@ -6256,20 +6256,20 @@ button.btn.mini.light,
 .cal-skip-banner,
 .cal-schedule-mode-summary,
 .student-calendar-state {
-  background: rgba(0, 117, 255, 0.12) !important;
+  background: rgba(5, 150, 105, 0.12) !important;
   border: none !important;
-  border-left: 4px solid #0075FF !important;
+  border-left: 4px solid #059669 !important;
   color: #E2E8F0 !important;
 }
 
 .cal-temp-badge,
 .cal-student-cta {
-  color: #21D4FD !important;
+  color: #10B981 !important;
 }
 
 .cal-until-checkbox input[type="checkbox"],
 .interview-slot-option input {
-  accent-color: #0075FF !important;
+  accent-color: #059669 !important;
 }
 
 /* ==========================================================================
@@ -6339,7 +6339,7 @@ button.btn.mini.light,
 
 .home-shortcut:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 10px 25px rgba(0, 117, 255, 0.25) !important;
+  box-shadow: 0 10px 25px rgba(5, 150, 105, 0.25) !important;
   border: none !important;
 }
 
@@ -6385,7 +6385,7 @@ button.btn.mini.light,
 }
 
 .home-shortcut:hover > svg:last-child {
-  color: #21D4FD !important;
+  color: #10B981 !important;
   transform: translateX(3px) !important;
 }
 
@@ -6449,7 +6449,7 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-teacher-picker select {
-  background: #F8FAFD !important;
+  background: #F3F8F5 !important;
   border: none !important;
   color: #1A2340 !important;
 }
@@ -6465,9 +6465,9 @@ button.btn.mini.light,
 }
 
 .cal-switcher .selected {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
 }
 
 /* --- 24.4 Weekly Grid / Agenda (Image 3 Fix) --- */
@@ -6506,9 +6506,9 @@ button.btn.mini.light,
 }
 
 .cal-week-head-day.is-today {
-  background: linear-gradient(135deg, rgba(0, 117, 255, 0.4) 0%, rgba(33, 212, 253, 0.3) 100%) !important;
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.4) 0%, rgba(16, 185, 129, 0.3) 100%) !important;
   border: none !important;
-  box-shadow: 0 0 16px rgba(0, 117, 255, 0.35) !important;
+  box-shadow: 0 0 16px rgba(5, 150, 105, 0.35) !important;
 }
 
 .cal-week-head-day:hover {
@@ -6545,7 +6545,7 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-week-all-day {
-  background: #F8FAFD !important;
+  background: #F3F8F5 !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
   color: #52617A !important;
 }
@@ -6571,7 +6571,7 @@ button.btn.mini.light,
 }
 
 .cal-week-slot-bg {
-  background: rgba(0, 117, 255, 0.1) !important;
+  background: rgba(5, 150, 105, 0.1) !important;
   border: none !important;
 }
 
@@ -6611,7 +6611,7 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-editor-head {
-  background: #F8FAFD !important;
+  background: #F3F8F5 !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
 }
 
@@ -6670,11 +6670,11 @@ button.btn.mini.light,
 }
 
 .cal-editor-event {
-  background: rgba(0, 117, 255, 0.3) !important;
+  background: rgba(5, 150, 105, 0.3) !important;
   border: none !important;
-  border-left: 3px solid #0075FF !important;
+  border-left: 3px solid #059669 !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 12px rgba(0, 117, 255, 0.35) !important;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35) !important;
   backdrop-filter: blur(8px) !important;
 }
 
@@ -6685,9 +6685,9 @@ button.btn.mini.light,
 }
 
 .cal-editor-event.cal-editor-occupied {
-  background: linear-gradient(135deg, rgba(0, 117, 255, 0.45) 0%, rgba(33, 212, 253, 0.35) 100%) !important;
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.45) 0%, rgba(16, 185, 129, 0.35) 100%) !important;
   border: none !important;
-  border-left: 3px solid #21D4FD !important;
+  border-left: 3px solid #10B981 !important;
   color: #FFFFFF !important;
 }
 
@@ -6761,7 +6761,7 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-wpicker-header {
-  background: #F8FAFD !important;
+  background: #F3F8F5 !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
 }
 
@@ -6817,21 +6817,21 @@ button.btn.mini.light,
 }
 
 .cal-wpicker-legend strong {
-  color: #21D4FD !important;
+  color: #10B981 !important;
 }
 
 [data-theme="light"] .cal-wpicker-legend strong {
-  color: #0066E6 !important;
+  color: #059669 !important;
 }
 
 .cal-wpicker-dot.available {
-  background: rgba(0, 117, 255, 0.25) !important;
+  background: rgba(5, 150, 105, 0.25) !important;
   border: none !important;
 }
 
 .cal-wpicker-dot.selected {
-  background: #0075FF !important;
-  box-shadow: 0 0 8px rgba(0, 117, 255, 0.6) !important;
+  background: #059669 !important;
+  box-shadow: 0 0 8px rgba(5, 150, 105, 0.6) !important;
   border: none !important;
 }
 
@@ -6845,9 +6845,9 @@ button.btn.mini.light,
 }
 
 .cal-wpicker-event {
-  background: rgba(0, 117, 255, 0.22) !important;
+  background: rgba(5, 150, 105, 0.22) !important;
   border: none !important;
-  border-left: 3px solid #0075FF !important;
+  border-left: 3px solid #059669 !important;
   border-radius: 8px !important;
   backdrop-filter: blur(8px) !important;
 }
@@ -6866,10 +6866,10 @@ button.btn.mini.light,
 }
 
 .cal-wpicker-event.is-selected {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.5) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.5) !important;
 }
 
 .cal-wpicker-event.is-busy {
@@ -6956,7 +6956,7 @@ dialog:has(.cal-enrollment) {
 .cal-lesson {
   background: rgba(11, 20, 55, 0.7) !important;
   border: none !important;
-  border-left: 3px solid #0075FF !important;
+  border-left: 3px solid #059669 !important;
   border-radius: 12px !important;
   color: #FFFFFF !important;
 }
@@ -6964,7 +6964,7 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .cal-lesson {
   background: #FFFFFF !important;
   border: none !important;
-  border-left: 3px solid #0066E6 !important;
+  border-left: 3px solid #059669 !important;
   color: #1A2340 !important;
 }
 
@@ -7003,7 +7003,7 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .cal-settings-nav button {
-  background: #F8FAFD !important;
+  background: #F3F8F5 !important;
   color: #52617A !important;
 }
 
@@ -7020,7 +7020,7 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .detail-item {
-  background: #F8FAFD !important;
+  background: #F3F8F5 !important;
   border: none !important;
   color: #1A2340 !important;
 }
@@ -7094,7 +7094,7 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .interview-slot-option {
-  background: #F8FAFD !important;
+  background: #F3F8F5 !important;
   border: none !important;
   color: #1A2340 !important;
 }
@@ -7119,7 +7119,7 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .cal-form-slots label {
-  background: #F8FAFD !important;
+  background: #F3F8F5 !important;
   border: none !important;
   color: #1A2340 !important;
 }
@@ -7128,34 +7128,34 @@ dialog:has(.cal-enrollment) {
 .crm-btn.primary,
 .crm-btn.crm-wa,
 .crm-toggle button.active {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4) !important;
 }
 
 .crm-box-status.is-done {
-  background: rgba(0, 117, 255, 0.2) !important;
-  color: #21D4FD !important;
+  background: rgba(5, 150, 105, 0.2) !important;
+  color: #10B981 !important;
   border: none !important;
 }
 
 .crm-cal-status.is-free {
-  background: rgba(0, 117, 255, 0.15) !important;
-  color: #21D4FD !important;
-  border-color: rgba(0, 117, 255, 0.3) !important;
+  background: rgba(5, 150, 105, 0.15) !important;
+  color: #10B981 !important;
+  border-color: rgba(5, 150, 105, 0.3) !important;
 }
 
 .crm-timeline-icon {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
 }
 
 .crm-help-note {
-  background: rgba(0, 117, 255, 0.12) !important;
+  background: rgba(5, 150, 105, 0.12) !important;
   border: none !important;
-  border-left: 3px solid #0075FF !important;
+  border-left: 3px solid #059669 !important;
   color: #E2E8F0 !important;
 }
 
@@ -7259,11 +7259,11 @@ button.btn,
 .crm-tabs button.active,
 .cal-switcher button.selected,
 .cal-lessons-tab.is-active {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
   outline: none !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
 }
 
 /* Status Pills & Badges — Absolutely NO stroke borders (especially CORRIGIR DOCX) */
@@ -7329,7 +7329,7 @@ button.btn,
 
 .home-shortcut:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 10px 25px rgba(0, 117, 255, 0.25) !important;
+  box-shadow: 0 10px 25px rgba(5, 150, 105, 0.25) !important;
   border: none !important;
   outline: none !important;
 }
@@ -7340,12 +7340,12 @@ button.btn,
   min-width: 46px !important;
   min-height: 46px !important;
   border-radius: 12px !important;
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
   flex-shrink: 0 !important;
   border: none !important;
 }
@@ -7395,13 +7395,13 @@ button.btn,
 }
 
 .home-shortcut:hover > svg:last-child {
-  color: #21D4FD !important;
+  color: #10B981 !important;
   transform: translateX(3px) !important;
 }
 
 /* Calendar Secondary Sidebar — Dark Glass, No Green, No White */
 .cal-secondary-sidebar {
-  background: rgba(6, 11, 40, 0.94) !important;
+  background: rgba(4, 16, 12, 0.94) !important;
   border: none !important;
   border-right: none !important;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25) !important;
@@ -7430,9 +7430,9 @@ button.btn,
 }
 
 .cal-secondary-sidebar nav button.active {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
   border: none !important;
 }
 
@@ -7528,8 +7528,8 @@ dialog,
 }
 
 .account-avatar {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
   border-radius: 12px !important;
   color: #FFFFFF !important;
   font-weight: 800 !important;
@@ -7567,11 +7567,11 @@ dialog,
 
 :root:not([data-theme="light"]) .sidebar-current-name svg,
 [data-theme="dark"] .sidebar-current-name svg {
-  color: #21D4FD !important;
-  stroke: #21D4FD !important;
+  color: #10B981 !important;
+  stroke: #10B981 !important;
   width: 18px !important;
   height: 18px !important;
-  filter: drop-shadow(0 0 6px rgba(33, 212, 253, 0.45)) !important;
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.45)) !important;
 }
 
 :root:not([data-theme="light"]) .sidebar .nav-group,
@@ -7633,9 +7633,9 @@ dialog,
 :root:not([data-theme="light"]) .sidebar .nav-btn.active .nav-ico .camp-icon,
 [data-theme="dark"] .sidebar .nav-btn.active .nav-ico svg,
 [data-theme="dark"] .sidebar .nav-btn.active .nav-ico .camp-icon {
-  color: #21D4FD !important;
-  stroke: #21D4FD !important;
-  filter: drop-shadow(0 0 8px rgba(33, 212, 253, 0.6)) !important;
+  color: #10B981 !important;
+  stroke: #10B981 !important;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6)) !important;
   transform: scale(1.06) !important;
 }
 
@@ -7716,11 +7716,11 @@ dialog,
 }
 
 [data-theme="light"] .sidebar-current-name svg {
-  color: #0066E6 !important;
-  stroke: #0066E6 !important;
+  color: #059669 !important;
+  stroke: #059669 !important;
   width: 18px !important;
   height: 18px !important;
-  filter: drop-shadow(0 2px 6px rgba(0, 102, 230, 0.35)) !important;
+  filter: drop-shadow(0 2px 6px rgba(5, 150, 105, 0.35)) !important;
 }
 
 [data-theme="light"] .sidebar .nav-group {
@@ -7747,15 +7747,15 @@ dialog,
 }
 
 [data-theme="light"] .sidebar .nav-btn:hover {
-  color: #0066E6 !important;
-  background: #F0F4FA !important;
-  box-shadow: 0 2px 8px rgba(0, 102, 230, 0.08) !important;
+  color: #059669 !important;
+  background: #EBF4EE !important;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.08) !important;
 }
 
 [data-theme="light"] .sidebar .nav-btn:hover .nav-ico svg,
 [data-theme="light"] .sidebar .nav-btn:hover .nav-ico .camp-icon {
-  color: #0066E6 !important;
-  stroke: #0066E6 !important;
+  color: #059669 !important;
+  stroke: #059669 !important;
   transform: scale(1.08) !important;
 }
 
@@ -7771,9 +7771,9 @@ dialog,
 
 [data-theme="light"] .sidebar .nav-btn.active .nav-ico svg,
 [data-theme="light"] .sidebar .nav-btn.active .nav-ico .camp-icon {
-  color: #0066E6 !important;
-  stroke: #0066E6 !important;
-  filter: drop-shadow(0 2px 8px rgba(0, 102, 230, 0.45)) !important;
+  color: #059669 !important;
+  stroke: #059669 !important;
+  filter: drop-shadow(0 2px 8px rgba(5, 150, 105, 0.45)) !important;
   transform: scale(1.06) !important;
 }
 
@@ -7788,7 +7788,7 @@ dialog,
 }
 
 [data-theme="light"] .account-trigger:hover {
-  background: #F8FAFD !important;
+  background: #F3F8F5 !important;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1) !important;
 }
 
@@ -7837,8 +7837,8 @@ dialog,
 }
 
 [data-theme="light"] .account-option:hover {
-  background: #F0F4FA !important;
-  color: #0066E6 !important;
+  background: #EBF4EE !important;
+  color: #059669 !important;
 }
 
 [data-theme="light"] .account-divider {
@@ -7898,14 +7898,14 @@ dialog,
 }
 
 [data-theme="light"] .cal-secondary-sidebar nav button:hover {
-  background: #F0F4FA !important;
-  color: #0066E6 !important;
+  background: #EBF4EE !important;
+  color: #059669 !important;
 }
 
 [data-theme="light"] .cal-secondary-sidebar nav button.active {
-  background: linear-gradient(135deg, #0066E6 0%, #087FA3 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(0, 102, 230, 0.35) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35) !important;
 }
 
 /* Collapsed Calendar Shell in Light Mode */
@@ -7926,7 +7926,7 @@ dialog,
 
 [data-theme="light"] .cal-admin-shell > .sidebar .nav-btn.active {
   background: #FFFFFF !important;
-  color: #0066E6 !important;
+  color: #059669 !important;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
 }
 
@@ -7959,7 +7959,7 @@ dialog,
 /* 27.1 Metric Blocks (Dark Mode) - Luminous Sapphire Frosted Glass */
 :root:not([data-theme="light"]) .metric,
 [data-theme="dark"] .metric {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.14) 0%, rgba(16, 28, 85, 0.88) 40%, rgba(8, 16, 55, 0.96) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.14) 0%, rgba(10, 42, 32, 0.88) 40%, rgba(6, 24, 18, 0.96) 100%) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border: none !important;
@@ -7973,9 +7973,9 @@ dialog,
 
 :root:not([data-theme="light"]) .metric:hover,
 [data-theme="dark"] .metric:hover {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.22) 0%, rgba(24, 42, 115, 0.92) 40%, rgba(12, 22, 75, 0.98) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.22) 0%, rgba(14, 56, 42, 0.92) 40%, rgba(8, 32, 24, 0.98) 100%) !important;
   transform: translateY(-3px) !important;
-  box-shadow: 0 18px 45px rgba(0, 117, 255, 0.32), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 18px 45px rgba(5, 150, 105, 0.32), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
 }
 
 :root:not([data-theme="light"]) .metric .metric-value,
@@ -8004,14 +8004,14 @@ dialog,
 }
 
 .metric:hover .metric-go {
-  color: #21D4FD !important;
+  color: #10B981 !important;
   transform: translateX(3px) !important;
 }
 
 /* 27.2 Home Shortcuts (Dark Mode) */
 :root:not([data-theme="light"]) .home-shortcut,
 [data-theme="dark"] .home-shortcut {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.12) 0%, rgba(14, 24, 75, 0.82) 40%, rgba(8, 14, 50, 0.94) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.12) 0%, rgba(10, 36, 28, 0.82) 40%, rgba(6, 22, 16, 0.94) 100%) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border: none !important;
@@ -8022,9 +8022,9 @@ dialog,
 
 :root:not([data-theme="light"]) .home-shortcut:hover,
 [data-theme="dark"] .home-shortcut:hover {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.2) 0%, rgba(20, 36, 105, 0.9) 40%, rgba(12, 22, 70, 0.98) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.2) 0%, rgba(10, 36, 26, 0.9) 40%, rgba(12, 22, 70, 0.98) 100%) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 16px 36px rgba(0, 117, 255, 0.28), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 16px 36px rgba(5, 150, 105, 0.28), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
 }
 
 :root:not([data-theme="light"]) .home-shortcut b,
@@ -8083,7 +8083,7 @@ dialog,
 }
 
 [data-theme="light"] .metric:hover .metric-go {
-  color: #0066E6 !important;
+  color: #059669 !important;
 }
 
 /* 27.4 Recent Enrollments Table - Perfect Column Center Alignment */
@@ -8114,12 +8114,12 @@ dialog,
 [data-theme="dark"] {
   --camp-bg: #060B26;
   --camp-bg-radial:
-    radial-gradient(circle at 82% 8%, rgba(0, 117, 255, 0.28) 0%, rgba(0, 117, 255, 0.08) 32%, transparent 56%),
-    radial-gradient(circle at 14% 34%, rgba(117, 81, 255, 0.20) 0%, rgba(88, 44, 255, 0.06) 26%, transparent 50%),
-    radial-gradient(ellipse at 50% 55%, rgba(0, 117, 255, 0.18) 0%, rgba(14, 28, 90, 0.10) 38%, transparent 68%),
-    radial-gradient(circle at 88% 85%, rgba(0, 117, 255, 0.26) 0%, rgba(33, 212, 253, 0.09) 30%, transparent 58%),
-    radial-gradient(circle at 18% 90%, rgba(33, 212, 253, 0.18) 0%, rgba(0, 117, 255, 0.05) 26%, transparent 52%),
-    linear-gradient(150deg, #060B26 0%, #080F35 35%, #09123D 60%, #060B2A 85%, #05081E 100%);
+    radial-gradient(circle at 82% 8%, rgba(5, 150, 105, 0.28) 0%, rgba(5, 150, 105, 0.08) 32%, transparent 56%),
+    radial-gradient(circle at 14% 34%, rgba(13, 148, 136, 0.20) 0%, rgba(13, 148, 136, 0.06) 26%, transparent 50%),
+    radial-gradient(ellipse at 50% 55%, rgba(5, 150, 105, 0.18) 0%, rgba(10, 38, 28, 0.10) 38%, transparent 68%),
+    radial-gradient(circle at 88% 85%, rgba(5, 150, 105, 0.26) 0%, rgba(16, 185, 129, 0.09) 30%, transparent 58%),
+    radial-gradient(circle at 18% 90%, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.05) 26%, transparent 52%),
+    linear-gradient(150deg, #05130F 0%, #071C16 35%, #09241C 60%, #061813 85%, #04100C 100%);
 }
 
 html,
@@ -8128,12 +8128,12 @@ body,
 [data-theme="dark"] body {
   background-color: #060B26 !important;
   background-image:
-    radial-gradient(circle at 82% 8%, rgba(0, 117, 255, 0.28) 0%, rgba(0, 117, 255, 0.08) 32%, transparent 56%),
-    radial-gradient(circle at 14% 34%, rgba(117, 81, 255, 0.20) 0%, rgba(88, 44, 255, 0.06) 26%, transparent 50%),
-    radial-gradient(ellipse at 50% 55%, rgba(0, 117, 255, 0.18) 0%, rgba(14, 28, 90, 0.10) 38%, transparent 68%),
-    radial-gradient(circle at 88% 85%, rgba(0, 117, 255, 0.26) 0%, rgba(33, 212, 253, 0.09) 30%, transparent 58%),
-    radial-gradient(circle at 18% 90%, rgba(33, 212, 253, 0.18) 0%, rgba(0, 117, 255, 0.05) 26%, transparent 52%),
-    linear-gradient(150deg, #060B26 0%, #080F35 35%, #09123D 60%, #060B2A 85%, #05081E 100%) !important;
+    radial-gradient(circle at 82% 8%, rgba(5, 150, 105, 0.28) 0%, rgba(5, 150, 105, 0.08) 32%, transparent 56%),
+    radial-gradient(circle at 14% 34%, rgba(13, 148, 136, 0.20) 0%, rgba(13, 148, 136, 0.06) 26%, transparent 50%),
+    radial-gradient(ellipse at 50% 55%, rgba(5, 150, 105, 0.18) 0%, rgba(10, 38, 28, 0.10) 38%, transparent 68%),
+    radial-gradient(circle at 88% 85%, rgba(5, 150, 105, 0.26) 0%, rgba(16, 185, 129, 0.09) 30%, transparent 58%),
+    radial-gradient(circle at 18% 90%, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.05) 26%, transparent 52%),
+    linear-gradient(150deg, #05130F 0%, #071C16 35%, #09241C 60%, #061813 85%, #04100C 100%) !important;
   background-attachment: fixed !important;
   background-repeat: no-repeat !important;
   background-size: cover !important;
@@ -8142,12 +8142,10 @@ body,
 
 /* Light Mode Background with subtle luminous ambience */
 [data-theme="light"] body {
-  background-color: #F5F7FC !important;
+  background-color: #F6FAF7 !important;
   background-image:
-    radial-gradient(circle at 85% 10%, rgba(0, 102, 230, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 15% 45%, rgba(104, 68, 214, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 75% 85%, rgba(8, 127, 163, 0.1) 0%, transparent 50%),
-    linear-gradient(180deg, #F5F7FC 0%, #EDF2FA 100%) !important;
+    radial-gradient(circle at 85% 10%, rgba(5, 150, 105, 0.09) 0%, transparent 48%), radial-gradient(circle at 15% 45%, rgba(16, 185, 129, 0.06) 0%, transparent 42%), radial-gradient(circle at 75% 85%, rgba(13, 148, 136, 0.07) 0%, transparent 48%),
+    linear-gradient(180deg, #F6FAF7 0%, #EDF5F0 100%) !important;
   background-attachment: fixed !important;
   background-repeat: no-repeat !important;
   background-size: cover !important;
@@ -8356,8 +8354,8 @@ body,
   right: 12px !important;
   height: 3px !important;
   border-radius: 3px 3px 0 0 !important;
-  background: linear-gradient(90deg, #0075FF 0%, #21D4FD 100%) !important;
-  box-shadow: 0 0 10px rgba(33, 212, 253, 0.6) !important;
+  background: linear-gradient(90deg, #059669 0%, #10B981 100%) !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6) !important;
 }
 
 :root:not([data-theme="light"]) .crm-tabs button span,
@@ -8372,8 +8370,8 @@ body,
 
 :root:not([data-theme="light"]) .crm-tabs button.active span,
 [data-theme="dark"] .crm-tabs button.active span {
-  background: rgba(0, 117, 255, 0.28) !important;
-  color: #21D4FD !important;
+  background: rgba(5, 150, 105, 0.28) !important;
+  color: #10B981 !important;
 }
 
 /* Light mode tabs */
@@ -8383,7 +8381,7 @@ body,
   gap: 6px !important;
   padding: 8px 18px 0 !important;
   margin: 0 !important;
-  background: #F8FAFD !important;
+  background: #F3F8F5 !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
   border-top-left-radius: 20px !important;
   border-top-right-radius: 20px !important;
@@ -8406,7 +8404,7 @@ body,
 }
 
 [data-theme="light"] .crm-tabs button.active {
-  color: #0066E6 !important;
+  color: #059669 !important;
   background: #FFFFFF !important;
   font-weight: 800 !important;
 }
@@ -8419,7 +8417,7 @@ body,
   right: 12px !important;
   height: 3px !important;
   border-radius: 3px 3px 0 0 !important;
-  background: #0066E6 !important;
+  background: #059669 !important;
 }
 
 /* 30.2 Streamlined CRM Filters Bar */
@@ -8485,9 +8483,9 @@ body,
 }
 
 .crm-filters-toggle-btn.is-active {
-  background: rgba(0, 117, 255, 0.22) !important;
-  color: #21D4FD !important;
-  box-shadow: 0 0 12px rgba(0, 117, 255, 0.3) !important;
+  background: rgba(5, 150, 105, 0.22) !important;
+  color: #10B981 !important;
+  box-shadow: 0 0 12px rgba(5, 150, 105, 0.3) !important;
 }
 
 .crm-filters-bar .crm-toggle {
@@ -8559,7 +8557,7 @@ body,
   padding: 20px 22px 24px !important;
   align-items: stretch !important;
   scrollbar-width: thin !important;
-  scrollbar-color: rgba(0, 117, 255, 0.4) transparent !important;
+  scrollbar-color: rgba(5, 150, 105, 0.4) transparent !important;
 }
 
 .crm-board::-webkit-scrollbar {
@@ -8572,12 +8570,12 @@ body,
 }
 
 .crm-board::-webkit-scrollbar-thumb {
-  background: rgba(0, 117, 255, 0.35) !important;
+  background: rgba(5, 150, 105, 0.35) !important;
   border-radius: 10px !important;
 }
 
 .crm-board::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 117, 255, 0.65) !important;
+  background: rgba(5, 150, 105, 0.65) !important;
 }
 
 :root:not([data-theme="light"]) .crm-board-col,
@@ -8587,7 +8585,7 @@ body,
   flex: 0 0 280px !important;
   max-height: calc(100vh - 280px) !important;
   min-height: 480px !important;
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.08) 0%, rgba(14, 24, 75, 0.68) 40%, rgba(8, 14, 46, 0.88) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.08) 0%, rgba(10, 36, 28, 0.68) 40%, rgba(8, 14, 46, 0.88) 100%) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border: none !important;
@@ -8606,7 +8604,7 @@ body,
   flex: 0 0 280px !important;
   max-height: calc(100vh - 280px) !important;
   min-height: 480px !important;
-  background: #F8FAFD !important;
+  background: #F3F8F5 !important;
   border: none !important;
   border-radius: 18px !important;
   box-shadow: 0 6px 20px rgba(112, 144, 176, 0.1) !important;
@@ -8628,7 +8626,7 @@ body,
   padding: 2px 5px 12px 1px !important;
   margin-right: -2px !important;
   scrollbar-width: thin !important;
-  scrollbar-color: rgba(0, 117, 255, 0.35) transparent !important;
+  scrollbar-color: rgba(5, 150, 105, 0.35) transparent !important;
 }
 
 .crm-board-items::-webkit-scrollbar {
@@ -8640,12 +8638,12 @@ body,
 }
 
 .crm-board-items::-webkit-scrollbar-thumb {
-  background: rgba(0, 117, 255, 0.35) !important;
+  background: rgba(5, 150, 105, 0.35) !important;
   border-radius: 10px !important;
 }
 
 .crm-board-items::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 117, 255, 0.65) !important;
+  background: rgba(5, 150, 105, 0.65) !important;
 }
 
 [data-theme="light"] .crm-board-items {
@@ -8659,7 +8657,7 @@ body,
 /* 30.7 Calendário Comercial & Docente (Fix for Bug & Glassmorphism) */
 :root:not([data-theme="light"]) .crm-due-panel,
 [data-theme="dark"] .crm-due-panel {
-  background: linear-gradient(127.09deg, rgba(8, 14, 48, 0.94) 0%, rgba(6, 11, 40, 0.88) 100%) !important;
+  background: linear-gradient(127.09deg, rgba(6, 22, 18, 0.94) 0%, rgba(4, 16, 12, 0.88) 100%) !important;
   backdrop-filter: blur(24px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   border: none !important;
@@ -8712,11 +8710,11 @@ body,
 
 :root:not([data-theme="light"]) .crm-due-icon,
 [data-theme="dark"] .crm-due-icon {
-  background: rgba(0, 117, 255, 0.18) !important;
-  color: #21D4FD !important;
+  background: rgba(5, 150, 105, 0.18) !important;
+  color: #10B981 !important;
   border: none !important;
   border-radius: 10px !important;
-  box-shadow: 0 0 12px rgba(0, 117, 255, 0.25) !important;
+  box-shadow: 0 0 12px rgba(5, 150, 105, 0.25) !important;
 }
 
 :root:not([data-theme="light"]) .crm-due-date,
@@ -8765,8 +8763,8 @@ body,
 }
 
 [data-theme="light"] .crm-due-icon {
-  background: rgba(0, 102, 230, 0.12) !important;
-  color: #0066E6 !important;
+  background: rgba(5, 150, 105, 0.12) !important;
+  color: #059669 !important;
   border-radius: 10px !important;
 }
 
@@ -8777,14 +8775,14 @@ body,
 /* 30.8 Lead Cards (3D Luminous Sapphire Glassmorphism — ZERO STROKE BORDER) */
 :root:not([data-theme="light"]) .crm-lead-card,
 [data-theme="dark"] .crm-lead-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(28, 50, 132, 0.86) 32%, rgba(16, 30, 88, 0.96) 100%) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(12, 48, 36, 0.86) 32%, rgba(8, 28, 22, 0.96) 100%) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 16px !important;
   padding: 14px 16px !important;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 117, 255, 0.2), inset 0 1px 1.5px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(5, 150, 105, 0.2), inset 0 1px 1.5px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.35) !important;
   cursor: grab !important;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
   position: relative !important;
@@ -8802,8 +8800,8 @@ body,
 [data-theme="dark"] .crm-lead-card:hover,
 [data-theme="dark"] .crm-lead-card:focus-visible {
   transform: translateY(-3px) scale(1.01) !important;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(36, 64, 158, 0.92) 32%, rgba(20, 36, 105, 0.98) 100%) !important;
-  box-shadow: 0 16px 36px rgba(0, 117, 255, 0.35), 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(16, 60, 45, 0.92) 32%, rgba(10, 36, 26, 0.98) 100%) !important;
+  box-shadow: 0 16px 36px rgba(5, 150, 105, 0.35), 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
   outline: none !important;
 }
 
@@ -8817,7 +8815,7 @@ body,
 [data-theme="dark"] .crm-lead-card.is-dragging {
   opacity: 0.65 !important;
   transform: scale(0.98) rotate(1deg) !important;
-  box-shadow: 0 20px 42px rgba(0, 117, 255, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 20px 42px rgba(5, 150, 105, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
   cursor: grabbing !important;
 }
 
@@ -8872,8 +8870,8 @@ body,
 :root:not([data-theme="light"]) .crm-card-interview,
 [data-theme="dark"] .crm-card-interview {
   border-top: none !important;
-  background: rgba(0, 117, 255, 0.18) !important;
-  color: #21D4FD !important;
+  background: rgba(5, 150, 105, 0.18) !important;
+  color: #10B981 !important;
   border-radius: 8px !important;
   padding: 6px 10px !important;
   margin-top: 10px !important;
@@ -8887,8 +8885,8 @@ body,
 
 :root:not([data-theme="light"]) .crm-card-interview svg,
 [data-theme="dark"] .crm-card-interview svg {
-  color: #21D4FD !important;
-  stroke: #21D4FD !important;
+  color: #10B981 !important;
+  stroke: #10B981 !important;
   flex-shrink: 0 !important;
 }
 
@@ -8947,8 +8945,8 @@ body,
 }
 
 [data-theme="light"] .crm-card-interview {
-  background: rgba(0, 102, 230, 0.1) !important;
-  color: #0066E6 !important;
+  background: rgba(5, 150, 105, 0.1) !important;
+  color: #059669 !important;
   border-radius: 8px !important;
   padding: 6px 10px !important;
   border: none !important;
