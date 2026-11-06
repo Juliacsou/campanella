@@ -1404,8 +1404,73 @@ dialog .close:hover {
   box-shadow: 0 0 10px var(--camp-primary-glow);
 }
 
+.cal-student-slot {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  color: var(--camp-text) !important;
+  border-radius: var(--camp-radius-sm);
+  padding: 8px 12px;
+}
+
+.cal-lesson-row {
+  border-bottom: 1px solid var(--camp-border) !important;
+  padding: 14px 4px !important;
+  transition: var(--camp-transition);
+}
+
+.cal-lesson-row:hover {
+  background: var(--camp-hover);
+}
+
+.cal-lesson-number {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  color: var(--camp-cyan) !important;
+  border-radius: var(--camp-radius-sm);
+}
+
+[data-theme="light"] .cal-lesson-number {
+  color: var(--camp-primary) !important;
+}
+
+.cal-lesson-main strong {
+  color: var(--camp-text) !important;
+}
+
+.cal-profile-accordion-toggle {
+  background: var(--camp-surface-card) !important;
+  border-bottom: 1px solid var(--camp-border) !important;
+}
+
+.cal-profile-accordion-toggle:hover {
+  background: var(--camp-hover) !important;
+}
+
+.cal-temp-schedule-banner {
+  background: var(--camp-warning-bg) !important;
+  border: 1px solid var(--camp-warning-border) !important;
+  border-left: 4px solid var(--camp-warning) !important;
+  color: var(--camp-text) !important;
+  border-radius: var(--camp-radius-md);
+  padding: 14px 18px;
+  margin: 14px 0;
+}
+
+.cal-temp-badge {
+  background: var(--camp-warning-bg) !important;
+  color: var(--camp-warning) !important;
+  border: 1px solid var(--camp-warning-border) !important;
+  border-radius: var(--camp-radius-pill);
+  padding: 2px 8px;
+  font-size: 10px;
+}
+
+.cal-profile-subsection {
+  border-top: 1px solid var(--camp-border) !important;
+}
+
 /* ==========================================================================
-   12. ONBOARDING & IMPORT WIZARD
+   12. ONBOARDING & IMPORT WIZARD (VISION UI STEPPER)
    ========================================================================== */
 
 .onb-top {
@@ -1414,21 +1479,100 @@ dialog .close:hover {
   margin-bottom: 24px;
 }
 
-.onb-step {
-  border: 1px solid var(--camp-border) !important;
-  background: var(--camp-surface-raised) !important;
-  border-radius: var(--camp-radius-md);
+.onb-stages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
 }
 
-.onb-step.active {
+.onb-stage {
+  border: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-card) !important;
+  border-radius: var(--camp-radius-md);
+  color: var(--camp-text-secondary) !important;
+  transition: var(--camp-transition);
+  padding: 14px 16px !important;
+}
+
+.onb-stage span {
+  background: var(--camp-surface-raised) !important;
+  color: var(--camp-text) !important;
+  border: 1px solid var(--camp-border);
+  border-radius: var(--camp-radius-pill);
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-content: center;
+  font-weight: 800;
+}
+
+.onb-stage:hover {
+  background: var(--camp-hover) !important;
+  color: var(--camp-text) !important;
+}
+
+.onb-stage.current {
+  background: var(--camp-surface-raised) !important;
   border-color: var(--camp-primary) !important;
+  color: var(--camp-text) !important;
   box-shadow: 0 0 15px var(--camp-primary-glow) !important;
+}
+
+.onb-stage.current span {
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 8px var(--camp-primary-glow);
+}
+
+.onb-summary {
+  background: var(--camp-surface-raised) !important;
+  color: var(--camp-primary) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
 }
 
 .onb-guidance {
   background: var(--camp-surface-raised) !important;
   border: 1px solid var(--camp-border) !important;
+  border-left: 4px solid var(--camp-cyan) !important;
   border-radius: var(--camp-radius-md);
+  color: var(--camp-text) !important;
+}
+
+[data-theme="light"] .onb-guidance {
+  border-left-color: var(--camp-primary) !important;
+}
+
+.onb-guidance-mark {
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+}
+
+.onb-guidance strong {
+  color: var(--camp-text) !important;
+}
+
+.onb-guidance p {
+  color: var(--camp-text-secondary) !important;
+}
+
+.onb-guidance--warning {
+  background: var(--camp-warning-bg) !important;
+  border-color: var(--camp-warning-border) !important;
+  border-left-color: var(--camp-warning) !important;
+  color: var(--camp-text) !important;
+}
+
+.onb-guidance--warning strong,
+.onb-guidance--warning p {
+  color: var(--camp-text) !important;
+}
+
+.onb-guidance--warning .onb-guidance-mark {
+  background: var(--camp-warning) !important;
+  color: #FFFFFF !important;
 }
 
 .onb-entry {
@@ -1445,10 +1589,72 @@ dialog .close:hover {
   box-shadow: var(--camp-shadow-card);
 }
 
+.onb-records {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+}
+
 .onb-record {
+  background: var(--camp-surface-raised) !important;
+  border-bottom: 1px solid var(--camp-border) !important;
+}
+
+.onb-record-main b {
+  color: var(--camp-text) !important;
+}
+
+.onb-record-main small {
+  color: var(--camp-text-secondary) !important;
+}
+
+.onb-upload {
+  border: 1px dashed var(--camp-border-strong) !important;
+  background: var(--camp-surface-raised) !important;
+  border-radius: var(--camp-radius-lg);
+}
+
+.onb-preview {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+}
+
+.onb-blank-action {
   background: var(--camp-surface-raised) !important;
   border: 1px solid var(--camp-border) !important;
   border-radius: var(--camp-radius-md);
+}
+
+.onb-blank-action strong {
+  color: var(--camp-text) !important;
+}
+
+.onb-blank-action p {
+  color: var(--camp-text-secondary) !important;
+}
+
+.onb-choice {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+}
+
+.onb-choice h3 {
+  color: var(--camp-text) !important;
+}
+
+.onb-choice p {
+  color: var(--camp-text-secondary) !important;
+}
+
+.onb-choice--caution {
+  background: var(--camp-warning-bg) !important;
+  border-color: var(--camp-warning-border) !important;
+}
+
+.onb-choice--caution h3,
+.onb-choice--caution p {
+  color: var(--camp-text) !important;
 }
 
 /* ==========================================================================
@@ -1520,6 +1726,30 @@ dialog .close:hover {
   border: 1px solid var(--camp-border) !important;
   border-radius: var(--camp-radius-md);
   color: var(--camp-text) !important;
+}
+
+.template-editor {
+  background: var(--camp-input) !important;
+  color: var(--camp-text) !important;
+  border: 1px solid var(--camp-input-border) !important;
+  border-radius: var(--camp-radius-md);
+  padding: 14px;
+}
+
+.syntax-formula {
+  background: var(--camp-surface-raised) !important;
+  color: var(--camp-cyan) !important;
+  border: 1px solid var(--camp-border) !important;
+}
+
+.syntax-name {
+  background: rgba(0, 117, 255, 0.22) !important;
+  color: var(--camp-primary) !important;
+}
+
+.syntax-who {
+  background: rgba(117, 81, 255, 0.22) !important;
+  color: var(--camp-purple) !important;
 }
 
 /* ==========================================================================
