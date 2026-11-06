@@ -9631,3 +9631,225 @@ body,
 .cal-month-day.full-blocked {
   opacity: 0.65 !important;
 }
+
+/* ==========================================================================
+   34. UNIFIED 3D GLASS CONTAINERS ACROSS ALL PAGES
+   ========================================================================== */
+
+/* 34.1 Main Page Containers (Panels, Workspaces, Sections, Template & School Cards) */
+.panel,
+.card,
+.crm-workspace,
+.crm-due-panel,
+.template-card,
+.school-card,
+.license-card,
+.license-key-reveal,
+.settings-section,
+.profile-section,
+.preferences-panel,
+.preferences-tile,
+.preferences-nav,
+.onb-panel,
+.cal-section,
+.cal-editor-panel,
+.cal-profile-registration,
+.cal-lessons-tabs-section {
+  border: none !important;
+  outline: none !important;
+  border-radius: 24px !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-sizing: border-box !important;
+}
+
+/* 34.2 LIGHT MODE: 3D Frosted Glass with Specular Top Highlight */
+[data-theme="light"] .panel,
+[data-theme="light"] .card,
+[data-theme="light"] .crm-workspace,
+[data-theme="light"] .crm-due-panel,
+[data-theme="light"] .template-card,
+[data-theme="light"] .school-card,
+[data-theme="light"] .license-card,
+[data-theme="light"] .license-key-reveal,
+[data-theme="light"] .settings-section,
+[data-theme="light"] .profile-section,
+[data-theme="light"] .preferences-panel,
+[data-theme="light"] .preferences-tile,
+[data-theme="light"] .preferences-nav,
+[data-theme="light"] .onb-panel,
+[data-theme="light"] .cal-section,
+[data-theme="light"] .cal-editor-panel,
+[data-theme="light"] .cal-profile-registration,
+[data-theme="light"] .cal-lessons-tabs-section {
+  background: rgba(255, 255, 255, 0.48) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  box-shadow: 
+    0 24px 50px -12px rgba(234, 88, 12, 0.08),
+    0 16px 32px -8px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.03),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+/* 34.3 DARK MODE: Deep Carbon 3D Glass with Ambient Occlusion */
+:root:not([data-theme="light"]) .panel,
+:root:not([data-theme="light"]) .card,
+:root:not([data-theme="light"]) .crm-workspace,
+:root:not([data-theme="light"]) .crm-due-panel,
+:root:not([data-theme="light"]) .template-card,
+:root:not([data-theme="light"]) .school-card,
+:root:not([data-theme="light"]) .license-card,
+:root:not([data-theme="light"]) .license-key-reveal,
+:root:not([data-theme="light"]) .settings-section,
+:root:not([data-theme="light"]) .profile-section,
+:root:not([data-theme="light"]) .preferences-panel,
+:root:not([data-theme="light"]) .preferences-tile,
+:root:not([data-theme="light"]) .preferences-nav,
+:root:not([data-theme="light"]) .onb-panel,
+:root:not([data-theme="light"]) .cal-section,
+:root:not([data-theme="light"]) .cal-editor-panel,
+:root:not([data-theme="light"]) .cal-profile-registration,
+:root:not([data-theme="light"]) .cal-lessons-tabs-section,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .card,
+[data-theme="dark"] .crm-workspace,
+[data-theme="dark"] .crm-due-panel,
+[data-theme="dark"] .template-card,
+[data-theme="dark"] .school-card,
+[data-theme="dark"] .license-card,
+[data-theme="dark"] .license-key-reveal,
+[data-theme="dark"] .settings-section,
+[data-theme="dark"] .profile-section,
+[data-theme="dark"] .preferences-panel,
+[data-theme="dark"] .preferences-tile,
+[data-theme="dark"] .preferences-nav,
+[data-theme="dark"] .onb-panel,
+[data-theme="dark"] .cal-section,
+[data-theme="dark"] .cal-editor-panel,
+[data-theme="dark"] .cal-profile-registration,
+[data-theme="dark"] .cal-lessons-tabs-section {
+  background: rgba(20, 20, 24, 0.55) !important;
+  backdrop-filter: blur(30px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
+  box-shadow: 
+    0 30px 60px -15px rgba(0, 0, 0, 0.7),
+    0 16px 30px -8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 34.4 Interactive Card Hover Effects (Template cards, School cards) */
+[data-theme="light"] .template-card:hover,
+[data-theme="light"] .school-card:hover {
+  transform: translateY(-3px) !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 
+    0 30px 60px -10px rgba(234, 88, 12, 0.15),
+    0 16px 32px -6px rgba(0, 0, 0, 0.08),
+    inset 0 1px 1px 0 #FFFFFF !important;
+}
+
+:root:not([data-theme="light"]) .template-card:hover,
+:root:not([data-theme="light"]) .school-card:hover,
+[data-theme="dark"] .template-card:hover,
+[data-theme="dark"] .school-card:hover {
+  transform: translateY(-3px) !important;
+  background: rgba(26, 26, 32, 0.65) !important;
+  box-shadow: 
+    0 36px 70px -12px rgba(234, 88, 12, 0.3),
+    0 20px 36px -6px rgba(0, 0, 0, 0.65),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.18) !important;
+}
+
+/* 34.5 CRM Pipeline Columns (Float seamlessly within 3D Glass Workspace) */
+[data-theme="light"] .crm-board-col {
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: none !important;
+  border-radius: 18px !important;
+  box-shadow: 
+    0 6px 18px rgba(0, 0, 0, 0.04),
+    inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
+}
+
+:root:not([data-theme="light"]) .crm-board-col,
+[data-theme="dark"] .crm-board-col {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: none !important;
+  border-radius: 18px !important;
+  box-shadow: 
+    0 6px 20px rgba(0, 0, 0, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+/* 34.6 Metric & KPI Cards (Harmonized 3D Glass Look) */
+[data-theme="light"] .metric,
+[data-theme="light"] .crm-metric,
+[data-theme="light"] .platform-metrics .metric,
+[data-theme="light"] .home-shortcuts .home-shortcut,
+[data-theme="light"] .teacher-stats > div,
+[data-theme="light"] .template-stats > div {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 18px !important;
+  box-shadow: 
+    0 12px 28px -6px rgba(0, 0, 0, 0.04),
+    0 4px 12px rgba(0, 0, 0, 0.02),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme="light"] .metric:hover,
+[data-theme="light"] .crm-metric:hover,
+[data-theme="light"] .home-shortcuts .home-shortcut:hover {
+  transform: translateY(-2px) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 
+    0 18px 36px -8px rgba(234, 88, 12, 0.12),
+    0 6px 16px rgba(0, 0, 0, 0.04),
+    inset 0 1px 1px 0 #FFFFFF !important;
+}
+
+:root:not([data-theme="light"]) .metric,
+:root:not([data-theme="light"]) .crm-metric,
+:root:not([data-theme="light"]) .platform-metrics .metric,
+:root:not([data-theme="light"]) .home-shortcuts .home-shortcut,
+:root:not([data-theme="light"]) .teacher-stats > div,
+:root:not([data-theme="light"]) .template-stats > div,
+[data-theme="dark"] .metric,
+[data-theme="dark"] .crm-metric,
+[data-theme="dark"] .platform-metrics .metric,
+[data-theme="dark"] .home-shortcuts .home-shortcut,
+[data-theme="dark"] .teacher-stats > div,
+[data-theme="dark"] .template-stats > div {
+  background: rgba(25, 25, 30, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 18px !important;
+  box-shadow: 
+    0 16px 32px -8px rgba(0, 0, 0, 0.55),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.25) !important;
+}
+
+:root:not([data-theme="light"]) .metric:hover,
+:root:not([data-theme="light"]) .crm-metric:hover,
+:root:not([data-theme="light"]) .home-shortcuts .home-shortcut:hover,
+[data-theme="dark"] .metric:hover,
+[data-theme="dark"] .crm-metric:hover,
+[data-theme="dark"] .home-shortcuts .home-shortcut:hover {
+  transform: translateY(-2px) !important;
+  background: rgba(32, 32, 38, 0.65) !important;
+  box-shadow: 
+    0 22px 42px -10px rgba(234, 88, 12, 0.25),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
