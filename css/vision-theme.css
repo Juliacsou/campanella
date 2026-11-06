@@ -1,11 +1,11 @@
 /**
  * CAMPANELLA V7 — VISION UI DESIGN SYSTEM
- * Complete Dark & Light Mode System
- * Inspired by Vision UI Dashboard (Deep Navy, Electric Blue, Glassmorphism)
+ * Complete Dark & Light Mode Theme System
+ * Inspired by Vision UI Dashboard (Deep Navy, Electric Blue, Subtle Glassmorphism)
  */
 
 /* ==========================================================================
-   1. DESIGN TOKENS (DARK & LIGHT)
+   1. TOKENS ARCHITECTURE (DARK & LIGHT)
    ========================================================================== */
 
 :root,
@@ -23,7 +23,7 @@
   --camp-surface: #0B1437;
   --camp-surface-raised: #101C44;
   --camp-surface-floating: #12204E;
-  --camp-surface-card: rgba(11, 20, 55, 0.88);
+  --camp-surface-card: rgba(11, 20, 55, 0.90);
   --camp-surface-card-border: rgba(255, 255, 255, 0.08);
 
   /* Inputs & Interactive Controls */
@@ -183,7 +183,7 @@
   --camp-radius-lg: 16px;
   --camp-radius-xl: 20px;
   --camp-radius-pill: 9999px;
-  --camp-transition: background-color 0.18s ease, border-color 0.18s ease, color 0.15s ease, box-shadow 0.18s ease;
+  --camp-transition: background-color 0.18s ease, border-color 0.18s ease, color 0.15s ease, box-shadow 0.18s ease, transform 0.15s ease;
 }
 
 /* ==========================================================================
@@ -713,6 +713,25 @@ p {
   border-radius: var(--camp-radius-sm) !important;
 }
 
+.icon-btn {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  color: var(--camp-text) !important;
+  border-radius: var(--camp-radius-sm);
+  transition: var(--camp-transition);
+}
+
+.icon-btn:hover {
+  background: var(--camp-hover) !important;
+  border-color: var(--camp-primary) !important;
+}
+
+.icon-btn.danger-icon {
+  background: var(--camp-danger-bg) !important;
+  border-color: var(--camp-danger-border) !important;
+  color: var(--camp-danger) !important;
+}
+
 /* ==========================================================================
    6. CARDS, METRICS & PANELS
    ========================================================================== */
@@ -727,7 +746,10 @@ p {
 .crm-side-card,
 .onb-panel,
 .cal-metrics>div,
-.sign-panel {
+.sign-panel,
+.template-library,
+.template-stats>div,
+.home-shortcut {
   background: var(--camp-surface-card) !important;
   border: 1px solid var(--camp-border) !important;
   border-radius: var(--camp-radius-lg) !important;
@@ -739,7 +761,8 @@ p {
 
 .panel:hover,
 .metric:hover,
-.crm-metric:hover {
+.crm-metric:hover,
+.home-shortcut:hover {
   border-color: var(--camp-border-strong) !important;
 }
 
@@ -747,7 +770,8 @@ p {
 .crm-due-head,
 .onb-panel-head,
 .settings-section-head,
-.profile-section-head {
+.profile-section-head,
+.template-library-heading {
   padding: 20px 24px !important;
   border-bottom: 1px solid var(--camp-border) !important;
   display: flex;
@@ -759,10 +783,11 @@ p {
   padding: 20px 24px;
 }
 
-/* Metric Highlight Cards */
+/* Metrics Cards (Vision UI Highlight) */
 .metric-grid,
 .crm-metrics,
-.cal-metrics {
+.cal-metrics,
+.template-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
@@ -797,7 +822,8 @@ p {
   pointer-events: none;
 }
 
-.metric-icon {
+.metric-icon,
+.shortcut-ico {
   width: 40px;
   height: 40px;
   border-radius: var(--camp-radius-md);
@@ -811,7 +837,8 @@ p {
 
 .metric-value,
 .crm-metric strong,
-.cal-metrics strong {
+.cal-metrics strong,
+.template-stats strong {
   font-size: 28px !important;
   font-weight: 800 !important;
   color: var(--camp-text) !important;
@@ -821,10 +848,79 @@ p {
 
 .metric-label,
 .crm-metric span,
-.cal-metrics span {
+.cal-metrics span,
+.template-stats span {
   font-size: 12px;
   color: var(--camp-text-secondary) !important;
   font-weight: 600;
+}
+
+.home-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.home-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px !important;
+  cursor: pointer;
+  border-radius: var(--camp-radius-md) !important;
+}
+
+.home-shortcut b {
+  color: var(--camp-text) !important;
+  font-size: 13.5px;
+}
+
+.home-shortcut small {
+  color: var(--camp-text-secondary) !important;
+}
+
+.home-shortcut svg:last-child {
+  color: var(--camp-text-muted) !important;
+}
+
+.home-shortcut:hover {
+  transform: translateY(-2px);
+  border-color: var(--camp-primary) !important;
+  box-shadow: var(--camp-shadow-card) !important;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.tabs .btn {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  color: var(--camp-text-secondary) !important;
+  box-shadow: none !important;
+}
+
+.tabs .btn.light {
+  color: var(--camp-text-secondary) !important;
+}
+
+.tabs .btn:not(.light) {
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+  box-shadow: var(--camp-shadow-btn) !important;
+}
+
+.tab-count {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: inherit !important;
+  border-radius: var(--camp-radius-pill);
+  padding: 1px 7px;
+  font-size: 11px;
 }
 
 /* ==========================================================================
@@ -974,6 +1070,27 @@ p {
   background: var(--camp-surface-raised) !important;
   color: var(--camp-text-secondary) !important;
   border: 1px solid var(--camp-border) !important;
+}
+
+/* Empty State */
+.empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--camp-text-muted) !important;
+}
+
+.empty-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--camp-radius-md);
+  background: var(--camp-surface-raised);
+  border: 1px solid var(--camp-border);
+  color: var(--camp-text-muted);
+  font-size: 22px;
+  margin: 0 auto 12px;
 }
 
 /* ==========================================================================
@@ -1175,13 +1292,15 @@ dialog .close:hover {
 }
 
 .crm-data-item,
-.crm-info-grid>div {
+.crm-info-grid>div,
+.detail-item {
   background: var(--camp-surface-raised) !important;
   border: 1px solid var(--camp-border) !important;
   border-radius: var(--camp-radius-md);
 }
 
-.crm-data-item strong {
+.crm-data-item strong,
+.detail-item strong {
   color: var(--camp-text) !important;
 }
 
@@ -1191,6 +1310,25 @@ dialog .close:hover {
 }
 
 .crm-box-title {
+  color: var(--camp-text) !important;
+}
+
+.crm-due-panel {
+  border: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-card) !important;
+  border-radius: var(--camp-radius-lg);
+  overflow: hidden;
+}
+
+.crm-due-head {
+  border-bottom: 1px solid var(--camp-border) !important;
+}
+
+.crm-due-item {
+  border-bottom: 1px solid var(--camp-border) !important;
+}
+
+.crm-due-item b {
   color: var(--camp-text) !important;
 }
 
@@ -1238,6 +1376,10 @@ dialog .close:hover {
 .cal-week-grid-head {
   background: var(--camp-surface-raised) !important;
   border-bottom: 1px solid var(--camp-border) !important;
+}
+
+.cal-week-head-day {
+  color: var(--camp-text) !important;
 }
 
 .cal-week-card {
@@ -1310,7 +1452,129 @@ dialog .close:hover {
 }
 
 /* ==========================================================================
-   13. PAPER DOCUMENT ISOLATION (LEGAL INTEGRITY)
+   13. PREFERENCES & SETTINGS SECTIONS
+   ========================================================================== */
+
+.preferences-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  gap: 24px;
+  margin-top: 22px;
+}
+
+.preferences-nav {
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg) !important;
+  padding: 12px;
+  background: var(--camp-surface-card) !important;
+}
+
+.preferences-nav-title {
+  color: var(--camp-text-muted) !important;
+}
+
+.settings-hero {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg) !important;
+}
+
+.school-hero-icon {
+  background: var(--camp-gradient-icon) !important;
+  color: #FFFFFF !important;
+  border-radius: var(--camp-radius-md) !important;
+}
+
+.profile-school-item {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  color: var(--camp-text) !important;
+}
+
+/* ==========================================================================
+   14. CENTRAL DE AJUDA & CONTRATOS
+   ========================================================================== */
+
+.guide-top {
+  background: var(--camp-surface-card) !important;
+  border-bottom: 1px solid var(--camp-border) !important;
+}
+
+.guide-sidebar {
+  border: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-card) !important;
+  border-radius: var(--camp-radius-lg) !important;
+}
+
+.guide-hero {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg);
+}
+
+.role-card,
+.base-field-line,
+.guide-tip,
+.syntax-showcase {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+  color: var(--camp-text) !important;
+}
+
+/* ==========================================================================
+   15. ALERTS & SEMANTIC NOTICES
+   ========================================================================== */
+
+.notice,
+.inline-note,
+.guide-tip,
+.crm-help-note,
+.cal-block-alert {
+  border-radius: var(--camp-radius-md) !important;
+  padding: 14px 18px !important;
+  margin: 14px 0 !important;
+  font-size: 13px !important;
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: var(--camp-info-bg) !important;
+  border: 1px solid var(--camp-info-border) !important;
+  border-left: 4px solid var(--camp-cyan) !important;
+  color: var(--camp-text) !important;
+}
+
+[data-theme="light"] .notice,
+[data-theme="light"] .inline-note,
+[data-theme="light"] .guide-tip,
+[data-theme="light"] .crm-help-note,
+[data-theme="light"] .cal-block-alert {
+  border-left-color: var(--camp-primary) !important;
+}
+
+.notice b, .notice strong,
+.inline-note b, .inline-note strong,
+.guide-tip b, .guide-tip strong,
+.crm-help-note b, .crm-help-note strong {
+  color: var(--camp-text) !important;
+}
+
+.deletion-banner {
+  background: var(--camp-danger-bg) !important;
+  border: 1px solid var(--camp-danger-border) !important;
+  border-left: 4px solid var(--camp-danger) !important;
+  border-radius: var(--camp-radius-md) !important;
+  color: var(--camp-text) !important;
+  padding: 16px 20px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* ==========================================================================
+   16. PAPER DOCUMENT ISOLATION (LEGAL INTEGRITY)
    ========================================================================== */
 /* Legal contracts and printable paperwork retain pristine paper styling in both modes */
 .legal-document,
@@ -1337,7 +1601,7 @@ dialog .close:hover {
 }
 
 /* ==========================================================================
-   14. REDUCED MOTION PREFERENCE
+   17. REDUCED MOTION PREFERENCE
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
