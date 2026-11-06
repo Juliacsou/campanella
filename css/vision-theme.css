@@ -6219,3 +6219,895 @@ button.btn.mini.light,
 .interview-slot-option input {
   accent-color: #0075FF !important;
 }
+
+/* ==========================================================================
+   24. VISION UI FULL CALENDAR RESKINNING & DARK THEME GLASSMORPHISM
+       Zero-White in Dark Mode, Borderless Frosted Glass, Electric Blue
+   ========================================================================== */
+
+/* --- 24.1 All Icon SVG Elements inside Brand Icon Squares --- */
+.shortcut-ico svg,
+.shortcut-ico .camp-icon,
+.metric-icon svg,
+.metric-icon .camp-icon,
+.platform-metrics .metric-icon svg,
+.platform-metrics .metric-icon .camp-icon,
+.metric-action .metric-icon svg,
+.metric-action .metric-icon .camp-icon,
+.school-card-icon svg,
+.school-card-icon .camp-icon,
+.enhanced-school-cards .school-card-icon svg,
+.enhanced-school-cards .school-card-icon .camp-icon,
+.settings-icon svg,
+.settings-icon .camp-icon,
+.school-hero-icon svg,
+.school-hero-icon .camp-icon,
+.template-file-icon svg,
+.template-file-icon .camp-icon,
+.template-empty-icon svg,
+.template-empty-icon .camp-icon,
+.cal-profile-accordion-icon svg,
+.cal-profile-accordion-icon .camp-icon,
+.fiche-choice-icon svg,
+.fiche-choice-icon .camp-icon,
+.fiche-popup-symbol svg,
+.fiche-popup-symbol .camp-icon,
+.preferences-tile-icon svg,
+.preferences-tile-icon .camp-icon,
+.preferences-panel-symbol svg,
+.preferences-panel-symbol .camp-icon,
+.onb-entry > span:first-child svg,
+.onb-entry > span:first-child .camp-icon {
+  stroke: #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+/* --- 24.2 Home Shortcuts Fix (Image 1 - No squishing, clean cards) --- */
+.home-shortcuts {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  gap: 14px !important;
+  margin-bottom: 24px !important;
+}
+
+.home-shortcut {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 18px 20px !important;
+  min-width: 0 !important;
+  border-radius: 16px !important;
+  border: none !important;
+  background: var(--camp-surface-card) !important;
+  box-shadow: var(--camp-shadow-card) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+.home-shortcut:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 25px rgba(0, 117, 255, 0.25) !important;
+  border: none !important;
+}
+
+.home-shortcut > span:nth-child(2) {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+.home-shortcut b {
+  font-size: 14px !important;
+  font-weight: 750 !important;
+  color: #FFFFFF !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  letter-spacing: -0.2px !important;
+}
+
+[data-theme="light"] .home-shortcut b {
+  color: #1A2340 !important;
+}
+
+.home-shortcut small {
+  font-size: 11px !important;
+  color: #A0AEC0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+[data-theme="light"] .home-shortcut small {
+  color: #718096 !important;
+}
+
+.home-shortcut > svg:last-child {
+  color: #718096 !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+  transition: transform 0.18s ease, color 0.18s ease !important;
+}
+
+.home-shortcut:hover > svg:last-child {
+  color: #21D4FD !important;
+  transform: translateX(3px) !important;
+}
+
+/* --- 24.3 Complete Calendar Dark Theme (Images 2, 3, 4 - Zero White in Dark Mode) --- */
+
+/* Panels and Shell */
+.cal-section,
+.cal-editor-panel,
+.cal-calendar {
+  background: var(--camp-surface-card) !important;
+  border: none !important;
+  border-radius: 18px !important;
+  box-shadow: var(--camp-shadow-card) !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .cal-section,
+[data-theme="light"] .cal-editor-panel,
+[data-theme="light"] .cal-calendar {
+  background: #FFFFFF !important;
+  color: #1A2340 !important;
+}
+
+/* Metrics above Calendar */
+.cal-metrics > div {
+  background: rgba(11, 20, 55, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 14px !important;
+  color: #FFFFFF !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+[data-theme="light"] .cal-metrics > div {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  color: #1A2340 !important;
+}
+
+.cal-metrics strong {
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .cal-metrics strong {
+  color: #1A2340 !important;
+}
+
+.cal-metrics span {
+  color: #A0AEC0 !important;
+}
+
+/* Teacher Picker & Controls */
+.cal-teacher-picker {
+  color: #A0AEC0 !important;
+}
+
+.cal-teacher-picker select {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 10px !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .cal-teacher-picker select {
+  background: #F8FAFD !important;
+  border: 1px solid #D8E0EE !important;
+  color: #1A2340 !important;
+}
+
+.cal-switcher {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-radius: 10px !important;
+  padding: 3px !important;
+}
+
+.cal-switcher button {
+  color: #A0AEC0 !important;
+}
+
+.cal-switcher .selected {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+}
+
+/* --- 24.4 Weekly Grid / Agenda (Image 3 Fix) --- */
+.cal-week-grid {
+  border-radius: 16px !important;
+}
+
+.cal-week-head-day {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 12px !important;
+  color: #FFFFFF !important;
+  padding: 12px 8px !important;
+  transition: all 0.15s ease !important;
+}
+
+[data-theme="light"] .cal-week-head-day {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  color: #1A2340 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+}
+
+.cal-week-head-day b {
+  color: #FFFFFF !important;
+  font-size: 13px !important;
+}
+
+[data-theme="light"] .cal-week-head-day b {
+  color: #1A2340 !important;
+}
+
+.cal-week-head-day span {
+  color: #A0AEC0 !important;
+  font-size: 11px !important;
+}
+
+.cal-week-head-day.is-today {
+  background: linear-gradient(135deg, rgba(0, 117, 255, 0.4) 0%, rgba(33, 212, 253, 0.3) 100%) !important;
+  border: 1px solid rgba(0, 117, 255, 0.6) !important;
+  box-shadow: 0 0 16px rgba(0, 117, 255, 0.35) !important;
+}
+
+.cal-week-head-day:hover {
+  background: rgba(255, 255, 255, 0.09) !important;
+}
+
+.cal-week-time-label {
+  color: #718096 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+.cal-week-day-col {
+  background: rgba(11, 20, 55, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+[data-theme="light"] .cal-week-day-col {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+}
+
+.cal-week-all-day {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  color: #A0AEC0 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .cal-week-all-day {
+  background: #F8FAFD !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+  color: #52617A !important;
+}
+
+.cal-week-all-day.empty {
+  color: #718096 !important;
+}
+
+.cal-week-body-inner {
+  background: linear-gradient(to bottom, transparent 0, transparent calc(100% - 1px), rgba(255, 255, 255, 0.04) calc(100% - 1px)) !important;
+}
+
+[data-theme="light"] .cal-week-body-inner {
+  background: linear-gradient(to bottom, transparent 0, transparent calc(100% - 1px), #EEF2F5 calc(100% - 1px)) !important;
+}
+
+.cal-week-hour-line {
+  border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-theme="light"] .cal-week-hour-line {
+  border-top: 1px solid #EEF2F5 !important;
+}
+
+.cal-week-slot-bg {
+  background: rgba(0, 117, 255, 0.1) !important;
+  border: 1px dashed rgba(0, 117, 255, 0.35) !important;
+}
+
+.cal-week-day-col.blocked-full {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.cal-week-day-col.blocked-full .cal-week-body-inner {
+  background: rgba(0, 0, 0, 0.25) !important;
+}
+
+.cal-week-day-col.blocked-full .cal-week-all-day {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #718096 !important;
+}
+
+/* --- 24.5 Weekly Slot Editor (Image 2 Fix - Grade Semanal) --- */
+.cal-editor-scroll {
+  background: rgba(11, 20, 55, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  overflow: hidden !important;
+}
+
+[data-theme="light"] .cal-editor-scroll {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+.cal-editor-head {
+  background: rgba(6, 11, 38, 0.95) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+[data-theme="light"] .cal-editor-head {
+  background: #F8FAFD !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+.cal-editor-corner {
+  color: #A0AEC0 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  font-weight: 700 !important;
+}
+
+.cal-editor-heading {
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.cal-editor-heading strong {
+  color: #FFFFFF !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+}
+
+[data-theme="light"] .cal-editor-heading strong {
+  color: #1A2340 !important;
+}
+
+.cal-editor-heading small {
+  color: #718096 !important;
+  font-size: 10px !important;
+}
+
+.cal-editor-times,
+.cal-editor-day {
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="light"] .cal-editor-times,
+[data-theme="light"] .cal-editor-day {
+  border-right: 1px solid #EDF1F4 !important;
+}
+
+.cal-editor-hour-label {
+  color: #718096 !important;
+}
+
+.cal-editor-target {
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px) !important;
+  background-color: transparent !important;
+}
+
+[data-theme="light"] .cal-editor-target {
+  background-image: linear-gradient(to bottom, #DCE7EB 1px, transparent 1px),
+                    linear-gradient(to bottom, #EFF3F5 1px, transparent 1px) !important;
+}
+
+.cal-editor-target:hover {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.cal-editor-event {
+  background: rgba(0, 117, 255, 0.3) !important;
+  border: 1px solid rgba(0, 117, 255, 0.4) !important;
+  border-left: 3px solid #0075FF !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(0, 117, 255, 0.35) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.cal-editor-event strong,
+.cal-editor-event span,
+.cal-editor-event small {
+  color: #FFFFFF !important;
+}
+
+.cal-editor-event.cal-editor-occupied {
+  background: linear-gradient(135deg, rgba(0, 117, 255, 0.45) 0%, rgba(33, 212, 253, 0.35) 100%) !important;
+  border: 1px solid rgba(33, 212, 253, 0.4) !important;
+  border-left: 3px solid #21D4FD !important;
+  color: #FFFFFF !important;
+}
+
+.cal-editor-event.cal-editor-free {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-left: 3px solid rgba(255, 255, 255, 0.3) !important;
+  color: #A0AEC0 !important;
+}
+
+.cal-editor-caption {
+  color: #A0AEC0 !important;
+}
+
+.cal-editor-foot {
+  color: #718096 !important;
+}
+
+/* --- 24.6 Weekly Picker (Image 4 Fix - Horários Semanais & Modais) --- */
+.cal-enrollment {
+  background: rgba(11, 20, 55, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+[data-theme="light"] .cal-enrollment {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
+}
+
+.cal-picker-title h3,
+.cal-picker-title .form-section,
+.form-section h3,
+.cal-enrollment h3 {
+  color: #FFFFFF !important;
+  font-weight: 750 !important;
+}
+
+[data-theme="light"] .cal-picker-title h3,
+[data-theme="light"] .cal-picker-title .form-section,
+[data-theme="light"] .form-section h3,
+[data-theme="light"] .cal-enrollment h3 {
+  color: #1A2340 !important;
+}
+
+.cal-weekly-picker {
+  color: #FFFFFF !important;
+}
+
+.cal-wpicker-scroll {
+  background: rgba(6, 11, 38, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  overflow: hidden !important;
+}
+
+[data-theme="light"] .cal-wpicker-scroll {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+.cal-wpicker-header {
+  background: rgba(11, 20, 55, 0.95) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="light"] .cal-wpicker-header {
+  background: #F8FAFD !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.cal-wpicker-header > * {
+  color: #FFFFFF !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .cal-wpicker-header > * {
+  color: #1A2340 !important;
+  border-right: 1px solid #E5EEEB !important;
+}
+
+.cal-wpicker-header > span {
+  color: #718096 !important;
+  font-weight: 600 !important;
+}
+
+.cal-wpicker-day,
+.cal-wpicker-time {
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="light"] .cal-wpicker-day,
+[data-theme="light"] .cal-wpicker-time {
+  border-right: 1px solid #E5EEEB !important;
+}
+
+.cal-wpicker-rule {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-theme="light"] .cal-wpicker-rule {
+  border-bottom: 1px solid #E9F0EE !important;
+}
+
+.cal-wpicker-time span {
+  color: #718096 !important;
+}
+
+.cal-wpicker-legend {
+  color: #A0AEC0 !important;
+}
+
+[data-theme="light"] .cal-wpicker-legend {
+  color: #52617A !important;
+}
+
+.cal-wpicker-legend span {
+  color: inherit !important;
+}
+
+.cal-wpicker-legend strong {
+  color: #21D4FD !important;
+}
+
+[data-theme="light"] .cal-wpicker-legend strong {
+  color: #0066E6 !important;
+}
+
+.cal-wpicker-dot.available {
+  background: rgba(0, 117, 255, 0.25) !important;
+  border: 1px solid rgba(0, 117, 255, 0.5) !important;
+}
+
+.cal-wpicker-dot.selected {
+  background: #0075FF !important;
+  box-shadow: 0 0 8px rgba(0, 117, 255, 0.6) !important;
+  border: none !important;
+}
+
+.cal-wpicker-dot.occupied {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: none !important;
+}
+
+[data-theme="light"] .cal-wpicker-dot.occupied {
+  background: #DDE3E5 !important;
+}
+
+.cal-wpicker-event {
+  background: rgba(0, 117, 255, 0.22) !important;
+  border: 1px solid rgba(0, 117, 255, 0.35) !important;
+  border-left: 3px solid #0075FF !important;
+  border-radius: 8px !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.cal-wpicker-event > button {
+  color: #FFFFFF !important;
+}
+
+.cal-wpicker-event strong {
+  color: #FFFFFF !important;
+  font-size: 11.5px !important;
+}
+
+.cal-wpicker-event small {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.cal-wpicker-event.is-selected {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.5) !important;
+}
+
+.cal-wpicker-event.is-busy {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.cal-wpicker-event.is-busy button {
+  color: #718096 !important;
+}
+
+.cal-weekly-empty {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+  border-radius: 12px !important;
+  color: #A0AEC0 !important;
+  padding: 24px !important;
+}
+
+/* Modals containing Calendar elements */
+dialog,
+.camp-app-dialog,
+dialog:has(.cal-weekly-picker),
+dialog:has(.cal-reschedule-modal),
+dialog:has(.student-profile),
+dialog:has(.template-edit-modal),
+dialog:has(.cal-enrollment) {
+  background: #0B1437 !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7) !important;
+}
+
+[data-theme="light"] dialog,
+[data-theme="light"] .camp-app-dialog,
+[data-theme="light"] dialog:has(.cal-weekly-picker),
+[data-theme="light"] dialog:has(.cal-reschedule-modal),
+[data-theme="light"] dialog:has(.student-profile),
+[data-theme="light"] dialog:has(.template-edit-modal),
+[data-theme="light"] dialog:has(.cal-enrollment) {
+  background: #FFFFFF !important;
+  color: #1A2340 !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+}
+
+#modal-body {
+  color: inherit !important;
+}
+
+/* --- 24.7 Additional Calendar Components (Zero Legacy White/Green) --- */
+.cal-student,
+.cal-student-card {
+  background: rgba(11, 20, 55, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 14px !important;
+  color: #FFFFFF !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+[data-theme="light"] .cal-student,
+[data-theme="light"] .cal-student-card {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  color: #1A2340 !important;
+}
+
+.cal-student strong,
+.cal-student-card strong {
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .cal-student strong,
+[data-theme="light"] .cal-student-card strong {
+  color: #1A2340 !important;
+}
+
+.cal-student small,
+.cal-student-card small {
+  color: #A0AEC0 !important;
+}
+
+.cal-lesson {
+  background: rgba(11, 20, 55, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-left: 3px solid #0075FF !important;
+  border-radius: 12px !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .cal-lesson {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border-left: 3px solid #0066E6 !important;
+  color: #1A2340 !important;
+}
+
+.cal-lesson-text strong {
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .cal-lesson-text strong {
+  color: #1A2340 !important;
+}
+
+.cal-lesson-text span,
+.cal-lesson-text small {
+  color: #A0AEC0 !important;
+}
+
+.cal-settings-body {
+  background: rgba(11, 20, 55, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 16px !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .cal-settings-body {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  color: #1A2340 !important;
+}
+
+.cal-settings-nav button {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  color: #A0AEC0 !important;
+  transition: all 0.15s ease !important;
+}
+
+[data-theme="light"] .cal-settings-nav button {
+  background: #F8FAFD !important;
+  color: #52617A !important;
+}
+
+.cal-settings-nav button:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+.detail-item {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 12px !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .detail-item {
+  background: #F8FAFD !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  color: #1A2340 !important;
+}
+
+.detail-item strong {
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .detail-item strong {
+  color: #1A2340 !important;
+}
+
+.detail-item span {
+  color: #A0AEC0 !important;
+}
+
+.cal-profile-metrics > div {
+  background: rgba(11, 20, 55, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 14px !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .cal-profile-metrics > div {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  color: #1A2340 !important;
+}
+
+.cal-profile-metrics strong {
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .cal-profile-metrics strong {
+  color: #1A2340 !important;
+}
+
+.cal-profile-metrics span {
+  color: #A0AEC0 !important;
+}
+
+.cal-schedule-mode-box {
+  background: rgba(11, 20, 55, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 14px !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .cal-schedule-mode-box {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  color: #1A2340 !important;
+}
+
+.interview-calendar-picker {
+  background: rgba(11, 20, 55, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+}
+
+[data-theme="light"] .interview-calendar-picker {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.interview-slot-option {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .interview-slot-option {
+  background: #F8FAFD !important;
+  border: 1px solid #D8E0EE !important;
+  color: #1A2340 !important;
+}
+
+.interview-slot-option strong {
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .interview-slot-option strong {
+  color: #1A2340 !important;
+}
+
+.interview-slot-option small {
+  color: #A0AEC0 !important;
+}
+
+.cal-form-slots label {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .cal-form-slots label {
+  background: #F8FAFD !important;
+  border: 1px solid #D8E0EE !important;
+  color: #1A2340 !important;
+}
+
+/* --- 24.8 CRM & Platform Green Remnants Cleanup --- */
+.crm-btn.primary,
+.crm-btn.crm-wa,
+.crm-toggle button.active {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.4) !important;
+}
+
+.crm-box-status.is-done {
+  background: rgba(0, 117, 255, 0.2) !important;
+  color: #21D4FD !important;
+  border: none !important;
+}
+
+.crm-cal-status.is-free {
+  background: rgba(0, 117, 255, 0.15) !important;
+  color: #21D4FD !important;
+  border-color: rgba(0, 117, 255, 0.3) !important;
+}
+
+.crm-timeline-icon {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+}
+
+.crm-help-note {
+  background: rgba(0, 117, 255, 0.12) !important;
+  border: none !important;
+  border-left: 3px solid #0075FF !important;
+  color: #E2E8F0 !important;
+}
+
+.crm-board-col header b {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
