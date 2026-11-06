@@ -9365,3 +9365,269 @@ body,
   background: rgba(220, 38, 38, 0.1) !important;
   color: #DC2626 !important;
 }
+
+/* ==========================================================================
+   33. CALENDAR MONTH VIEW: 3D GLASS CONTAINER & ELEVATED DAY NUMBER BADGES
+   ========================================================================== */
+
+/* 33.1 Calendar Container: Glassmorphism with 3D Depth & Specular Reflection */
+.cal-calendar,
+.panel.cal-calendar {
+  border: none !important;
+  outline: none !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+  transition: all 0.25s ease !important;
+}
+
+/* Light Mode 3D Glass Container */
+[data-theme="light"] .cal-calendar,
+[data-theme="light"] .panel.cal-calendar {
+  background: rgba(255, 255, 255, 0.48) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  box-shadow: 
+    0 24px 50px -12px rgba(234, 88, 12, 0.08),
+    0 16px 32px -8px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.03),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Dark Mode 3D Glass Container */
+:root:not([data-theme="light"]) .cal-calendar,
+:root:not([data-theme="light"]) .panel.cal-calendar,
+[data-theme="dark"] .cal-calendar,
+[data-theme="dark"] .panel.cal-calendar {
+  background: rgba(20, 20, 24, 0.55) !important;
+  backdrop-filter: blur(30px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
+  box-shadow: 
+    0 30px 60px -15px rgba(0, 0, 0, 0.7),
+    0 16px 30px -8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Also style metrics above calendar with 3D glass vibe */
+[data-theme="light"] .cal-metrics > div {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 10px 25px -5px rgba(0, 0, 0, 0.04),
+    0 4px 10px rgba(0, 0, 0, 0.02),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.85) !important;
+}
+
+:root:not([data-theme="light"]) .cal-metrics > div,
+[data-theme="dark"] .cal-metrics > div {
+  background: rgba(25, 25, 30, 0.55) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 14px 28px -6px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+/* 33.2 Month Grid & Weekdays Header */
+.cal-month-weekdays {
+  color: #71717A !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
+  padding: 8px 0 14px !important;
+}
+
+.cal-month-grid {
+  gap: 10px !important;
+}
+
+/* 33.3 Month Day Cells: Translucent 3D Cards */
+.cal-month-day {
+  border: none !important;
+  outline: none !important;
+  border-radius: 16px !important;
+  padding: 10px !important;
+  min-height: 86px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Light Mode Day Cards */
+[data-theme="light"] .cal-month-day {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  box-shadow: 
+    0 4px 14px rgba(0, 0, 0, 0.04),
+    0 1px 3px rgba(0, 0, 0, 0.02),
+    inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
+}
+
+[data-theme="light"] .cal-month-day:hover {
+  background: rgba(255, 255, 255, 0.92) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 
+    0 10px 24px rgba(234, 88, 12, 0.12),
+    0 4px 10px rgba(0, 0, 0, 0.05),
+    inset 0 1px 1px #FFFFFF !important;
+}
+
+/* Dark Mode Day Cards */
+:root:not([data-theme="light"]) .cal-month-day,
+[data-theme="dark"] .cal-month-day {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 
+    0 4px 14px rgba(0, 0, 0, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.06) !important;
+}
+
+:root:not([data-theme="light"]) .cal-month-day:hover,
+[data-theme="dark"] .cal-month-day:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 
+    0 10px 25px rgba(234, 88, 12, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 33.4 Day Number Badge: Pure White Box with Shadow in Volta & Orange Font */
+.cal-month-day b {
+  background: #FFFFFF !important;
+  color: #EA580C !important; /* Bold vivid orange */
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  padding: 0 6px !important;
+  border-radius: 9px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  margin-bottom: 4px !important;
+  box-shadow: 
+    0 3px 8px rgba(0, 0, 0, 0.14),
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    inset 0 1px 1px #FFFFFF !important;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease !important;
+}
+
+.cal-month-day:hover b {
+  box-shadow: 
+    0 5px 12px rgba(234, 88, 12, 0.28),
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 1px 1px #FFFFFF !important;
+  transform: scale(1.08) !important;
+}
+
+/* In Dark Mode, white box pops with high contrast */
+:root:not([data-theme="light"]) .cal-month-day b,
+[data-theme="dark"] .cal-month-day b {
+  background: #FFFFFF !important;
+  color: #EA580C !important;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.45),
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px #FFFFFF !important;
+}
+
+/* 33.5 Today & Selected Day States */
+[data-theme="light"] .cal-month-day.is-today {
+  background: linear-gradient(135deg, rgba(254, 215, 170, 0.6) 0%, rgba(255, 237, 213, 0.45) 100%) !important;
+  box-shadow: 
+    0 6px 20px rgba(234, 88, 12, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
+}
+
+:root:not([data-theme="light"]) .cal-month-day.is-today,
+[data-theme="dark"] .cal-month-day.is-today {
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.35) 0%, rgba(251, 146, 60, 0.2) 100%) !important;
+  box-shadow: 
+    0 6px 24px rgba(234, 88, 12, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+}
+
+.cal-month-day.is-today b {
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 
+    0 4px 14px rgba(234, 88, 12, 0.5),
+    0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.cal-month-day.chosen {
+  box-shadow: 
+    0 0 0 2px #EA580C,
+    0 8px 24px rgba(234, 88, 12, 0.25) !important;
+}
+
+[data-theme="light"] .cal-month-day.chosen {
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* 33.6 Outside Month Days */
+.cal-month-day.other {
+  opacity: 0.45 !important;
+}
+
+.cal-month-day.other b {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #FB923C !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 33.7 Text & Tags Inside Month Day */
+[data-theme="light"] .cal-month-day small {
+  color: #C2410C !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+}
+
+:root:not([data-theme="light"]) .cal-month-day small,
+[data-theme="dark"] .cal-month-day small {
+  color: #FB923C !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .cal-month-day .cal-month-interview {
+  color: #EA580C !important;
+  font-weight: 800 !important;
+}
+
+:root:not([data-theme="light"]) .cal-month-day .cal-month-interview,
+[data-theme="dark"] .cal-month-day .cal-month-interview {
+  color: #FB923C !important;
+  font-weight: 800 !important;
+}
+
+[data-theme="light"] .cal-month-day .cal-month-block {
+  color: #D97706 !important;
+  font-weight: 700 !important;
+}
+
+:root:not([data-theme="light"]) .cal-month-day .cal-month-block,
+[data-theme="dark"] .cal-month-day .cal-month-block {
+  color: #FBBF24 !important;
+  font-weight: 700 !important;
+}
+
+/* Full blocked days */
+.cal-month-day.full-blocked {
+  opacity: 0.65 !important;
+}
