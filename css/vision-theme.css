@@ -16,18 +16,18 @@
   --camp-bg: #060B26;
   --camp-bg-secondary: #0B1437;
   --camp-bg-radial:
-    radial-gradient(circle at 82% 8%, rgba(0, 117, 255, 0.46) 0%, rgba(0, 117, 255, 0.16) 30%, transparent 58%),
-    radial-gradient(circle at 14% 36%, rgba(117, 81, 255, 0.36) 0%, rgba(88, 44, 255, 0.14) 28%, transparent 52%),
-    radial-gradient(ellipse at 50% 58%, rgba(0, 117, 255, 0.35) 0%, rgba(14, 28, 90, 0.22) 42%, transparent 72%),
-    radial-gradient(circle at 88% 84%, rgba(0, 117, 255, 0.44) 0%, rgba(33, 212, 253, 0.22) 32%, transparent 60%),
-    radial-gradient(circle at 18% 90%, rgba(33, 212, 253, 0.34) 0%, rgba(0, 117, 255, 0.14) 28%, transparent 54%),
-    linear-gradient(150deg, #060B26 0%, #0d1546 32%, #0e1b56 58%, #080e34 82%, #05081e 100%);
+    radial-gradient(circle at 82% 8%, rgba(0, 117, 255, 0.28) 0%, rgba(0, 117, 255, 0.08) 32%, transparent 56%),
+    radial-gradient(circle at 14% 34%, rgba(117, 81, 255, 0.20) 0%, rgba(88, 44, 255, 0.06) 26%, transparent 50%),
+    radial-gradient(ellipse at 50% 55%, rgba(0, 117, 255, 0.18) 0%, rgba(14, 28, 90, 0.10) 38%, transparent 68%),
+    radial-gradient(circle at 88% 85%, rgba(0, 117, 255, 0.26) 0%, rgba(33, 212, 253, 0.09) 30%, transparent 58%),
+    radial-gradient(circle at 18% 90%, rgba(33, 212, 253, 0.18) 0%, rgba(0, 117, 255, 0.05) 26%, transparent 52%),
+    linear-gradient(150deg, #060B26 0%, #080F35 35%, #09123D 60%, #060B2A 85%, #05081E 100%);
   
   /* Surfaces — Vision UI Signature Glassmorphism */
   --camp-surface: #0B1437;
   --camp-surface-raised: #111C44;
   --camp-surface-floating: #12204E;
-  --camp-surface-card: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%);
+  --camp-surface-card: linear-gradient(127.09deg, rgba(8, 14, 48, 0.94) 0%, rgba(6, 11, 40, 0.88) 100%);
   --camp-surface-card-border: none;
 
   /* Inputs & Interactive Controls */
@@ -46,9 +46,9 @@
 
   /* Typography — Vision UI High-Contrast White & Muted Slate */
   --camp-text: #FFFFFF;
-  --camp-text-secondary: #A0AEC0;
-  --camp-text-muted: #718096;
-  --camp-text-disabled: #4A5568;
+  --camp-text-secondary: #CBD5E1;
+  --camp-text-muted: #94A3B8;
+  --camp-text-disabled: #64748B;
 
   /* Semantic Feedback (Pure Borderless Glass) */
   --camp-success: #01B574;
@@ -80,7 +80,7 @@
 
   /* Gradients */
   --camp-gradient-primary: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%);
-  --camp-gradient-surface: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%);
+  --camp-gradient-surface: linear-gradient(127.09deg, rgba(8, 14, 48, 0.94) 0%, rgba(6, 11, 40, 0.88) 100%);
   --camp-gradient-sidebar: linear-gradient(180deg, #0B1437 0%, #060B26 100%);
   --camp-gradient-icon: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%);
 
@@ -1134,7 +1134,7 @@ button.btn {
 .cal-calendar,
 .cal-student-card,
 .cal-settings-layout {
-  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(8, 14, 48, 0.94) 0%, rgba(6, 11, 40, 0.88) 100%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -7959,13 +7959,13 @@ dialog,
 /* 27.1 Metric Blocks (Dark Mode) - Luminous Sapphire Frosted Glass */
 :root:not([data-theme="light"]) .metric,
 [data-theme="dark"] .metric {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.16) 0%, rgba(20, 36, 102, 0.75) 40%, rgba(10, 20, 68, 0.9) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.14) 0%, rgba(16, 28, 85, 0.88) 40%, rgba(8, 16, 55, 0.96) 100%) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
-  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.4), inset 0 1px 1.5px rgba(255, 255, 255, 0.28), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45), inset 0 1px 1.5px rgba(255, 255, 255, 0.25), inset 0 -1px 1px rgba(0, 0, 0, 0.3) !important;
   position: relative !important;
   overflow: hidden !important;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -7973,16 +7973,33 @@ dialog,
 
 :root:not([data-theme="light"]) .metric:hover,
 [data-theme="dark"] .metric:hover {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.24) 0%, rgba(26, 48, 128, 0.82) 40%, rgba(14, 28, 85, 0.94) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.22) 0%, rgba(24, 42, 115, 0.92) 40%, rgba(12, 22, 75, 0.98) 100%) !important;
   transform: translateY(-3px) !important;
-  box-shadow: 0 18px 45px rgba(0, 117, 255, 0.28), inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 18px 45px rgba(0, 117, 255, 0.32), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
+}
+
+:root:not([data-theme="light"]) .metric .metric-value,
+[data-theme="dark"] .metric .metric-value {
+  color: #FFFFFF !important;
+  font-weight: 800 !important;
+  font-size: 32px !important;
+  letter-spacing: -0.5px !important;
+}
+
+:root:not([data-theme="light"]) .metric .metric-label,
+[data-theme="dark"] .metric .metric-label {
+  color: #CBD5E1 !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  letter-spacing: -0.1px !important;
+  margin-top: 4px !important;
 }
 
 .metric-go {
   position: absolute !important;
   right: 20px !important;
   top: 22px !important;
-  color: #718096 !important;
+  color: #94A3B8 !important;
   transition: all 0.2s ease !important;
 }
 
@@ -7994,20 +8011,50 @@ dialog,
 /* 27.2 Home Shortcuts (Dark Mode) */
 :root:not([data-theme="light"]) .home-shortcut,
 [data-theme="dark"] .home-shortcut {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.12) 0%, rgba(18, 32, 90, 0.65) 40%, rgba(10, 18, 60, 0.85) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.12) 0%, rgba(14, 24, 75, 0.82) 40%, rgba(8, 14, 50, 0.94) 100%) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border: none !important;
   border-radius: 16px !important;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32), inset 0 1px 1.5px rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35), inset 0 1px 1.5px rgba(255, 255, 255, 0.2) !important;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 :root:not([data-theme="light"]) .home-shortcut:hover,
 [data-theme="dark"] .home-shortcut:hover {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.2) 0%, rgba(24, 42, 115, 0.75) 40%, rgba(14, 26, 75, 0.92) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.2) 0%, rgba(20, 36, 105, 0.9) 40%, rgba(12, 22, 70, 0.98) 100%) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 16px 36px rgba(0, 117, 255, 0.24), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 16px 36px rgba(0, 117, 255, 0.28), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
+}
+
+:root:not([data-theme="light"]) .home-shortcut b,
+[data-theme="dark"] .home-shortcut b {
+  color: #FFFFFF !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+:root:not([data-theme="light"]) .home-shortcut small,
+[data-theme="dark"] .home-shortcut small {
+  color: #CBD5E1 !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+}
+
+:root:not([data-theme="light"]) .home-shortcut svg:last-child,
+[data-theme="dark"] .home-shortcut svg:last-child {
+  color: #94A3B8 !important;
+}
+
+:root:not([data-theme="light"]) .home-actions-title h2,
+[data-theme="dark"] .home-actions-title h2 {
+  color: #FFFFFF !important;
+}
+
+:root:not([data-theme="light"]) .home-actions-title p,
+[data-theme="dark"] .home-actions-title p {
+  color: #CBD5E1 !important;
+  font-size: 13.5px !important;
 }
 
 /* 27.3 Metric Blocks & Shortcuts (Light Mode) */
@@ -8067,12 +8114,12 @@ dialog,
 [data-theme="dark"] {
   --camp-bg: #060B26;
   --camp-bg-radial:
-    radial-gradient(circle at 82% 8%, rgba(0, 117, 255, 0.46) 0%, rgba(0, 117, 255, 0.16) 30%, transparent 58%),
-    radial-gradient(circle at 14% 36%, rgba(117, 81, 255, 0.36) 0%, rgba(88, 44, 255, 0.14) 28%, transparent 52%),
-    radial-gradient(ellipse at 50% 58%, rgba(0, 117, 255, 0.35) 0%, rgba(14, 28, 90, 0.22) 42%, transparent 72%),
-    radial-gradient(circle at 88% 84%, rgba(0, 117, 255, 0.44) 0%, rgba(33, 212, 253, 0.22) 32%, transparent 60%),
-    radial-gradient(circle at 18% 90%, rgba(33, 212, 253, 0.34) 0%, rgba(0, 117, 255, 0.14) 28%, transparent 54%),
-    linear-gradient(150deg, #060B26 0%, #0d1546 32%, #0e1b56 58%, #080e34 82%, #05081e 100%);
+    radial-gradient(circle at 82% 8%, rgba(0, 117, 255, 0.28) 0%, rgba(0, 117, 255, 0.08) 32%, transparent 56%),
+    radial-gradient(circle at 14% 34%, rgba(117, 81, 255, 0.20) 0%, rgba(88, 44, 255, 0.06) 26%, transparent 50%),
+    radial-gradient(ellipse at 50% 55%, rgba(0, 117, 255, 0.18) 0%, rgba(14, 28, 90, 0.10) 38%, transparent 68%),
+    radial-gradient(circle at 88% 85%, rgba(0, 117, 255, 0.26) 0%, rgba(33, 212, 253, 0.09) 30%, transparent 58%),
+    radial-gradient(circle at 18% 90%, rgba(33, 212, 253, 0.18) 0%, rgba(0, 117, 255, 0.05) 26%, transparent 52%),
+    linear-gradient(150deg, #060B26 0%, #080F35 35%, #09123D 60%, #060B2A 85%, #05081E 100%);
 }
 
 html,
@@ -8081,12 +8128,12 @@ body,
 [data-theme="dark"] body {
   background-color: #060B26 !important;
   background-image:
-    radial-gradient(circle at 82% 8%, rgba(0, 117, 255, 0.46) 0%, rgba(0, 117, 255, 0.16) 30%, transparent 58%),
-    radial-gradient(circle at 14% 36%, rgba(117, 81, 255, 0.36) 0%, rgba(88, 44, 255, 0.14) 28%, transparent 52%),
-    radial-gradient(ellipse at 50% 58%, rgba(0, 117, 255, 0.35) 0%, rgba(14, 28, 90, 0.22) 42%, transparent 72%),
-    radial-gradient(circle at 88% 84%, rgba(0, 117, 255, 0.44) 0%, rgba(33, 212, 253, 0.22) 32%, transparent 60%),
-    radial-gradient(circle at 18% 90%, rgba(33, 212, 253, 0.34) 0%, rgba(0, 117, 255, 0.14) 28%, transparent 54%),
-    linear-gradient(150deg, #060B26 0%, #0d1546 32%, #0e1b56 58%, #080e34 82%, #05081e 100%) !important;
+    radial-gradient(circle at 82% 8%, rgba(0, 117, 255, 0.28) 0%, rgba(0, 117, 255, 0.08) 32%, transparent 56%),
+    radial-gradient(circle at 14% 34%, rgba(117, 81, 255, 0.20) 0%, rgba(88, 44, 255, 0.06) 26%, transparent 50%),
+    radial-gradient(ellipse at 50% 55%, rgba(0, 117, 255, 0.18) 0%, rgba(14, 28, 90, 0.10) 38%, transparent 68%),
+    radial-gradient(circle at 88% 85%, rgba(0, 117, 255, 0.26) 0%, rgba(33, 212, 253, 0.09) 30%, transparent 58%),
+    radial-gradient(circle at 18% 90%, rgba(33, 212, 253, 0.18) 0%, rgba(0, 117, 255, 0.05) 26%, transparent 52%),
+    linear-gradient(150deg, #060B26 0%, #080F35 35%, #09123D 60%, #060B2A 85%, #05081E 100%) !important;
   background-attachment: fixed !important;
   background-repeat: no-repeat !important;
   background-size: cover !important;
@@ -8134,4 +8181,92 @@ body,
   border-bottom: none !important;
   backdrop-filter: blur(14px) !important;
   -webkit-backdrop-filter: blur(14px) !important;
+}
+
+/* ==========================================================================
+   29. VISION UI HIGH-CONTRAST TYPOGRAPHY & TABLE READABILITY (DARK MODE)
+   - Eliminates washed out / faded secondary texts across all pages
+   - Crisp #CBD5E1 for labels, hints, muted copy and descriptions
+   - Pristine #94A3B8 for table headers, metadata and small labels
+   - Deep readable #E2E8F0 for data cells
+   ========================================================================== */
+
+:root:not([data-theme="light"]) .muted,
+:root:not([data-theme="light"]) .subtle,
+:root:not([data-theme="light"]) .leadline,
+[data-theme="dark"] .muted,
+[data-theme="dark"] .subtle,
+[data-theme="dark"] .leadline {
+  color: #CBD5E1 !important;
+}
+
+:root:not([data-theme="light"]) .data-table th,
+:root:not([data-theme="light"]) .crm-table th,
+[data-theme="dark"] .data-table th,
+[data-theme="dark"] .crm-table th {
+  color: #94A3B8 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.8px !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+}
+
+:root:not([data-theme="light"]) .data-table td,
+:root:not([data-theme="light"]) .crm-table td,
+[data-theme="dark"] .data-table td,
+[data-theme="dark"] .crm-table td {
+  color: #E2E8F0 !important;
+  font-size: 13.5px !important;
+}
+
+:root:not([data-theme="light"]) .data-table td .muted,
+:root:not([data-theme="light"]) .data-table td small,
+:root:not([data-theme="light"]) .crm-table td .muted,
+:root:not([data-theme="light"]) .crm-table td small,
+[data-theme="dark"] .data-table td .muted,
+[data-theme="dark"] .data-table td small,
+[data-theme="dark"] .crm-table td .muted,
+[data-theme="dark"] .crm-table td small {
+  color: #94A3B8 !important;
+}
+
+:root:not([data-theme="light"]) .panel-head h2,
+:root:not([data-theme="light"]) .panel-head h3,
+:root:not([data-theme="light"]) .card-head h2,
+[data-theme="dark"] .panel-head h2,
+[data-theme="dark"] .panel-head h3,
+[data-theme="dark"] .card-head h2 {
+  color: #FFFFFF !important;
+  font-weight: 750 !important;
+  font-size: 17px !important;
+  letter-spacing: -0.2px !important;
+}
+
+:root:not([data-theme="light"]) .topbar .subtle,
+:root:not([data-theme="light"]) .topbar-breadcrumb,
+:root:not([data-theme="light"]) .breadcrumb,
+[data-theme="dark"] .topbar .subtle,
+[data-theme="dark"] .topbar-breadcrumb,
+[data-theme="dark"] .breadcrumb {
+  color: #CBD5E1 !important;
+}
+
+:root:not([data-theme="light"]) .topbar .subtle b,
+[data-theme="dark"] .topbar .subtle b {
+  color: #FFFFFF !important;
+}
+
+:root:not([data-theme="light"]) label,
+:root:not([data-theme="light"]) .field-label,
+[data-theme="dark"] label,
+[data-theme="dark"] .field-label {
+  color: #CBD5E1 !important;
+  font-weight: 600 !important;
+}
+
+:root:not([data-theme="light"]) .form-help,
+:root:not([data-theme="light"]) .field-hint,
+[data-theme="dark"] .form-help,
+[data-theme="dark"] .field-hint {
+  color: #94A3B8 !important;
 }
