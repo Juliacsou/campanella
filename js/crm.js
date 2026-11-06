@@ -106,7 +106,7 @@ const formFooter=(label='Salvar')=>`<div class="form-footer"><button type="butto
 const formatWhats=s=>{let raw=onlyDigits(s);if(!raw)return '';if(raw.length===10||raw.length===11)raw='55'+raw;return /^[0-9]{11,15}$/.test(raw)?`https://wa.me/${raw}`:''};
 
 export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy}){
- const state={tab:'open',mode:'board',search:'',column:'all',tag:'all',source:'all',service:'all',region:'all',interview:'all',period:'all',sort:'activity',lead:null,importRows:[],editingColId:null,editingTagId:null,dragLeadId:null};
+ const state={tab:'open',mode:'board',search:'',column:'all',tag:'all',source:'all',service:'all',region:'all',interview:'all',period:'all',sort:'activity',lead:null,importRows:[],editingColId:null,editingTagId:null,dragLeadId:null,filtersOpen:false};
  const leads=()=>db.leads||[];
  const appts=id=>(db.crm_appointments||[]).filter(x=>x.lead_id===id).sort((a,b)=>String(b.scheduled_at).localeCompare(String(a.scheduled_at)));
  const acts=id=>(db.crm_activities||[]).filter(x=>x.lead_id===id).sort((a,b)=>String(b.occurred_at).localeCompare(String(a.occurred_at)));
@@ -220,18 +220,75 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   const sources=unique(all.map(l=>l.crm_source));
   const service=unique(all.map(l=>l.crm_service));
   const regions=unique(all.map(l=>l.crm_region));
-  const header=`<div class="crm-head"><div><div class="eyebrow">Relacionamento & conversão</div><h1>CRM de Leads</h1><p>Arraste leads entre colunas, personalize automações da pipeline, organize por tags coloridas e agende entrevistas no calendário do professor.</p></div><div class="crm-head-actions">${btn('crmPipelineModal',`${crmIcon('sliders',15)} Configurar pipeline`,'','subtle')}${btn('crmTagsModal',`${crmIcon('tag',15)} Tags`,'','subtle')}${btn('crmImport',`${crmIcon('upload',15)} Importar leads`,'','subtle')}${btn('crmNew',`${crmIcon('plus',15)} Novo lead`,'','primary')}</div></div>`;
-  return `<div class="crm-root">${header}${crmMetrics()}<div class="crm-tabs">${Object.entries(STATUS_TABS).map(([k,v])=>`<button data-action="crmTab" data-tab="${k}" class="${state.tab===k?'active':''}">${safe(v)} <span>${k==='open'?s.open:k==='won'?s.won:s.lost}</span></button>`).join('')}</div>
-  <section class="crm-workspace"><div class="crm-filters"><div class="crm-search"><span class="crm-search-icon">${crmIcon('search',17)}</span><input id="crmSearch" type="search" autocomplete="off" placeholder="Buscar por nome, WhatsApp, tag, indicação…" value="${safe(state.search)}"></div>
-  <label>Coluna da pipeline<select id="crmFilterColumn">${opt([['all','Todas as colunas'],...cols.map(c=>[c.id,c.name])],state.column)}</select></label>
-  <label>Tag<select id="crmFilterTag">${opt([['all','Todas as tags'],...tags.map(t=>[t.id,t.name])],state.tag)}</select></label>
-  <label>Origem<select id="crmFilterSource">${opt([['all','Todas as origens'],...sources.map(x=>[x,x])],state.source)}</select></label>
-  <label>Serviço<select id="crmFilterService">${opt([['all','Todos os serviços'],...service.map(x=>[x,x])],state.service)}</select></label>
-  <label>Entrevista<select id="crmFilterInterview">${opt([['all','Todas'],['none','Não agendada'],['scheduled','Agendada'],['completed','Realizada'],['canceled','Cancelada'],['no_show','Não compareceu']],state.interview)}</select></label>
-  <label>Ordenar<select id="crmFilterSort">${opt([['activity','Última atualização'],['interview','Próxima entrevista'],['newest','Mais recentes'],['oldest','Mais antigos'],['name','Nome A–Z']],state.sort)}</select></label>
-  </div><div class="crm-list-controls"><div><b>${rows.length}</b> ${rows.length===1?'contato':'contatos'} nesta visão · <span class="crm-muted">Dica: você pode arrastar qualquer card manualmente entre as colunas</span></div><div class="crm-toggle"><button class="${state.mode==='board'?'active':''}" data-action="crmMode" data-mode="board">${crmIcon('kanban',15)} Pipeline</button><button class="${state.mode==='list'?'active':''}" data-action="crmMode" data-mode="list">${crmIcon('list',15)} Lista</button></div></div>
-  ${state.mode==='board'&&state.tab==='open'?board(rows):listing(rows)}</section>
-  ${state.tab==='open'?upcomingInterviews():''}</div>`;
+
+  const activeSecondaryCount=[
+   state.column!=='all',
+   state.source!=='all',
+   state.service!=='all',
+   state.interview!=='all',
+   state.sort!=='activity'
+  ].filter(Boolean).length;
+
+  const header=`<div class="crm-head">
+   <div><h1>CRM de Leads</h1></div>
+   <div class="crm-head-actions">
+    ${btn('crmPipelineModal',`${crmIcon('sliders',15)} Configurar pipeline`,'','subtle')}
+    ${btn('crmTagsModal',`${crmIcon('tag',15)} Tags`,'','subtle')}
+    ${btn('crmImport',`${crmIcon('upload',15)} Importar leads`,'','subtle')}
+    ${btn('crmNew',`${crmIcon('plus',15)} Novo lead`,'','primary')}
+   </div>
+  </div>`;
+
+  const tabsMarkup=`<div class="crm-tabs" role="tablist">
+   ${Object.entries(STATUS_TABS).map(([k,v])=>`<button type="button" role="tab" data-action="crmTab" data-tab="${k}" class="${state.tab===k?'active':''}" aria-selected="${state.tab===k}">${safe(v)} <span>${k==='open'?s.open:k==='won'?s.won:s.lost}</span></button>`).join('')}
+  </div>`;
+
+  const primaryFilters=`<div class="crm-filters-bar">
+   <div class="crm-search">
+    <span class="crm-search-icon">${crmIcon('search',17)}</span>
+    <input id="crmSearch" type="search" autocomplete="off" placeholder="Buscar por nome, WhatsApp, tag, indicação…" value="${safe(state.search)}">
+   </div>
+   <div class="crm-filter-tag-wrap">
+    <select id="crmFilterTag" title="Filtrar por Tag">
+     ${opt([['all','Todas as tags'],...tags.map(t=>[t.id,t.name])],state.tag)}
+    </select>
+   </div>
+   <button type="button" class="crm-btn subtle crm-filters-toggle-btn ${state.filtersOpen||activeSecondaryCount?'is-active':''}" data-action="crmToggleFilters">
+    ${crmIcon('sliders',14)} <span>Filtros</span>${activeSecondaryCount?`<span class="tab-count">${activeSecondaryCount}</span>`:''}
+   </button>
+   <div class="crm-toggle">
+    <button class="${state.mode==='board'?'active':''}" data-action="crmMode" data-mode="board">${crmIcon('kanban',15)} Pipeline</button>
+    <button class="${state.mode==='list'?'active':''}" data-action="crmMode" data-mode="list">${crmIcon('list',15)} Lista</button>
+   </div>
+  </div>`;
+
+  const advancedFilters=state.filtersOpen?`<div class="crm-advanced-filters">
+   <div class="crm-advanced-grid">
+    <label>Coluna da pipeline<select id="crmFilterColumn">${opt([['all','Todas as colunas'],...cols.map(c=>[c.id,c.name])],state.column)}</select></label>
+    <label>Origem<select id="crmFilterSource">${opt([['all','Todas as origens'],...sources.map(x=>[x,x])],state.source)}</select></label>
+    <label>Serviço<select id="crmFilterService">${opt([['all','Todos os serviços'],...service.map(x=>[x,x])],state.service)}</select></label>
+    <label>Entrevista<select id="crmFilterInterview">${opt([['all','Todas'],['none','Não agendada'],['scheduled','Agendada'],['completed','Realizada'],['canceled','Cancelada'],['no_show','Não compareceu']],state.interview)}</select></label>
+    <label>Ordenar<select id="crmFilterSort">${opt([['activity','Última atualização'],['interview','Próxima entrevista'],['newest','Mais recentes'],['oldest','Mais antigos'],['name','Nome A–Z']],state.sort)}</select></label>
+   </div>
+   ${activeSecondaryCount?`<div class="crm-advanced-actions"><button type="button" class="crm-btn subtle mini" data-action="crmClearAdvancedFilters">${crmIcon('x',12)} Limpar filtros avançados</button></div>`:''}
+  </div>`:'';
+
+  const listControls=`<div class="crm-list-controls">
+   <div><b>${rows.length}</b> ${rows.length===1?'contato':'contatos'} nesta visão</div>
+  </div>`;
+
+  return `<div class="crm-root">${header}${crmMetrics()}
+   <section class="crm-workspace">
+    ${tabsMarkup}
+    <div class="crm-workspace-header">
+     ${primaryFilters}
+     ${advancedFilters}
+     ${listControls}
+    </div>
+    ${state.mode==='board'&&state.tab==='open'?board(rows):listing(rows)}
+   </section>
+   ${state.tab==='open'?upcomingInterviews():''}
+  </div>`;
  }
 
  function leadCard(l){
@@ -242,7 +299,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   return `<article class="crm-lead-card" draggable="true" data-action="crmDetail" data-id="${l.id}" role="button" tabindex="0">
    <div class="crm-lead-top"><strong>${safe(l.name)}</strong>${fiche?pill('Ficha inicial','green'):''}</div>
    ${tags.length?`<div class="crm-card-tags">${tags.map(renderTagBadge).join('')}</div>`:''}
-   <div class="crm-muted">${safe(l.crm_source||'Origem não informada')} · ${safe(l.crm_service||'Aulas')}</div>
+   ${l.crm_service?`<div class="crm-muted">${safe(l.crm_service)}</div>`:''}
    ${l.crm_last_contact_on?`<div class="crm-card-foot"><span class="crm-mini-date">Último contato: ${shortDate(l.crm_last_contact_on)}</span></div>`:''}
    ${appt?`<div class="crm-card-interview">${crmIcon('calendar',13)} <span>${dateTime(appt.scheduled_at)} · ${safe(teacherName(appt.teacher_id))}</span></div>`:lastAppt?.state==='completed'?`<div class="crm-card-interview is-done">${crmIcon('checkCircle',13)} <span>Entrevista realizada · ${safe(teacherName(lastAppt.teacher_id))}</span></div>`:''}
   </article>`;
@@ -725,6 +782,8 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   startBusy();try{return await (async()=>{switch(act){
    case 'crmTab':state.tab=x.dataset.tab;return refreshView();
    case 'crmMode':state.mode=x.dataset.mode;return refreshView();
+   case 'crmToggleFilters':state.filtersOpen=!state.filtersOpen;return refreshView();
+   case 'crmClearAdvancedFilters':state.column='all';state.source='all';state.service='all';state.interview='all';state.sort='activity';return refreshView();
    case 'crmCancel':return closeModal();
    case 'crmNew':return newForm('');
    case 'crmEdit':return newForm(id);
