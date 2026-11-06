@@ -44,7 +44,8 @@ const CRM_ICONS={
  arrowUp:'<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
  arrowDown:'<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
  rotateCcw:'<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',
- fileText:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>'
+ fileText:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>',
+ eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
 };
 const crmIcon=(name,size=15)=>`<svg class="crm-ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${CRM_ICONS[name]||CRM_ICONS.check}</svg>`;
 
@@ -335,14 +336,14 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    const col=resolveColumnForLead(l);
    const tags=leadTags(l);
    const statusLabel=l.crm_outcome==='lost'?(l.crm_loss_reason||'Não convertido'):l.crm_outcome==='won'?'Fechado':(col?.name||'Sem coluna');
-   return `<tr><td><strong>${safe(l.name)}</strong><small>${safe(l.phone||'Sem telefone')}</small></td><td>${pill(statusLabel,'soft')}</td><td>${tags.length?`<div class="crm-card-tags">${tags.map(renderTagBadge).join('')}</div>`:'<span class="crm-muted">—</span>'}</td><td>${safe(l.crm_source||'—')}<small>${safe(l.crm_service||'')}</small></td><td>${interviewText(l)}</td><td>${ficheText(l)}</td><td>${btn('crmDetail','Abrir',l.id,'subtle')}</td></tr>`;
+   return `<tr><td><strong>${safe(l.name)}</strong><small>${safe(l.phone||'Sem telefone')}</small></td><td>${pill(statusLabel,'soft')}</td><td>${tags.length?`<div class="crm-card-tags">${tags.map(renderTagBadge).join('')}</div>`:'<span class="crm-muted">—</span>'}</td><td>${safe(l.crm_source||'—')}<small>${safe(l.crm_service||'')}</small></td><td>${interviewText(l)}</td><td>${ficheText(l)}</td><td>${btn('crmDetail',`${crmIcon('eye',14)} <span>ABRIR</span>`,l.id,'table-action-btn subtle')}</td></tr>`;
   }).join('')||'<tr><td colspan="7" class="crm-no-data">Nenhum lead corresponde a estes filtros.</td></tr>'}</tbody></table></div>`;
  }
 
  function upcomingInterviews(){
   const open=allLeadStates().filter(l=>l.crm_outcome==='open');
   const upcomingList=(db.crm_appointments||[]).filter(a=>a.state==='scheduled'&&open.some(l=>l.id===a.lead_id)).sort((a,b)=>String(a.scheduled_at).localeCompare(String(b.scheduled_at))).slice(0,8);
-  return `<section class="crm-due-panel"><div class="crm-due-head"><div><div class="eyebrow">Calendário comercial & docente</div><h2>Próximas entrevistas agendadas</h2></div></div><div class="crm-due-list">${upcomingList.length?upcomingList.map(a=>`<div class="crm-due-item"><span class="crm-due-icon">${crmIcon('calendar',16)}</span><div><b>${safe(lookup('leads',a.lead_id)?.name||'Lead')}</b><p>Professor: ${safe(teacherName(a.teacher_id))} · ${Number(a.duration_minutes||30)} min${a.note?' · '+safe(a.note):''}</p></div><span class="crm-due-date">${dateTime(a.scheduled_at)}</span>${btn('crmDetail','Abrir',a.lead_id,'subtle')}</div>`).join(''):'<p class="crm-muted">Nenhuma entrevista agendada no momento.</p>'}</div></section>`;
+  return `<section class="crm-due-panel"><div class="crm-due-head"><div><div class="eyebrow">Calendário comercial & docente</div><h2>Próximas entrevistas agendadas</h2></div></div><div class="crm-due-list">${upcomingList.length?upcomingList.map(a=>`<div class="crm-due-item"><span class="crm-due-icon">${crmIcon('calendar',16)}</span><div><b>${safe(lookup('leads',a.lead_id)?.name||'Lead')}</b><p>Professor: ${safe(teacherName(a.teacher_id))} · ${Number(a.duration_minutes||30)} min${a.note?' · '+safe(a.note):''}</p></div><span class="crm-due-date">${dateTime(a.scheduled_at)}</span>${btn('crmDetail',`${crmIcon('eye',14)} <span>ABRIR</span>`,a.lead_id,'table-action-btn subtle')}</div>`).join(''):'<p class="crm-muted">Nenhuma entrevista agendada no momento.</p>'}</div></section>`;
  }
 
  function clean(phone){return onlyDigits(phone||'');}

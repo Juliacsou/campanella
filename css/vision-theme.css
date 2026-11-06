@@ -9006,3 +9006,362 @@ body,
   padding: 6px 10px !important;
   border: none !important;
 }
+
+/* ==========================================================================
+   32. SLEEK CARD & TABLE ACTION BUTTONS (Minimalist Icon + Uppercase Text)
+   ========================================================================== */
+
+/* Container alignment inside cards & tables */
+.data-table td .actions,
+.table-wrap td .actions,
+.template-card-actions,
+.school-card-actions,
+.cal-lesson-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  flex-wrap: wrap !important;
+}
+
+.actions-right {
+  justify-content: flex-end !important;
+}
+
+/* Minimalist Button Structure (Zero Pill Box, Zero Border) - Exactly matching Image 2 */
+.table-action-btn,
+.data-table td button:not(.close):not(.theme-toggle-btn):not(.contract-menu-item),
+.data-table td .btn:not(.btn-cta):not(.contract-menu-item),
+.table-wrap td button:not(.close):not(.theme-toggle-btn):not(.contract-menu-item),
+.table-wrap td .btn:not(.btn-cta):not(.contract-menu-item),
+.crm-table td button:not(.close):not(.contract-menu-item),
+.crm-table td .crm-btn.subtle:not(.contract-menu-item),
+.template-card-actions > button,
+.template-card-actions > .btn,
+.school-card-actions > button,
+.school-card-actions > .btn,
+.crm-due-item .crm-btn.subtle,
+.cal-lesson-actions > button,
+.cal-lesson-actions > .btn,
+.contract-actions-dropdown > summary.table-action-btn,
+.contract-actions-dropdown > summary.btn,
+.contract-actions-dropdown > summary {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 6px !important;
+  padding: 4px 6px !important;
+  font-family: inherit !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.8px !important;
+  text-transform: uppercase !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  transition: color 0.18s ease, transform 0.18s ease, background-color 0.18s ease !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  min-height: auto !important;
+  height: auto !important;
+  text-decoration: none !important;
+}
+
+/* SVG icons within minimalist action buttons */
+.table-action-btn svg,
+.data-table td button:not(.contract-menu-item) svg,
+.data-table td .btn:not(.contract-menu-item) svg,
+.table-wrap td button:not(.contract-menu-item) svg,
+.table-wrap td .btn:not(.contract-menu-item) svg,
+.crm-table td button:not(.contract-menu-item) svg,
+.template-card-actions > button svg,
+.school-card-actions > button svg,
+.crm-due-item .crm-btn.subtle svg,
+.cal-lesson-actions > button svg,
+.contract-actions-dropdown > summary svg {
+  width: 14px !important;
+  height: 14px !important;
+  stroke-width: 2.2px !important;
+  flex-shrink: 0 !important;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  color: inherit !important;
+  stroke: currentColor !important;
+  fill: none !important;
+}
+
+/* Fill icons like trash when path is filled or currentColor */
+.table-action-btn.danger svg,
+.table-action-btn.btn-danger svg {
+  color: inherit !important;
+}
+
+.table-action-btn:hover svg,
+.data-table td button:not(.contract-menu-item):hover svg,
+.template-card-actions > button:hover svg,
+.contract-actions-dropdown > summary:hover svg {
+  transform: scale(1.15) !important;
+}
+
+/* --------------------------------------------------------------------------
+   32.1 DARK MODE (Vision UI Neutral Dark Palette)
+   -------------------------------------------------------------------------- */
+:root:not([data-theme="light"]) .table-action-btn,
+:root:not([data-theme="light"]) .data-table td button:not(.close):not(.theme-toggle-btn):not(.contract-menu-item),
+:root:not([data-theme="light"]) .data-table td .btn:not(.btn-cta):not(.contract-menu-item),
+:root:not([data-theme="light"]) .table-wrap td button:not(.close):not(.theme-toggle-btn):not(.contract-menu-item),
+:root:not([data-theme="light"]) .table-wrap td .btn:not(.btn-cta):not(.contract-menu-item),
+:root:not([data-theme="light"]) .crm-table td button:not(.close):not(.contract-menu-item),
+:root:not([data-theme="light"]) .crm-table td .crm-btn.subtle:not(.contract-menu-item),
+:root:not([data-theme="light"]) .template-card-actions > button,
+:root:not([data-theme="light"]) .school-card-actions > button,
+:root:not([data-theme="light"]) .crm-due-item .crm-btn.subtle,
+:root:not([data-theme="light"]) .cal-lesson-actions > button,
+:root:not([data-theme="light"]) .contract-actions-dropdown > summary,
+[data-theme="dark"] .table-action-btn,
+[data-theme="dark"] .data-table td button:not(.close):not(.theme-toggle-btn):not(.contract-menu-item),
+[data-theme="dark"] .data-table td .btn:not(.btn-cta):not(.contract-menu-item),
+[data-theme="dark"] .table-wrap td button:not(.close):not(.theme-toggle-btn):not(.contract-menu-item),
+[data-theme="dark"] .table-wrap td .btn:not(.btn-cta):not(.contract-menu-item),
+[data-theme="dark"] .crm-table td button:not(.close):not(.contract-menu-item),
+[data-theme="dark"] .crm-table td .crm-btn.subtle:not(.contract-menu-item),
+[data-theme="dark"] .template-card-actions > button,
+[data-theme="dark"] .school-card-actions > button,
+[data-theme="dark"] .crm-due-item .crm-btn.subtle,
+[data-theme="dark"] .cal-lesson-actions > button,
+[data-theme="dark"] .contract-actions-dropdown > summary {
+  color: #A1A1AA !important; /* Silver/slate like EDIT in Image 2 */
+}
+
+:root:not([data-theme="light"]) .table-action-btn:hover,
+:root:not([data-theme="light"]) .data-table td button:not(.close):not(.contract-menu-item):hover,
+:root:not([data-theme="light"]) .data-table td .btn:not(.btn-cta):not(.contract-menu-item):hover,
+:root:not([data-theme="light"]) .table-wrap td button:not(.close):not(.contract-menu-item):hover,
+:root:not([data-theme="light"]) .table-wrap td .btn:not(.btn-cta):not(.contract-menu-item):hover,
+:root:not([data-theme="light"]) .crm-table td button:not(.close):not(.contract-menu-item):hover,
+:root:not([data-theme="light"]) .template-card-actions > button:hover,
+:root:not([data-theme="light"]) .school-card-actions > button:hover,
+:root:not([data-theme="light"]) .contract-actions-dropdown > summary:hover,
+[data-theme="dark"] .table-action-btn:hover,
+[data-theme="dark"] .data-table td button:not(.close):not(.contract-menu-item):hover,
+[data-theme="dark"] .data-table td .btn:not(.btn-cta):not(.contract-menu-item):hover,
+[data-theme="dark"] .table-wrap td button:not(.close):not(.contract-menu-item):hover,
+[data-theme="dark"] .table-wrap td .btn:not(.btn-cta):not(.contract-menu-item):hover,
+[data-theme="dark"] .crm-table td button:not(.close):not(.contract-menu-item):hover,
+[data-theme="dark"] .template-card-actions > button:hover,
+[data-theme="dark"] .school-card-actions > button:hover,
+[data-theme="dark"] .contract-actions-dropdown > summary:hover {
+  color: #FFFFFF !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Danger / Delete / Remove (Image 2 Red DELETE style) */
+:root:not([data-theme="light"]) .table-action-btn.danger,
+:root:not([data-theme="light"]) .table-action-btn.btn-danger,
+:root:not([data-theme="light"]) .data-table td button.danger,
+:root:not([data-theme="light"]) .data-table td .btn.danger,
+:root:not([data-theme="light"]) .table-wrap td button.danger,
+:root:not([data-theme="light"]) .template-card-actions > button.danger,
+:root:not([data-theme="light"]) .danger-icon,
+[data-theme="dark"] .table-action-btn.danger,
+[data-theme="dark"] .table-action-btn.btn-danger,
+[data-theme="dark"] .data-table td button.danger,
+[data-theme="dark"] .data-table td .btn.danger,
+[data-theme="dark"] .table-wrap td button.danger,
+[data-theme="dark"] .template-card-actions > button.danger,
+[data-theme="dark"] .danger-icon {
+  color: #EF4444 !important; /* Pure Vivid Red */
+}
+
+:root:not([data-theme="light"]) .table-action-btn.danger:hover,
+:root:not([data-theme="light"]) .data-table td button.danger:hover,
+:root:not([data-theme="light"]) .data-table td .btn.danger:hover,
+:root:not([data-theme="light"]) .template-card-actions > button.danger:hover,
+[data-theme="dark"] .table-action-btn.danger:hover,
+[data-theme="dark"] .data-table td button.danger:hover,
+[data-theme="dark"] .data-table td .btn.danger:hover,
+[data-theme="dark"] .template-card-actions > button.danger:hover {
+  color: #F87171 !important;
+  background-color: rgba(239, 68, 68, 0.14) !important;
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.4)) !important;
+}
+
+/* Primary / Orange (Criar Ficha, Nova Chave, Rematricular, etc.) */
+:root:not([data-theme="light"]) .table-action-btn.primary,
+:root:not([data-theme="light"]) .data-table td button.primary,
+[data-theme="dark"] .table-action-btn.primary,
+[data-theme="dark"] .data-table td button.primary {
+  color: #FB923C !important;
+}
+
+:root:not([data-theme="light"]) .table-action-btn.primary:hover,
+[data-theme="dark"] .table-action-btn.primary:hover {
+  color: #F97316 !important;
+  background-color: rgba(249, 115, 22, 0.14) !important;
+}
+
+/* --------------------------------------------------------------------------
+   32.2 LIGHT MODE (Crisp Charcoal & Vivid Red)
+   -------------------------------------------------------------------------- */
+[data-theme="light"] .table-action-btn,
+[data-theme="light"] .data-table td button:not(.close):not(.theme-toggle-btn):not(.contract-menu-item),
+[data-theme="light"] .data-table td .btn:not(.btn-cta):not(.contract-menu-item),
+[data-theme="light"] .table-wrap td button:not(.close):not(.theme-toggle-btn):not(.contract-menu-item),
+[data-theme="light"] .table-wrap td .btn:not(.btn-cta):not(.contract-menu-item),
+[data-theme="light"] .crm-table td button:not(.close):not(.contract-menu-item),
+[data-theme="light"] .crm-table td .crm-btn.subtle:not(.contract-menu-item),
+[data-theme="light"] .template-card-actions > button,
+[data-theme="light"] .school-card-actions > button,
+[data-theme="light"] .crm-due-item .crm-btn.subtle,
+[data-theme="light"] .cal-lesson-actions > button,
+[data-theme="light"] .contract-actions-dropdown > summary {
+  color: #52525B !important; /* Neutral dark slate */
+}
+
+[data-theme="light"] .table-action-btn:hover,
+[data-theme="light"] .data-table td button:not(.close):not(.contract-menu-item):hover,
+[data-theme="light"] .data-table td .btn:not(.btn-cta):not(.contract-menu-item):hover,
+[data-theme="light"] .table-wrap td button:not(.close):not(.contract-menu-item):hover,
+[data-theme="light"] .table-wrap td .btn:not(.btn-cta):not(.contract-menu-item):hover,
+[data-theme="light"] .crm-table td button:not(.close):not(.contract-menu-item):hover,
+[data-theme="light"] .template-card-actions > button:hover,
+[data-theme="light"] .school-card-actions > button:hover,
+[data-theme="light"] .contract-actions-dropdown > summary:hover {
+  color: #18181B !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  transform: translateY(-1px) !important;
+}
+
+[data-theme="light"] .table-action-btn.danger,
+[data-theme="light"] .table-action-btn.btn-danger,
+[data-theme="light"] .data-table td button.danger,
+[data-theme="light"] .data-table td .btn.danger,
+[data-theme="light"] .table-wrap td button.danger,
+[data-theme="light"] .template-card-actions > button.danger,
+[data-theme="light"] .danger-icon {
+  color: #DC2626 !important; /* Pure vivid red */
+}
+
+[data-theme="light"] .table-action-btn.danger:hover,
+[data-theme="light"] .data-table td button.danger:hover,
+[data-theme="light"] .data-table td .btn.danger:hover,
+[data-theme="light"] .template-card-actions > button.danger:hover {
+  color: #B91C1C !important;
+  background-color: rgba(220, 38, 38, 0.08) !important;
+}
+
+[data-theme="light"] .table-action-btn.primary,
+[data-theme="light"] .data-table td button.primary {
+  color: #EA580C !important;
+}
+
+[data-theme="light"] .table-action-btn.primary:hover {
+  color: #C2410C !important;
+  background-color: rgba(234, 88, 12, 0.08) !important;
+}
+
+/* --------------------------------------------------------------------------
+   32.3 DROPDOWN POPOVER & MENU ITEMS INTEGRITY
+   -------------------------------------------------------------------------- */
+.contract-actions-dropdown {
+  position: relative !important;
+  display: inline-block !important;
+}
+
+.contract-actions-popover {
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+  min-width: 200px !important;
+  padding: 6px !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+:root:not([data-theme="light"]) .contract-actions-popover,
+[data-theme="dark"] .contract-actions-popover {
+  background: rgba(20, 20, 22, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="light"] .contract-actions-popover {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15) !important;
+}
+
+.contract-actions-popover .contract-menu-item,
+.contract-menu-item {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 8px 12px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  border-radius: 8px !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  border: none !important;
+  line-height: 1.4 !important;
+  white-space: nowrap !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.contract-menu-item svg {
+  width: 14px !important;
+  height: 14px !important;
+  flex-shrink: 0 !important;
+}
+
+:root:not([data-theme="light"]) .contract-menu-item,
+[data-theme="dark"] .contract-menu-item {
+  color: #E4E4E7 !important;
+}
+
+:root:not([data-theme="light"]) .contract-menu-item:hover,
+[data-theme="dark"] .contract-menu-item:hover {
+  background: rgba(251, 146, 60, 0.15) !important;
+  color: #FB923C !important;
+}
+
+:root:not([data-theme="light"]) .contract-menu-item.danger,
+[data-theme="dark"] .contract-menu-item.danger {
+  color: #EF4444 !important;
+}
+
+:root:not([data-theme="light"]) .contract-menu-item.danger:hover,
+[data-theme="dark"] .contract-menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.16) !important;
+  color: #F87171 !important;
+}
+
+[data-theme="light"] .contract-menu-item {
+  color: #27272A !important;
+}
+
+[data-theme="light"] .contract-menu-item:hover {
+  background: rgba(234, 88, 12, 0.1) !important;
+  color: #EA580C !important;
+}
+
+[data-theme="light"] .contract-menu-item.danger {
+  color: #DC2626 !important;
+}
+
+[data-theme="light"] .contract-menu-item.danger:hover {
+  background: rgba(220, 38, 38, 0.1) !important;
+  color: #DC2626 !important;
+}
