@@ -25,7 +25,7 @@
   --camp-surface-raised: #111C44;
   --camp-surface-floating: #12204E;
   --camp-surface-card: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%);
-  --camp-surface-card-border: 1.5px solid rgba(255, 255, 255, 0.05);
+  --camp-surface-card-border: none;
 
   /* Inputs & Interactive Controls */
   --camp-input: rgba(15, 23, 42, 0.65);
@@ -47,24 +47,24 @@
   --camp-text-muted: #718096;
   --camp-text-disabled: #4A5568;
 
-  /* Semantic Feedback */
+  /* Semantic Feedback (Pure Borderless Glass) */
   --camp-success: #01B574;
-  --camp-success-bg: rgba(1, 181, 116, 0.18);
-  --camp-success-border: rgba(1, 181, 116, 0.35);
+  --camp-success-bg: rgba(1, 181, 116, 0.22);
+  --camp-success-border: transparent;
   --camp-warning: #FFB547;
-  --camp-warning-bg: rgba(255, 181, 71, 0.18);
-  --camp-warning-border: rgba(255, 181, 71, 0.35);
+  --camp-warning-bg: rgba(255, 181, 71, 0.22);
+  --camp-warning-border: transparent;
   --camp-danger: #E31A1A;
-  --camp-danger-bg: rgba(227, 26, 26, 0.18);
-  --camp-danger-border: rgba(227, 26, 26, 0.35);
+  --camp-danger-bg: rgba(227, 26, 26, 0.22);
+  --camp-danger-border: transparent;
   --camp-info: #0075FF;
-  --camp-info-bg: rgba(0, 117, 255, 0.18);
-  --camp-info-border: rgba(0, 117, 255, 0.35);
+  --camp-info-bg: rgba(0, 117, 255, 0.22);
+  --camp-info-border: transparent;
 
   /* Borders & Dividers — Vision UI is Borderless */
   --camp-border: transparent;
   --camp-border-subtle: transparent;
-  --camp-border-strong: rgba(255, 255, 255, 0.08);
+  --camp-border-strong: transparent;
   --camp-divider: rgba(255, 255, 255, 0.05);
   --camp-divider-subtle: rgba(255, 255, 255, 0.03);
 
@@ -133,24 +133,24 @@
   --camp-text-muted: #64748B;
   --camp-text-disabled: #A0AEC0;
 
-  /* Semantic Feedback */
+  /* Semantic Feedback (Pure Borderless) */
   --camp-success: #087F5B;
-  --camp-success-bg: rgba(8, 127, 91, 0.1);
-  --camp-success-border: rgba(8, 127, 91, 0.3);
+  --camp-success-bg: rgba(8, 127, 91, 0.12);
+  --camp-success-border: transparent;
   --camp-warning: #9A5700;
-  --camp-warning-bg: rgba(154, 87, 0, 0.1);
-  --camp-warning-border: rgba(154, 87, 0, 0.3);
+  --camp-warning-bg: rgba(154, 87, 0, 0.12);
+  --camp-warning-border: transparent;
   --camp-danger: #C53030;
-  --camp-danger-bg: rgba(197, 48, 48, 0.1);
-  --camp-danger-border: rgba(197, 48, 48, 0.3);
+  --camp-danger-bg: rgba(197, 48, 48, 0.12);
+  --camp-danger-border: transparent;
   --camp-info: #087FA3;
-  --camp-info-bg: rgba(8, 127, 163, 0.1);
-  --camp-info-border: rgba(8, 127, 163, 0.3);
+  --camp-info-bg: rgba(8, 127, 163, 0.12);
+  --camp-info-border: transparent;
 
   /* Borders & Dividers — Vision UI is Borderless */
   --camp-border: transparent;
   --camp-border-subtle: transparent;
-  --camp-border-strong: rgba(0, 0, 0, 0.08);
+  --camp-border-strong: transparent;
   --camp-divider: rgba(0, 0, 0, 0.04);
   --camp-divider-subtle: rgba(0, 0, 0, 0.02);
 
@@ -905,20 +905,26 @@ button.btn {
   filter: grayscale(0.5);
 }
 
-/* Botão Simples (Light / Secondary / Subtle / Outline) */
+/* Botão Simples & Abas Inativas (Pure Glassmorphism — ZERO STROKE BORDER) */
 .btn.light,
 .btn.secondary,
 .btn.subtle,
 .crm-btn:not(.primary),
-.tabs .btn.light {
+.tabs .btn.light,
+.tabs button:not(.btn):not(.active),
+.crm-tabs button:not(.active),
+.cal-switcher button:not(.selected) {
   background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border: none !important;
+  outline: none !important;
   color: #FFFFFF !important;
-  box-shadow: none !important;
+  box-shadow: 0px 4px 14px 0px rgba(0, 0, 0, 0.2) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   font-size: 11px !important;
-  font-weight: 700 !important;
+  font-weight: 750 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.6px !important;
+  letter-spacing: 0.8px !important;
   border-radius: 12px !important;
   padding: 10px 18px !important;
 }
@@ -929,21 +935,24 @@ button.btn {
 [data-theme="light"] .crm-btn:not(.primary),
 [data-theme="light"] .tabs .btn.light {
   background: #FFFFFF !important;
-  border: 1px solid #D8E0EE !important;
+  border: none !important;
   color: #0066E6 !important;
-  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.06) !important;
 }
 
 .btn.light:hover,
 .btn.secondary:hover,
 .btn.subtle:hover,
 .crm-btn:not(.primary):hover,
-.tabs .btn.light:hover {
+.tabs .btn.light:hover,
+.tabs button:not(.btn):not(.active):hover,
+.crm-tabs button:not(.active):hover,
+.cal-switcher button:not(.selected):hover {
   background: rgba(255, 255, 255, 0.16) !important;
-  border-color: rgba(255, 255, 255, 0.28) !important;
+  border: none !important;
   color: #FFFFFF !important;
   transform: translateY(-1px);
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.3) !important;
 }
 
 [data-theme="light"] .btn.light:hover,
@@ -952,7 +961,7 @@ button.btn {
 [data-theme="light"] .crm-btn:not(.primary):hover,
 [data-theme="light"] .tabs .btn.light:hover {
   background: #F0F4FA !important;
-  border-color: #0066E6 !important;
+  border: none !important;
   color: #0066E6 !important;
 }
 
@@ -997,15 +1006,29 @@ button.btn {
   transform: translateY(-1px);
 }
 
-/* Botão Mini */
+/* Botão Mini (ZERO STROKE BORDER) */
 .btn.mini {
-  padding: 5px 12px !important;
+  padding: 6px 12px !important;
   font-size: 10px !important;
   font-weight: 800 !important;
   letter-spacing: 0.6px !important;
   text-transform: uppercase !important;
   border-radius: 8px !important;
+  border: none !important;
   min-height: auto !important;
+}
+
+.btn.mini.light {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.btn.mini.light:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border: none !important;
+  color: #FFFFFF !important;
 }
 
 .icon-btn {
@@ -1060,7 +1083,8 @@ button.btn {
 .cal-student-card,
 .cal-settings-layout {
   background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 20px !important;
   box-shadow: 0px 20px 27px 0px rgba(0, 0, 0, 0.25) !important;
   backdrop-filter: blur(120px) saturate(180%) !important;
@@ -1099,7 +1123,8 @@ button.btn {
 [data-theme="light"] .cal-student-card,
 [data-theme="light"] .cal-settings-layout {
   background: #FFFFFF !important;
-  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 20px !important;
   box-shadow: 0px 10px 30px 0px rgba(0, 0, 0, 0.04) !important;
 }
@@ -1250,37 +1275,85 @@ button.btn {
   box-shadow: var(--camp-shadow-card) !important;
 }
 
-/* Tabs */
+/* Tabs (Pure Borderless Glassmorphism) */
 .tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
+  display: flex !important;
+  gap: 8px !important;
+  margin-bottom: 20px !important;
+  border: none !important;
+  outline: none !important;
 }
 
-.tabs .btn {
-  background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
-  color: var(--camp-text-secondary) !important;
-  box-shadow: none !important;
+.tabs .btn,
+.tabs button {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  outline: none !important;
+  color: #A0AEC0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-radius: 12px !important;
+  padding: 10px 18px !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  white-space: nowrap !important;
 }
 
-.tabs .btn.light {
-  color: var(--camp-text-secondary) !important;
+.tabs .btn.light,
+.tabs button:not(.active):not(.btn) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  outline: none !important;
+  color: #A0AEC0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
 }
 
-.tabs .btn:not(.light) {
-  background: var(--camp-gradient-primary) !important;
+.tabs .btn.light:hover,
+.tabs button:not(.active):not(.btn):hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border: none !important;
+  outline: none !important;
   color: #FFFFFF !important;
-  border-color: transparent !important;
-  box-shadow: var(--camp-shadow-btn) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+}
+
+.tabs .btn:not(.light),
+.tabs button.active {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+}
+
+[data-theme="light"] .tabs .btn,
+[data-theme="light"] .tabs button {
+  background: #F0F4FA !important;
+  border: none !important;
+  color: #52617A !important;
+}
+
+[data-theme="light"] .tabs .btn:not(.light),
+[data-theme="light"] .tabs button.active {
+  background: linear-gradient(135deg, #0066E6 0%, #087FA3 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
 }
 
 .tab-count {
-  background: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
   color: inherit !important;
   border-radius: var(--camp-radius-pill);
-  padding: 1px 7px;
-  font-size: 11px;
+  padding: 2px 8px;
+  font-size: 10px;
+  margin-left: 6px;
+  font-weight: 800;
+  border: none !important;
 }
 
 /* ==========================================================================
@@ -1424,7 +1497,7 @@ button.btn {
   border-left: none !important;
 }
 
-/* Status Pills & Tags (Vision UI Neon Badges) */
+/* Status Pills & Tags (Vision UI Pure Glassmorphism — ZERO STROKE BORDERS) */
 .pill,
 .crm-badge,
 .crm-tag-chip,
@@ -1445,9 +1518,12 @@ button.btn {
   letter-spacing: 0.8px !important;
   line-height: 1.3 !important;
   box-sizing: border-box !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
 }
 
-/* Success / Ativo / Convertido (Verde Neon) */
+/* Success / Ativo / Convertido (Verde Neon Glass) */
 .pill-entrevistado,
 .pill-signed,
 .pill-convertido,
@@ -1455,50 +1531,57 @@ button.btn {
 .crm-badge.crm-green,
 .crm-box-status.is-done,
 .template-status.is-active {
-  background: rgba(1, 181, 116, 0.18) !important;
-  color: #01B574 !important;
-  border: 1px solid rgba(1, 181, 116, 0.35) !important;
+  background: rgba(1, 181, 116, 0.22) !important;
+  color: #05CD99 !important;
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(1, 181, 116, 0.25) !important;
 }
 
-/* Warning / Pendente / Enviado (Âmbar Neon) */
+/* Warning / Pendente / Enviado (Âmbar Neon Glass) */
 .pill-sent,
 .pill-warning,
 .crm-badge.crm-warm {
-  background: rgba(255, 181, 71, 0.18) !important;
+  background: rgba(255, 181, 71, 0.22) !important;
   color: #FFB547 !important;
-  border: 1px solid rgba(255, 181, 71, 0.35) !important;
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(255, 181, 71, 0.2) !important;
 }
 
-/* Danger / Cancelado / Desistiu (Vermelho Neon) */
+/* Danger / Cancelado / Desistiu (Vermelho Neon Glass — CORRIGIR DOCX) */
 .pill-void,
 .pill-perdido,
 .pill-danger,
 .crm-badge.crm-danger,
 .crm-box-status.is-lost,
-.template-status.is-inactive {
-  background: rgba(227, 26, 26, 0.18) !important;
-  color: #E31A1A !important;
-  border: 1px solid rgba(227, 26, 26, 0.35) !important;
+.template-status.is-inactive,
+.template-status:not(.is-active) {
+  background: rgba(227, 26, 26, 0.22) !important;
+  color: #FF7B7B !important;
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(227, 26, 26, 0.25) !important;
 }
 
-/* Info / Primary (Ciano Neon) */
+/* Info / Primary (Ciano Neon Glass) */
 .crm-badge.crm-soft,
 .pill-primary,
 .pill-info {
-  background: rgba(0, 117, 255, 0.18) !important;
-  color: #0075FF !important;
-  border: 1px solid rgba(0, 117, 255, 0.35) !important;
+  background: rgba(0, 117, 255, 0.22) !important;
+  color: #21D4FD !important;
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(0, 117, 255, 0.25) !important;
 }
 
-/* Neutral */
+/* Neutral (Pure Glassmorphism — ZERO STROKE BORDER) */
 .pill,
 .pill-superseded,
 .pill-draft,
 .crm-badge.crm-neutral,
 .topbar-chip {
   background: rgba(255, 255, 255, 0.08) !important;
-  color: #A0AEC0 !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #CBD5E0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* Empty State */
@@ -4614,20 +4697,38 @@ dialog .close:hover {
 }
 
 .template-status {
-  font-weight: 750 !important;
-  font-size: 11px !important;
+  font-weight: 800 !important;
+  font-size: 10px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
   border-radius: var(--camp-radius-pill) !important;
-  padding: 4px 10px !important;
+  padding: 5px 12px !important;
+  border: none !important;
+  outline: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
 }
 
 .template-status.is-active {
-  background: var(--camp-success-bg) !important;
-  color: var(--camp-success) !important;
+  background: rgba(1, 181, 116, 0.22) !important;
+  color: #05CD99 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 2px 10px rgba(1, 181, 116, 0.25) !important;
 }
 
-.template-status.is-inactive {
-  background: var(--camp-hover) !important;
-  color: var(--camp-text-muted) !important;
+.template-status.is-inactive,
+.template-status:not(.is-active) {
+  background: rgba(227, 26, 26, 0.22) !important;
+  color: #FF7B7B !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 2px 10px rgba(227, 26, 26, 0.25) !important;
+}
+
+.template-card-actions .btn {
+  border: none !important;
+  outline: none !important;
 }
 
 .template-card-title {
@@ -4845,7 +4946,7 @@ dialog .close:hover {
    wireframe borders, and ensures hyper-faithful styling across all pages.
    ========================================================================== */
 
-/* --- 19.1 Global Elimination of Thin Borders Across All Boxes & Surfaces --- */
+/* --- 19.1 Global Elimination of Thin Borders Across All Boxes & Surfaces (Pure Borderless Glassmorphism) --- */
 .panel,
 .card,
 .metric,
@@ -4880,7 +4981,8 @@ dialog,
 .table-wrap,
 .data-table,
 .crm-table {
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
 }
 
 [data-theme="light"] .panel,
@@ -4907,7 +5009,8 @@ dialog,
 [data-theme="light"] .cal-calendar,
 [data-theme="light"] .cal-student-card,
 [data-theme="light"] .cal-settings-layout {
-  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border: none !important;
+  outline: none !important;
 }
 
 /* --- 19.2 Seamless Borderless Tables (Vision UI Style) --- */
@@ -4989,7 +5092,9 @@ table tr:hover td {
   background: rgba(6, 11, 40, 0.88) !important;
   backdrop-filter: blur(40px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
-  border-right: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  border-right: none !important;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35) !important;
   padding: 24px 14px 20px !important;
 }
 
@@ -5033,7 +5138,8 @@ table tr:hover td {
 
 .cal-calendar {
   background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 20px !important;
   box-shadow: 0px 20px 27px 0px rgba(0, 0, 0, 0.25) !important;
   backdrop-filter: blur(120px) saturate(180%) !important;
@@ -5053,7 +5159,9 @@ table tr:hover td {
   background: rgba(15, 23, 42, 0.6) !important;
   border-radius: 12px !important;
   padding: 4px !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
   display: inline-flex !important;
   gap: 4px !important;
 }
@@ -5061,6 +5169,7 @@ table tr:hover td {
 .cal-switcher button {
   background: transparent !important;
   border: none !important;
+  outline: none !important;
   color: #A0AEC0 !important;
   border-radius: 8px !important;
   padding: 6px 14px !important;
@@ -5116,7 +5225,8 @@ table tr:hover td {
   position: absolute !important;
   left: 6% !important;
   right: 6% !important;
-  border: 1px solid rgba(33, 212, 253, 0.35) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 10px !important;
   background: linear-gradient(135deg, rgba(0, 117, 255, 0.35) 0%, rgba(33, 212, 253, 0.3) 100%) !important;
   color: #FFFFFF !important;
@@ -5131,7 +5241,7 @@ table tr:hover td {
 .cal-week-card:hover {
   transform: translateY(-2px) scale(1.02) !important;
   box-shadow: 0 6px 18px rgba(0, 117, 255, 0.45) !important;
-  border-color: rgba(33, 212, 253, 0.6) !important;
+  border: none !important;
 }
 
 .cal-week-card strong {
@@ -5149,23 +5259,23 @@ table tr:hover td {
 .cal-week-card.interview,
 .cal-week-card.is-interview {
   background: linear-gradient(135deg, rgba(117, 81, 255, 0.35) 0%, rgba(200, 80, 255, 0.3) 100%) !important;
-  border-color: rgba(117, 81, 255, 0.5) !important;
+  border: none !important;
   box-shadow: 0 4px 14px rgba(117, 81, 255, 0.25) !important;
 }
 
 .cal-week-card.done {
   background: linear-gradient(135deg, rgba(1, 181, 116, 0.3) 0%, rgba(1, 181, 116, 0.2) 100%) !important;
-  border-color: rgba(1, 181, 116, 0.4) !important;
+  border: none !important;
 }
 
 .cal-week-card.pending {
   background: linear-gradient(135deg, rgba(255, 181, 71, 0.3) 0%, rgba(255, 181, 71, 0.2) 100%) !important;
-  border-color: rgba(255, 181, 71, 0.4) !important;
+  border: none !important;
 }
 
 .cal-week-block-band {
   background: rgba(227, 26, 26, 0.15) !important;
-  border: 1px dashed rgba(227, 26, 26, 0.4) !important;
+  border: none !important;
   border-radius: 8px !important;
   color: #FF7B7B !important;
 }
@@ -5185,17 +5295,20 @@ table tr:hover td {
 
 .cal-month-day {
   background: rgba(255, 255, 255, 0.03) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 12px !important;
   padding: 10px !important;
   min-height: 80px !important;
   color: #FFFFFF !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
   transition: all 0.15s ease !important;
 }
 
 .cal-month-day:hover {
   background: rgba(255, 255, 255, 0.07) !important;
-  border-color: rgba(0, 117, 255, 0.4) !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.35) !important;
 }
 
 .cal-month-day.other {
@@ -5204,8 +5317,8 @@ table tr:hover td {
 }
 
 .cal-month-day.chosen {
-  border-color: #0075FF !important;
-  box-shadow: 0 0 14px rgba(0, 117, 255, 0.4) !important;
+  border: none !important;
+  box-shadow: 0 0 16px rgba(0, 117, 255, 0.5) !important;
 }
 
 .cal-month-day.is-today b {
@@ -5251,35 +5364,41 @@ table tr:hover td {
 .crm-tabs {
   display: flex !important;
   gap: 8px !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border: none !important;
   padding: 0 0 16px !important;
   margin-bottom: 24px !important;
 }
 
 .crm-tabs button {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  outline: none !important;
   color: #A0AEC0 !important;
-  padding: 9px 18px !important;
+  padding: 10px 18px !important;
   border-radius: 12px !important;
   font-size: 11px !important;
   font-weight: 750 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.6px !important;
+  letter-spacing: 0.8px !important;
   cursor: pointer !important;
-  transition: all 0.15s ease !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .crm-tabs button:hover {
-  background: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  border: none !important;
   color: #FFFFFF !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
 }
 
 .crm-tabs button.active {
   background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
   color: #FFFFFF !important;
-  border-color: transparent !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.4) !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
 }
 
 .crm-tabs button span {
@@ -5293,7 +5412,8 @@ table tr:hover td {
 
 .crm-workspace {
   background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 20px !important;
   box-shadow: 0px 20px 27px 0px rgba(0, 0, 0, 0.25) !important;
   backdrop-filter: blur(120px) saturate(180%) !important;
@@ -5308,9 +5428,11 @@ table tr:hover td {
 
 .crm-board-col {
   background: rgba(6, 11, 40, 0.65) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 16px !important;
   padding: 14px !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
 .crm-board-col header {
@@ -5329,17 +5451,18 @@ table tr:hover td {
 
 .crm-lead-card {
   background: linear-gradient(127deg, rgba(16, 26, 68, 0.85) 0%, rgba(10, 16, 44, 0.85) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 14px !important;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
   padding: 16px !important;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 .crm-lead-card:hover {
   transform: translateY(-2px) !important;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35) !important;
-  border-color: rgba(0, 117, 255, 0.35) !important;
+  border: none !important;
 }
 
 .crm-lead-top strong {
@@ -5351,15 +5474,19 @@ table tr:hover td {
 .crm-info-grid > div,
 .crm-data-item {
   background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 12px !important;
   padding: 14px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 .crm-priority-box {
   background: linear-gradient(127deg, rgba(16, 26, 68, 0.85) 0%, rgba(10, 16, 44, 0.85) 100%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.07) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 16px !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
 }
 
 .crm-box-title {
@@ -5376,7 +5503,8 @@ table tr:hover td {
 /* --- 19.5 Fichas Iniciais, Matrículas & Pacotes --- */
 .fiche-choice {
   background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 20px !important;
   padding: 24px !important;
   box-shadow: 0px 20px 27px 0px rgba(0, 0, 0, 0.25) !important;
@@ -5396,7 +5524,8 @@ table tr:hover td {
 
 .notice {
   background: rgba(0, 117, 255, 0.08) !important;
-  border: 1px solid rgba(0, 117, 255, 0.25) !important;
+  border: none !important;
+  outline: none !important;
   border-left: 4px solid #0075FF !important;
   border-radius: 12px !important;
   padding: 14px 18px !important;
@@ -5410,15 +5539,18 @@ table tr:hover td {
 }
 
 .schedule-editor {
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   background: rgba(255, 255, 255, 0.02) !important;
   border-radius: 16px !important;
   padding: 18px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
 }
 
 .schedule-row {
   background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 10px !important;
   padding: 10px 14px !important;
   color: #FFFFFF !important;
@@ -5439,7 +5571,8 @@ table tr:hover td {
 
 .preferences-nav {
   background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 20px !important;
   padding: 14px !important;
   display: flex !important;
@@ -5487,7 +5620,8 @@ table tr:hover td {
 
 .preferences-tile {
   background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 20px !important;
   padding: 22px !important;
   box-shadow: 0px 20px 27px 0px rgba(0, 0, 0, 0.25) !important;
@@ -5512,7 +5646,8 @@ table tr:hover td {
 
 .school-hero {
   background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 20px !important;
   box-shadow: 0px 20px 27px 0px rgba(0, 0, 0, 0.25) !important;
   padding: 28px !important;
@@ -5524,10 +5659,12 @@ table tr:hover td {
 
 .school-license-summary {
   background: rgba(255, 255, 255, 0.04) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 16px !important;
   padding: 18px !important;
   color: #FFFFFF !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
 }
 
 .school-license-summary b {
@@ -5543,7 +5680,8 @@ table tr:hover td {
 
 .school-card {
   background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 20px !important;
   padding: 24px !important;
   box-shadow: 0px 20px 27px 0px rgba(0, 0, 0, 0.25) !important;
@@ -5566,8 +5704,7 @@ table tr:hover td {
 }
 
 .school-card.is-current {
-  border-color: rgba(0, 117, 255, 0.4) !important;
-  box-shadow: 0 0 20px rgba(0, 117, 255, 0.25) !important;
+  box-shadow: 0 0 24px rgba(0, 117, 255, 0.4) !important;
 }
 
 /* --- 19.7 Dropdowns & Action Popovers --- */
@@ -5579,7 +5716,8 @@ table tr:hover td {
   background: rgba(10, 16, 44, 0.95) !important;
   backdrop-filter: blur(24px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 16px !important;
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6) !important;
   padding: 8px !important;
@@ -5618,20 +5756,6 @@ table tr:hover td {
 }
 
 /* --- 19.8 Auth, Boot Screen & Overlays --- */
-.boot {
-  background: #060B26 !important;
-  color: #FFFFFF !important;
-}
-
-.boot .mark {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 4px 20px rgba(0, 117, 255, 0.5) !important;
-  border-radius: 16px !important;
-  font-family: var(--camp-font) !important;
-  font-weight: 800 !important;
-}
-
 .login-page,
 #loginPage,
 #signupPage,
@@ -5648,7 +5772,8 @@ table tr:hover td {
 .login-card,
 .auth-card {
   background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 24px !important;
   box-shadow: 0 24px 50px rgba(0, 0, 0, 0.5) !important;
   backdrop-filter: blur(120px) saturate(180%) !important;
@@ -5657,7 +5782,8 @@ table tr:hover td {
 
 .busy-card {
   background: rgba(10, 16, 44, 0.95) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  outline: none !important;
   border-radius: 20px !important;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6) !important;
   color: #FFFFFF !important;
@@ -5666,4 +5792,281 @@ table tr:hover td {
 .busy-wheel {
   border-color: rgba(255, 255, 255, 0.15) !important;
   border-top-color: #0075FF !important;
+}
+
+/* ==========================================================================
+   21. ENHANCED FUTURISTIC VISION UI BOOT SCREEN
+   ========================================================================== */
+.boot {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  background: #060B26 !important;
+  background-image: 
+    radial-gradient(at 82% 1%, rgba(0, 117, 255, 0.35) 0px, transparent 50%),
+    radial-gradient(at 5% 42%, rgba(117, 81, 255, 0.28) 0px, transparent 45%),
+    radial-gradient(at 95% 85%, rgba(33, 212, 253, 0.22) 0px, transparent 50%),
+    radial-gradient(at 20% 90%, rgba(0, 117, 255, 0.18) 0px, transparent 40%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  height: 100vh !important;
+  width: 100vw !important;
+}
+
+/* Ambient Floating Glowing Orbs */
+.boot-orb {
+  position: absolute !important;
+  border-radius: 50% !important;
+  pointer-events: none !important;
+  filter: blur(80px) !important;
+  opacity: 0.6 !important;
+}
+
+.boot-orb-1 {
+  width: 460px;
+  height: 460px;
+  top: -100px;
+  right: -80px;
+  background: radial-gradient(circle, rgba(0, 117, 255, 0.45) 0%, transparent 70%);
+  animation: bootOrbFloat1 9s ease-in-out infinite alternate;
+}
+
+.boot-orb-2 {
+  width: 420px;
+  height: 420px;
+  bottom: -80px;
+  left: -90px;
+  background: radial-gradient(circle, rgba(117, 81, 255, 0.4) 0%, transparent 70%);
+  animation: bootOrbFloat2 11s ease-in-out infinite alternate;
+}
+
+.boot-orb-3 {
+  width: 320px;
+  height: 320px;
+  bottom: 15%;
+  right: 15%;
+  background: radial-gradient(circle, rgba(33, 212, 253, 0.3) 0%, transparent 70%);
+  animation: bootOrbFloat1 8s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes bootOrbFloat1 {
+  0% { transform: translateY(0px) scale(1); }
+  100% { transform: translateY(40px) scale(1.12); }
+}
+
+@keyframes bootOrbFloat2 {
+  0% { transform: translateY(0px) scale(1); }
+  100% { transform: translateY(-45px) scale(1.15); }
+}
+
+/* Centered Glassmorphic Vision UI Card */
+.boot-card {
+  position: relative !important;
+  z-index: 10 !important;
+  background: linear-gradient(127.09deg, rgba(16, 26, 68, 0.85) 0%, rgba(10, 16, 44, 0.9) 100%) !important;
+  backdrop-filter: blur(40px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 28px !important;
+  padding: 44px 40px !important;
+  width: min(420px, calc(100vw - 36px)) !important;
+  text-align: center !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 40px rgba(0, 117, 255, 0.25) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  animation: bootCardIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes bootCardIn {
+  0% { opacity: 0; transform: scale(0.92) translateY(18px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Emblem & Pulsing Halos */
+.boot-emblem-wrap {
+  position: relative !important;
+  width: 76px !important;
+  height: 76px !important;
+  display: grid !important;
+  place-items: center !important;
+  margin-bottom: 20px !important;
+}
+
+.boot-glow-pulse {
+  position: absolute !important;
+  inset: -10px !important;
+  border-radius: 26px !important;
+  background: radial-gradient(circle, rgba(0, 117, 255, 0.6) 0%, rgba(33, 212, 253, 0.2) 60%, transparent 100%) !important;
+  filter: blur(14px) !important;
+  animation: bootGlowPulse 2.4s ease-in-out infinite;
+  pointer-events: none !important;
+}
+
+.boot-glow-ring {
+  position: absolute !important;
+  inset: -4px !important;
+  border-radius: 24px !important;
+  border: 1.5px solid rgba(33, 212, 253, 0.5) !important;
+  animation: bootRingExpand 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  pointer-events: none !important;
+}
+
+@keyframes bootGlowPulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.96); }
+  50% { opacity: 1; transform: scale(1.1); filter: blur(18px); }
+}
+
+@keyframes bootRingExpand {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+.boot-mark,
+.boot .mark {
+  position: relative !important;
+  z-index: 2 !important;
+  width: 68px !important;
+  height: 68px !important;
+  border-radius: 20px !important;
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  font-family: var(--camp-font), 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 32px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 8px 30px rgba(0, 117, 255, 0.65) !important;
+  border: none !important;
+}
+
+/* Brand Title & Subtitle */
+.boot-brand {
+  font-family: var(--camp-font), 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  letter-spacing: 3px !important;
+  color: #FFFFFF !important;
+  margin: 0 0 6px 0 !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
+}
+
+.boot-sub {
+  font-family: var(--camp-font), 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 750 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.8px !important;
+  color: #21D4FD !important;
+  margin: 0 0 26px 0 !important;
+  opacity: 0.9 !important;
+}
+
+/* Shimmer Progress Track & Bar */
+.boot-progress-wrap {
+  width: 100% !important;
+  height: 4px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 99px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  margin-bottom: 20px !important;
+}
+
+.boot-bar {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  height: 100% !important;
+  width: 50% !important;
+  border-radius: 99px !important;
+  background: linear-gradient(90deg, #0075FF 0%, #21D4FD 50%, #7551FF 100%) !important;
+  box-shadow: 0 0 12px rgba(33, 212, 253, 0.8) !important;
+  animation: bootBarSweep 2s ease-in-out infinite;
+}
+
+@keyframes bootBarSweep {
+  0% { left: -50%; width: 35%; }
+  50% { width: 60%; }
+  100% { left: 100%; width: 40%; }
+}
+
+/* Status Indicator */
+.boot-status {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  color: #A0AEC0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.4px !important;
+}
+
+.boot-spinner {
+  width: 15px !important;
+  height: 15px !important;
+  border-radius: 50% !important;
+  border: 2px solid rgba(255, 255, 255, 0.12) !important;
+  border-top-color: #0075FF !important;
+  border-right-color: #21D4FD !important;
+  animation: bootSpin 0.85s linear infinite !important;
+}
+
+@keyframes bootSpin {
+  to { transform: rotate(360deg); }
+}
+
+.boot-caption {
+  margin: 0 !important;
+}
+
+/* ==========================================================================
+   22. ABSOLUTE ZERO-STROKE GUARANTEE (BUTTONS, TABS, PILLS, CARDS, BOXES)
+   Enforces pure borderless glassmorphism across all components.
+   ========================================================================== */
+.btn,
+.btn.light,
+.btn.mini,
+.btn.mini.light,
+.btn.secondary,
+.btn.subtle,
+.btn.ghost,
+.crm-btn,
+button.btn,
+button.btn.mini,
+button.btn.mini.light,
+.tabs .btn,
+.tabs button,
+.crm-tabs button,
+.cal-switcher button,
+.pill,
+.crm-badge,
+.crm-tag-chip,
+.template-status,
+.template-status.is-active,
+.template-status.is-inactive,
+.template-status:not(.is-active),
+.crm-box-status,
+.card,
+.panel,
+.metric,
+.crm-workspace,
+.crm-board-col,
+.crm-lead-card,
+.template-card,
+.school-card,
+.license-card,
+.preferences-tile,
+.preferences-nav,
+.cal-calendar,
+.cal-month-day,
+.fiche-choice,
+.schedule-editor,
+.schedule-row,
+.contract-actions-popover {
+  border: none !important;
+  outline: none !important;
 }

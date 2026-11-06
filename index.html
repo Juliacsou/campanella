@@ -28,7 +28,24 @@
  <script type="module" src="./js/app.js?v=6.18.0"></script>
 </head>
 <body>
- <div id="app" aria-live="polite"><div class="boot"><span class="mark">C</span><p><span class="busy-wheel" aria-hidden="true" style="margin:0 auto"></span>Carregando Campanella…</p></div></div>
+ <div id="app" aria-live="polite">
+  <div class="boot">
+   <div class="boot-orb boot-orb-1" aria-hidden="true"></div>
+   <div class="boot-orb boot-orb-2" aria-hidden="true"></div>
+   <div class="boot-orb boot-orb-3" aria-hidden="true"></div>
+   <div class="boot-card">
+    <div class="boot-emblem-wrap">
+     <div class="boot-glow-pulse" aria-hidden="true"></div>
+     <div class="boot-glow-ring" aria-hidden="true"></div>
+     <span class="mark boot-mark">C</span>
+    </div>
+    <h1 class="boot-brand">CAMPANELLA</h1>
+    <p class="boot-sub">SISTEMA INTEGRADO DE GESTÃO ESCOLAR</p>
+    <div class="boot-progress-wrap" aria-hidden="true"><div class="boot-bar"></div></div>
+    <div class="boot-status"><span class="boot-spinner" aria-hidden="true"></span><span class="boot-status-text">Carregando ambiente seguro…</span></div>
+   </div>
+  </div>
+ </div>
  <dialog id="modal" aria-label="Janela de edição"><button class="close" data-action="close" aria-label="Fechar">×</button><div id="modal-body"></div></dialog>
  <div id="busyOverlay" hidden aria-hidden="true"><div class="busy-card" role="status" aria-live="polite"><span class="busy-wheel" aria-hidden="true"></span><span data-busy-label>Processando sua solicitação...</span></div></div>
  <div id="toast" role="status" aria-live="polite"></div>
