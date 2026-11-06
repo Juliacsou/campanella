@@ -1,6 +1,7 @@
-# Campanella — Contexto Técnico e Documentação do Projeto (V6.10)
+# Campanella — Contexto Técnico e Documentação do Projeto (V7.0)
 
 CRM escolar multi-escolas com gestão comercial, matrículas, geração de contratos (DOCX/PDF), controle de licenças, assistente de importação em massa e módulo integrado de calendário pedagógico.
+A versão **V7.0** introduz o redesign visual completo baseado no **Vision UI Dashboard React** (Creative Tim), unificando dois temas completos (Dark Mode padrão e Light Mode alternativo).
 
 Fluxo principal:
 `lead → ficha/entrevista → pré-matrícula → contrato gerado → assinatura obtida fora do Campanella → registro administrativo de assinatura → aluno matriculado`
@@ -117,3 +118,39 @@ node tests/v6_10_import_ux_smoke.mjs
 - Modelos DOCX com campos personalizados ou pacotes na modalidade **dupla** exigem fluxo individual (não suportados na importação de matrículas em lote).
 - Dados em edição no assistente de importação antes do cadastro final não são persistidos no servidor; baixe os CSVs de pendências antes de fechar a página.
 - Não há disparo automático de e-mails de agendamento nem reescrita automática de contratos já assinados após reagendamentos.
+
+---
+
+## 5. Campanella V7 — Design System Vision UI (Dark & Light Mode)
+
+A versão **V7** traz a transformação estética completa do Campanella inspirada no **Vision UI Dashboard React** (Creative Tim), oferecendo uma experiência futurista, premium e profissional para a gestão escolar.
+
+### 5.1. Conceito Visual & Paleta Semântica
+- **Estética:** Dark Futuristic / Premium SaaS / Glassmorphism / Deep Navy / Electric Blue.
+- **Camadas de Profundidade:**
+  - Base N0: `#060B1F` (Dark) / `#F5F7FC` (Light)
+  - Card N1: `#080F2B` (Dark) / `#FFFFFF` (Light)
+  - Superfície Elevada N2: `#0B1437` (Dark) / `#FFFFFF` (Light)
+  - Superfície Flutuante N3: `#101C44` (Dark) / `#FFFFFF` (Light)
+  - Inputs & Campos: `#0C1735` (Dark) / `#F8FAFD` (Light)
+  - Hover: `#172650` (Dark) / `#EEF2FA` (Light)
+- **Acentos Elétricos:** Primary Blue (`#0075FF`), Electric Cyan (`#21D4FD`), Light Blue (`#55C1FF`), Purple (`#7551FF`).
+- **Estados Semânticos:** Sucesso (`#01B574`), Atenção (`#FFB547`), Erro (`#F56565`), Informação (`#21D4FD`).
+
+### 5.2. Alternância Instantânea e Paridade entre Temas
+- **Persistência Local:** Salvo em `localStorage` sob a chave `campanella:theme`.
+- **Anti-flash:** Script síncrono no topo de `<head>` em `index.html` e `ajuda-contratos.html` que aplica `data-theme` antes do primeiro paint, eliminando qualquer cintilação branca.
+- **Alternador Rápido:** Botão no topo do cabeçalho com ícones SVG animados de Sol e Lua, sem recarregar a página.
+
+### 5.3. Isolamento Físico de Contratos Jurídicos
+- **Regra de Fidelidade Legal:** Toda visualização de contrato, comprovante e documento impresso (`.legal-document`, `.doc-frame`) preserva fundo de papel branco absoluto (`#FFFFFF`) e tipografia de alto contraste (`#1A2340`) em ambos os modos, assegurando a validade jurídica e a legibilidade na impressão física.
+
+### 5.4. Como Iniciar Localmente no Windows
+1. **Opção 1 (1 clique):** Dê dois cliques em [`iniciar.bat`](iniciar.bat).
+2. **Opção 2 (PowerShell):**
+   ```powershell
+   cd C:\Users\Julia\Downloads\campanella-v7
+   npx.cmd --yes http-server . -p 8001 -a 127.0.0.1 -c-1
+   ```
+   *Nota: O uso de `npx.cmd` evita o bloqueio padrão da política de execução de scripts `.ps1` do PowerShell.*
+   Acesse no navegador: `http://127.0.0.1:8001`.
