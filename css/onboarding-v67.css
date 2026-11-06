@@ -1,7 +1,7 @@
 /* Campanella V6.8 - assistente de implantacao */
 .onb-wizard{display:grid;gap:20px;min-width:0}
 .onb-top{display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.onb-top h2{font-size:clamp(21px,2.3vw,28px);margin:2px 0 8px;color:#112d30}
+.onb-top h2{font-size:clamp(21px,2.3vw,28px);margin:2px 0 8px;color:#061C14}
 .onb-top p{margin:0}
 .onb-summary{display:grid;gap:1px;min-width:130px;text-align:center;background:#ecf6f1;padding:13px 22px;border-radius:14px;color:#0e6f58}
 .onb-summary b{font-size:27px}.onb-summary small{font-size:12px}

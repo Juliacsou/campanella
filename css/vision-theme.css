@@ -12,9 +12,9 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  /* Backgrounds — Vision UI Deep Cosmic Navy */
-  --camp-bg: #060B26;
-  --camp-bg-secondary: #0B1437;
+  /* Backgrounds — Vision UI Deep Cosmic Obsidian Forest */
+  --camp-bg: #03130E;
+  --camp-bg-secondary: #061C14;
   --camp-bg-radial:
     radial-gradient(circle at 82% 8%, rgba(5, 150, 105, 0.28) 0%, rgba(5, 150, 105, 0.08) 32%, transparent 56%),
     radial-gradient(circle at 14% 34%, rgba(13, 148, 136, 0.20) 0%, rgba(13, 148, 136, 0.06) 26%, transparent 50%),
@@ -24,15 +24,15 @@
     linear-gradient(150deg, #05130F 0%, #071C16 35%, #09241C 60%, #061813 85%, #04100C 100%);
   
   /* Surfaces — Vision UI Signature Glassmorphism */
-  --camp-surface: #0B1437;
-  --camp-surface-raised: #111C44;
-  --camp-surface-floating: #12204E;
-  --camp-surface-card: linear-gradient(127.09deg, rgba(6, 22, 18, 0.94) 0%, rgba(4, 16, 12, 0.88) 100%);
+  --camp-surface: #061C14;
+  --camp-surface-raised: #0A261C;
+  --camp-surface-floating: #0E3024;
+  --camp-surface-card: linear-gradient(127.09deg, rgba(10, 36, 27, 0.94) 0%, rgba(6, 27, 20, 0.88) 100%);
   --camp-surface-card-border: none;
 
   /* Inputs & Interactive Controls */
-  --camp-input: rgba(15, 23, 42, 0.65);
-  --camp-input-focus: rgba(20, 30, 60, 0.85);
+  --camp-input: rgba(6, 28, 20, 0.75);
+  --camp-input-focus: rgba(10, 42, 32, 0.90);
   --camp-input-border: rgba(255, 255, 255, 0.12);
   --camp-hover: rgba(255, 255, 255, 0.06);
   --camp-hover-strong: rgba(5, 150, 105, 0.18);
@@ -46,9 +46,9 @@
 
   /* Typography — Vision UI High-Contrast White & Muted Slate */
   --camp-text: #FFFFFF;
-  --camp-text-secondary: #CBD5E1;
-  --camp-text-muted: #94A3B8;
-  --camp-text-disabled: #64748B;
+  --camp-text-secondary: #D1DFD6;
+  --camp-text-muted: #8DA697;
+  --camp-text-disabled: #5C7366;
 
   /* Semantic Feedback (Pure Borderless Glass) */
   --camp-success: #01B574;
@@ -81,22 +81,22 @@
   /* Gradients */
   --camp-gradient-primary: linear-gradient(135deg, #059669 0%, #10B981 100%);
   --camp-gradient-surface: linear-gradient(127.09deg, rgba(6, 22, 18, 0.94) 0%, rgba(4, 16, 12, 0.88) 100%);
-  --camp-gradient-sidebar: linear-gradient(180deg, #0B1437 0%, #060B26 100%);
+  --camp-gradient-sidebar: linear-gradient(180deg, #061C14 0%, #03130E 100%);
   --camp-gradient-icon: linear-gradient(135deg, #059669 0%, #34D399 100%);
 
   /* Scrollbars */
   --camp-scrollbar-thumb: rgba(255, 255, 255, 0.18);
-  --camp-scrollbar-track: rgba(6, 11, 31, 0.7);
+  --camp-scrollbar-track: rgba(3, 19, 14, 0.7);
 
   /* Bridge to existing legacy variables */
   --c-ink: #FFFFFF;
   --c-green: #059669;
   --c-border: transparent;
-  --c-soft: #101C44;
+  --c-soft: #082118;
   --crm-stroke: transparent;
   --crm-forest: #059669;
-  --crm-muted: #A0AEC0;
-  --crm-bg: #060B26;
+  --crm-muted: #7B9485;
+  --crm-bg: #03130E;
 }
 
 [data-theme="light"] {
@@ -131,10 +131,10 @@
   --camp-purple: #0D9488;
 
   /* Typography — Crisp High Contrast (Zero Blue) */
-  --camp-text: #111827;
-  --camp-text-secondary: #374151;
+  --camp-text: #0F1C16;
+  --camp-text-secondary: #263B30;
   --camp-text-muted: #6B7280;
-  --camp-text-disabled: #9CA3AF;
+  --camp-text-disabled: #8DA697;
 
   /* Semantic Feedback (Pure Borderless) */
   --camp-success: #059669;
@@ -175,13 +175,13 @@
   --camp-scrollbar-track: transparent;
 
   /* Bridge to existing legacy variables */
-  --c-ink: #111827;
+  --c-ink: #0F1C16;
   --c-green: #059669;
   --c-border: transparent;
   --c-soft: rgba(243, 248, 245, 0.8);
   --crm-stroke: transparent;
   --crm-forest: #059669;
-  --crm-muted: #4B5563;
+  --crm-muted: #44594D;
   --crm-bg: #F3F8F5;
 }
 
@@ -442,7 +442,7 @@ textarea:focus-visible {
   top: 0 !important;
   height: 100vh !important;
   overflow-y: auto !important;
-  background: var(--camp-surface-secondary, #080F2B) !important;
+  background: var(--camp-surface-secondary, #041711) !important;
   border-right: 1px solid var(--camp-divider) !important;
   padding: 24px 14px 20px !important;
   display: flex !important;
@@ -1343,7 +1343,7 @@ button.btn {
   background: rgba(255, 255, 255, 0.08) !important;
   border: none !important;
   outline: none !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
@@ -1362,7 +1362,7 @@ button.btn {
   background: rgba(255, 255, 255, 0.08) !important;
   border: none !important;
   outline: none !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
 }
 
@@ -1389,7 +1389,7 @@ button.btn {
 [data-theme="light"] .tabs button {
   background: #EBF4EE !important;
   border: none !important;
-  color: #374151 !important;
+  color: #263B30 !important;
 }
 
 [data-theme="light"] .tabs .btn:not(.light),
@@ -1632,7 +1632,7 @@ button.btn {
 .crm-badge.crm-neutral,
 .topbar-chip {
   background: rgba(255, 255, 255, 0.08) !important;
-  color: #CBD5E0 !important;
+  color: #D1DFD6 !important;
   border: none !important;
   outline: none !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
@@ -1696,7 +1696,7 @@ dialog[open],
 
 dialog::backdrop,
 .camp-app-dialog::backdrop {
-  background: rgba(4, 8, 24, 0.78) !important;
+  background: rgba(3, 15, 11, 0.78) !important;
   backdrop-filter: blur(8px) !important;
   animation: camp-fade-in 0.2s ease-out forwards;
 }
@@ -1757,7 +1757,7 @@ dialog .close:hover {
 #busyOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(4, 8, 24, 0.75) !important;
+  background: rgba(3, 15, 11, 0.75) !important;
   backdrop-filter: blur(6px);
   z-index: 1000;
   display: grid;
@@ -4910,7 +4910,7 @@ dialog .close:hover {
 .legal-document,
 .doc-frame {
   background: #FFFFFF !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
   border-radius: var(--camp-radius-md);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
 }
@@ -4919,15 +4919,15 @@ dialog .close:hover {
 .legal-document h3,
 .legal-document p,
 .legal-document strong {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .legal-document h3 {
-  background: #EEF2F6 !important;
+  background: #EFF6F2 !important;
 }
 
 .signature-summary {
-  border-color: #E2E8F0 !important;
+  border-color: #E2EDE6 !important;
 }
 
 /* ==========================================================================
@@ -4996,7 +4996,7 @@ dialog .close:hover {
 
 /* ==========================================================================
    19. COMPREHENSIVE VISION UI SYSTEM & FULL-PAGE RESKINNING
-   Eliminates all remaining legacy colors (#167360, #122b30, #d5e8dc),
+   Eliminates all remaining legacy colors (#167360, #061C14, #d5e8dc),
    wireframe borders, and ensures hyper-faithful styling across all pages.
    ========================================================================== */
 
@@ -5080,7 +5080,7 @@ table {
 .crm-table th,
 table th {
   background: transparent !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   font-size: 10px !important;
   font-weight: 800 !important;
   text-transform: uppercase !important;
@@ -5096,7 +5096,7 @@ table td {
   padding: 16px 18px !important;
   border: none !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   background: transparent !important;
   vertical-align: middle !important;
 }
@@ -5118,21 +5118,21 @@ table tr:hover td {
 [data-theme="light"] .data-table th,
 [data-theme="light"] .crm-table th,
 [data-theme="light"] table th {
-  border-bottom: 1px solid #EDF2F7 !important;
-  color: #718096 !important;
+  border-bottom: 1px solid #EAF2ED !important;
+  color: #7B9485 !important;
 }
 
 [data-theme="light"] .data-table td,
 [data-theme="light"] .crm-table td,
 [data-theme="light"] table td {
   border-bottom: 1px solid #F7FAFC !important;
-  color: #4A5568 !important;
+  color: #44594D !important;
 }
 
 [data-theme="light"] .data-table td:first-child,
 [data-theme="light"] .crm-table td strong,
 [data-theme="light"] .data-table td b {
-  color: #1A202C !important;
+  color: #0F1C16 !important;
 }
 
 [data-theme="light"] .data-table tr:hover td,
@@ -5157,7 +5157,7 @@ table tr:hover td {
   font-weight: 800 !important;
   text-transform: uppercase !important;
   letter-spacing: 1.2px !important;
-  color: #718096 !important;
+  color: #7B9485 !important;
   padding: 6px 12px 12px !important;
 }
 
@@ -5165,7 +5165,7 @@ table tr:hover td {
   border: 0 !important;
   border-radius: 12px !important;
   background: transparent !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   font-size: 12px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
@@ -5191,7 +5191,7 @@ table tr:hover td {
 }
 
 .cal-calendar {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5210,7 +5210,7 @@ table tr:hover td {
 }
 
 .cal-switcher {
-  background: rgba(15, 23, 42, 0.6) !important;
+  background: rgba(6, 28, 20, 0.6) !important;
   border-radius: 12px !important;
   padding: 4px !important;
   border: none !important;
@@ -5224,7 +5224,7 @@ table tr:hover td {
   background: transparent !important;
   border: none !important;
   outline: none !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   border-radius: 8px !important;
   padding: 6px 14px !important;
   font-size: 11px !important;
@@ -5262,7 +5262,7 @@ table tr:hover td {
 
 .cal-week-time-col,
 .cal-week-time-label {
-  color: #718096 !important;
+  color: #7B9485 !important;
   font-size: 11px !important;
   font-weight: 700 !important;
 }
@@ -5336,7 +5336,7 @@ table tr:hover td {
 }
 
 .cal-month-weekdays {
-  color: #718096 !important;
+  color: #7B9485 !important;
   font-size: 11px !important;
   font-weight: 800 !important;
   text-transform: uppercase !important;
@@ -5407,7 +5407,7 @@ table tr:hover td {
 }
 
 .cal-block-row small {
-  color: #718096 !important;
+  color: #7B9485 !important;
   font-size: 11px !important;
 }
 
@@ -5428,7 +5428,7 @@ table tr:hover td {
   background: rgba(255, 255, 255, 0.08) !important;
   border: none !important;
   outline: none !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   padding: 10px 18px !important;
   border-radius: 12px !important;
   font-size: 11px !important;
@@ -5466,7 +5466,7 @@ table tr:hover td {
 }
 
 .crm-workspace {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5505,7 +5505,7 @@ table tr:hover td {
 }
 
 .crm-lead-card {
-  background: linear-gradient(127deg, rgba(16, 26, 68, 0.85) 0%, rgba(10, 16, 44, 0.85) 100%) !important;
+  background: linear-gradient(127deg, rgba(10, 38, 28, 0.85) 0%, rgba(6, 28, 20, 0.85) 100%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 14px !important;
@@ -5537,7 +5537,7 @@ table tr:hover td {
 }
 
 .crm-priority-box {
-  background: linear-gradient(127deg, rgba(16, 26, 68, 0.85) 0%, rgba(10, 16, 44, 0.85) 100%) !important;
+  background: linear-gradient(127deg, rgba(10, 38, 28, 0.85) 0%, rgba(6, 28, 20, 0.85) 100%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 16px !important;
@@ -5552,12 +5552,12 @@ table tr:hover td {
   background: rgba(5, 150, 105, 0.12) !important;
   border-left: 3px solid #059669 !important;
   border-radius: 10px !important;
-  color: #E2E8F0 !important;
+  color: #E2EDE6 !important;
 }
 
 /* --- 19.5 Fichas Iniciais, Matrículas & Pacotes --- */
 .fiche-choice {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5573,7 +5573,7 @@ table tr:hover td {
 }
 
 .fiche-choice p {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   font-size: 12.5px !important;
 }
 
@@ -5584,7 +5584,7 @@ table tr:hover td {
   border-left: 4px solid #059669 !important;
   border-radius: 12px !important;
   padding: 14px 18px !important;
-  color: #E2E8F0 !important;
+  color: #E2EDE6 !important;
   margin-top: 18px !important;
   font-size: 12.5px !important;
 }
@@ -5625,7 +5625,7 @@ table tr:hover td {
 }
 
 .preferences-nav {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5637,7 +5637,7 @@ table tr:hover td {
 }
 
 .preferences-nav-title {
-  color: #718096 !important;
+  color: #7B9485 !important;
   font-size: 10.5px !important;
   font-weight: 800 !important;
   text-transform: uppercase !important;
@@ -5648,7 +5648,7 @@ table tr:hover td {
 .preferences-nav-item {
   background: transparent !important;
   border: none !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   border-radius: 12px !important;
   padding: 12px 14px !important;
   font-size: 13px !important;
@@ -5674,7 +5674,7 @@ table tr:hover td {
 }
 
 .preferences-tile {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5695,12 +5695,12 @@ table tr:hover td {
 }
 
 .preferences-tile small {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   font-size: 12px !important;
 }
 
 .school-hero {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5727,14 +5727,14 @@ table tr:hover td {
 }
 
 .school-license-summary span {
-  color: #718096 !important;
+  color: #7B9485 !important;
   text-transform: uppercase !important;
   font-size: 10.5px !important;
   letter-spacing: 0.8px !important;
 }
 
 .school-card {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5755,7 +5755,7 @@ table tr:hover td {
 }
 
 .school-card p {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
 }
 
 .school-card.is-current {
@@ -5768,7 +5768,7 @@ table tr:hover td {
   right: 0 !important;
   top: calc(100% + 8px) !important;
   min-width: 240px !important;
-  background: rgba(10, 16, 44, 0.95) !important;
+  background: rgba(6, 28, 20, 0.95) !important;
   backdrop-filter: blur(24px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   border: none !important;
@@ -5788,7 +5788,7 @@ table tr:hover td {
   padding: 10px 14px !important;
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: #E2E8F0 !important;
+  color: #E2EDE6 !important;
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
@@ -5815,7 +5815,7 @@ table tr:hover td {
 #loginPage,
 #signupPage,
 #noSchoolPage {
-  background-color: #060B26 !important;
+  background-color: #03130E !important;
   background-image: 
     radial-gradient(at 82% 1%, rgba(5, 150, 105, 0.3) 0px, transparent 50%),
     radial-gradient(at 5% 42%, rgba(13, 148, 136, 0.25) 0px, transparent 45%),
@@ -5826,7 +5826,7 @@ table tr:hover td {
 
 .login-card,
 .auth-card {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 24px !important;
@@ -5836,7 +5836,7 @@ table tr:hover td {
 }
 
 .busy-card {
-  background: rgba(10, 16, 44, 0.95) !important;
+  background: rgba(6, 28, 20, 0.95) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5856,7 +5856,7 @@ table tr:hover td {
   position: fixed !important;
   inset: 0 !important;
   z-index: 99999 !important;
-  background: #060B26 !important;
+  background: #03130E !important;
   background-image: 
     radial-gradient(at 82% 1%, rgba(5, 150, 105, 0.35) 0px, transparent 50%),
     radial-gradient(at 5% 42%, rgba(13, 148, 136, 0.28) 0px, transparent 45%),
@@ -5920,7 +5920,7 @@ table tr:hover td {
 .boot-card {
   position: relative !important;
   z-index: 10 !important;
-  background: linear-gradient(127.09deg, rgba(16, 26, 68, 0.85) 0%, rgba(10, 16, 44, 0.9) 100%) !important;
+  background: linear-gradient(127.09deg, rgba(10, 38, 28, 0.85) 0%, rgba(6, 28, 20, 0.9) 100%) !important;
   backdrop-filter: blur(40px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
   border: none !important;
@@ -6054,7 +6054,7 @@ table tr:hover td {
   display: inline-flex !important;
   align-items: center !important;
   gap: 10px !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   font-size: 12px !important;
   font-weight: 600 !important;
   letter-spacing: 0.4px !important;
@@ -6261,7 +6261,7 @@ button.btn.mini.light,
   background: rgba(5, 150, 105, 0.12) !important;
   border: none !important;
   border-left: 4px solid #059669 !important;
-  color: #E2E8F0 !important;
+  color: #E2EDE6 !important;
 }
 
 .cal-temp-badge,
@@ -6364,23 +6364,23 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .home-shortcut b {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .home-shortcut small {
   font-size: 11px !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
 
 [data-theme="light"] .home-shortcut small {
-  color: #718096 !important;
+  color: #7B9485 !important;
 }
 
 .home-shortcut > svg:last-child {
-  color: #718096 !important;
+  color: #7B9485 !important;
   flex-shrink: 0 !important;
   margin-left: auto !important;
   transition: transform 0.18s ease, color 0.18s ease !important;
@@ -6408,12 +6408,12 @@ button.btn.mini.light,
 [data-theme="light"] .cal-editor-panel,
 [data-theme="light"] .cal-calendar {
   background: #FFFFFF !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 /* Metrics above Calendar */
 .cal-metrics > div {
-  background: rgba(11, 20, 55, 0.7) !important;
+  background: rgba(6, 28, 20, 0.7) !important;
   border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
@@ -6423,7 +6423,7 @@ button.btn.mini.light,
 [data-theme="light"] .cal-metrics > div {
   background: #FFFFFF !important;
   border: none !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-metrics strong {
@@ -6431,20 +6431,20 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-metrics strong {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-metrics span {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
 }
 
 /* Teacher Picker & Controls */
 .cal-teacher-picker {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
 }
 
 .cal-teacher-picker select {
-  background: rgba(15, 23, 42, 0.75) !important;
+  background: rgba(6, 28, 20, 0.75) !important;
   border: none !important;
   border-radius: 10px !important;
   color: #FFFFFF !important;
@@ -6453,7 +6453,7 @@ button.btn.mini.light,
 [data-theme="light"] .cal-teacher-picker select {
   background: #F3F8F5 !important;
   border: none !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-switcher {
@@ -6463,7 +6463,7 @@ button.btn.mini.light,
 }
 
 .cal-switcher button {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
 }
 
 .cal-switcher .selected {
@@ -6489,7 +6489,7 @@ button.btn.mini.light,
 [data-theme="light"] .cal-week-head-day {
   background: #FFFFFF !important;
   border: none !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
 }
 
@@ -6499,11 +6499,11 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-week-head-day b {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-week-head-day span {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   font-size: 11px !important;
 }
 
@@ -6518,13 +6518,13 @@ button.btn.mini.light,
 }
 
 .cal-week-time-label {
-  color: #718096 !important;
+  color: #7B9485 !important;
   font-size: 11px !important;
   font-weight: 700 !important;
 }
 
 .cal-week-day-col {
-  background: rgba(11, 20, 55, 0.65) !important;
+  background: rgba(6, 28, 20, 0.65) !important;
   border: none !important;
   border-radius: 14px !important;
   overflow: hidden !important;
@@ -6541,7 +6541,7 @@ button.btn.mini.light,
 .cal-week-all-day {
   background: rgba(255, 255, 255, 0.03) !important;
   border-bottom: none !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   font-size: 11px !important;
   font-weight: 700 !important;
 }
@@ -6549,11 +6549,11 @@ button.btn.mini.light,
 [data-theme="light"] .cal-week-all-day {
   background: #F3F8F5 !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
-  color: #374151 !important;
+  color: #263B30 !important;
 }
 
 .cal-week-all-day.empty {
-  color: #718096 !important;
+  color: #7B9485 !important;
 }
 
 .cal-week-body-inner {
@@ -6561,7 +6561,7 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-week-body-inner {
-  background: linear-gradient(to bottom, transparent 0, transparent calc(100% - 1px), #EEF2F5 calc(100% - 1px)) !important;
+  background: linear-gradient(to bottom, transparent 0, transparent calc(100% - 1px), #EAF2ED calc(100% - 1px)) !important;
 }
 
 .cal-week-hour-line {
@@ -6569,7 +6569,7 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-week-hour-line {
-  border-top: 1px solid #EEF2F5 !important;
+  border-top: 1px solid #EAF2ED !important;
 }
 
 .cal-week-slot-bg {
@@ -6587,12 +6587,12 @@ button.btn.mini.light,
 
 .cal-week-day-col.blocked-full .cal-week-all-day {
   background: rgba(255, 255, 255, 0.04) !important;
-  color: #718096 !important;
+  color: #7B9485 !important;
 }
 
 /* --- 24.5 Weekly Slot Editor (Image 2 Fix - Grade Semanal) --- */
 .cal-editor-scroll {
-  background: rgba(11, 20, 55, 0.75) !important;
+  background: rgba(6, 28, 20, 0.75) !important;
   border: none !important;
   border-radius: 14px !important;
   backdrop-filter: blur(20px) !important;
@@ -6606,7 +6606,7 @@ button.btn.mini.light,
 }
 
 .cal-editor-head {
-  background: rgba(6, 11, 38, 0.95) !important;
+  background: rgba(3, 19, 14, 0.95) !important;
   border-bottom: none !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
@@ -6618,7 +6618,7 @@ button.btn.mini.light,
 }
 
 .cal-editor-corner {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   border-right: none !important;
   font-weight: 700 !important;
 }
@@ -6634,11 +6634,11 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-editor-heading strong {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-editor-heading small {
-  color: #718096 !important;
+  color: #7B9485 !important;
   font-size: 10px !important;
 }
 
@@ -6649,11 +6649,11 @@ button.btn.mini.light,
 
 [data-theme="light"] .cal-editor-times,
 [data-theme="light"] .cal-editor-day {
-  border-right: 1px solid #EDF1F4 !important;
+  border-right: 1px solid #E7F0EB !important;
 }
 
 .cal-editor-hour-label {
-  color: #718096 !important;
+  color: #7B9485 !important;
 }
 
 .cal-editor-target {
@@ -6663,8 +6663,8 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-editor-target {
-  background-image: linear-gradient(to bottom, #DCE7EB 1px, transparent 1px),
-                    linear-gradient(to bottom, #EFF3F5 1px, transparent 1px) !important;
+  background-image: linear-gradient(to bottom, #DCE8E0 1px, transparent 1px),
+                    linear-gradient(to bottom, #EFF6F2 1px, transparent 1px) !important;
 }
 
 .cal-editor-target:hover {
@@ -6697,20 +6697,20 @@ button.btn.mini.light,
   background: rgba(255, 255, 255, 0.06) !important;
   border: none !important;
   border-left: 3px solid rgba(255, 255, 255, 0.3) !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
 }
 
 .cal-editor-caption {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
 }
 
 .cal-editor-foot {
-  color: #718096 !important;
+  color: #7B9485 !important;
 }
 
 /* --- 24.6 Weekly Picker (Image 4 Fix - Horários Semanais & Modais) --- */
 .cal-enrollment {
-  background: rgba(11, 20, 55, 0.75) !important;
+  background: rgba(6, 28, 20, 0.75) !important;
   border: none !important;
   border-radius: 16px !important;
   padding: 20px !important;
@@ -6736,7 +6736,7 @@ button.btn.mini.light,
 [data-theme="light"] .cal-picker-title .form-section,
 [data-theme="light"] .form-section h3,
 [data-theme="light"] .cal-enrollment h3 {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-weekly-picker {
@@ -6744,7 +6744,7 @@ button.btn.mini.light,
 }
 
 .cal-wpicker-scroll {
-  background: rgba(6, 11, 38, 0.85) !important;
+  background: rgba(3, 19, 14, 0.85) !important;
   border: none !important;
   border-radius: 14px !important;
   backdrop-filter: blur(16px) !important;
@@ -6758,7 +6758,7 @@ button.btn.mini.light,
 }
 
 .cal-wpicker-header {
-  background: rgba(11, 20, 55, 0.95) !important;
+  background: rgba(6, 28, 20, 0.95) !important;
   border-bottom: none !important;
 }
 
@@ -6775,12 +6775,12 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-wpicker-header > * {
-  color: #111827 !important;
+  color: #0F1C16 !important;
   border-right: 1px solid #E5EEEB !important;
 }
 
 .cal-wpicker-header > span {
-  color: #718096 !important;
+  color: #7B9485 !important;
   font-weight: 600 !important;
 }
 
@@ -6803,15 +6803,15 @@ button.btn.mini.light,
 }
 
 .cal-wpicker-time span {
-  color: #718096 !important;
+  color: #7B9485 !important;
 }
 
 .cal-wpicker-legend {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
 }
 
 [data-theme="light"] .cal-wpicker-legend {
-  color: #374151 !important;
+  color: #263B30 !important;
 }
 
 .cal-wpicker-legend span {
@@ -6843,7 +6843,7 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-wpicker-dot.occupied {
-  background: #DDE3E5 !important;
+  background: #D7E4DC !important;
 }
 
 .cal-wpicker-event {
@@ -6880,14 +6880,14 @@ button.btn.mini.light,
 }
 
 .cal-wpicker-event.is-busy button {
-  color: #718096 !important;
+  color: #7B9485 !important;
 }
 
 .cal-weekly-empty {
   background: rgba(255, 255, 255, 0.03) !important;
   border: none !important;
   border-radius: 12px !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   padding: 24px !important;
 }
 
@@ -6899,7 +6899,7 @@ dialog:has(.cal-reschedule-modal),
 dialog:has(.student-profile),
 dialog:has(.template-edit-modal),
 dialog:has(.cal-enrollment) {
-  background: #0B1437 !important;
+  background: #061C14 !important;
   color: #FFFFFF !important;
   border: none !important;
   border-radius: 20px !important;
@@ -6914,7 +6914,7 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] dialog:has(.template-edit-modal),
 [data-theme="light"] dialog:has(.cal-enrollment) {
   background: #FFFFFF !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
   border: none !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
 }
@@ -6926,7 +6926,7 @@ dialog:has(.cal-enrollment) {
 /* --- 24.7 Additional Calendar Components (Zero Legacy White/Green) --- */
 .cal-student,
 .cal-student-card {
-  background: rgba(11, 20, 55, 0.7) !important;
+  background: rgba(6, 28, 20, 0.7) !important;
   border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
@@ -6937,7 +6937,7 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .cal-student-card {
   background: #FFFFFF !important;
   border: none !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-student strong,
@@ -6947,16 +6947,16 @@ dialog:has(.cal-enrollment) {
 
 [data-theme="light"] .cal-student strong,
 [data-theme="light"] .cal-student-card strong {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-student small,
 .cal-student-card small {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
 }
 
 .cal-lesson {
-  background: rgba(11, 20, 55, 0.7) !important;
+  background: rgba(6, 28, 20, 0.7) !important;
   border: none !important;
   border-left: 3px solid #059669 !important;
   border-radius: 12px !important;
@@ -6967,7 +6967,7 @@ dialog:has(.cal-enrollment) {
   background: #FFFFFF !important;
   border: none !important;
   border-left: 3px solid #059669 !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-lesson-text strong {
@@ -6975,16 +6975,16 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .cal-lesson-text strong {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-lesson-text span,
 .cal-lesson-text small {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
 }
 
 .cal-settings-body {
-  background: rgba(11, 20, 55, 0.7) !important;
+  background: rgba(6, 28, 20, 0.7) !important;
   border: none !important;
   border-radius: 16px !important;
   color: #FFFFFF !important;
@@ -6993,20 +6993,20 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .cal-settings-body {
   background: #FFFFFF !important;
   border: none !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-settings-nav button {
   background: rgba(255, 255, 255, 0.04) !important;
   border: none !important;
   border-radius: 10px !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   transition: all 0.15s ease !important;
 }
 
 [data-theme="light"] .cal-settings-nav button {
   background: #F3F8F5 !important;
-  color: #374151 !important;
+  color: #263B30 !important;
 }
 
 .cal-settings-nav button:hover {
@@ -7024,7 +7024,7 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .detail-item {
   background: #F3F8F5 !important;
   border: none !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .detail-item strong {
@@ -7032,15 +7032,15 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .detail-item strong {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .detail-item span {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
 }
 
 .cal-profile-metrics > div {
-  background: rgba(11, 20, 55, 0.7) !important;
+  background: rgba(6, 28, 20, 0.7) !important;
   border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
@@ -7049,7 +7049,7 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .cal-profile-metrics > div {
   background: #FFFFFF !important;
   border: none !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-profile-metrics strong {
@@ -7057,15 +7057,15 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .cal-profile-metrics strong {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .cal-profile-metrics span {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
 }
 
 .cal-schedule-mode-box {
-  background: rgba(11, 20, 55, 0.7) !important;
+  background: rgba(6, 28, 20, 0.7) !important;
   border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
@@ -7074,11 +7074,11 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .cal-schedule-mode-box {
   background: #FFFFFF !important;
   border: none !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .interview-calendar-picker {
-  background: rgba(11, 20, 55, 0.7) !important;
+  background: rgba(6, 28, 20, 0.7) !important;
   border: none !important;
   border-radius: 14px !important;
 }
@@ -7098,7 +7098,7 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .interview-slot-option {
   background: #F3F8F5 !important;
   border: none !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .interview-slot-option strong {
@@ -7106,11 +7106,11 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .interview-slot-option strong {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 .interview-slot-option small {
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
 }
 
 .cal-form-slots label {
@@ -7123,7 +7123,7 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .cal-form-slots label {
   background: #F3F8F5 !important;
   border: none !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 /* --- 24.8 CRM & Platform Green Remnants Cleanup --- */
@@ -7158,7 +7158,7 @@ dialog:has(.cal-enrollment) {
   background: rgba(5, 150, 105, 0.12) !important;
   border: none !important;
   border-left: 3px solid #059669 !important;
-  color: #E2E8F0 !important;
+  color: #E2EDE6 !important;
 }
 
 .crm-board-col header b {
@@ -7236,7 +7236,7 @@ button.btn,
 .cal-switcher button:not(.selected),
 .cal-lessons-tab:not(.is-active) {
   background: rgba(255, 255, 255, 0.08) !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   border: none !important;
   outline: none !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
@@ -7383,14 +7383,14 @@ button.btn,
 
 .home-shortcut small {
   font-size: 11px !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
 
 .home-shortcut > svg:last-child {
-  color: #718096 !important;
+  color: #7B9485 !important;
   flex-shrink: 0 !important;
   margin-left: auto !important;
   transition: transform 0.18s ease, color 0.18s ease !important;
@@ -7412,7 +7412,7 @@ button.btn,
 }
 
 .cal-secondary-sidebar h2 {
-  color: #718096 !important;
+  color: #7B9485 !important;
   font-size: 11px !important;
   font-weight: 800 !important;
   text-transform: uppercase !important;
@@ -7421,7 +7421,7 @@ button.btn,
 
 .cal-secondary-sidebar nav button {
   background: transparent !important;
-  color: #A0AEC0 !important;
+  color: #7B9485 !important;
   border: none !important;
   outline: none !important;
 }
@@ -7447,7 +7447,7 @@ button.btn,
 /* Modals & Dialogs — Zero-stroke Floating Glass */
 dialog,
 .camp-app-dialog {
-  background: #0B1437 !important;
+  background: #061C14 !important;
   color: #FFFFFF !important;
   border: none !important;
   outline: none !important;
@@ -7542,8 +7542,9 @@ dialog,
    -------------------------------------------------------------------------- */
 :root:not([data-theme="light"]) .sidebar,
 [data-theme="dark"] .sidebar {
-  background: var(--camp-gradient-sidebar) !important;
-  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.45) !important;
+  background: linear-gradient(180deg, #061C14 0%, #03130E 100%) !important;
+  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.5) !important;
+  border-right: none !important;
 }
 
 :root:not([data-theme="light"]) .sidebar .brand-title,
@@ -7553,7 +7554,7 @@ dialog,
 
 :root:not([data-theme="light"]) .sidebar .brand-sub,
 [data-theme="dark"] .sidebar .brand-sub {
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
 }
 
 :root:not([data-theme="light"]) .sidebar-current-name,
@@ -7578,7 +7579,7 @@ dialog,
 
 :root:not([data-theme="light"]) .sidebar .nav-group,
 [data-theme="dark"] .sidebar .nav-group {
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
   font-size: 10.5px !important;
   letter-spacing: 1.4px !important;
   font-weight: 800 !important;
@@ -7587,15 +7588,15 @@ dialog,
 
 :root:not([data-theme="light"]) .sidebar .nav-btn,
 [data-theme="dark"] .sidebar .nav-btn {
-  color: #E2E8F0 !important;
+  color: #E2EDE6 !important;
 }
 
 :root:not([data-theme="light"]) .sidebar .nav-btn .nav-ico svg,
 :root:not([data-theme="light"]) .sidebar .nav-btn .nav-ico .camp-icon,
 [data-theme="dark"] .sidebar .nav-btn .nav-ico svg,
 [data-theme="dark"] .sidebar .nav-btn .nav-ico .camp-icon {
-  color: #94A3B8 !important;
-  stroke: #94A3B8 !important;
+  color: #8DA697 !important;
+  stroke: #8DA697 !important;
   width: 19px !important;
   height: 19px !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -7621,14 +7622,14 @@ dialog,
 
 :root:not([data-theme="light"]) .sidebar .nav-btn.active,
 [data-theme="dark"] .sidebar .nav-btn.active {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+  background: linear-gradient(127deg, rgba(5, 150, 105, 0.28) 0%, rgba(16, 185, 129, 0.12) 100%) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
   font-weight: 750 !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.22), inset 0 -1px 1px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(5, 150, 105, 0.25), inset 0 1px 1.5px rgba(255, 255, 255, 0.3) !important;
 }
 
 :root:not([data-theme="light"]) .sidebar .nav-btn.active .nav-ico svg,
@@ -7668,13 +7669,13 @@ dialog,
 
 :root:not([data-theme="light"]) .account-person small,
 [data-theme="dark"] .account-person small {
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
   font-size: 11.5px !important;
 }
 
 :root:not([data-theme="light"]) .account-trigger > svg,
 [data-theme="dark"] .account-trigger > svg {
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -7689,14 +7690,14 @@ dialog,
 }
 
 [data-theme="light"] .sidebar .brand-title {
-  color: #1A202C !important;
+  color: #0F1C16 !important;
   font-weight: 800 !important;
   font-size: 15.5px !important;
   letter-spacing: 0.8px !important;
 }
 
 [data-theme="light"] .sidebar .brand-sub {
-  color: #718096 !important;
+  color: #7B9485 !important;
   font-size: 9.5px !important;
   letter-spacing: 1.4px !important;
   font-weight: 700 !important;
@@ -7710,7 +7711,7 @@ dialog,
 }
 
 [data-theme="light"] .sidebar-current-name {
-  color: #1A202C !important;
+  color: #0F1C16 !important;
   font-size: 15px !important;
   font-weight: 800 !important;
   letter-spacing: -0.2px !important;
@@ -7728,7 +7729,7 @@ dialog,
 }
 
 [data-theme="light"] .sidebar .nav-group {
-  color: #718096 !important;
+  color: #7B9485 !important;
   font-size: 10.5px !important;
   letter-spacing: 1.4px !important;
   font-weight: 800 !important;
@@ -7736,15 +7737,15 @@ dialog,
 }
 
 [data-theme="light"] .sidebar .nav-btn {
-  color: #4A5568 !important;
+  color: #44594D !important;
   background: transparent !important;
   border: none !important;
 }
 
 [data-theme="light"] .sidebar .nav-btn .nav-ico svg,
 [data-theme="light"] .sidebar .nav-btn .nav-ico .camp-icon {
-  color: #718096 !important;
-  stroke: #718096 !important;
+  color: #7B9485 !important;
+  stroke: #7B9485 !important;
   width: 19px !important;
   height: 19px !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -7768,7 +7769,7 @@ dialog,
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
   font-weight: 750 !important;
   box-shadow: 0 8px 24px rgba(5, 150, 105, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 1) !important;
   border: none !important;
@@ -7801,18 +7802,18 @@ dialog,
 }
 
 [data-theme="light"] .account-person b {
-  color: #1A202C !important;
+  color: #0F1C16 !important;
   font-size: 13.5px !important;
   font-weight: 700 !important;
 }
 
 [data-theme="light"] .account-person small {
-  color: #718096 !important;
+  color: #7B9485 !important;
   font-size: 11.5px !important;
 }
 
 [data-theme="light"] .account-trigger > svg {
-  color: #718096 !important;
+  color: #7B9485 !important;
 }
 
 /* Account dropdown in Light Mode */
@@ -7820,7 +7821,7 @@ dialog,
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.84) 100%) !important;
   backdrop-filter: blur(28px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
   box-shadow: 0 20px 48px rgba(15, 35, 25, 0.12), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
   border: none !important;
   border-radius: 18px !important;
@@ -7831,19 +7832,19 @@ dialog,
 }
 
 [data-theme="light"] .account-dropdown-top b {
-  color: #1A202C !important;
+  color: #0F1C16 !important;
 }
 
 [data-theme="light"] .account-dropdown-top small {
-  color: #718096 !important;
+  color: #7B9485 !important;
 }
 
 [data-theme="light"] .account-dropdown-title {
-  color: #718096 !important;
+  color: #7B9485 !important;
 }
 
 [data-theme="light"] .account-option {
-  color: #4A5568 !important;
+  color: #44594D !important;
 }
 
 [data-theme="light"] .account-option:hover {
@@ -7858,18 +7859,18 @@ dialog,
 /* Topbar chip & light buttons in Light Mode */
 [data-theme="light"] .topbar-chip {
   background: #FFFFFF !important;
-  color: #374151 !important;
+  color: #263B30 !important;
   box-shadow: 0 2px 8px rgba(15, 35, 25, 0.06) !important;
 }
 
 [data-theme="light"] .btn.light {
-  background: #EDF2F7 !important;
-  color: #2D3748 !important;
+  background: #EAF2ED !important;
+  color: #1E2E25 !important;
 }
 
 [data-theme="light"] .btn.light:hover {
-  background: #E2E8F0 !important;
-  color: #1A202C !important;
+  background: #E2EDE6 !important;
+  color: #0F1C16 !important;
 }
 
 [data-theme="light"] .home-shortcut {
@@ -7889,11 +7890,11 @@ dialog,
 }
 
 [data-theme="light"] .home-shortcut b {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 [data-theme="light"] .home-shortcut small {
-  color: #374151 !important;
+  color: #263B30 !important;
 }
 
 [data-theme="light"] dialog,
@@ -7901,23 +7902,23 @@ dialog,
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.86) 100%) !important;
   backdrop-filter: blur(36px) saturate(200%) !important;
   -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
   border: none !important;
   box-shadow: 0 28px 70px rgba(15, 35, 25, 0.16), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
 }
 
 [data-theme="light"] .cal-secondary-sidebar {
   background: #FFFFFF !important;
-  color: #111827 !important;
+  color: #0F1C16 !important;
   box-shadow: 4px 0 24px rgba(15, 35, 25, 0.06) !important;
 }
 
 [data-theme="light"] .cal-secondary-sidebar h2 {
-  color: #718096 !important;
+  color: #7B9485 !important;
 }
 
 [data-theme="light"] .cal-secondary-sidebar nav button {
-  color: #374151 !important;
+  color: #263B30 !important;
   background: transparent !important;
 }
 
@@ -7940,12 +7941,12 @@ dialog,
 
 [data-theme="light"] .cal-admin-shell > .sidebar .account-trigger {
   background: #FFFFFF !important;
-  color: #1A202C !important;
+  color: #0F1C16 !important;
   box-shadow: 0 2px 8px rgba(15, 35, 25, 0.08) !important;
 }
 
 [data-theme="light"] .cal-admin-shell > .sidebar .nav-btn {
-  color: #374151 !important;
+  color: #263B30 !important;
 }
 
 [data-theme="light"] .cal-admin-shell > .sidebar .nav-btn.active {
@@ -8012,7 +8013,7 @@ dialog,
 
 :root:not([data-theme="light"]) .metric .metric-label,
 [data-theme="dark"] .metric .metric-label {
-  color: #CBD5E1 !important;
+  color: #D1DFD6 !important;
   font-weight: 600 !important;
   font-size: 13px !important;
   letter-spacing: -0.1px !important;
@@ -8023,7 +8024,7 @@ dialog,
   position: absolute !important;
   right: 20px !important;
   top: 22px !important;
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
   transition: all 0.2s ease !important;
 }
 
@@ -8046,7 +8047,7 @@ dialog,
 
 :root:not([data-theme="light"]) .home-shortcut:hover,
 [data-theme="dark"] .home-shortcut:hover {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.2) 0%, rgba(10, 36, 26, 0.9) 40%, rgba(12, 22, 70, 0.98) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.2) 0%, rgba(10, 36, 26, 0.9) 40%, rgba(10, 38, 28, 0.98) 100%) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 16px 36px rgba(5, 150, 105, 0.28), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
 }
@@ -8060,14 +8061,14 @@ dialog,
 
 :root:not([data-theme="light"]) .home-shortcut small,
 [data-theme="dark"] .home-shortcut small {
-  color: #CBD5E1 !important;
+  color: #D1DFD6 !important;
   font-size: 11.5px !important;
   font-weight: 500 !important;
 }
 
 :root:not([data-theme="light"]) .home-shortcut svg:last-child,
 [data-theme="dark"] .home-shortcut svg:last-child {
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
 }
 
 :root:not([data-theme="light"]) .home-actions-title h2,
@@ -8077,7 +8078,7 @@ dialog,
 
 :root:not([data-theme="light"]) .home-actions-title p,
 [data-theme="dark"] .home-actions-title p {
-  color: #CBD5E1 !important;
+  color: #D1DFD6 !important;
   font-size: 13.5px !important;
 }
 
@@ -8099,15 +8100,15 @@ dialog,
 }
 
 [data-theme="light"] .metric-value {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 [data-theme="light"] .metric-label {
-  color: #4B5563 !important;
+  color: #44594D !important;
 }
 
 [data-theme="light"] .metric-go {
-  color: #9CA3AF !important;
+  color: #8DA697 !important;
 }
 
 [data-theme="light"] .metric:hover .metric-go {
@@ -8140,7 +8141,7 @@ dialog,
 
 :root:not([data-theme="light"]),
 [data-theme="dark"] {
-  --camp-bg: #060B26;
+  --camp-bg: #03130E;
   --camp-bg-radial:
     radial-gradient(circle at 82% 8%, rgba(5, 150, 105, 0.28) 0%, rgba(5, 150, 105, 0.08) 32%, transparent 56%),
     radial-gradient(circle at 14% 34%, rgba(13, 148, 136, 0.20) 0%, rgba(13, 148, 136, 0.06) 26%, transparent 50%),
@@ -8154,14 +8155,14 @@ html,
 body,
 :root:not([data-theme="light"]) body,
 [data-theme="dark"] body {
-  background-color: #060B26 !important;
+  background-color: #03130E !important;
   background-image:
     radial-gradient(circle at 82% 8%, rgba(5, 150, 105, 0.28) 0%, rgba(5, 150, 105, 0.08) 32%, transparent 56%),
     radial-gradient(circle at 14% 34%, rgba(13, 148, 136, 0.20) 0%, rgba(13, 148, 136, 0.06) 26%, transparent 50%),
     radial-gradient(ellipse at 50% 55%, rgba(5, 150, 105, 0.18) 0%, rgba(10, 38, 28, 0.10) 38%, transparent 68%),
     radial-gradient(circle at 88% 85%, rgba(5, 150, 105, 0.26) 0%, rgba(16, 185, 129, 0.09) 30%, transparent 58%),
     radial-gradient(circle at 18% 90%, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.05) 26%, transparent 52%),
-    linear-gradient(150deg, #05130F 0%, #071C16 35%, #09241C 60%, #061813 85%, #04100C 100%) !important;
+    linear-gradient(150deg, #03130E 0%, #051A13 35%, #07221A 60%, #041610 85%, #020C09 100%) !important;
   background-attachment: fixed !important;
   background-repeat: no-repeat !important;
   background-size: cover !important;
@@ -8215,9 +8216,9 @@ body,
 /* ==========================================================================
    29. VISION UI HIGH-CONTRAST TYPOGRAPHY & TABLE READABILITY (DARK MODE)
    - Eliminates washed out / faded secondary texts across all pages
-   - Crisp #CBD5E1 for labels, hints, muted copy and descriptions
-   - Pristine #94A3B8 for table headers, metadata and small labels
-   - Deep readable #E2E8F0 for data cells
+   - Crisp #D1DFD6 for labels, hints, muted copy and descriptions
+   - Pristine #8DA697 for table headers, metadata and small labels
+   - Deep readable #E2EDE6 for data cells
    ========================================================================== */
 
 :root:not([data-theme="light"]) .muted,
@@ -8226,14 +8227,14 @@ body,
 [data-theme="dark"] .muted,
 [data-theme="dark"] .subtle,
 [data-theme="dark"] .leadline {
-  color: #CBD5E1 !important;
+  color: #D1DFD6 !important;
 }
 
 :root:not([data-theme="light"]) .data-table th,
 :root:not([data-theme="light"]) .crm-table th,
 [data-theme="dark"] .data-table th,
 [data-theme="dark"] .crm-table th {
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
   font-weight: 700 !important;
   letter-spacing: 0.8px !important;
   font-size: 11px !important;
@@ -8244,7 +8245,7 @@ body,
 :root:not([data-theme="light"]) .crm-table td,
 [data-theme="dark"] .data-table td,
 [data-theme="dark"] .crm-table td {
-  color: #E2E8F0 !important;
+  color: #E2EDE6 !important;
   font-size: 13.5px !important;
 }
 
@@ -8256,7 +8257,7 @@ body,
 [data-theme="dark"] .data-table td small,
 [data-theme="dark"] .crm-table td .muted,
 [data-theme="dark"] .crm-table td small {
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
 }
 
 :root:not([data-theme="light"]) .panel-head h2,
@@ -8277,7 +8278,7 @@ body,
 [data-theme="dark"] .topbar .subtle,
 [data-theme="dark"] .topbar-breadcrumb,
 [data-theme="dark"] .breadcrumb {
-  color: #CBD5E1 !important;
+  color: #D1DFD6 !important;
 }
 
 :root:not([data-theme="light"]) .topbar .subtle b,
@@ -8289,7 +8290,7 @@ body,
 :root:not([data-theme="light"]) .field-label,
 [data-theme="dark"] label,
 [data-theme="dark"] .field-label {
-  color: #CBD5E1 !important;
+  color: #D1DFD6 !important;
   font-weight: 600 !important;
 }
 
@@ -8297,7 +8298,7 @@ body,
 :root:not([data-theme="light"]) .field-hint,
 [data-theme="dark"] .form-help,
 [data-theme="dark"] .field-hint {
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
 }
 
 /* ==========================================================================
@@ -8347,7 +8348,7 @@ body,
   background: transparent !important;
   border: none !important;
   outline: none !important;
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
   font-size: 13px !important;
   font-weight: 700 !important;
   padding: 12px 18px 14px !important;
@@ -8392,7 +8393,7 @@ body,
 :root:not([data-theme="light"]) .crm-tabs button span,
 [data-theme="dark"] .crm-tabs button span {
   background: rgba(255, 255, 255, 0.12) !important;
-  color: #CBD5E1 !important;
+  color: #D1DFD6 !important;
   border-radius: 20px !important;
   padding: 2px 7px !important;
   font-size: 10.5px !important;
@@ -8431,7 +8432,7 @@ body,
 [data-theme="light"] .crm-tabs button {
   background: transparent !important;
   border: none !important;
-  color: #4B5563 !important;
+  color: #44594D !important;
   font-size: 13px !important;
   font-weight: 700 !important;
   padding: 12px 18px 14px !important;
@@ -8441,7 +8442,7 @@ body,
 }
 
 [data-theme="light"] .crm-tabs button:hover {
-  color: #111827 !important;
+  color: #0F1C16 !important;
   background: rgba(0, 0, 0, 0.03) !important;
 }
 
@@ -8586,12 +8587,12 @@ body,
   align-items: center !important;
   justify-content: space-between !important;
   padding: 12px 22px !important;
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
   font-size: 12px !important;
 }
 
 .crm-list-controls b {
-  color: #CBD5E1 !important;
+  color: #D1DFD6 !important;
   font-weight: 750 !important;
 }
 
@@ -8631,7 +8632,7 @@ body,
   flex: 0 0 280px !important;
   max-height: calc(100vh - 280px) !important;
   min-height: 480px !important;
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.08) 0%, rgba(10, 36, 28, 0.68) 40%, rgba(8, 14, 46, 0.88) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.08) 0%, rgba(10, 36, 28, 0.68) 40%, rgba(6, 28, 20, 0.88) 100%) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border: none !important;
@@ -8752,7 +8753,7 @@ body,
 
 :root:not([data-theme="light"]) .crm-due-item p,
 [data-theme="dark"] .crm-due-item p {
-  color: #CBD5E1 !important;
+  color: #D1DFD6 !important;
   font-size: 12px !important;
   margin: 3px 0 0 !important;
 }
@@ -8768,13 +8769,13 @@ body,
 
 :root:not([data-theme="light"]) .crm-due-date,
 [data-theme="dark"] .crm-due-date {
-  color: #CBD5E1 !important;
+  color: #D1DFD6 !important;
   font-weight: 700 !important;
 }
 
 :root:not([data-theme="light"]) .crm-due-panel .crm-muted,
 [data-theme="dark"] .crm-due-panel .crm-muted {
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
   padding: 16px 0 !important;
   font-size: 13px !important;
 }
@@ -8796,7 +8797,7 @@ body,
 }
 
 [data-theme="light"] .crm-due-head h2 {
-  color: #111827 !important;
+  color: #0F1C16 !important;
   font-size: 18px !important;
   margin: 0 !important;
 }
@@ -8806,11 +8807,11 @@ body,
 }
 
 [data-theme="light"] .crm-due-item b {
-  color: #111827 !important;
+  color: #0F1C16 !important;
 }
 
 [data-theme="light"] .crm-due-item p {
-  color: #4B5563 !important;
+  color: #44594D !important;
 }
 
 [data-theme="light"] .crm-due-icon {
@@ -8820,7 +8821,7 @@ body,
 }
 
 [data-theme="light"] .crm-due-date {
-  color: #4B5563 !important;
+  color: #44594D !important;
 }
 
 /* 30.8 Lead Cards (3D Luminous Emerald Glassmorphism — ZERO STROKE BORDER) */
@@ -8892,7 +8893,7 @@ body,
 
 :root:not([data-theme="light"]) .crm-lead-card .crm-muted,
 [data-theme="dark"] .crm-lead-card .crm-muted {
-  color: #CBD5E1 !important;
+  color: #D1DFD6 !important;
   font-size: 11.5px !important;
   font-weight: 500 !important;
   margin-top: 2px !important;
@@ -8912,7 +8913,7 @@ body,
 :root:not([data-theme="light"]) .crm-mini-date,
 [data-theme="dark"] .crm-card-foot,
 [data-theme="dark"] .crm-mini-date {
-  color: #94A3B8 !important;
+  color: #8DA697 !important;
   font-size: 10.5px !important;
   font-weight: 600 !important;
   margin-top: 4px !important;
@@ -8981,13 +8982,13 @@ body,
 }
 
 [data-theme="light"] .crm-lead-top strong {
-  color: #111827 !important;
+  color: #0F1C16 !important;
   font-size: 14px !important;
   font-weight: 800 !important;
 }
 
 [data-theme="light"] .crm-lead-card .crm-muted {
-  color: #4B5563 !important;
+  color: #44594D !important;
   font-size: 12px !important;
   font-weight: 500 !important;
 }
