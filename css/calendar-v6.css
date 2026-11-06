@@ -1,5 +1,5 @@
 /* Campanella V6: interface de aulas, responsiva e isolada dos modais legados.
-   Alinhada ao Design System Vision UI (Zero-stroke Glassmorphism, Dark Cosmic Navy & Electric Blue) */
+   Alinhada ao Design System Vision UI (Zero-stroke Glassmorphism, Emerald & Mint Green Glassmorphism) */
 
 .cal-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:0 0 20px}
 .cal-metrics>div{padding:18px 20px;background:var(--camp-surface-card, rgba(11,20,55,0.7));border:none!important;border-radius:16px;display:flex;flex-direction:column;gap:5px;min-width:0;box-shadow:var(--camp-shadow-card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}

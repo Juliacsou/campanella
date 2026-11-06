@@ -98,7 +98,7 @@ dialog:has(#crmAppointmentForm){width:min(980px,calc(100vw - 26px))}
 .crm-mini-legend-item{display:inline-flex;align-items:center;gap:5px}
 .crm-mini-dot{width:9px;height:9px;border-radius:3px;display:inline-block}
 .crm-mini-dot.is-lesson{background:#18523e}
-.crm-mini-dot.is-interview{background:#0284c7}
+.crm-mini-dot.is-interview{background:#059669}
 .crm-mini-dot.is-block{background:#dc2626}
 .crm-mini-dot.is-selected{background:#d97706}
 .crm-mini-week-nav{display:inline-flex;align-items:center;gap:4px}
@@ -132,7 +132,7 @@ dialog:has(#crmAppointmentForm){width:min(980px,calc(100vw - 26px))}
 .crm-mini-event strong{font-size:10px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .crm-mini-event span{font-size:9.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.92}
 .crm-mini-event.is-lesson{background:#e7f3ee;border-left:3px solid #18523e;color:#123e2f}
-.crm-mini-event.is-interview{background:#e0f2fe;border-left:3px solid #0284c7;color:#075985}
+.crm-mini-event.is-interview{background:rgba(5,150,105,0.12);border-left:3px solid #059669;color:#047857}
 .crm-mini-event.is-block{background:#fee2e2;border-left:3px solid #dc2626;color:#991b1b}
 .crm-mini-event.is-selected{background:rgba(245,158,11,.18);border:2px dashed #d97706;color:#92400e;z-index:3;pointer-events:none}
 .crm-mini-event.is-selected.is-conflict{background:rgba(220,38,38,.18);border-color:#dc2626;color:#991b1b}
