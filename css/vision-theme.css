@@ -1201,52 +1201,323 @@ dialog .close:hover {
 }
 
 /* ==========================================================================
-   10. CRM KANBAN, TABS & DETAIL VIEW
+   10. CRM KANBAN, TABS, LEAD DRAWER & APPOINTMENT SCHEDULER
    ========================================================================== */
 
 .crm-root {
   color: var(--camp-text) !important;
 }
 
+.crm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.crm-head h1 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--camp-text) !important;
+  margin: 4px 0;
+}
+
+.crm-head p {
+  color: var(--camp-text-secondary) !important;
+  font-size: 13px;
+  margin: 0;
+  max-width: 720px;
+}
+
+.crm-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.crm-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.crm-metric {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg) !important;
+  padding: 18px 20px !important;
+  box-shadow: var(--camp-shadow-card) !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 122px;
+  transition: var(--camp-transition);
+}
+
+.crm-metric:hover {
+  transform: translateY(-2px);
+  border-color: var(--camp-border-strong) !important;
+}
+
+.crm-metric span {
+  font-size: 11.5px !important;
+  color: var(--camp-text-secondary) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.crm-metric strong {
+  font-size: 32px !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--camp-text) !important;
+  margin: 6px 0 2px;
+}
+
+.crm-metric small {
+  font-size: 11.5px !important;
+  color: var(--camp-text-muted) !important;
+}
+
+.crm-metric.hot {
+  border-color: var(--camp-warning) !important;
+  background: var(--camp-warning-bg) !important;
+}
+
+.crm-metric.hot strong {
+  color: var(--camp-warning) !important;
+}
+
 .crm-tabs {
+  display: flex;
+  gap: 8px;
   border-bottom: 1px solid var(--camp-border) !important;
+  padding: 0 0 12px;
+  margin-bottom: 20px;
+  overflow-x: auto;
 }
 
 .crm-tabs button {
+  white-space: nowrap;
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--camp-text-secondary) !important;
+  padding: 9px 16px;
+  border-radius: var(--camp-radius-pill);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--camp-transition);
+}
+
+.crm-tabs button:hover {
+  color: var(--camp-text) !important;
+  background: var(--camp-hover);
 }
 
 .crm-tabs button.active {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border-color: var(--camp-border) !important;
   color: var(--camp-primary) !important;
+  box-shadow: var(--camp-shadow-card);
+}
+
+.crm-tabs button span {
+  font-size: 11px;
+  margin-left: 6px;
+  background: rgba(0, 117, 255, 0.16);
+  color: var(--camp-primary);
+  padding: 2px 7px;
+  border-radius: var(--camp-radius-pill);
+}
+
+[data-theme="dark"] .crm-tabs button.active span {
+  background: var(--camp-primary);
+  color: #FFFFFF;
+}
+
+.crm-workspace {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg) !important;
+  box-shadow: var(--camp-shadow-card) !important;
+  overflow: hidden;
+}
+
+.crm-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-card) !important;
+}
+
+.crm-filters label {
+  color: var(--camp-text-secondary) !important;
+  font-size: 11px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.crm-search {
+  grid-column: span 2;
+  position: relative;
+  align-self: end;
+}
+
+.crm-search-icon,
+.crm-search span {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--camp-text-muted) !important;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.crm-search input {
+  padding-left: 42px !important;
+}
+
+.crm-list-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 22px;
+  gap: 16px;
+  border-bottom: 1px solid var(--camp-border) !important;
+  color: var(--camp-text-secondary) !important;
+  font-size: 12.5px;
+}
+
+.crm-list-controls b {
+  color: var(--camp-text) !important;
 }
 
 .crm-toggle {
+  display: inline-flex;
+  gap: 4px;
   background: var(--camp-surface-raised) !important;
   border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-pill);
+  padding: 3px;
 }
 
 .crm-toggle button {
+  border: 0;
+  background: transparent;
   color: var(--camp-text-secondary) !important;
+  padding: 6px 14px;
+  border-radius: var(--camp-radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--camp-transition);
+}
+
+.crm-toggle button:hover {
+  color: var(--camp-text) !important;
 }
 
 .crm-toggle button.active {
-  background: var(--camp-primary) !important;
+  background: var(--camp-gradient-primary) !important;
   color: #FFFFFF !important;
+  box-shadow: 0 2px 8px var(--camp-primary-glow);
+}
+
+.crm-board {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 18px 22px;
+  min-height: 480px;
+  scrollbar-color: var(--camp-border-strong) var(--camp-surface-card);
 }
 
 .crm-board-col {
+  min-width: 255px;
+  width: 265px;
+  flex: 0 0 265px;
   background: var(--camp-surface-card) !important;
   border: 1px solid var(--camp-border) !important;
-  border-radius: var(--camp-radius-lg);
-  padding: 14px;
+  border-radius: var(--camp-radius-lg) !important;
+  padding: 14px !important;
+  display: flex;
+  flex-direction: column;
+  transition: var(--camp-transition);
 }
 
-.crm-board-col header,
+.crm-board-col-head {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch !important;
+  gap: 6px;
+  padding: 4px 4px 12px !important;
+  border-bottom: 1px solid var(--camp-border) !important;
+  margin-bottom: 12px;
+}
+
 .crm-board-col-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.crm-board-col-title span {
+  font-size: 12.5px;
+  font-weight: 800;
   color: var(--camp-text) !important;
+  letter-spacing: -0.01em;
+}
+
+.crm-board-col-title b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border);
+  border-radius: var(--camp-radius-pill);
+  color: var(--camp-cyan) !important;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+[data-theme="light"] .crm-board-col-title b {
+  color: var(--camp-primary) !important;
+}
+
+.crm-col-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0, 117, 255, 0.14) !important;
+  border: 1px solid rgba(0, 117, 255, 0.25) !important;
+  border-radius: var(--camp-radius-pill);
+  padding: 2px 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--camp-cyan) !important;
+  width: fit-content;
+}
+
+[data-theme="light"] .crm-col-trigger {
+  color: var(--camp-primary) !important;
 }
 
 .crm-board-col.is-drag-over {
@@ -1255,106 +1526,934 @@ dialog .close:hover {
   background: var(--camp-surface-raised) !important;
 }
 
+.crm-board-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.crm-column-empty {
+  color: var(--camp-text-muted) !important;
+  font-size: 12px;
+  padding: 28px 8px;
+  text-align: center;
+}
+
 .crm-lead-card {
   background: var(--camp-surface-raised) !important;
   border: 1px solid var(--camp-border) !important;
   border-radius: var(--camp-radius-md) !important;
-  padding: 14px;
-  transition: var(--camp-transition);
+  padding: 14px 13px !important;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.crm-lead-card:hover {
+.crm-lead-card:hover,
+.crm-lead-card:focus {
   transform: translateY(-2px);
   border-color: var(--camp-primary) !important;
-  box-shadow: var(--camp-shadow-card);
+  box-shadow: 0 0 16px var(--camp-primary-glow), var(--camp-shadow-card);
+  outline: none;
+}
+
+.crm-lead-top {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 
 .crm-lead-top strong {
-  color: var(--camp-text) !important;
   font-size: 13.5px;
+  color: var(--camp-text) !important;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.crm-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0;
+}
+
+.crm-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--camp-radius-pill);
+  font-size: 10.5px;
+  font-weight: 750;
+  background: rgba(0, 117, 255, 0.14) !important;
+  color: var(--camp-text) !important;
+  border: 1px solid var(--tag-color, var(--camp-primary));
+}
+
+.crm-muted {
+  color: var(--camp-text-muted) !important;
+  font-size: 11.5px;
+}
+
+.crm-card-interview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--camp-info-bg) !important;
+  border: 1px solid var(--camp-info-border) !important;
+  border-radius: var(--camp-radius-sm);
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--camp-cyan) !important;
+  margin-top: 7px;
+}
+
+[data-theme="light"] .crm-card-interview {
+  color: var(--camp-primary) !important;
+}
+
+.crm-card-interview.is-done {
+  background: var(--camp-success-bg) !important;
+  border-color: var(--camp-success-border) !important;
+  color: var(--camp-success) !important;
 }
 
 .crm-badge {
   background: var(--camp-surface) !important;
   border: 1px solid var(--camp-border) !important;
   color: var(--camp-text-secondary) !important;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--camp-radius-pill);
 }
 
-.crm-detail {
-  background: var(--camp-surface-floating) !important;
+.crm-badge.crm-green {
+  background: var(--camp-success-bg) !important;
+  color: var(--camp-success) !important;
+  border-color: var(--camp-success-border) !important;
+}
+
+.crm-badge.crm-warm {
+  background: var(--camp-warning-bg) !important;
+  color: var(--camp-warning) !important;
+  border-color: var(--camp-warning-border) !important;
+}
+
+.crm-btn {
+  font-weight: 700;
+  font-size: 12px;
+  border: 1px solid var(--camp-border);
+  border-radius: var(--camp-radius-sm);
+  background: var(--camp-surface-raised);
+  color: var(--camp-text);
+  min-height: 36px;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: var(--camp-transition);
+}
+
+.crm-btn:hover {
+  background: var(--camp-hover);
+  border-color: var(--camp-border-strong);
+}
+
+.crm-btn.primary {
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px var(--camp-primary-glow);
+}
+
+.crm-btn.primary:hover {
+  box-shadow: 0 6px 18px var(--camp-primary-glow);
+  transform: translateY(-1px);
+}
+
+.crm-btn.danger {
+  background: var(--camp-danger-bg) !important;
+  color: var(--camp-danger) !important;
+  border-color: var(--camp-danger-border) !important;
+}
+
+.crm-btn.subtle {
+  background: var(--camp-surface) !important;
   color: var(--camp-text) !important;
 }
 
-.crm-detail-top,
-.crm-detail-actions {
+.crm-btn.crm-wa {
+  background: rgba(1, 181, 116, 0.18) !important;
+  color: var(--camp-success) !important;
+  border-color: rgba(1, 181, 116, 0.35) !important;
+  width: 100%;
+}
+
+/* CRM Lead Detail Drawer & Sections */
+.crm-detail {
+  background: var(--camp-surface-card) !important;
+  color: var(--camp-text) !important;
+  border-radius: var(--camp-radius-lg);
+  overflow: hidden;
+}
+
+.crm-detail-top {
   background: var(--camp-surface-raised) !important;
+  border-bottom: 1px solid var(--camp-border) !important;
+  padding: 22px 24px;
+}
+
+.crm-detail-top h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--camp-text) !important;
+  margin: 4px 0 8px;
+}
+
+.crm-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.crm-detail-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.crm-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--camp-border) !important;
 }
 
-.crm-data-item,
-.crm-info-grid>div,
-.detail-item {
+.crm-section-title h3 {
+  font-size: 17px !important;
+  font-weight: 800;
+  color: var(--camp-text) !important;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.crm-lead-data-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.crm-data-item {
+  padding: 12px 14px;
+  border-radius: var(--camp-radius-md);
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.crm-data-item span {
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--camp-text-secondary) !important;
+}
+
+.crm-data-item strong {
+  font-size: 13.5px;
+  font-weight: 750;
+  color: var(--camp-text) !important;
+  overflow-wrap: anywhere;
+}
+
+.crm-lead-tags-bar {
   background: var(--camp-surface-raised) !important;
   border: 1px solid var(--camp-border) !important;
   border-radius: var(--camp-radius-md);
+  padding: 14px;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.crm-data-item strong,
-.detail-item strong {
+.crm-lead-tags-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--camp-text-secondary) !important;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.crm-lead-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.crm-tag-toggle {
+  background: var(--camp-surface) !important;
+  border: 1px solid var(--camp-border) !important;
   color: var(--camp-text) !important;
+  border-radius: var(--camp-radius-pill);
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--camp-transition);
+}
+
+.crm-tag-toggle:hover {
+  border-color: var(--camp-border-strong) !important;
+  background: var(--camp-hover) !important;
+}
+
+.crm-tag-toggle.is-active {
+  border-color: var(--camp-primary) !important;
+  background: rgba(0, 117, 255, 0.22) !important;
+  color: var(--camp-text) !important;
+  box-shadow: 0 0 10px var(--camp-primary-glow);
+}
+
+.crm-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .crm-priority-box {
   background: var(--camp-surface-raised) !important;
   border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg) !important;
+  padding: 18px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 12px !important;
+}
+
+.crm-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--camp-border) !important;
 }
 
 .crm-box-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--camp-text) !important;
+  letter-spacing: -0.01em;
+}
+
+.crm-box-status {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: var(--camp-radius-pill);
+  font-size: 11px;
+  font-weight: 750;
+  background: var(--camp-surface) !important;
+  border: 1px solid var(--camp-border);
+  color: var(--camp-text-secondary) !important;
+}
+
+.crm-box-status.is-done {
+  background: var(--camp-success-bg) !important;
+  color: var(--camp-success) !important;
+  border-color: var(--camp-success-border) !important;
+}
+
+.crm-box-status.is-lost {
+  background: var(--camp-danger-bg) !important;
+  color: var(--camp-danger) !important;
+  border-color: var(--camp-danger-border) !important;
+}
+
+.crm-priority-box p {
+  font-size: 12.5px !important;
+  line-height: 1.5;
+  color: var(--camp-text-secondary) !important;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.crm-box-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.crm-history-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.crm-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.crm-timeline-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--camp-border) !important;
+  padding-bottom: 12px;
+}
+
+.crm-timeline-icon {
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--camp-radius-pill);
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px var(--camp-primary-glow);
+}
+
+.crm-timeline-item b {
+  font-size: 12.5px;
   color: var(--camp-text) !important;
 }
 
-.crm-due-panel {
+.crm-timeline-item small {
+  display: block;
+  font-size: 11px;
+  color: var(--camp-text-muted) !important;
+  margin-top: 2px;
+}
+
+.crm-timeline-item p {
+  font-size: 12px;
+  color: var(--camp-text-secondary) !important;
+  margin: 5px 0 0;
+}
+
+.crm-compact-list > div {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--camp-border) !important;
+  padding: 10px 0;
+}
+
+.crm-compact-list b {
+  font-size: 11.5px;
+  color: var(--camp-text) !important;
+}
+
+.crm-compact-list span,
+.crm-compact-list small {
+  font-size: 11px;
+  color: var(--camp-text-secondary) !important;
+}
+
+/* CRM Mini-Week Visual Scheduler (Appointment Modal) */
+.crm-mini-week {
+  margin: 10px 0 4px;
   border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg) !important;
   background: var(--camp-surface-card) !important;
-  border-radius: var(--camp-radius-lg);
   overflow: hidden;
+  box-shadow: var(--camp-shadow-card) !important;
 }
 
-.crm-due-head {
+.crm-mini-week-empty {
+  padding: 18px 20px;
+  border: 1px dashed var(--camp-border-strong) !important;
+  border-radius: var(--camp-radius-md);
+  background: var(--camp-surface-raised) !important;
+  color: var(--camp-text-secondary) !important;
+  font-size: 13px;
+  margin: 8px 0;
+  text-align: center;
+}
+
+.crm-mini-week-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-raised) !important;
 }
 
-.crm-due-item {
-  border-bottom: 1px solid var(--camp-border) !important;
-}
-
-.crm-due-item b {
+.crm-mini-week-title strong {
+  font-size: 13.5px;
+  font-weight: 800;
   color: var(--camp-text) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.crm-mini-week-title span {
+  font-size: 12px;
+  color: var(--camp-text-secondary) !important;
+}
+
+.crm-mini-week-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--camp-text-secondary) !important;
+}
+
+.crm-mini-week-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crm-mini-week-head {
+  display: grid;
+  grid-template-columns: 52px repeat(7, minmax(86px, 1fr));
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--camp-surface-raised) !important;
+  border-bottom: 1px solid var(--camp-border) !important;
+}
+
+.crm-mini-head-corner {
+  border-right: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-card) !important;
+}
+
+.crm-mini-head-day {
+  border: 0;
+  border-right: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-raised) !important;
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: var(--camp-transition);
+}
+
+.crm-mini-head-day:hover {
+  background: var(--camp-hover) !important;
+}
+
+.crm-mini-head-day span {
+  font-size: 10.5px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--camp-text-muted) !important;
+}
+
+.crm-mini-head-day strong {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--camp-text) !important;
+}
+
+.crm-mini-head-day.is-selected {
+  background: rgba(0, 117, 255, 0.18) !important;
+}
+
+.crm-mini-head-day.is-selected strong {
+  color: var(--camp-cyan) !important;
+}
+
+[data-theme="light"] .crm-mini-head-day.is-selected strong {
+  color: var(--camp-primary) !important;
+}
+
+.crm-mini-time-col {
+  position: relative;
+  border-right: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-card) !important;
+}
+
+.crm-mini-time-label {
+  color: var(--camp-text-muted) !important;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.crm-mini-day-col {
+  position: relative;
+  border-right: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-card) !important;
+  cursor: pointer;
+}
+
+.crm-mini-day-col.is-chosen-day {
+  background: rgba(0, 117, 255, 0.04) !important;
+}
+
+.crm-mini-hour-rule {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="light"] .crm-mini-hour-rule {
+  border-bottom-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+.crm-mini-hour-rule:hover {
+  background: var(--camp-hover) !important;
+}
+
+.crm-mini-event {
+  border-radius: var(--camp-radius-sm);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+.crm-mini-event.is-lesson {
+  background: rgba(1, 181, 116, 0.22) !important;
+  border-left: 3px solid var(--camp-success) !important;
+  color: var(--camp-text) !important;
+}
+
+.crm-mini-event.is-interview {
+  background: rgba(33, 212, 253, 0.24) !important;
+  border-left: 3px solid var(--camp-cyan) !important;
+  color: var(--camp-text) !important;
+}
+
+.crm-mini-event.is-block {
+  background: rgba(245, 101, 101, 0.22) !important;
+  border-left: 3px solid var(--camp-danger) !important;
+  color: var(--camp-text) !important;
+}
+
+.crm-mini-event.is-selected {
+  background: rgba(0, 117, 255, 0.32) !important;
+  border: 2px dashed var(--camp-primary) !important;
+  color: #FFFFFF !important;
+}
+
+.crm-mini-week-hint {
+  padding: 10px 16px;
+  border-top: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-raised) !important;
+  font-size: 12px;
+  color: var(--camp-text-secondary) !important;
+}
+
+/* CRM Pipeline and Tag Settings Modals */
+.crm-pipeline-row,
+.crm-tag-row {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: var(--camp-transition);
+}
+
+.crm-pipeline-row.is-editing {
+  border-color: var(--camp-primary) !important;
+  box-shadow: 0 0 12px var(--camp-primary-glow) !important;
+}
+
+.crm-pipeline-order {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border);
+  color: var(--camp-cyan) !important;
+  border-radius: var(--camp-radius-pill);
+  font-weight: 800;
+  font-size: 11px;
+  padding: 3px 8px;
+}
+
+[data-theme="light"] .crm-pipeline-order {
+  color: var(--camp-primary) !important;
+}
+
+.crm-pipeline-info strong {
+  color: var(--camp-text) !important;
+  font-size: 13.5px;
+}
+
+.crm-pipeline-info small {
+  color: var(--camp-text-secondary) !important;
+  font-size: 11.5px;
+}
+
+.crm-pipeline-form {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg);
+  padding: 18px;
+  margin-top: 18px;
+}
+
+/* Fiche Created Popup & Choices */
+.fiche-popup-symbol {
+  height: 48px;
+  width: 48px;
+  border-radius: var(--camp-radius-md);
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  font-weight: 800;
+  color: #FFFFFF !important;
+  background: var(--camp-gradient-primary) !important;
+  box-shadow: 0 4px 14px var(--camp-primary-glow);
+  margin-bottom: 16px;
+}
+
+.fiche-choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.fiche-choice {
+  border: 1px solid var(--camp-border) !important;
+  background: var(--camp-surface-raised) !important;
+  border-radius: var(--camp-radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.fiche-choice h3 {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: var(--camp-text) !important;
+  margin: 0;
+}
+
+.fiche-choice p {
+  color: var(--camp-text-secondary) !important;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.fiche-choice-icon {
+  display: grid;
+  place-items: center;
+  color: var(--camp-cyan) !important;
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--camp-radius-md);
+  font-size: 18px;
+}
+
+[data-theme="light"] .fiche-choice-icon {
+  color: var(--camp-primary) !important;
+}
+
+/* Popover & Actions Dropdown */
+.contract-actions-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 7px);
+  min-width: 230px;
+  width: max-content;
+  max-width: min(320px, 85vw);
+  max-height: 65vh;
+  overflow-y: auto;
+  padding: 7px;
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border-strong) !important;
+  border-radius: var(--camp-radius-md) !important;
+  box-shadow: var(--camp-shadow-modal) !important;
+  z-index: 50;
+}
+
+.contract-menu-item {
+  color: var(--camp-text) !important;
+  border-radius: var(--camp-radius-sm);
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 650;
+  transition: var(--camp-transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.contract-menu-item:hover {
+  background: var(--camp-hover) !important;
+  color: var(--camp-primary) !important;
+}
+
+.contract-menu-item.danger {
+  color: var(--camp-danger) !important;
+}
+
+.contract-menu-item.danger:hover {
+  background: var(--camp-danger-bg) !important;
 }
 
 /* ==========================================================================
    11. CALENDAR PEDAGÓGICO & PORTAL DO PROFESSOR
    ========================================================================== */
 
+.cal-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.cal-metrics > div {
+  padding: 18px 20px;
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  box-shadow: var(--camp-shadow-card);
+  transition: var(--camp-transition);
+}
+
+.cal-metrics > div:hover {
+  transform: translateY(-2px);
+  border-color: var(--camp-border-strong) !important;
+}
+
+.cal-metrics strong {
+  font-size: 28px !important;
+  letter-spacing: -0.03em;
+  color: var(--camp-text) !important;
+  font-weight: 800;
+}
+
+.cal-metrics span {
+  font-size: 11.5px !important;
+  color: var(--camp-text-secondary) !important;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.cal-metrics .cal-attention {
+  border-color: var(--camp-warning) !important;
+  background: var(--camp-warning-bg) !important;
+}
+
+.cal-metrics .cal-attention strong {
+  color: var(--camp-warning) !important;
+}
+
+.cal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
 .cal-switcher {
+  display: inline-flex;
+  gap: 3px;
   background: var(--camp-surface-raised) !important;
   border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-pill);
+  padding: 3px;
 }
 
 .cal-switcher button {
+  border: 0;
+  background: transparent;
   color: var(--camp-text-secondary) !important;
+  padding: 7px 15px;
+  border-radius: var(--camp-radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--camp-transition);
+}
+
+.cal-switcher button:hover {
+  color: var(--camp-text) !important;
 }
 
 .cal-switcher .selected {
-  background: var(--camp-primary) !important;
+  background: var(--camp-gradient-primary) !important;
   color: #FFFFFF !important;
+  box-shadow: 0 2px 8px var(--camp-primary-glow);
+}
+
+.cal-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.cal-nav b {
+  font-size: 13.5px;
+  color: var(--camp-text) !important;
+  font-weight: 800;
+  margin-left: 6px;
 }
 
 .cal-lesson {
-  background: var(--camp-surface-raised) !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
   border: 1px solid var(--camp-border) !important;
   border-left: 3px solid var(--camp-primary) !important;
   border-radius: var(--camp-radius-md);
+  margin: 8px 0;
+  flex-wrap: wrap;
+  background: var(--camp-surface-card) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .cal-lesson.is-pending {
@@ -1363,7 +2462,27 @@ dialog .close:hover {
 }
 
 .cal-lesson-time {
+  font-weight: 800;
   color: var(--camp-text) !important;
+  width: 55px;
+  white-space: nowrap;
+  font-size: 13.5px;
+}
+
+.cal-lesson-time small {
+  color: var(--camp-text-muted) !important;
+  font-size: 10.5px;
+}
+
+.cal-lesson-text strong {
+  color: var(--camp-text) !important;
+  font-size: 13.5px;
+}
+
+.cal-lesson-text span,
+.cal-lesson-text small {
+  color: var(--camp-text-secondary) !important;
+  font-size: 11.5px;
 }
 
 .cal-week-grid {
@@ -1371,6 +2490,7 @@ dialog .close:hover {
   border-radius: var(--camp-radius-lg);
   background: var(--camp-surface-card) !important;
   overflow: hidden;
+  box-shadow: var(--camp-shadow-card);
 }
 
 .cal-week-grid-head {
@@ -1380,28 +2500,148 @@ dialog .close:hover {
 
 .cal-week-head-day {
   color: var(--camp-text) !important;
+  font-weight: 750;
+  font-size: 12px;
 }
 
-.cal-week-card {
-  background: var(--camp-gradient-primary) !important;
-  color: #FFFFFF !important;
+.cal-week-day {
+  min-width: 110px;
+  padding: 10px;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+  background: var(--camp-surface-card) !important;
+  min-height: 220px;
+}
+
+.cal-day-title {
+  background: none;
+  border: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 3px 1px 12px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--camp-text) !important;
+}
+
+.cal-day-title b {
+  font-size: 13px;
+  color: var(--camp-text) !important;
+}
+
+.cal-day-title span {
+  font-size: 10.5px;
+  color: var(--camp-text-muted) !important;
+}
+
+.cal-week-event {
+  width: 100%;
+  background: var(--camp-surface-raised) !important;
+  color: var(--camp-text) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-left: 3px solid var(--camp-primary) !important;
   border-radius: var(--camp-radius-sm);
-  box-shadow: 0 4px 12px var(--camp-primary-glow);
+  padding: 8px 10px;
+  text-align: left;
+  margin-bottom: 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  word-break: break-word;
+  transition: var(--camp-transition);
 }
 
-.cal-week-card.done {
-  background: var(--camp-success) !important;
+.cal-week-event:hover {
+  border-color: var(--camp-primary) !important;
+  box-shadow: 0 0 10px var(--camp-primary-glow);
+}
+
+.cal-week-event b {
+  font-size: 11.5px;
+  color: var(--camp-text) !important;
+}
+
+.cal-week-event span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--camp-text) !important;
+}
+
+.cal-week-event small {
+  font-size: 10px;
+  color: var(--camp-text-secondary) !important;
+}
+
+.cal-week-event.done {
+  border-left-color: var(--camp-success) !important;
+  opacity: 0.85;
+}
+
+.cal-month-weekdays {
+  text-align: center;
+  color: var(--camp-text-muted) !important;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+  padding: 8px 0 12px;
 }
 
 .cal-month-day {
   background: var(--camp-surface-card) !important;
   border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+  min-height: 74px;
+  padding: 8px;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  text-align: left;
   color: var(--camp-text) !important;
+  transition: var(--camp-transition);
 }
 
-.cal-month-day.is-today {
+.cal-month-day:hover {
   border-color: var(--camp-primary) !important;
-  box-shadow: 0 0 10px var(--camp-primary-glow);
+  background: var(--camp-hover) !important;
+}
+
+.cal-month-day.other {
+  opacity: 0.42;
+  background: var(--camp-surface) !important;
+}
+
+.cal-month-day.chosen {
+  border: 2px solid var(--camp-primary) !important;
+  box-shadow: 0 0 12px var(--camp-primary-glow);
+}
+
+.cal-month-day.is-today b {
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  padding: 2px 7px;
+  border-radius: var(--camp-radius-pill);
+}
+
+.cal-slot-chip {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: var(--camp-radius-pill);
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  color: var(--camp-cyan) !important;
+  margin: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+[data-theme="light"] .cal-slot-chip {
+  color: var(--camp-primary) !important;
 }
 
 .cal-student-slot {
@@ -1608,6 +2848,88 @@ dialog .close:hover {
   color: var(--camp-text-secondary) !important;
 }
 
+.onb-results-count {
+  background: var(--camp-surface-raised) !important;
+  padding: 12px 16px;
+  border-radius: var(--camp-radius-md);
+  color: var(--camp-text) !important;
+  border: 1px solid var(--camp-border);
+}
+
+.onb-hint {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+  color: var(--camp-text-secondary) !important;
+  padding: 12px 16px;
+}
+
+.onb-report-counts > div {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+  padding: 12px 16px;
+  text-align: center;
+}
+
+.onb-report-counts b {
+  color: var(--camp-cyan) !important;
+  font-size: 20px;
+}
+
+[data-theme="light"] .onb-report-counts b {
+  color: var(--camp-primary) !important;
+}
+
+.onb-report-counts span {
+  color: var(--camp-text-secondary) !important;
+  font-size: 11.5px;
+}
+
+.onb-alert {
+  background: var(--camp-warning-bg) !important;
+  border: 1px solid var(--camp-warning-border) !important;
+  border-left: 4px solid var(--camp-warning) !important;
+  color: var(--camp-text) !important;
+  border-radius: var(--camp-radius-md);
+  padding: 16px;
+}
+
+.onb-alert > .table-wrap {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+}
+
+.onb-record-status.success {
+  background: var(--camp-success-bg) !important;
+  color: var(--camp-success) !important;
+  border: 1px solid var(--camp-success-border);
+}
+
+.onb-record-status.error {
+  background: var(--camp-danger-bg) !important;
+  color: var(--camp-danger) !important;
+  border: 1px solid var(--camp-danger-border);
+}
+
+.onb-record-status.neutral {
+  background: var(--camp-surface) !important;
+  color: var(--camp-text-secondary) !important;
+  border: 1px solid var(--camp-border);
+}
+
+.onb-correction {
+  background: var(--camp-surface-card) !important;
+  border-top: 1px solid var(--camp-border) !important;
+}
+
+.onb-edit-grid input {
+  background: var(--camp-input) !important;
+  border: 1px solid var(--camp-input-border) !important;
+  color: var(--camp-text) !important;
+}
+
 .onb-upload {
   border: 1px dashed var(--camp-border-strong) !important;
   background: var(--camp-surface-raised) !important;
@@ -1658,7 +2980,7 @@ dialog .close:hover {
 }
 
 /* ==========================================================================
-   13. PREFERENCES & SETTINGS SECTIONS
+   13. PREFERENCES, SETTINGS & MULTI-SCHOOL PLATFORM
    ========================================================================== */
 
 .preferences-layout {
@@ -1697,8 +3019,86 @@ dialog .close:hover {
   color: var(--camp-text) !important;
 }
 
+/* School Cards & Multi-Escola Platform View */
+.school-cards,
+.enhanced-school-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.school-card {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg) !important;
+  padding: 22px !important;
+  box-shadow: var(--camp-shadow-card) !important;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: var(--camp-transition);
+}
+
+.school-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--camp-border-strong) !important;
+  box-shadow: var(--camp-shadow-card);
+}
+
+.school-card.is-current {
+  border-color: var(--camp-primary) !important;
+  box-shadow: 0 0 16px var(--camp-primary-glow), var(--camp-shadow-card) !important;
+}
+
+.school-card-icon {
+  background: var(--camp-gradient-icon) !important;
+  color: #FFFFFF !important;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--camp-radius-md);
+  display: grid;
+  place-content: center;
+  box-shadow: 0 4px 12px var(--camp-primary-glow);
+}
+
+.school-card h3 {
+  font-size: 17.5px;
+  font-weight: 800;
+  color: var(--camp-text) !important;
+  margin: 0 0 6px;
+}
+
+.school-card p {
+  font-size: 12.5px;
+  color: var(--camp-text-secondary) !important;
+  margin: 0 0 4px;
+}
+
+.school-card small {
+  font-size: 11.5px;
+  color: var(--camp-text-muted) !important;
+}
+
+/* License Management Cards */
+.license-card {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg) !important;
+  padding: 22px !important;
+  box-shadow: var(--camp-shadow-card);
+}
+
+.license-hero {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg);
+  padding: 22px;
+  margin-bottom: 22px;
+}
+
 /* ==========================================================================
-   14. CENTRAL DE AJUDA & CONTRATOS
+   14. CENTRAL DE AJUDA & CONTRATOS DOCX
    ========================================================================== */
 
 .guide-top {
@@ -1750,6 +3150,110 @@ dialog .close:hover {
 .syntax-who {
   background: rgba(117, 81, 255, 0.22) !important;
   color: var(--camp-purple) !important;
+}
+
+/* DOCX Validation Report */
+.docx-report {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg);
+  padding: 20px;
+  margin-top: 18px;
+}
+
+.docx-report-summary {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.docx-report-summary.is-valid {
+  border-left: 4px solid var(--camp-success) !important;
+}
+
+.docx-report-summary.is-invalid {
+  border-left: 4px solid var(--camp-danger) !important;
+}
+
+.docx-issue-card {
+  background: var(--camp-surface-raised) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-md);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.docx-issue-card.error {
+  border-left: 4px solid var(--camp-danger) !important;
+}
+
+.docx-issue-card.warning {
+  border-left: 4px solid var(--camp-warning) !important;
+}
+
+.docx-marker-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--camp-radius-pill);
+  font-size: 11px;
+  font-family: monospace;
+  background: rgba(0, 117, 255, 0.16) !important;
+  color: var(--camp-cyan) !important;
+  border: 1px solid rgba(0, 117, 255, 0.3);
+}
+
+[data-theme="light"] .docx-marker-pill {
+  color: var(--camp-primary) !important;
+}
+
+.docx-report-error {
+  background: var(--camp-danger-bg) !important;
+  border: 1px solid var(--camp-danger-border) !important;
+  color: var(--camp-danger) !important;
+  padding: 14px 18px;
+  border-radius: var(--camp-radius-md);
+}
+
+/* Schedule Editor Inside Contract Forms */
+.schedule-editor {
+  background: var(--camp-surface-card) !important;
+  border: 1px solid var(--camp-border) !important;
+  border-radius: var(--camp-radius-lg) !important;
+  padding: 18px;
+  margin: 16px 0;
+}
+
+.schedule-editor legend {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--camp-text) !important;
+  padding: 0 10px;
+}
+
+.schedule-row {
+  border-bottom: 1px solid var(--camp-border) !important;
+  padding: 10px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.schedule-row:last-child {
+  border-bottom: none !important;
+}
+
+.day-toggle {
+  color: var(--camp-text) !important;
+  font-weight: 650;
+  font-size: 13px;
+}
+
+.schedule-time {
+  color: var(--camp-text-secondary) !important;
+  font-size: 12px;
 }
 
 /* ==========================================================================
@@ -1831,7 +3335,59 @@ dialog .close:hover {
 }
 
 /* ==========================================================================
-   17. REDUCED MOTION PREFERENCE
+   17. RESPONSIVENESS, MOBILE REFINEMENT & ACCESSIBILITY
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .crm-metrics,
+  .cal-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .crm-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .crm-info-grid,
+  .crm-history-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .onb-stages {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 740px) {
+  .crm-metrics,
+  .cal-metrics {
+    grid-template-columns: 1fr !important;
+  }
+  .crm-filters {
+    grid-template-columns: 1fr !important;
+  }
+  .crm-search {
+    grid-column: span 1 !important;
+  }
+  .fiche-choice-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .onb-stages {
+    grid-template-columns: 1fr !important;
+  }
+  .preferences-layout {
+    grid-template-columns: 1fr !important;
+  }
+  .contract-actions-popover {
+    position: fixed !important;
+    left: 16px !important;
+    right: 16px !important;
+    max-width: none !important;
+    width: auto !important;
+    bottom: 20px !important;
+    top: auto !important;
+  }
+}
+
+/* ==========================================================================
+   18. REDUCED MOTION PREFERENCE
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
