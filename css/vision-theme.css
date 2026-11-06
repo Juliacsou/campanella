@@ -603,7 +603,7 @@ textarea:focus-visible {
 }
 
 .sidebar-current-name {
-  color: #FFFFFF !important;
+  color: var(--camp-text) !important;
   font-size: 15px !important;
   font-weight: 800 !important;
   letter-spacing: -0.2px !important;
@@ -613,8 +613,8 @@ textarea:focus-visible {
 }
 
 .sidebar-current-name svg {
-  color: #21D4FD !important;
-  stroke: #21D4FD !important;
+  color: var(--camp-cyan, #21D4FD) !important;
+  stroke: var(--camp-cyan, #21D4FD) !important;
   width: 17px !important;
   height: 17px !important;
   flex-shrink: 0 !important;
@@ -644,7 +644,7 @@ textarea:focus-visible {
 }
 
 .nav-group {
-  color: #94A3B8 !important;
+  color: var(--camp-text-muted) !important;
   font-size: 10.5px !important;
   letter-spacing: 1.4px !important;
   text-transform: uppercase !important;
@@ -659,7 +659,7 @@ textarea:focus-visible {
 }
 
 .nav-btn {
-  color: #E2E8F0 !important;
+  color: var(--camp-text-secondary) !important;
   border: none !important;
   border-radius: 14px !important;
   background: transparent !important;
@@ -685,7 +685,7 @@ textarea:focus-visible {
   background: transparent !important;
   box-shadow: none !important;
   border: none !important;
-  color: #94A3B8 !important;
+  color: var(--camp-text-muted) !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
@@ -693,41 +693,36 @@ textarea:focus-visible {
 .nav-btn .nav-ico .camp-icon {
   width: 19px !important;
   height: 19px !important;
-  color: #94A3B8 !important;
-  stroke: #94A3B8 !important;
+  color: var(--camp-text-muted) !important;
+  stroke: var(--camp-text-muted) !important;
   transition: all 0.2s ease !important;
 }
 
 .nav-btn:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+  background: var(--camp-hover) !important;
+  color: var(--camp-text) !important;
 }
 
 .nav-btn:hover .nav-ico {
   background: transparent !important;
   box-shadow: none !important;
   border: none !important;
-  color: #FFFFFF !important;
+  color: var(--camp-primary) !important;
 }
 
 .nav-btn:hover .nav-ico svg,
 .nav-btn:hover .nav-ico .camp-icon {
-  color: #FFFFFF !important;
-  stroke: #FFFFFF !important;
+  color: var(--camp-primary) !important;
+  stroke: var(--camp-primary) !important;
   transform: scale(1.08) !important;
 }
 
 .nav-btn.active {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  background: var(--camp-surface-raised) !important;
   border: none !important;
-  color: #FFFFFF !important;
+  color: var(--camp-text) !important;
   font-weight: 750 !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.22), inset 0 -1px 1px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: var(--camp-shadow-card) !important;
 }
 
 .nav-btn.active .nav-ico {
@@ -735,14 +730,13 @@ textarea:focus-visible {
   box-shadow: none !important;
   border: none !important;
   border-radius: 0 !important;
-  color: #21D4FD !important;
+  color: var(--camp-primary) !important;
 }
 
 .nav-btn.active .nav-ico svg,
 .nav-btn.active .nav-ico .camp-icon {
-  color: #21D4FD !important;
-  stroke: #21D4FD !important;
-  filter: drop-shadow(0 0 8px rgba(33, 212, 253, 0.55)) !important;
+  color: var(--camp-primary) !important;
+  stroke: var(--camp-primary) !important;
   transform: scale(1.06) !important;
 }
 
@@ -760,12 +754,10 @@ textarea:focus-visible {
   padding: 10px 14px !important;
   border-radius: 16px !important;
   cursor: pointer;
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  background: var(--camp-surface-raised) !important;
   border: none !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 1.5px rgba(255, 255, 255, 0.2), inset 0 -1px 1px rgba(0, 0, 0, 0.25) !important;
+  color: var(--camp-text) !important;
+  box-shadow: var(--camp-shadow-card) !important;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
@@ -7459,15 +7451,14 @@ dialog,
 }
 
 /* ==========================================================================
-   26. SIDEBAR MODERN GLASSMORPHISM & ICON FREEDOM
+   26. SIDEBAR MODERN DUAL-THEME GLASSMORPHISM (DARK & LIGHT MODE)
    - Free icons: zero square container, zero border, zero background
    - Scrollbars: 100% hidden across all browsers
-   - Active nav item: authentic frosted glass with blur and inner highlight
-   - Bottom user card: ultra-luxurious Vision UI glassmorphism
-   - Active school: clean, prominent title with no background or extra label
-   - High-contrast, crystal clear typography
+   - Dark Mode: authentic frosted dark glass with blur & specular highlights
+   - Light Mode: pristine Vision UI elevated white card styling, high contrast
    ========================================================================== */
 
+/* Universal (Both Themes): Scrollbar Hiding & Icon Freedom */
 .sidebar,
 .sidebar-menu,
 .sidebar *,
@@ -7504,58 +7495,6 @@ dialog,
   justify-content: center !important;
 }
 
-.sidebar .nav-btn .nav-ico svg,
-.sidebar .nav-btn .nav-ico .camp-icon {
-  color: #94A3B8 !important;
-  stroke: #94A3B8 !important;
-  width: 19px !important;
-  height: 19px !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.sidebar .nav-btn:hover .nav-ico svg,
-.sidebar .nav-btn:hover .nav-ico .camp-icon {
-  color: #FFFFFF !important;
-  stroke: #FFFFFF !important;
-  transform: scale(1.08) !important;
-}
-
-.sidebar .nav-btn.active .nav-ico svg,
-.sidebar .nav-btn.active .nav-ico .camp-icon {
-  color: #21D4FD !important;
-  stroke: #21D4FD !important;
-  filter: drop-shadow(0 0 8px rgba(33, 212, 253, 0.6)) !important;
-  transform: scale(1.06) !important;
-}
-
-.sidebar .nav-btn {
-  color: #E2E8F0 !important;
-  font-size: 13.5px !important;
-  font-weight: 600 !important;
-  border: none !important;
-  border-radius: 14px !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.sidebar .nav-btn:hover {
-  color: #FFFFFF !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.12) !important;
-}
-
-.sidebar .nav-btn.active {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  border: none !important;
-  border-radius: 14px !important;
-  color: #FFFFFF !important;
-  font-weight: 750 !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.22), inset 0 -1px 1px rgba(0, 0, 0, 0.15) !important;
-}
-
 .sidebar-current {
   background: transparent !important;
   box-shadow: none !important;
@@ -7567,7 +7506,53 @@ dialog,
   display: none !important;
 }
 
-.sidebar-current-name {
+.sidebar-bottom {
+  border-top: none !important;
+  padding: 16px 0 0 !important;
+  margin-top: auto !important;
+}
+
+.sidebar .brand {
+  border-bottom: none !important;
+}
+
+.sidebar .nav-btn {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: 14px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.account-avatar {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+  border-radius: 12px !important;
+  color: #FFFFFF !important;
+  font-weight: 800 !important;
+}
+
+/* --------------------------------------------------------------------------
+   26.1 DARK MODE (Vision UI Frosted Glass)
+   -------------------------------------------------------------------------- */
+:root:not([data-theme="light"]) .sidebar,
+[data-theme="dark"] .sidebar {
+  background: var(--camp-gradient-sidebar) !important;
+  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.45) !important;
+}
+
+:root:not([data-theme="light"]) .sidebar .brand-title,
+[data-theme="dark"] .sidebar .brand-title {
+  color: #FFFFFF !important;
+}
+
+:root:not([data-theme="light"]) .sidebar .brand-sub,
+[data-theme="dark"] .sidebar .brand-sub {
+  color: #94A3B8 !important;
+}
+
+:root:not([data-theme="light"]) .sidebar-current-name,
+[data-theme="dark"] .sidebar-current-name {
   color: #FFFFFF !important;
   font-size: 15px !important;
   font-weight: 800 !important;
@@ -7577,7 +7562,8 @@ dialog,
   gap: 9px !important;
 }
 
-.sidebar-current-name svg {
+:root:not([data-theme="light"]) .sidebar-current-name svg,
+[data-theme="dark"] .sidebar-current-name svg {
   color: #21D4FD !important;
   stroke: #21D4FD !important;
   width: 18px !important;
@@ -7585,7 +7571,8 @@ dialog,
   filter: drop-shadow(0 0 6px rgba(33, 212, 253, 0.45)) !important;
 }
 
-.sidebar .nav-group {
+:root:not([data-theme="light"]) .sidebar .nav-group,
+[data-theme="dark"] .sidebar .nav-group {
   color: #94A3B8 !important;
   font-size: 10.5px !important;
   letter-spacing: 1.4px !important;
@@ -7593,13 +7580,64 @@ dialog,
   text-transform: uppercase !important;
 }
 
-.sidebar-bottom {
-  border-top: none !important;
-  padding: 16px 0 0 !important;
-  margin-top: auto !important;
+:root:not([data-theme="light"]) .sidebar .nav-btn,
+[data-theme="dark"] .sidebar .nav-btn {
+  color: #E2E8F0 !important;
 }
 
-.account-trigger {
+:root:not([data-theme="light"]) .sidebar .nav-btn .nav-ico svg,
+:root:not([data-theme="light"]) .sidebar .nav-btn .nav-ico .camp-icon,
+[data-theme="dark"] .sidebar .nav-btn .nav-ico svg,
+[data-theme="dark"] .sidebar .nav-btn .nav-ico .camp-icon {
+  color: #94A3B8 !important;
+  stroke: #94A3B8 !important;
+  width: 19px !important;
+  height: 19px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+:root:not([data-theme="light"]) .sidebar .nav-btn:hover,
+[data-theme="dark"] .sidebar .nav-btn:hover {
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.12) !important;
+}
+
+:root:not([data-theme="light"]) .sidebar .nav-btn:hover .nav-ico svg,
+:root:not([data-theme="light"]) .sidebar .nav-btn:hover .nav-ico .camp-icon,
+[data-theme="dark"] .sidebar .nav-btn:hover .nav-ico svg,
+[data-theme="dark"] .sidebar .nav-btn:hover .nav-ico .camp-icon {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  transform: scale(1.08) !important;
+}
+
+:root:not([data-theme="light"]) .sidebar .nav-btn.active,
+[data-theme="dark"] .sidebar .nav-btn.active {
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: none !important;
+  border-radius: 14px !important;
+  color: #FFFFFF !important;
+  font-weight: 750 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.22), inset 0 -1px 1px rgba(0, 0, 0, 0.15) !important;
+}
+
+:root:not([data-theme="light"]) .sidebar .nav-btn.active .nav-ico svg,
+:root:not([data-theme="light"]) .sidebar .nav-btn.active .nav-ico .camp-icon,
+[data-theme="dark"] .sidebar .nav-btn.active .nav-ico svg,
+[data-theme="dark"] .sidebar .nav-btn.active .nav-ico .camp-icon {
+  color: #21D4FD !important;
+  stroke: #21D4FD !important;
+  filter: drop-shadow(0 0 8px rgba(33, 212, 253, 0.6)) !important;
+  transform: scale(1.06) !important;
+}
+
+:root:not([data-theme="light"]) .account-trigger,
+[data-theme="dark"] .account-trigger {
   background: linear-gradient(127deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
   backdrop-filter: blur(24px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
@@ -7610,38 +7648,281 @@ dialog,
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-.account-trigger:hover {
+:root:not([data-theme="light"]) .account-trigger:hover,
+[data-theme="dark"] .account-trigger:hover {
   background: linear-gradient(127deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 100%) !important;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.42), inset 0 1px 1.5px rgba(255, 255, 255, 0.3) !important;
 }
 
-.account-person b {
+:root:not([data-theme="light"]) .account-person b,
+[data-theme="dark"] .account-person b {
   color: #FFFFFF !important;
   font-size: 13.5px !important;
   font-weight: 700 !important;
 }
 
-.account-person small {
+:root:not([data-theme="light"]) .account-person small,
+[data-theme="dark"] .account-person small {
   color: #94A3B8 !important;
   font-size: 11.5px !important;
 }
 
-.account-avatar {
-  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
-  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.5) !important;
-  border-radius: 12px !important;
-  color: #FFFFFF !important;
-  font-weight: 800 !important;
-}
-
-.sidebar .brand {
-  border-bottom: none !important;
-}
-
-.sidebar .brand-title {
-  color: #FFFFFF !important;
-}
-
-.sidebar .brand-sub {
+:root:not([data-theme="light"]) .account-trigger > svg,
+[data-theme="dark"] .account-trigger > svg {
   color: #94A3B8 !important;
+}
+
+/* --------------------------------------------------------------------------
+   26.2 LIGHT MODE (Vision UI Elevated Card & Crisp Contrast)
+   -------------------------------------------------------------------------- */
+[data-theme="light"] .sidebar {
+  background: #FFFFFF !important;
+  box-shadow: 4px 0 24px rgba(30, 55, 100, 0.06) !important;
+  border-right: none !important;
+}
+
+[data-theme="light"] .sidebar .brand-title {
+  color: #1A202C !important;
+  font-weight: 800 !important;
+  font-size: 15.5px !important;
+  letter-spacing: 0.8px !important;
+}
+
+[data-theme="light"] .sidebar .brand-sub {
+  color: #718096 !important;
+  font-size: 9.5px !important;
+  letter-spacing: 1.4px !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .sidebar-current {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 4px 12px 14px 12px !important;
+}
+
+[data-theme="light"] .sidebar-current-name {
+  color: #1A202C !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.2px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+}
+
+[data-theme="light"] .sidebar-current-name svg {
+  color: #0066E6 !important;
+  stroke: #0066E6 !important;
+  width: 18px !important;
+  height: 18px !important;
+  filter: drop-shadow(0 2px 6px rgba(0, 102, 230, 0.35)) !important;
+}
+
+[data-theme="light"] .sidebar .nav-group {
+  color: #718096 !important;
+  font-size: 10.5px !important;
+  letter-spacing: 1.4px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+}
+
+[data-theme="light"] .sidebar .nav-btn {
+  color: #4A5568 !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+[data-theme="light"] .sidebar .nav-btn .nav-ico svg,
+[data-theme="light"] .sidebar .nav-btn .nav-ico .camp-icon {
+  color: #718096 !important;
+  stroke: #718096 !important;
+  width: 19px !important;
+  height: 19px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+[data-theme="light"] .sidebar .nav-btn:hover {
+  color: #0066E6 !important;
+  background: #F0F4FA !important;
+  box-shadow: 0 2px 8px rgba(0, 102, 230, 0.08) !important;
+}
+
+[data-theme="light"] .sidebar .nav-btn:hover .nav-ico svg,
+[data-theme="light"] .sidebar .nav-btn:hover .nav-ico .camp-icon {
+  color: #0066E6 !important;
+  stroke: #0066E6 !important;
+  transform: scale(1.08) !important;
+}
+
+/* Active Nav Item in Light Mode: Crisp Elevated Card with Drop Shadow */
+[data-theme="light"] .sidebar .nav-btn.active {
+  background: #FFFFFF !important;
+  color: #1A202C !important;
+  font-weight: 750 !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+  border: none !important;
+  border-radius: 14px !important;
+}
+
+[data-theme="light"] .sidebar .nav-btn.active .nav-ico svg,
+[data-theme="light"] .sidebar .nav-btn.active .nav-ico .camp-icon {
+  color: #0066E6 !important;
+  stroke: #0066E6 !important;
+  filter: drop-shadow(0 2px 8px rgba(0, 102, 230, 0.45)) !important;
+  transform: scale(1.06) !important;
+}
+
+/* Bottom User Trigger in Light Mode */
+[data-theme="light"] .account-trigger {
+  background: #FFFFFF !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  padding: 10px 14px !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+[data-theme="light"] .account-trigger:hover {
+  background: #F8FAFD !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .account-person b {
+  color: #1A202C !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .account-person small {
+  color: #718096 !important;
+  font-size: 11.5px !important;
+}
+
+[data-theme="light"] .account-trigger > svg {
+  color: #718096 !important;
+}
+
+/* Account dropdown in Light Mode */
+[data-theme="light"] .account-dropdown {
+  background: #FFFFFF !important;
+  color: #1A202C !important;
+  box-shadow: 0 20px 48px rgba(30, 55, 100, 0.15) !important;
+  border: none !important;
+  border-radius: 18px !important;
+}
+
+[data-theme="light"] .account-dropdown-top {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .account-dropdown-top b {
+  color: #1A202C !important;
+}
+
+[data-theme="light"] .account-dropdown-top small {
+  color: #718096 !important;
+}
+
+[data-theme="light"] .account-dropdown-title {
+  color: #718096 !important;
+}
+
+[data-theme="light"] .account-option {
+  color: #4A5568 !important;
+}
+
+[data-theme="light"] .account-option:hover {
+  background: #F0F4FA !important;
+  color: #0066E6 !important;
+}
+
+[data-theme="light"] .account-divider {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Topbar chip & light buttons in Light Mode */
+[data-theme="light"] .topbar-chip {
+  background: #FFFFFF !important;
+  color: #52617A !important;
+  box-shadow: 0 2px 8px rgba(30, 55, 100, 0.06) !important;
+}
+
+[data-theme="light"] .btn.light {
+  background: #EDF2F7 !important;
+  color: #2D3748 !important;
+}
+
+[data-theme="light"] .btn.light:hover {
+  background: #E2E8F0 !important;
+  color: #1A202C !important;
+}
+
+[data-theme="light"] .home-shortcut {
+  background: #FFFFFF !important;
+  box-shadow: 0 4px 18px rgba(112, 144, 176, 0.08) !important;
+}
+
+[data-theme="light"] .home-shortcut b {
+  color: #1A2340 !important;
+}
+
+[data-theme="light"] .home-shortcut small {
+  color: #52617A !important;
+}
+
+[data-theme="light"] dialog,
+[data-theme="light"] .camp-app-dialog {
+  background: #FFFFFF !important;
+  color: #1A2340 !important;
+  box-shadow: 0 20px 60px rgba(30, 55, 100, 0.18) !important;
+}
+
+[data-theme="light"] .cal-secondary-sidebar {
+  background: #FFFFFF !important;
+  color: #1A2340 !important;
+  box-shadow: 4px 0 24px rgba(30, 55, 100, 0.06) !important;
+}
+
+[data-theme="light"] .cal-secondary-sidebar h2 {
+  color: #718096 !important;
+}
+
+[data-theme="light"] .cal-secondary-sidebar nav button {
+  color: #52617A !important;
+  background: transparent !important;
+}
+
+[data-theme="light"] .cal-secondary-sidebar nav button:hover {
+  background: #F0F4FA !important;
+  color: #0066E6 !important;
+}
+
+[data-theme="light"] .cal-secondary-sidebar nav button.active {
+  background: linear-gradient(135deg, #0066E6 0%, #087FA3 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(0, 102, 230, 0.35) !important;
+}
+
+/* Collapsed Calendar Shell in Light Mode */
+[data-theme="light"] .cal-admin-shell > .sidebar {
+  background: #FFFFFF !important;
+  box-shadow: 4px 0 24px rgba(30, 55, 100, 0.06) !important;
+}
+
+[data-theme="light"] .cal-admin-shell > .sidebar .account-trigger {
+  background: #FFFFFF !important;
+  color: #1A202C !important;
+  box-shadow: 0 2px 8px rgba(30, 55, 100, 0.08) !important;
+}
+
+[data-theme="light"] .cal-admin-shell > .sidebar .nav-btn {
+  color: #52617A !important;
+}
+
+[data-theme="light"] .cal-admin-shell > .sidebar .nav-btn.active {
+  background: #FFFFFF !important;
+  color: #0066E6 !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
 }
