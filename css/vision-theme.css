@@ -589,30 +589,36 @@ textarea:focus-visible {
 }
 
 .sidebar-current {
-  background: var(--camp-surface-raised) !important;
+  background: transparent !important;
   border: none !important;
-  border-radius: var(--camp-radius-md);
-  padding: 10px 12px;
+  box-shadow: none !important;
+  padding: 2px 10px 12px !important;
+  margin: 0 !important;
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .sidebar-current-label {
-  font-size: 9.5px;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: var(--camp-text-muted);
-  font-weight: 800;
+  display: none !important;
 }
 
 .sidebar-current-name {
-  color: var(--camp-text);
-  font-size: 12.5px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 7px;
+  color: #FFFFFF !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.2px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.sidebar-current-name svg {
+  color: #21D4FD !important;
+  stroke: #21D4FD !important;
+  width: 17px !important;
+  height: 17px !important;
+  flex-shrink: 0 !important;
+  filter: drop-shadow(0 0 6px rgba(33, 212, 253, 0.4)) !important;
 }
 
 .sidebar-menu {
@@ -620,19 +626,30 @@ textarea:focus-visible {
   overflow-y: auto;
   margin-right: -4px;
   padding-right: 4px;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.sidebar-menu::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar,
+.sidebar *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
 .nav-section {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .nav-group {
-  color: var(--camp-text-muted) !important;
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  font-weight: 800;
-  padding: 4px 12px 8px;
+  color: #94A3B8 !important;
+  font-size: 10.5px !important;
+  letter-spacing: 1.4px !important;
+  text-transform: uppercase !important;
+  font-weight: 800 !important;
+  padding: 6px 12px 6px !important;
 }
 
 .nav {
@@ -642,74 +659,114 @@ textarea:focus-visible {
 }
 
 .nav-btn {
-  color: var(--camp-text-secondary) !important;
-  border: 1px solid transparent !important;
-  border-radius: var(--camp-radius-md) !important;
+  color: #E2E8F0 !important;
+  border: none !important;
+  border-radius: 14px !important;
   background: transparent !important;
   padding: 10px 14px !important;
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 13px;
-  font-weight: 600;
-  transition: var(--camp-transition);
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
   text-align: left;
   width: 100%;
 }
 
 .nav-btn .nav-ico {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--camp-radius-sm);
-  background: var(--camp-surface-raised);
-  color: var(--camp-text-secondary);
-  transition: var(--camp-transition);
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  color: #94A3B8 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.nav-btn .nav-ico svg,
+.nav-btn .nav-ico .camp-icon {
+  width: 19px !important;
+  height: 19px !important;
+  color: #94A3B8 !important;
+  stroke: #94A3B8 !important;
+  transition: all 0.2s ease !important;
 }
 
 .nav-btn:hover {
-  background: var(--camp-hover) !important;
-  color: var(--camp-text) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
 }
 
 .nav-btn:hover .nav-ico {
-  color: var(--camp-primary);
-  background: var(--camp-hover-strong);
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  color: #FFFFFF !important;
+}
+
+.nav-btn:hover .nav-ico svg,
+.nav-btn:hover .nav-ico .camp-icon {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  transform: scale(1.08) !important;
 }
 
 .nav-btn.active {
-  background: var(--camp-surface-raised) !important;
-  border-color: var(--camp-border-strong) !important;
-  color: var(--camp-text) !important;
-  font-weight: 700 !important;
-  box-shadow: var(--camp-shadow-sm) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: none !important;
+  color: #FFFFFF !important;
+  font-weight: 750 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.22), inset 0 -1px 1px rgba(0, 0, 0, 0.15) !important;
 }
 
 .nav-btn.active .nav-ico {
-  background: var(--camp-gradient-primary) !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 2px 10px var(--camp-primary-glow);
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  color: #21D4FD !important;
+}
+
+.nav-btn.active .nav-ico svg,
+.nav-btn.active .nav-ico .camp-icon {
+  color: #21D4FD !important;
+  stroke: #21D4FD !important;
+  filter: drop-shadow(0 0 8px rgba(33, 212, 253, 0.55)) !important;
+  transform: scale(1.06) !important;
 }
 
 .sidebar-bottom {
-  border-top: 1px solid var(--camp-border) !important;
-  padding-top: 14px;
+  border-top: none !important;
+  padding: 16px 0 0 !important;
+  margin-top: auto !important;
 }
 
 /* User Account Trigger & Dropdown */
 .account-trigger {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: var(--camp-radius-md);
+  gap: 12px;
+  padding: 10px 14px !important;
+  border-radius: 16px !important;
   cursor: pointer;
-  background: var(--camp-surface-raised);
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   border: none !important;
-  color: var(--camp-text);
-  transition: var(--camp-transition);
+  color: #FFFFFF !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 1.5px rgba(255, 255, 255, 0.2), inset 0 -1px 1px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .account-trigger:hover {
@@ -7399,4 +7456,192 @@ dialog,
   outline: none !important;
   border-radius: 20px !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* ==========================================================================
+   26. SIDEBAR MODERN GLASSMORPHISM & ICON FREEDOM
+   - Free icons: zero square container, zero border, zero background
+   - Scrollbars: 100% hidden across all browsers
+   - Active nav item: authentic frosted glass with blur and inner highlight
+   - Bottom user card: ultra-luxurious Vision UI glassmorphism
+   - Active school: clean, prominent title with no background or extra label
+   - High-contrast, crystal clear typography
+   ========================================================================== */
+
+.sidebar,
+.sidebar-menu,
+.sidebar *,
+.cal-secondary-sidebar,
+.cal-secondary-sidebar * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.sidebar::-webkit-scrollbar,
+.sidebar-menu::-webkit-scrollbar,
+.sidebar *::-webkit-scrollbar,
+.cal-secondary-sidebar::-webkit-scrollbar,
+.cal-secondary-sidebar *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+.sidebar .nav-btn .nav-ico,
+.sidebar .nav-btn.active .nav-ico,
+.sidebar .nav-btn:hover .nav-ico,
+.sidebar .nav-ico {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.sidebar .nav-btn .nav-ico svg,
+.sidebar .nav-btn .nav-ico .camp-icon {
+  color: #94A3B8 !important;
+  stroke: #94A3B8 !important;
+  width: 19px !important;
+  height: 19px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.sidebar .nav-btn:hover .nav-ico svg,
+.sidebar .nav-btn:hover .nav-ico .camp-icon {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  transform: scale(1.08) !important;
+}
+
+.sidebar .nav-btn.active .nav-ico svg,
+.sidebar .nav-btn.active .nav-ico .camp-icon {
+  color: #21D4FD !important;
+  stroke: #21D4FD !important;
+  filter: drop-shadow(0 0 8px rgba(33, 212, 253, 0.6)) !important;
+  transform: scale(1.06) !important;
+}
+
+.sidebar .nav-btn {
+  color: #E2E8F0 !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: 14px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.sidebar .nav-btn:hover {
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.12) !important;
+}
+
+.sidebar .nav-btn.active {
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: none !important;
+  border-radius: 14px !important;
+  color: #FFFFFF !important;
+  font-weight: 750 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.22), inset 0 -1px 1px rgba(0, 0, 0, 0.15) !important;
+}
+
+.sidebar-current {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 4px 12px 14px 12px !important;
+}
+
+.sidebar-current-label {
+  display: none !important;
+}
+
+.sidebar-current-name {
+  color: #FFFFFF !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.2px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+}
+
+.sidebar-current-name svg {
+  color: #21D4FD !important;
+  stroke: #21D4FD !important;
+  width: 18px !important;
+  height: 18px !important;
+  filter: drop-shadow(0 0 6px rgba(33, 212, 253, 0.45)) !important;
+}
+
+.sidebar .nav-group {
+  color: #94A3B8 !important;
+  font-size: 10.5px !important;
+  letter-spacing: 1.4px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+}
+
+.sidebar-bottom {
+  border-top: none !important;
+  padding: 16px 0 0 !important;
+  margin-top: auto !important;
+}
+
+.account-trigger {
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 1.5px rgba(255, 255, 255, 0.2), inset 0 -1px 1px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.account-trigger:hover {
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 100%) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.42), inset 0 1px 1.5px rgba(255, 255, 255, 0.3) !important;
+}
+
+.account-person b {
+  color: #FFFFFF !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+}
+
+.account-person small {
+  color: #94A3B8 !important;
+  font-size: 11.5px !important;
+}
+
+.account-avatar {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.5) !important;
+  border-radius: 12px !important;
+  color: #FFFFFF !important;
+  font-weight: 800 !important;
+}
+
+.sidebar .brand {
+  border-bottom: none !important;
+}
+
+.sidebar .brand-title {
+  color: #FFFFFF !important;
+}
+
+.sidebar .brand-sub {
+  color: #94A3B8 !important;
 }

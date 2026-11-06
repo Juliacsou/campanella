@@ -140,15 +140,17 @@ function applyTheme(targetTheme){
   btn.setAttribute('title',`Alternar tema (${isDark?'Modo Escuro':'Modo Claro'})`);
   btn.innerHTML=`<span class="theme-toggle-icon">${isDark?ico('sun',16):ico('moon',16)}</span><span>${isDark?'Modo Claro':'Modo Escuro'}</span>`;
  });
- window.dispatchEvent(new CustomEvent('campanella:theme-changed',{detail:{theme}}));
+ if(typeof window!=='undefined'){window.dispatchEvent(new CustomEvent('campanella:theme-changed',{detail:{theme}}));}
 }
-window.toggleTheme=(explicit)=>{
- const next=explicit||(currentTheme()==='dark'?'light':'dark');
- applyTheme(next);
-};
-window.themeToggleMarkup=themeToggleMarkup;
-window.currentTheme=currentTheme;
-const onboarding=createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe,ico,today,dateBR,cpfValid,amountWords,confirm:confirmModal,toast});
+if(typeof window!=='undefined'){
+ window.toggleTheme=(explicit)=>{
+  const next=explicit||(currentTheme()==='dark'?'light':'dark');
+  applyTheme(next);
+ };
+ window.themeToggleMarkup=themeToggleMarkup;
+ window.currentTheme=currentTheme;
+}
+const onboarding=typeof createOnboarding==='function'?createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe,ico,today,dateBR,cpfValid,amountWords,confirm:confirmModal,toast}):null;
 const navGroups=[
  ['Início',[['dashboard','dashboard','Visão geral']]],
  ['Relacionamento',[['leads','leads','CRM · Leads'],['interviews','interviews','Fichas iniciais']]],
