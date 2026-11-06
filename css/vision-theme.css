@@ -5264,8 +5264,9 @@ table tr:hover td {
 }
 
 .cal-week-card.done {
-  background: linear-gradient(135deg, rgba(1, 181, 116, 0.3) 0%, rgba(1, 181, 116, 0.2) 100%) !important;
+  background: linear-gradient(135deg, rgba(0, 117, 255, 0.35) 0%, rgba(33, 212, 253, 0.25) 100%) !important;
   border: none !important;
+  color: #FFFFFF !important;
 }
 
 .cal-week-card.pending {
@@ -6069,4 +6070,152 @@ button.btn.mini.light,
 .contract-actions-popover {
   border: none !important;
   outline: none !important;
+}
+
+/* ==========================================================================
+   23. ZERO-GREEN OVERRIDES FOR ICONS & CALENDAR (VISION UI ELECTRIC BLUE/CYAN)
+   ========================================================================== */
+
+/* --- All App Icons Across All Pages (Vision UI Electric Blue/Cyan Gradient Squares) --- */
+.metric-icon,
+.platform-metrics .metric-icon,
+.metric-action .metric-icon,
+.shortcut-ico,
+.settings-icon,
+.school-card-icon,
+.enhanced-school-cards .school-card-icon,
+.school-hero-icon,
+.fiche-choice-icon,
+.fiche-popup-symbol,
+.preferences-tile-icon,
+.preferences-panel-symbol,
+.preferences-intro-icon,
+.template-file-icon,
+.template-empty-icon,
+.cal-profile-accordion-icon,
+.onb-entry > span:first-child,
+.onb-section-number,
+.avatar,
+.account-avatar,
+.sidebar .mark,
+.mark {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  border-radius: 12px !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.4) !important;
+}
+
+/* Onboarding Stage numbers */
+.onb-stage.current span,
+.onb-stage span {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 8px rgba(0, 117, 255, 0.4) !important;
+}
+
+/* Inherited SVG icon colors in sidebar & dropdowns */
+.cal-nav-icon,
+.cal-secondary-sidebar nav button .cal-nav-icon,
+.cal-secondary-sidebar nav button svg,
+.profile-school-item svg,
+.preferences-nav-item svg,
+.preferences-nav-item.selected svg,
+.account-option-icon {
+  color: inherit !important;
+}
+
+/* Text highlights & eyebrows */
+.eyebrow,
+.account-create,
+.docx-report-heading.is-ok b {
+  color: #21D4FD !important;
+}
+
+[data-theme="light"] .eyebrow,
+[data-theme="light"] .account-create {
+  color: #0066E6 !important;
+}
+
+/* --- Calendar Vision UI Electric Blue Overrides --- */
+.cal-secondary-sidebar nav button.active {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+}
+
+.cal-secondary-sidebar nav button:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .cal-secondary-sidebar nav button:hover {
+  background: #F0F4FA !important;
+  color: #0066E6 !important;
+}
+
+.cal-status,
+.cal-status-scheduled,
+.cal-status-completed {
+  color: #21D4FD !important;
+}
+
+[data-theme="light"] .cal-status,
+[data-theme="light"] .cal-status-scheduled,
+[data-theme="light"] .cal-status-completed {
+  color: #0066E6 !important;
+}
+
+.cal-progress span {
+  background: linear-gradient(90deg, #0075FF 0%, #21D4FD 100%) !important;
+  border-radius: 15px !important;
+}
+
+.cal-wpicker-event,
+.cal-wpicker-dot.available,
+.cal-reschedule-item.available,
+.cal-slot-chip,
+.cal-student-slot,
+.cal-profile-page .cal-count {
+  background: rgba(0, 117, 255, 0.16) !important;
+  color: #21D4FD !important;
+  border: none !important;
+}
+
+.cal-wpicker-event.is-selected,
+.cal-wpicker-dot.selected,
+.cal-reschedule-item.selected,
+.cal-lessons-tab.is-active,
+.cal-settings-nav button.selected {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+}
+
+.cal-editor-event.cal-editor-occupied {
+  background: rgba(0, 117, 255, 0.35) !important;
+  border-left: 3px solid #21D4FD !important;
+  color: #FFFFFF !important;
+}
+
+.cal-temp-schedule-banner,
+.cal-skip-banner,
+.cal-schedule-mode-summary,
+.student-calendar-state {
+  background: rgba(0, 117, 255, 0.12) !important;
+  border: none !important;
+  border-left: 4px solid #0075FF !important;
+  color: #E2E8F0 !important;
+}
+
+.cal-temp-badge,
+.cal-student-cta {
+  color: #21D4FD !important;
+}
+
+.cal-until-checkbox input[type="checkbox"],
+.interview-slot-option input {
+  accent-color: #0075FF !important;
 }
