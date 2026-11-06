@@ -23,8 +23,8 @@
   --camp-surface: #0B1437;
   --camp-surface-raised: #101C44;
   --camp-surface-floating: #12204E;
-  --camp-surface-card: rgba(11, 20, 55, 0.90);
-  --camp-surface-card-border: rgba(255, 255, 255, 0.08);
+  --camp-surface-card: #0B1437;
+  --camp-surface-card-border: transparent;
 
   /* Inputs & Interactive Controls */
   --camp-input: #0C1735;
@@ -60,20 +60,23 @@
   --camp-info-bg: rgba(33, 212, 253, 0.15);
   --camp-info-border: rgba(33, 212, 253, 0.35);
 
-  /* Borders & Dividers */
-  --camp-border: rgba(255, 255, 255, 0.08);
-  --camp-border-subtle: rgba(255, 255, 255, 0.05);
-  --camp-border-strong: rgba(255, 255, 255, 0.18);
+  /* Borders & Dividers — Vision UI is Borderless */
+  --camp-border: transparent;
+  --camp-border-subtle: transparent;
+  --camp-border-strong: rgba(255, 255, 255, 0.08);
+  --camp-divider: rgba(255, 255, 255, 0.04);
+  --camp-divider-subtle: rgba(255, 255, 255, 0.02);
 
-  /* Shadows */
-  --camp-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --camp-shadow-card: 0 8px 32px rgba(0, 0, 0, 0.38);
+  /* Shadows — Vision UI signature elevation */
+  --camp-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --camp-shadow-card: 0px 20px 27px 0px rgba(0, 0, 0, 0.25);
+  --camp-shadow-card-hover: 0px 24px 35px 0px rgba(0, 0, 0, 0.38);
   --camp-shadow-floating: 0 20px 48px rgba(0, 0, 0, 0.6);
   --camp-shadow-btn: 0 4px 15px rgba(0, 117, 255, 0.35);
 
   /* Gradients */
   --camp-gradient-primary: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%);
-  --camp-gradient-surface: linear-gradient(127deg, rgba(16, 28, 68, 0.94) 0%, rgba(11, 20, 55, 0.88) 100%);
+  --camp-gradient-surface: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%);
   --camp-gradient-sidebar: linear-gradient(180deg, #0B1437 0%, #060B1F 100%);
   --camp-gradient-icon: linear-gradient(135deg, #0075FF 0%, #7551FF 100%);
 
@@ -84,9 +87,9 @@
   /* Bridge to existing legacy variables */
   --c-ink: #FFFFFF;
   --c-green: #0075FF;
-  --c-border: rgba(255, 255, 255, 0.08);
+  --c-border: transparent;
   --c-soft: #101C44;
-  --crm-stroke: rgba(255, 255, 255, 0.08);
+  --crm-stroke: transparent;
   --crm-forest: #0075FF;
   --crm-muted: #A0AEC0;
   --crm-bg: #060B1F;
@@ -107,7 +110,7 @@
   --camp-surface-raised: #FFFFFF;
   --camp-surface-floating: #FFFFFF;
   --camp-surface-card: #FFFFFF;
-  --camp-surface-card-border: #E1E7F0;
+  --camp-surface-card-border: transparent;
 
   /* Inputs & Interactive Controls */
   --camp-input: #F8FAFD;
@@ -143,14 +146,17 @@
   --camp-info-bg: rgba(8, 127, 163, 0.1);
   --camp-info-border: rgba(8, 127, 163, 0.3);
 
-  /* Borders & Dividers */
-  --camp-border: #E1E7F0;
-  --camp-border-subtle: #EDF2F7;
-  --camp-border-strong: #CCD7E7;
+  /* Borders & Dividers — Vision UI is Borderless */
+  --camp-border: transparent;
+  --camp-border-subtle: transparent;
+  --camp-border-strong: rgba(0, 0, 0, 0.08);
+  --camp-divider: rgba(0, 0, 0, 0.04);
+  --camp-divider-subtle: rgba(0, 0, 0, 0.02);
 
-  /* Shadows */
+  /* Shadows — Vision UI signature elevation */
   --camp-shadow-sm: 0 2px 6px rgba(30, 55, 100, 0.05);
-  --camp-shadow-card: 0 8px 24px rgba(30, 55, 100, 0.08);
+  --camp-shadow-card: 0px 20px 27px 0px rgba(112, 144, 176, 0.08);
+  --camp-shadow-card-hover: 0px 24px 35px 0px rgba(112, 144, 176, 0.14);
   --camp-shadow-floating: 0 20px 48px rgba(30, 55, 100, 0.15);
   --camp-shadow-btn: 0 4px 14px rgba(0, 102, 230, 0.22);
 
@@ -167,9 +173,9 @@
   /* Bridge to existing legacy variables */
   --c-ink: #1A2340;
   --c-green: #0066E6;
-  --c-border: #E1E7F0;
+  --c-border: transparent;
   --c-soft: #F8FAFD;
-  --crm-stroke: #E1E7F0;
+  --crm-stroke: transparent;
   --crm-forest: #0066E6;
   --crm-muted: #52617A;
   --crm-bg: #F5F7FC;
@@ -180,8 +186,8 @@
   --camp-radius-xs: 6px;
   --camp-radius-sm: 8px;
   --camp-radius-md: 12px;
-  --camp-radius-lg: 16px;
-  --camp-radius-xl: 20px;
+  --camp-radius-lg: 20px;
+  --camp-radius-xl: 24px;
   --camp-radius-pill: 9999px;
   --camp-transition: background-color 0.18s ease, border-color 0.18s ease, color 0.15s ease, box-shadow 0.18s ease, transform 0.15s ease;
 }
@@ -323,6 +329,200 @@ textarea:focus-visible {
   grid-template-columns: 260px minmax(0, 1fr);
   min-height: 100vh;
   background: transparent;
+}
+
+/* Three-column admin layout for Calendar page */
+.shell.cal-admin-shell {
+  display: grid !important;
+  grid-template-columns: 80px 240px minmax(0, 1fr) !important;
+  min-height: 100vh !important;
+}
+
+/* Teacher portal shell */
+.shell.cal-teacher-shell {
+  display: grid !important;
+  grid-template-columns: 260px minmax(0, 1fr) !important;
+  min-height: 100vh !important;
+}
+
+/* Collapsed primary sidebar in Calendar view */
+.cal-admin-shell > .sidebar {
+  width: 80px !important;
+  padding: 24px 8px !important;
+  gap: 20px !important;
+  align-items: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.cal-admin-shell > .sidebar > .brand {
+  padding: 0 !important;
+  justify-content: center !important;
+  border-bottom: none !important;
+}
+
+.cal-admin-shell > .sidebar > .brand > div,
+.cal-admin-shell > .sidebar > .sidebar-current {
+  display: none !important;
+}
+
+.cal-admin-shell > .sidebar .nav-group,
+.cal-admin-shell > .sidebar .nav-btn > span:last-child {
+  display: none !important;
+}
+
+.cal-admin-shell > .sidebar .nav-section {
+  margin-bottom: 4px !important;
+  width: 100% !important;
+}
+
+.cal-admin-shell > .sidebar .nav {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.cal-admin-shell > .sidebar .nav-btn {
+  justify-content: center !important;
+  padding: 0 !important;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 12px !important;
+  margin: 0 auto !important;
+}
+
+.cal-admin-shell > .sidebar .nav-ico {
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+}
+
+.cal-admin-shell > .sidebar .sidebar-bottom {
+  margin-top: auto !important;
+  padding: 12px 0 0 !important;
+  border-top: none !important;
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+.cal-admin-shell > .sidebar .account-person,
+.cal-admin-shell > .sidebar .account-trigger > svg {
+  display: none !important;
+}
+
+.cal-admin-shell > .sidebar .account-trigger {
+  justify-content: center !important;
+  padding: 0 !important;
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: var(--camp-surface-raised) !important;
+  border: none !important;
+}
+
+.cal-admin-shell > .sidebar .account-dropdown {
+  left: 84px !important;
+  right: auto !important;
+  bottom: 12px !important;
+}
+
+/* Secondary Calendar Sidebar */
+.cal-secondary-sidebar {
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;
+  overflow-y: auto !important;
+  background: var(--camp-surface-secondary, #080F2B) !important;
+  border-right: 1px solid var(--camp-divider) !important;
+  padding: 24px 14px 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  box-sizing: border-box !important;
+  z-index: 10 !important;
+  backdrop-filter: blur(20px);
+}
+
+[data-theme="light"] .cal-secondary-sidebar {
+  background: #FFFFFF !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.02) !important;
+}
+
+.cal-secondary-sidebar h2 {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.2px !important;
+  color: var(--camp-text-muted) !important;
+  padding: 6px 12px 10px !important;
+  margin: 0 !important;
+}
+
+.cal-secondary-sidebar nav {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.cal-secondary-sidebar nav button {
+  border: 0 !important;
+  text-align: left !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  color: var(--camp-text-secondary) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 12px 14px !important;
+  display: flex !important;
+  gap: 12px !important;
+  align-items: center !important;
+  cursor: pointer !important;
+  transition: var(--camp-transition) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.cal-secondary-sidebar nav button .cal-nav-icon {
+  width: 20px !important;
+  height: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: inherit !important;
+  flex-shrink: 0 !important;
+}
+
+.cal-secondary-sidebar nav button:hover {
+  background: var(--camp-hover) !important;
+  color: var(--camp-text) !important;
+}
+
+.cal-secondary-sidebar nav button.active {
+  background: var(--camp-primary) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px 0 rgba(0, 117, 255, 0.4) !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .cal-secondary-sidebar nav button.active {
+  background: var(--camp-primary) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px 0 rgba(0, 102, 230, 0.3) !important;
+}
+
+.cal-admin-shell > .workspace {
+  min-width: 0 !important;
+}
+
+.cal-admin-shell > .workspace .content {
+  padding: 28px 36px !important;
 }
 
 .sidebar {
@@ -757,7 +957,7 @@ textarea:focus-visible {
 }
 
 /* ==========================================================================
-   6. CARDS, METRICS & PANELS
+   6. CARDS, METRICS & PANELS (BORDERLESS VISION UI FLOATING SURFACES)
    ========================================================================== */
 
 .panel,
@@ -769,13 +969,18 @@ textarea:focus-visible {
 .crm-section,
 .crm-side-card,
 .onb-panel,
-.cal-metrics>div,
+.cal-metrics > div,
 .sign-panel,
 .template-library,
-.template-stats>div,
-.home-shortcut {
+.template-stats > div,
+.teacher-stats > div,
+.school-card,
+.license-card,
+.home-shortcut,
+.role-card,
+.marker-builder {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   box-shadow: var(--camp-shadow-card) !important;
   backdrop-filter: blur(20px);
@@ -786,8 +991,12 @@ textarea:focus-visible {
 .panel:hover,
 .metric:hover,
 .crm-metric:hover,
-.home-shortcut:hover {
-  border-color: var(--camp-border-strong) !important;
+.home-shortcut:hover,
+.teacher-stats > div:hover,
+.school-card:hover,
+.license-card:hover {
+  border-color: transparent !important;
+  box-shadow: var(--camp-shadow-card-hover) !important;
 }
 
 .panel-head,
@@ -797,7 +1006,7 @@ textarea:focus-visible {
 .profile-section-head,
 .template-library-heading {
   padding: 20px 24px !important;
-  border-bottom: 1px solid var(--camp-border) !important;
+  border-bottom: none !important;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1016,13 +1225,23 @@ textarea:focus-visible {
 }
 
 /* ==========================================================================
-   8. TABLES & LISTINGS
+   8. TABLES & LISTINGS (BORDERLESS VISION UI FLOATING TABLES)
    ========================================================================== */
+
+.table-wrap {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: var(--camp-radius-lg) !important;
+  overflow-x: auto;
+}
 
 .data-table,
 .crm-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: none !important;
   text-align: left;
   font-size: 13px;
   color: var(--camp-text-secondary) !important;
@@ -1030,28 +1249,35 @@ textarea:focus-visible {
 
 .data-table th,
 .crm-table th {
-  font-size: 10.5px;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
+  font-size: 10.5px !important;
+  letter-spacing: 1.2px !important;
+  text-transform: uppercase !important;
   color: var(--camp-text-muted) !important;
-  font-weight: 800;
-  background: var(--camp-surface-raised) !important;
+  font-weight: 800 !important;
+  background: transparent !important;
   padding: 14px 20px !important;
-  white-space: nowrap;
-  border-bottom: 1px solid var(--camp-border) !important;
+  white-space: nowrap !important;
+  border: none !important;
+  border-bottom: 1px solid var(--camp-divider) !important;
 }
 
 .data-table td,
 .crm-table td {
   padding: 16px 20px !important;
-  border-top: 1px solid var(--camp-border) !important;
-  vertical-align: middle;
+  border: none !important;
+  border-bottom: 1px solid var(--camp-divider) !important;
+  vertical-align: middle !important;
   color: var(--camp-text-secondary) !important;
+}
+
+.data-table tr:last-child td,
+.crm-table tr:last-child td {
+  border-bottom: none !important;
 }
 
 .data-table td:first-child,
 .crm-table td strong {
-  font-weight: 700;
+  font-weight: 750;
   color: var(--camp-text) !important;
 }
 
@@ -1068,7 +1294,7 @@ textarea:focus-visible {
 
 .data-table tr:hover td:first-child,
 .crm-table tr:hover td:first-child {
-  border-left: 3px solid var(--camp-primary) !important;
+  border-left: none !important;
 }
 
 /* Status Pills */
@@ -1133,7 +1359,7 @@ textarea:focus-visible {
 
 dialog,
 .camp-app-dialog {
-  border: 1px solid var(--camp-border-strong) !important;
+  border: none !important;
   border-radius: var(--camp-radius-xl) !important;
   background: var(--camp-surface-floating) !important;
   color: var(--camp-text) !important;
@@ -1202,7 +1428,7 @@ dialog .close {
   position: absolute;
   right: 18px;
   top: 16px;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   background: var(--camp-surface-raised) !important;
   color: var(--camp-text-secondary) !important;
   width: 32px;
@@ -1218,7 +1444,7 @@ dialog .close {
 dialog .close:hover {
   background: var(--camp-hover) !important;
   color: var(--camp-text) !important;
-  border-color: var(--camp-border-strong) !important;
+  border-color: transparent !important;
 }
 
 /* Busy overlay and Toast */
@@ -1579,8 +1805,9 @@ dialog .close:hover {
   width: 265px;
   flex: 0 0 265px;
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
+  box-shadow: var(--camp-shadow-card) !important;
   padding: 14px !important;
   display: flex;
   flex-direction: column;
@@ -1593,7 +1820,7 @@ dialog .close:hover {
   align-items: stretch !important;
   gap: 6px;
   padding: 4px 4px 12px !important;
-  border-bottom: 1px solid var(--camp-border) !important;
+  border-bottom: 1px solid var(--camp-divider) !important;
   margin-bottom: 12px;
 }
 
@@ -1618,7 +1845,7 @@ dialog .close:hover {
   height: 22px;
   padding: 0 6px;
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border);
+  border: none !important;
   border-radius: var(--camp-radius-pill);
   color: var(--camp-cyan) !important;
   font-size: 11px;
@@ -1634,7 +1861,7 @@ dialog .close:hover {
   align-items: center;
   gap: 5px;
   background: rgba(0, 117, 255, 0.14) !important;
-  border: 1px solid rgba(0, 117, 255, 0.25) !important;
+  border: none !important;
   border-radius: var(--camp-radius-pill);
   padding: 2px 8px;
   font-size: 10.5px;
@@ -1669,19 +1896,26 @@ dialog .close:hover {
 
 .crm-lead-card {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md) !important;
   padding: 14px 13px !important;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16) !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+[data-theme="light"] .crm-lead-card {
+  background: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(112, 144, 176, 0.08) !important;
 }
 
 .crm-lead-card:hover,
 .crm-lead-card:focus {
   transform: translateY(-2px);
-  border-color: var(--camp-primary) !important;
-  box-shadow: 0 0 16px var(--camp-primary-glow), var(--camp-shadow-card);
+  border-color: transparent !important;
+  box-shadow: 0 8px 24px rgba(0, 117, 255, 0.28) !important;
+  outline: none;
+}
   outline: none;
 }
 
@@ -2478,7 +2712,7 @@ dialog .close:hover {
 .cal-metrics > div {
   padding: 18px 20px;
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg);
   display: flex;
   flex-direction: column;
@@ -2489,7 +2723,8 @@ dialog .close:hover {
 
 .cal-metrics > div:hover {
   transform: translateY(-2px);
-  border-color: var(--camp-border-strong) !important;
+  border-color: transparent !important;
+  box-shadow: var(--camp-shadow-card-hover);
 }
 
 .cal-metrics strong {
@@ -2508,7 +2743,7 @@ dialog .close:hover {
 }
 
 .cal-metrics .cal-attention {
-  border-color: var(--camp-warning) !important;
+  border: none !important;
   background: var(--camp-warning-bg) !important;
 }
 
@@ -2528,7 +2763,7 @@ dialog .close:hover {
   display: inline-flex;
   gap: 3px;
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-pill);
   padding: 3px;
 }
@@ -2574,13 +2809,17 @@ dialog .close:hover {
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border: 1px solid var(--camp-border) !important;
-  border-left: 3px solid var(--camp-primary) !important;
+  border: none !important;
+  border-left: 4px solid var(--camp-primary) !important;
   border-radius: var(--camp-radius-md);
   margin: 8px 0;
   flex-wrap: wrap;
   background: var(--camp-surface-card) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .cal-lesson {
+  box-shadow: 0 4px 14px rgba(112, 144, 176, 0.08);
 }
 
 .cal-lesson.is-pending {
@@ -2613,7 +2852,7 @@ dialog .close:hover {
 }
 
 .cal-week-grid {
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg);
   background: var(--camp-surface-card) !important;
   overflow: hidden;
@@ -2622,7 +2861,7 @@ dialog .close:hover {
 
 .cal-week-grid-head {
   background: var(--camp-surface-raised) !important;
-  border-bottom: 1px solid var(--camp-border) !important;
+  border-bottom: 1px solid var(--camp-divider) !important;
 }
 
 .cal-week-head-day {
@@ -2634,7 +2873,7 @@ dialog .close:hover {
 .cal-week-day {
   min-width: 110px;
   padding: 10px;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   background: var(--camp-surface-card) !important;
   min-height: 220px;
@@ -2668,7 +2907,7 @@ dialog .close:hover {
   width: 100%;
   background: var(--camp-surface-raised) !important;
   color: var(--camp-text) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-left: 3px solid var(--camp-primary) !important;
   border-radius: var(--camp-radius-sm);
   padding: 8px 10px;
@@ -2719,7 +2958,7 @@ dialog .close:hover {
 
 .cal-month-day {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   min-height: 74px;
   padding: 8px;
@@ -2734,7 +2973,7 @@ dialog .close:hover {
 }
 
 .cal-month-day:hover {
-  border-color: var(--camp-primary) !important;
+  border-color: transparent !important;
   background: var(--camp-hover) !important;
 }
 
@@ -2760,27 +2999,28 @@ dialog .close:hover {
   padding: 6px 12px;
   border-radius: var(--camp-radius-pill);
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   color: var(--camp-cyan) !important;
   margin: 4px;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 [data-theme="light"] .cal-slot-chip {
   color: var(--camp-primary) !important;
+  background: rgba(0, 102, 230, 0.1) !important;
 }
 
 .cal-student-slot {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   color: var(--camp-text) !important;
   border-radius: var(--camp-radius-sm);
   padding: 8px 12px;
 }
 
 .cal-lesson-row {
-  border-bottom: 1px solid var(--camp-border) !important;
+  border-bottom: 1px solid var(--camp-divider) !important;
   padding: 14px 4px !important;
   transition: var(--camp-transition);
 }
@@ -2791,7 +3031,7 @@ dialog .close:hover {
 
 .cal-lesson-number {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   color: var(--camp-cyan) !important;
   border-radius: var(--camp-radius-sm);
 }
@@ -2806,7 +3046,7 @@ dialog .close:hover {
 
 .cal-profile-accordion-toggle {
   background: var(--camp-surface-card) !important;
-  border-bottom: 1px solid var(--camp-border) !important;
+  border-bottom: 1px solid var(--camp-divider) !important;
 }
 
 .cal-profile-accordion-toggle:hover {
@@ -3118,10 +3358,11 @@ dialog .close:hover {
 }
 
 .preferences-nav {
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   padding: 12px;
   background: var(--camp-surface-card) !important;
+  box-shadow: var(--camp-shadow-card) !important;
 }
 
 .preferences-nav-title {
@@ -3130,8 +3371,9 @@ dialog .close:hover {
 
 .settings-hero {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
+  box-shadow: var(--camp-shadow-card) !important;
 }
 
 .school-hero-icon {
@@ -3142,8 +3384,10 @@ dialog .close:hover {
 
 .profile-school-item {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   color: var(--camp-text) !important;
+  border-radius: var(--camp-radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 /* School Cards & Multi-Escola Platform View */
@@ -3157,7 +3401,7 @@ dialog .close:hover {
 
 .school-card {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   padding: 22px !important;
   box-shadow: var(--camp-shadow-card) !important;
@@ -3169,13 +3413,13 @@ dialog .close:hover {
 
 .school-card:hover {
   transform: translateY(-2px);
-  border-color: var(--camp-border-strong) !important;
-  box-shadow: var(--camp-shadow-card);
+  border-color: transparent !important;
+  box-shadow: var(--camp-shadow-card-hover) !important;
 }
 
 .school-card.is-current {
-  border-color: var(--camp-primary) !important;
-  box-shadow: 0 0 16px var(--camp-primary-glow), var(--camp-shadow-card) !important;
+  border: none !important;
+  box-shadow: 0 0 20px var(--camp-primary-glow), var(--camp-shadow-card) !important;
 }
 
 .school-card-icon {
@@ -3210,18 +3454,19 @@ dialog .close:hover {
 /* License Management Cards */
 .license-card {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   padding: 22px !important;
-  box-shadow: var(--camp-shadow-card);
+  box-shadow: var(--camp-shadow-card) !important;
 }
 
 .license-hero {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
-  border-radius: var(--camp-radius-lg);
+  border: none !important;
+  border-radius: var(--camp-radius-lg) !important;
   padding: 22px;
   margin-bottom: 22px;
+  box-shadow: var(--camp-shadow-card) !important;
 }
 
 /* ==========================================================================
@@ -3441,7 +3686,7 @@ dialog .close:hover {
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr);
   gap: 22px;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   padding: 28px 32px;
   margin-top: 20px;
@@ -3479,17 +3724,18 @@ dialog .close:hover {
 /* Syntax Showcase & Formula */
 .syntax-showcase {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   color: var(--camp-text) !important;
   overflow: hidden;
   margin: 18px 0;
+  box-shadow: var(--camp-shadow-card);
 }
 
 .syntax-header {
   padding: 10px 16px;
   background: var(--camp-surface-card) !important;
-  border-bottom: 1px solid var(--camp-border) !important;
+  border-bottom: 1px solid var(--camp-divider) !important;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -3502,7 +3748,7 @@ dialog .close:hover {
 .syntax-formula {
   background: var(--camp-surface-raised) !important;
   color: var(--camp-cyan) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   padding: 16px;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 16px;
@@ -3541,7 +3787,7 @@ dialog .close:hover {
   display: grid;
   grid-template-columns: 1fr 1fr 1.25fr;
   gap: 0;
-  border-top: 1px solid var(--camp-border) !important;
+  border-top: 1px solid var(--camp-divider) !important;
   background: var(--camp-surface-card) !important;
 }
 
@@ -3553,7 +3799,7 @@ dialog .close:hover {
 }
 
 .syntax-legend > div + div {
-  border-left: 1px solid var(--camp-border) !important;
+  border-left: 1px solid var(--camp-divider) !important;
 }
 
 .syntax-legend strong {
@@ -3579,10 +3825,11 @@ dialog .close:hover {
 
 .role-card {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   padding: 18px;
   color: var(--camp-text) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
 }
 
 .role-card h4 {
@@ -3601,7 +3848,7 @@ dialog .close:hover {
   display: inline-flex;
   color: var(--camp-cyan) !important;
   background: rgba(0, 117, 255, 0.16) !important;
-  border: 1px solid rgba(0, 117, 255, 0.25);
+  border: none !important;
   border-radius: var(--camp-radius-pill);
   padding: 4px 10px;
   font-weight: 750;
@@ -3616,7 +3863,7 @@ dialog .close:hover {
 .role-card:last-child .role-token {
   background: rgba(117, 81, 255, 0.16) !important;
   color: var(--camp-purple) !important;
-  border-color: rgba(117, 81, 255, 0.25);
+  border-color: transparent !important;
 }
 
 /* Base Field Lists */
@@ -3632,10 +3879,11 @@ dialog .close:hover {
   justify-content: space-between;
   gap: 8px;
   padding: 12px 14px;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   background: var(--camp-surface-raised) !important;
   color: var(--camp-text) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 .base-field-line strong {
@@ -3651,7 +3899,7 @@ dialog .close:hover {
   overflow-wrap: anywhere;
   color: var(--camp-cyan) !important;
   background: var(--camp-surface) !important;
-  border: 1px solid var(--camp-border);
+  border: none !important;
   padding: 4px 8px;
   border-radius: var(--camp-radius-sm);
 }
@@ -3663,7 +3911,7 @@ dialog .close:hover {
 .copy {
   color: var(--camp-text) !important;
   background: var(--camp-surface) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-sm);
   padding: 7px 12px;
   font-size: 11px;
@@ -3674,12 +3922,12 @@ dialog .close:hover {
 
 .copy:hover {
   background: var(--camp-hover) !important;
-  border-color: var(--camp-primary) !important;
+  border-color: transparent !important;
 }
 
 /* Marker Builder Interativo */
 .marker-builder {
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg);
   background: var(--camp-surface-card) !important;
   margin: 22px 0;
@@ -4075,7 +4323,7 @@ dialog .close:hover {
   flex-direction: column;
   gap: 5px;
   background: var(--camp-info-bg) !important;
-  border: 1px solid var(--camp-info-border) !important;
+  border: none !important;
   border-left: 4px solid var(--camp-cyan) !important;
   color: var(--camp-text) !important;
 }
@@ -4097,7 +4345,7 @@ dialog .close:hover {
 
 .deletion-banner {
   background: var(--camp-danger-bg) !important;
-  border: 1px solid var(--camp-danger-border) !important;
+  border: none !important;
   border-left: 4px solid var(--camp-danger) !important;
   border-radius: var(--camp-radius-md) !important;
   color: var(--camp-text) !important;
@@ -4106,6 +4354,229 @@ dialog .close:hover {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+/* Teacher Stats & Team Management (Borderless Vision UI) */
+.teacher-stats {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  margin: 16px 0 24px !important;
+}
+
+.teacher-stats > div {
+  background: var(--camp-surface-card) !important;
+  border: none !important;
+  border-radius: var(--camp-radius-lg) !important;
+  padding: 20px 24px !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 12px !important;
+  box-shadow: var(--camp-shadow-card) !important;
+  transition: var(--camp-transition);
+}
+
+.teacher-stats > div:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--camp-shadow-card-hover) !important;
+}
+
+.teacher-stats strong {
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  color: var(--camp-text) !important;
+  letter-spacing: -1px;
+}
+
+.teacher-stats span {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--camp-text-secondary) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Contract Templates (Modelos de Contratos) */
+.template-card-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+  gap: 18px !important;
+  padding: 22px !important;
+}
+
+.template-card {
+  border: none !important;
+  background: var(--camp-surface-raised) !important;
+  border-radius: 16px !important;
+  padding: 22px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
+  color: var(--camp-text) !important;
+  transition: var(--camp-transition);
+}
+
+[data-theme="light"] .template-card {
+  background: #FFFFFF !important;
+  box-shadow: 0 4px 16px rgba(112, 144, 176, 0.08) !important;
+}
+
+.template-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0, 117, 255, 0.22) !important;
+}
+
+.template-card-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 14px !important;
+}
+
+.template-file-icon {
+  display: grid !important;
+  place-items: center !important;
+  width: 42px !important;
+  height: 42px !important;
+  background: var(--camp-gradient-icon) !important;
+  color: #FFFFFF !important;
+  border-radius: var(--camp-radius-md) !important;
+  box-shadow: 0 4px 12px var(--camp-primary-glow) !important;
+}
+
+.template-status {
+  font-weight: 750 !important;
+  font-size: 11px !important;
+  border-radius: var(--camp-radius-pill) !important;
+  padding: 4px 10px !important;
+}
+
+.template-status.is-active {
+  background: var(--camp-success-bg) !important;
+  color: var(--camp-success) !important;
+}
+
+.template-status.is-inactive {
+  background: var(--camp-hover) !important;
+  color: var(--camp-text-muted) !important;
+}
+
+.template-card-title {
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: var(--camp-text) !important;
+  margin: 6px 0 2px !important;
+}
+
+.template-card-kind {
+  color: var(--camp-text-muted) !important;
+  font-size: 12px !important;
+}
+
+.template-card-facts {
+  border-top: 1px solid var(--camp-divider) !important;
+  padding: 16px 0 !important;
+  margin-top: 16px !important;
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.template-card-facts div {
+  display: grid !important;
+  grid-template-columns: minmax(110px, 38%) minmax(0, 1fr) !important;
+  gap: 10px !important;
+  align-items: start !important;
+}
+
+.template-card-facts span {
+  font-size: 11.5px !important;
+  color: var(--camp-text-muted) !important;
+}
+
+.template-card-facts strong {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: var(--camp-text) !important;
+}
+
+.template-card-actions {
+  border-top: 1px solid var(--camp-divider) !important;
+  padding-top: 16px !important;
+  margin-top: auto !important;
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.template-empty-icon {
+  background: var(--camp-gradient-icon) !important;
+  color: #FFFFFF !important;
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 16px !important;
+  display: grid !important;
+  place-items: center !important;
+  box-shadow: 0 4px 16px var(--camp-primary-glow) !important;
+}
+
+/* Detail Items & Reports */
+.detail-item {
+  padding: 16px !important;
+  background: var(--camp-surface-raised) !important;
+  border: none !important;
+  border-radius: var(--camp-radius-md) !important;
+  color: var(--camp-text) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme="light"] .detail-item {
+  background: #F8FAFD !important;
+  box-shadow: 0 2px 8px rgba(112, 144, 176, 0.06) !important;
+}
+
+.detail-item strong {
+  color: var(--camp-text) !important;
+}
+
+.detail-item span {
+  color: var(--camp-text-muted) !important;
+}
+
+.docx-report {
+  background: var(--camp-surface-card) !important;
+  border: none !important;
+  border-radius: var(--camp-radius-md) !important;
+  padding: 16px 20px !important;
+  color: var(--camp-text) !important;
+  box-shadow: var(--camp-shadow-card) !important;
+}
+
+.docx-report-heading b {
+  color: var(--camp-danger) !important;
+}
+
+.docx-report-heading.is-ok b {
+  color: var(--camp-success) !important;
+}
+
+.docx-report-heading span {
+  color: var(--camp-text-muted) !important;
+}
+
+.settings-model-count strong {
+  color: var(--camp-text) !important;
+}
+
+.settings-model-count span {
+  color: var(--camp-text-secondary) !important;
+}
+
+.link-field {
+  background: var(--camp-input) !important;
+  border: 1px solid var(--camp-input-border) !important;
+  border-radius: var(--camp-radius-md) !important;
+  color: var(--camp-text) !important;
+  padding: 12px 14px !important;
 }
 
 /* ==========================================================================
