@@ -1149,6 +1149,33 @@ dialog .close:hover {
   place-items: center;
 }
 
+.boot {
+  display: grid;
+  place-content: center;
+  text-align: center;
+  height: 100vh;
+  gap: 18px;
+  color: var(--camp-text-secondary) !important;
+  background: var(--camp-bg) !important;
+}
+
+.boot .mark {
+  margin: auto;
+  background: var(--camp-gradient-primary) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 18px var(--camp-primary-glow) !important;
+}
+
+.boot p {
+  color: var(--camp-text-secondary) !important;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
 .busy-card {
   background: var(--camp-surface-floating) !important;
   border: 1px solid var(--camp-border-strong) !important;
