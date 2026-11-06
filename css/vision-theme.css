@@ -1,7 +1,7 @@
 /**
  * CAMPANELLA V7 — VISION UI DESIGN SYSTEM
  * Complete Dark & Light Mode Theme System
- * Inspired by Vision UI Dashboard (Emerald & Mint Green Glassmorphism)
+ * Vision UI Design System (Warm Sunset Orange & Neutral Obsidian Glassmorphism)
  */
 
 /* ==========================================================================
@@ -12,47 +12,47 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  /* Backgrounds — Vision UI Deep Cosmic Obsidian Forest */
-  --camp-bg: #03130E;
-  --camp-bg-secondary: #061C14;
+  /* Backgrounds — Vision UI Pure Neutral Dark & Obsidian Textures (Zero Color Tint) */
+  --camp-bg: #0C0C0C;
+  --camp-bg-secondary: #121212;
   --camp-bg-radial:
-    radial-gradient(circle at 82% 8%, rgba(5, 150, 105, 0.28) 0%, rgba(5, 150, 105, 0.08) 32%, transparent 56%),
-    radial-gradient(circle at 14% 34%, rgba(13, 148, 136, 0.20) 0%, rgba(13, 148, 136, 0.06) 26%, transparent 50%),
-    radial-gradient(ellipse at 50% 55%, rgba(5, 150, 105, 0.18) 0%, rgba(10, 38, 28, 0.10) 38%, transparent 68%),
-    radial-gradient(circle at 88% 85%, rgba(5, 150, 105, 0.26) 0%, rgba(16, 185, 129, 0.09) 30%, transparent 58%),
-    radial-gradient(circle at 18% 90%, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.05) 26%, transparent 52%),
-    linear-gradient(150deg, #05130F 0%, #071C16 35%, #09241C 60%, #061813 85%, #04100C 100%);
+    radial-gradient(circle at 82% 8%, rgba(234, 88, 12, 0.28) 0%, rgba(234, 88, 12, 0.08) 32%, transparent 56%),
+    radial-gradient(circle at 14% 34%, rgba(245, 158, 11, 0.20) 0%, rgba(245, 158, 11, 0.06) 26%, transparent 50%),
+    radial-gradient(ellipse at 50% 55%, rgba(234, 88, 12, 0.18) 0%, rgba(26, 26, 26, 0.10) 38%, transparent 68%),
+    radial-gradient(circle at 88% 85%, rgba(234, 88, 12, 0.26) 0%, rgba(251, 146, 60, 0.09) 30%, transparent 58%),
+    radial-gradient(circle at 18% 90%, rgba(251, 146, 60, 0.18) 0%, rgba(234, 88, 12, 0.05) 26%, transparent 52%),
+    linear-gradient(150deg, #0E0E0E 0%, #121212 35%, #161616 60%, #0F0F0F 85%, #090909 100%);
   
   /* Surfaces — Vision UI Signature Glassmorphism */
-  --camp-surface: #061C14;
-  --camp-surface-raised: #0A261C;
-  --camp-surface-floating: #0E3024;
-  --camp-surface-card: linear-gradient(127.09deg, rgba(10, 36, 27, 0.94) 0%, rgba(6, 27, 20, 0.88) 100%);
+  --camp-surface: #121212;
+  --camp-surface-raised: #1C1C1C;
+  --camp-surface-floating: #242424;
+  --camp-surface-card: linear-gradient(127.09deg, rgba(26, 26, 26, 0.94) 0%, rgba(18, 18, 18, 0.88) 100%);
   --camp-surface-card-border: none;
 
   /* Inputs & Interactive Controls */
-  --camp-input: rgba(6, 28, 20, 0.75);
-  --camp-input-focus: rgba(10, 42, 32, 0.90);
+  --camp-input: rgba(20, 20, 20, 0.75);
+  --camp-input-focus: rgba(30, 30, 30, 0.90);
   --camp-input-border: rgba(255, 255, 255, 0.12);
   --camp-hover: rgba(255, 255, 255, 0.06);
-  --camp-hover-strong: rgba(5, 150, 105, 0.18);
+  --camp-hover-strong: rgba(234, 88, 12, 0.18);
 
   /* Brand Accents — Vision UI Emerald & Mint Green */
-  --camp-primary: #059669;
-  --camp-primary-hover: #047857;
-  --camp-primary-glow: rgba(5, 150, 105, 0.45);
-  --camp-cyan: #34D399;
-  --camp-purple: #0D9488;
+  --camp-primary: #EA580C;
+  --camp-primary-hover: #C2410C;
+  --camp-primary-glow: rgba(234, 88, 12, 0.45);
+  --camp-cyan: #FDBA74;
+  --camp-purple: #F59E0B;
 
   /* Typography — Vision UI High-Contrast White & Muted Slate */
   --camp-text: #FFFFFF;
-  --camp-text-secondary: #D1DFD6;
-  --camp-text-muted: #8DA697;
-  --camp-text-disabled: #5C7366;
+  --camp-text-secondary: #D4D4D8;
+  --camp-text-muted: #9CA3AF;
+  --camp-text-disabled: #52525B;
 
   /* Semantic Feedback (Pure Borderless Glass) */
-  --camp-success: #01B574;
-  --camp-success-bg: rgba(1, 181, 116, 0.22);
+  --camp-success: #EA580C;
+  --camp-success-bg: rgba(234, 88, 12, 0.22);
   --camp-success-border: transparent;
   --camp-warning: #FFB547;
   --camp-warning-bg: rgba(255, 181, 71, 0.22);
@@ -60,8 +60,8 @@
   --camp-danger: #E31A1A;
   --camp-danger-bg: rgba(227, 26, 26, 0.22);
   --camp-danger-border: transparent;
-  --camp-info: #059669;
-  --camp-info-bg: rgba(5, 150, 105, 0.22);
+  --camp-info: #EA580C;
+  --camp-info-bg: rgba(234, 88, 12, 0.22);
   --camp-info-border: transparent;
 
   /* Borders & Dividers — Vision UI is Borderless */
@@ -76,38 +76,38 @@
   --camp-shadow-card: 0px 20px 27px 0px rgba(0, 0, 0, 0.25);
   --camp-shadow-card-hover: 0px 24px 35px 0px rgba(0, 0, 0, 0.38);
   --camp-shadow-floating: 0 20px 48px rgba(0, 0, 0, 0.6);
-  --camp-shadow-btn: 0px 4px 14px 0px rgba(5, 150, 105, 0.4);
+  --camp-shadow-btn: 0px 4px 14px 0px rgba(234, 88, 12, 0.4);
 
   /* Gradients */
-  --camp-gradient-primary: linear-gradient(135deg, #059669 0%, #10B981 100%);
-  --camp-gradient-surface: linear-gradient(127.09deg, rgba(6, 22, 18, 0.94) 0%, rgba(4, 16, 12, 0.88) 100%);
-  --camp-gradient-sidebar: linear-gradient(180deg, #061C14 0%, #03130E 100%);
-  --camp-gradient-icon: linear-gradient(135deg, #059669 0%, #34D399 100%);
+  --camp-gradient-primary: linear-gradient(135deg, #EA580C 0%, #FB923C 100%);
+  --camp-gradient-surface: linear-gradient(127.09deg, rgba(18, 18, 18, 0.94) 0%, rgba(14, 14, 14, 0.88) 100%);
+  --camp-gradient-sidebar: linear-gradient(180deg, #121212 0%, #0C0C0C 100%);
+  --camp-gradient-icon: linear-gradient(135deg, #EA580C 0%, #FDBA74 100%);
 
   /* Scrollbars */
   --camp-scrollbar-thumb: rgba(255, 255, 255, 0.18);
-  --camp-scrollbar-track: rgba(3, 19, 14, 0.7);
+  --camp-scrollbar-track: rgba(12, 12, 12, 0.7);
 
   /* Bridge to existing legacy variables */
   --c-ink: #FFFFFF;
-  --c-green: #059669;
+  --c-green: #EA580C;
   --c-border: transparent;
-  --c-soft: #082118;
+  --c-soft: #161616;
   --crm-stroke: transparent;
-  --crm-forest: #059669;
-  --crm-muted: #7B9485;
-  --crm-bg: #03130E;
+  --crm-forest: #EA580C;
+  --crm-muted: #9CA3AF;
+  --crm-bg: #0C0C0C;
 }
 
 [data-theme="light"] {
   color-scheme: light;
 
   /* Backgrounds */
-  --camp-bg: #F3F8F5;
-  --camp-bg-secondary: #EBF4EE;
-  --camp-bg-radial: radial-gradient(at 85% 0%, rgba(5, 150, 105, 0.12) 0px, transparent 55%),
-                    radial-gradient(at 5% 45%, rgba(13, 148, 136, 0.08) 0px, transparent 50%),
-                    radial-gradient(at 50% 90%, rgba(16, 185, 129, 0.08) 0px, transparent 40%);
+  --camp-bg: #FAF9F6;
+  --camp-bg-secondary: #F5F2EB;
+  --camp-bg-radial: radial-gradient(at 85% 0%, rgba(234, 88, 12, 0.12) 0px, transparent 55%),
+                    radial-gradient(at 5% 45%, rgba(245, 158, 11, 0.08) 0px, transparent 50%),
+                    radial-gradient(at 50% 90%, rgba(251, 146, 60, 0.08) 0px, transparent 40%);
   
   /* Surfaces — Authentic Frosted Glassmorphism */
   --camp-surface: rgba(255, 255, 255, 0.85);
@@ -119,26 +119,26 @@
   /* Inputs & Interactive Controls */
   --camp-input: rgba(255, 255, 255, 0.75);
   --camp-input-focus: rgba(255, 255, 255, 0.96);
-  --camp-input-border: rgba(5, 150, 105, 0.22);
-  --camp-hover: rgba(5, 150, 105, 0.06);
-  --camp-hover-strong: rgba(5, 150, 105, 0.12);
+  --camp-input-border: rgba(234, 88, 12, 0.22);
+  --camp-hover: rgba(234, 88, 12, 0.06);
+  --camp-hover-strong: rgba(234, 88, 12, 0.12);
 
   /* Brand Accents */
-  --camp-primary: #059669;
-  --camp-primary-hover: #047857;
-  --camp-primary-glow: rgba(5, 150, 105, 0.28);
-  --camp-cyan: #10B981;
-  --camp-purple: #0D9488;
+  --camp-primary: #EA580C;
+  --camp-primary-hover: #C2410C;
+  --camp-primary-glow: rgba(234, 88, 12, 0.28);
+  --camp-cyan: #FB923C;
+  --camp-purple: #F59E0B;
 
   /* Typography — Crisp High Contrast (Zero Blue) */
-  --camp-text: #0F1C16;
-  --camp-text-secondary: #263B30;
+  --camp-text: #18181B;
+  --camp-text-secondary: #3F3F46;
   --camp-text-muted: #6B7280;
-  --camp-text-disabled: #8DA697;
+  --camp-text-disabled: #A1A1AA;
 
   /* Semantic Feedback (Pure Borderless) */
-  --camp-success: #059669;
-  --camp-success-bg: rgba(5, 150, 105, 0.14);
+  --camp-success: #EA580C;
+  --camp-success-bg: rgba(234, 88, 12, 0.14);
   --camp-success-border: transparent;
   --camp-warning: #9A5700;
   --camp-warning-bg: rgba(154, 87, 0, 0.12);
@@ -146,8 +146,8 @@
   --camp-danger: #C53030;
   --camp-danger-bg: rgba(197, 48, 48, 0.12);
   --camp-danger-border: transparent;
-  --camp-info: #059669;
-  --camp-info-bg: rgba(5, 150, 105, 0.14);
+  --camp-info: #EA580C;
+  --camp-info-bg: rgba(234, 88, 12, 0.14);
   --camp-info-border: transparent;
 
   /* Borders & Dividers — Vision UI is Borderless */
@@ -158,31 +158,31 @@
   --camp-divider-subtle: rgba(0, 0, 0, 0.02);
 
   /* Shadows — Frosted Glass Elevation (Zero Blue) */
-  --camp-shadow-sm: 0 2px 8px rgba(15, 35, 25, 0.04);
-  --camp-shadow-card: 0px 14px 35px rgba(15, 35, 25, 0.05), inset 0 1px 2px rgba(255, 255, 255, 0.95);
-  --camp-shadow-card-hover: 0px 20px 42px rgba(5, 150, 105, 0.14), inset 0 1px 2px rgba(255, 255, 255, 1);
-  --camp-shadow-floating: 0 24px 60px rgba(15, 35, 25, 0.12);
-  --camp-shadow-btn: 0 4px 14px rgba(5, 150, 105, 0.28);
+  --camp-shadow-sm: 0 2px 8px rgba(24, 24, 24, 0.04);
+  --camp-shadow-card: 0px 14px 35px rgba(24, 24, 24, 0.05), inset 0 1px 2px rgba(255, 255, 255, 0.95);
+  --camp-shadow-card-hover: 0px 20px 42px rgba(234, 88, 12, 0.14), inset 0 1px 2px rgba(255, 255, 255, 1);
+  --camp-shadow-floating: 0 24px 60px rgba(24, 24, 24, 0.12);
+  --camp-shadow-btn: 0 4px 14px rgba(234, 88, 12, 0.28);
 
   /* Gradients */
-  --camp-gradient-primary: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  --camp-gradient-primary: linear-gradient(135deg, #EA580C 0%, #FB923C 100%);
   --camp-gradient-surface: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.68) 100%);
-  --camp-gradient-sidebar: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(246, 250, 247, 0.78) 100%);
-  --camp-gradient-icon: linear-gradient(135deg, #059669 0%, #34D399 100%);
+  --camp-gradient-sidebar: linear-gradient(180deg, rgba(255, 255, 255, 0.90) 0%, rgba(250, 248, 245, 0.80) 100%);
+  --camp-gradient-icon: linear-gradient(135deg, #EA580C 0%, #FDBA74 100%);
 
   /* Scrollbars */
-  --camp-scrollbar-thumb: rgba(5, 150, 105, 0.35);
+  --camp-scrollbar-thumb: rgba(234, 88, 12, 0.35);
   --camp-scrollbar-track: transparent;
 
   /* Bridge to existing legacy variables */
-  --c-ink: #0F1C16;
-  --c-green: #059669;
+  --c-ink: #18181B;
+  --c-green: #EA580C;
   --c-border: transparent;
   --c-soft: rgba(243, 248, 245, 0.8);
   --crm-stroke: transparent;
-  --crm-forest: #059669;
-  --crm-muted: #44594D;
-  --crm-bg: #F3F8F5;
+  --crm-forest: #EA580C;
+  --crm-muted: #3F3F46;
+  --crm-bg: #FAF9F6;
 }
 
 :root {
@@ -442,7 +442,7 @@ textarea:focus-visible {
   top: 0 !important;
   height: 100vh !important;
   overflow-y: auto !important;
-  background: var(--camp-surface-secondary, #041711) !important;
+  background: var(--camp-surface-secondary, #0D0D0D) !important;
   border-right: 1px solid var(--camp-divider) !important;
   padding: 24px 14px 20px !important;
   display: flex !important;
@@ -511,14 +511,14 @@ textarea:focus-visible {
 .cal-secondary-sidebar nav button.active {
   background: var(--camp-primary) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px 0 rgba(5, 150, 105, 0.4) !important;
+  box-shadow: 0 4px 14px 0 rgba(234, 88, 12, 0.4) !important;
   font-weight: 700 !important;
 }
 
 [data-theme="light"] .cal-secondary-sidebar nav button.active {
   background: var(--camp-primary) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px 0 rgba(5, 150, 105, 0.3) !important;
+  box-shadow: 0 4px 14px 0 rgba(234, 88, 12, 0.3) !important;
 }
 
 .cal-admin-shell > .workspace {
@@ -550,7 +550,7 @@ textarea:focus-visible {
 }
 
 [data-theme="light"] .sidebar {
-  box-shadow: 4px 0 24px rgba(15, 35, 25, 0.05);
+  box-shadow: 4px 0 24px rgba(24, 24, 24, 0.05);
 }
 
 .sidebar .brand {
@@ -616,12 +616,12 @@ textarea:focus-visible {
 }
 
 .sidebar-current-name svg {
-  color: var(--camp-cyan, #10B981) !important;
-  stroke: var(--camp-cyan, #10B981) !important;
+  color: var(--camp-cyan, #FB923C) !important;
+  stroke: var(--camp-cyan, #FB923C) !important;
   width: 17px !important;
   height: 17px !important;
   flex-shrink: 0 !important;
-  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.4)) !important;
+  filter: drop-shadow(0 0 6px rgba(251, 146, 60, 0.4)) !important;
 }
 
 .sidebar-menu {
@@ -926,7 +926,7 @@ button.btn {
   gap: 8px;
   align-items: center;
   justify-content: center;
-  box-shadow: 0px 4px 14px 0px rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0px 4px 14px 0px rgba(234, 88, 12, 0.45) !important;
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
   cursor: pointer;
   text-decoration: none;
@@ -937,7 +937,7 @@ button.btn {
 .btn:hover,
 .crm-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0px 6px 20px 0px rgba(5, 150, 105, 0.65) !important;
+  box-shadow: 0px 6px 20px 0px rgba(234, 88, 12, 0.65) !important;
   filter: brightness(1.08);
 }
 
@@ -945,7 +945,7 @@ button.btn {
 .crm-btn:active,
 .home-shortcut:active {
   transform: translateY(0) scale(0.98) !important;
-  box-shadow: 0px 2px 8px 0px rgba(5, 150, 105, 0.4) !important;
+  box-shadow: 0px 2px 8px 0px rgba(234, 88, 12, 0.4) !important;
 }
 
 .btn:disabled,
@@ -988,7 +988,7 @@ button.btn {
 [data-theme="light"] .tabs .btn.light {
   background: #FFFFFF !important;
   border: none !important;
-  color: #059669 !important;
+  color: #EA580C !important;
   box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.06) !important;
 }
 
@@ -1012,9 +1012,9 @@ button.btn {
 [data-theme="light"] .btn.subtle:hover,
 [data-theme="light"] .crm-btn:not(.primary):hover,
 [data-theme="light"] .tabs .btn.light:hover {
-  background: #EBF4EE !important;
+  background: #F5F2EB !important;
   border: none !important;
-  color: #059669 !important;
+  color: #EA580C !important;
 }
 
 /* Botão Danger */
@@ -1134,7 +1134,7 @@ button.btn {
 .cal-calendar,
 .cal-student-card,
 .cal-settings-layout {
-  background: linear-gradient(127.09deg, rgba(6, 22, 18, 0.94) 0%, rgba(4, 16, 12, 0.88) 100%) !important;
+  background: linear-gradient(127.09deg, rgba(18, 18, 18, 0.94) 0%, rgba(14, 14, 14, 0.88) 100%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -1180,7 +1180,7 @@ button.btn {
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
-  box-shadow: 0 14px 35px rgba(15, 35, 25, 0.05), inset 0 1px 2px rgba(255, 255, 255, 0.95), inset 0 -1px 1px rgba(0, 0, 0, 0.02) !important;
+  box-shadow: 0 14px 35px rgba(24, 24, 24, 0.05), inset 0 1px 2px rgba(255, 255, 255, 0.95), inset 0 -1px 1px rgba(0, 0, 0, 0.02) !important;
 }
 
 .panel:hover,
@@ -1265,12 +1265,12 @@ button.btn {
   min-width: 44px !important;
   min-height: 44px !important;
   border-radius: 12px !important;
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   display: inline-grid !important;
   place-items: center !important;
   font-size: 18px !important;
-  box-shadow: 0px 4px 14px 0px rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0px 4px 14px 0px rgba(234, 88, 12, 0.45) !important;
   box-sizing: border-box !important;
 }
 
@@ -1343,7 +1343,7 @@ button.btn {
   background: rgba(255, 255, 255, 0.08) !important;
   border: none !important;
   outline: none !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
@@ -1362,7 +1362,7 @@ button.btn {
   background: rgba(255, 255, 255, 0.08) !important;
   border: none !important;
   outline: none !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
 }
 
@@ -1378,23 +1378,23 @@ button.btn {
 
 .tabs .btn:not(.light),
 .tabs button.active {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
   outline: none !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45) !important;
 }
 
 [data-theme="light"] .tabs .btn,
 [data-theme="light"] .tabs button {
-  background: #EBF4EE !important;
+  background: #F5F2EB !important;
   border: none !important;
-  color: #263B30 !important;
+  color: #27272A !important;
 }
 
 [data-theme="light"] .tabs .btn:not(.light),
 [data-theme="light"] .tabs button.active {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
 }
@@ -1585,10 +1585,10 @@ button.btn {
 .crm-badge.crm-green,
 .crm-box-status.is-done,
 .template-status.is-active {
-  background: rgba(1, 181, 116, 0.22) !important;
-  color: #05CD99 !important;
+  background: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
   border: none !important;
-  box-shadow: 0 2px 10px rgba(1, 181, 116, 0.25) !important;
+  box-shadow: 0 2px 10px rgba(234, 88, 12, 0.25) !important;
 }
 
 /* Warning / Pendente / Enviado (Âmbar Neon Glass) */
@@ -1619,10 +1619,10 @@ button.btn {
 .crm-badge.crm-soft,
 .pill-primary,
 .pill-info {
-  background: rgba(5, 150, 105, 0.22) !important;
-  color: #10B981 !important;
+  background: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
   border: none !important;
-  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.25) !important;
+  box-shadow: 0 2px 10px rgba(234, 88, 12, 0.25) !important;
 }
 
 /* Neutral (Pure Glassmorphism — ZERO STROKE BORDER) */
@@ -1632,7 +1632,7 @@ button.btn {
 .crm-badge.crm-neutral,
 .topbar-chip {
   background: rgba(255, 255, 255, 0.08) !important;
-  color: #D1DFD6 !important;
+  color: #D4D4D8 !important;
   border: none !important;
   outline: none !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
@@ -1696,7 +1696,7 @@ dialog[open],
 
 dialog::backdrop,
 .camp-app-dialog::backdrop {
-  background: rgba(3, 15, 11, 0.78) !important;
+  background: rgba(11, 11, 11, 0.78) !important;
   backdrop-filter: blur(8px) !important;
   animation: camp-fade-in 0.2s ease-out forwards;
 }
@@ -1757,7 +1757,7 @@ dialog .close:hover {
 #busyOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(3, 15, 11, 0.75) !important;
+  background: rgba(11, 11, 11, 0.75) !important;
   backdrop-filter: blur(6px);
   z-index: 1000;
   display: grid;
@@ -1856,7 +1856,7 @@ dialog .close:hover {
   background: var(--camp-surface-floating) !important;
   border-color: var(--camp-success) !important;
   color: var(--camp-text) !important;
-  box-shadow: 0 4px 20px rgba(1, 181, 116, 0.25), var(--camp-shadow-floating) !important;
+  box-shadow: 0 4px 20px rgba(234, 88, 12, 0.25), var(--camp-shadow-floating) !important;
 }
 
 /* ==========================================================================
@@ -1990,7 +1990,7 @@ dialog .close:hover {
 .crm-tabs button span {
   font-size: 11px;
   margin-left: 6px;
-  background: rgba(5, 150, 105, 0.16);
+  background: rgba(234, 88, 12, 0.16);
   color: var(--camp-primary);
   padding: 2px 7px;
   border-radius: var(--camp-radius-pill);
@@ -2166,7 +2166,7 @@ dialog .close:hover {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: rgba(5, 150, 105, 0.14) !important;
+  background: rgba(234, 88, 12, 0.14) !important;
   border: none !important;
   border-radius: var(--camp-radius-pill);
   padding: 2px 8px;
@@ -2212,14 +2212,14 @@ dialog .close:hover {
 
 [data-theme="light"] .crm-lead-card {
   background: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(15, 35, 25, 0.08) !important;
+  box-shadow: 0 4px 14px rgba(24, 24, 24, 0.08) !important;
 }
 
 .crm-lead-card:hover,
 .crm-lead-card:focus {
   transform: translateY(-2px);
   border-color: transparent !important;
-  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.28) !important;
+  box-shadow: 0 8px 24px rgba(234, 88, 12, 0.28) !important;
   outline: none;
 }
   outline: none;
@@ -2253,7 +2253,7 @@ dialog .close:hover {
   border-radius: var(--camp-radius-pill);
   font-size: 10.5px;
   font-weight: 750;
-  background: rgba(5, 150, 105, 0.14) !important;
+  background: rgba(234, 88, 12, 0.14) !important;
   color: var(--camp-text) !important;
   border: none !important;
 }
@@ -2354,9 +2354,9 @@ dialog .close:hover {
 }
 
 .crm-btn.crm-wa {
-  background: rgba(1, 181, 116, 0.18) !important;
+  background: rgba(234, 88, 12, 0.18) !important;
   color: var(--camp-success) !important;
-  border-color: rgba(1, 181, 116, 0.35) !important;
+  border-color: rgba(234, 88, 12, 0.35) !important;
   width: 100%;
 }
 
@@ -2497,7 +2497,7 @@ dialog .close:hover {
 
 .crm-tag-toggle.is-active {
   border-color: var(--camp-primary) !important;
-  background: rgba(5, 150, 105, 0.22) !important;
+  background: rgba(234, 88, 12, 0.22) !important;
   color: var(--camp-text) !important;
   box-shadow: 0 0 10px var(--camp-primary-glow);
 }
@@ -2756,7 +2756,7 @@ dialog .close:hover {
 }
 
 .crm-mini-head-day.is-selected {
-  background: rgba(5, 150, 105, 0.18) !important;
+  background: rgba(234, 88, 12, 0.18) !important;
 }
 
 .crm-mini-head-day.is-selected strong {
@@ -2787,7 +2787,7 @@ dialog .close:hover {
 }
 
 .crm-mini-day-col.is-chosen-day {
-  background: rgba(5, 150, 105, 0.04) !important;
+  background: rgba(234, 88, 12, 0.04) !important;
 }
 
 .crm-mini-hour-rule {
@@ -2808,13 +2808,13 @@ dialog .close:hover {
 }
 
 .crm-mini-event.is-lesson {
-  background: rgba(1, 181, 116, 0.22) !important;
+  background: rgba(234, 88, 12, 0.22) !important;
   border-left: 3px solid var(--camp-success) !important;
   color: var(--camp-text) !important;
 }
 
 .crm-mini-event.is-interview {
-  background: rgba(16, 185, 129, 0.24) !important;
+  background: rgba(251, 146, 60, 0.24) !important;
   border-left: 3px solid var(--camp-cyan) !important;
   color: var(--camp-text) !important;
 }
@@ -2826,7 +2826,7 @@ dialog .close:hover {
 }
 
 .crm-mini-event.is-selected {
-  background: rgba(5, 150, 105, 0.32) !important;
+  background: rgba(234, 88, 12, 0.32) !important;
   border: 2px dashed var(--camp-primary) !important;
   color: #FFFFFF !important;
 }
@@ -3125,7 +3125,7 @@ dialog .close:hover {
 }
 
 [data-theme="light"] .cal-lesson {
-  box-shadow: 0 4px 14px rgba(15, 35, 25, 0.08);
+  box-shadow: 0 4px 14px rgba(24, 24, 24, 0.08);
 }
 
 .cal-lesson.is-pending {
@@ -3314,7 +3314,7 @@ dialog .close:hover {
 
 [data-theme="light"] .cal-slot-chip {
   color: var(--camp-primary) !important;
-  background: rgba(5, 150, 105, 0.1) !important;
+  background: rgba(234, 88, 12, 0.1) !important;
 }
 
 .cal-student-slot {
@@ -3980,7 +3980,7 @@ dialog .close:hover {
 .guide-hero-footer span {
   padding: 6px 12px;
   border-radius: var(--camp-radius-pill);
-  background: rgba(5, 150, 105, 0.16) !important;
+  background: rgba(234, 88, 12, 0.16) !important;
   border: none !important;
   font-size: 11.5px;
   font-weight: 750;
@@ -4067,7 +4067,7 @@ dialog .close:hover {
 }
 
 .syntax-name {
-  background: rgba(5, 150, 105, 0.22) !important;
+  background: rgba(234, 88, 12, 0.22) !important;
   color: var(--camp-cyan) !important;
   padding: 4px 8px;
   border-radius: 4px;
@@ -4083,7 +4083,7 @@ dialog .close:hover {
 }
 
 .syntax-who {
-  background: rgba(13, 148, 136, 0.22) !important;
+  background: rgba(245, 158, 11, 0.22) !important;
   color: var(--camp-purple) !important;
   padding: 4px 8px;
   border-radius: 4px;
@@ -4153,7 +4153,7 @@ dialog .close:hover {
 .role-token {
   display: inline-flex;
   color: var(--camp-cyan) !important;
-  background: rgba(5, 150, 105, 0.16) !important;
+  background: rgba(234, 88, 12, 0.16) !important;
   border: none !important;
   border-radius: var(--camp-radius-pill);
   padding: 4px 10px;
@@ -4167,7 +4167,7 @@ dialog .close:hover {
 }
 
 .role-card:last-child .role-token {
-  background: rgba(13, 148, 136, 0.16) !important;
+  background: rgba(245, 158, 11, 0.16) !important;
   color: var(--camp-purple) !important;
   border-color: transparent !important;
 }
@@ -4256,7 +4256,7 @@ dialog .close:hover {
   font-size: 10px;
   color: var(--camp-cyan) !important;
   padding: 5px 10px;
-  background: rgba(5, 150, 105, 0.16) !important;
+  background: rgba(234, 88, 12, 0.16) !important;
   border: none !important;
   border-radius: var(--camp-radius-pill);
   font-weight: 800;
@@ -4555,7 +4555,7 @@ dialog .close:hover {
   border-radius: var(--camp-radius-pill);
   font-size: 11px;
   font-family: monospace;
-  background: rgba(5, 150, 105, 0.16) !important;
+  background: rgba(234, 88, 12, 0.16) !important;
   color: var(--camp-cyan) !important;
   border: none !important;
 }
@@ -4724,12 +4724,12 @@ dialog .close:hover {
 
 [data-theme="light"] .template-card {
   background: #FFFFFF !important;
-  box-shadow: 0 4px 16px rgba(15, 35, 25, 0.08) !important;
+  box-shadow: 0 4px 16px rgba(24, 24, 24, 0.08) !important;
 }
 
 .template-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(5, 150, 105, 0.22) !important;
+  box-shadow: 0 8px 28px rgba(234, 88, 12, 0.22) !important;
 }
 
 .template-card-top {
@@ -4764,11 +4764,11 @@ dialog .close:hover {
 }
 
 .template-status.is-active {
-  background: rgba(1, 181, 116, 0.22) !important;
-  color: #05CD99 !important;
+  background: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
   border: none !important;
   outline: none !important;
-  box-shadow: 0 2px 10px rgba(1, 181, 116, 0.25) !important;
+  box-shadow: 0 2px 10px rgba(234, 88, 12, 0.25) !important;
 }
 
 .template-status.is-inactive,
@@ -4854,8 +4854,8 @@ dialog .close:hover {
 }
 
 [data-theme="light"] .detail-item {
-  background: #F3F8F5 !important;
-  box-shadow: 0 2px 8px rgba(15, 35, 25, 0.06) !important;
+  background: #FAF9F6 !important;
+  box-shadow: 0 2px 8px rgba(24, 24, 24, 0.06) !important;
 }
 
 .detail-item strong {
@@ -4910,7 +4910,7 @@ dialog .close:hover {
 .legal-document,
 .doc-frame {
   background: #FFFFFF !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
   border-radius: var(--camp-radius-md);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
 }
@@ -4919,15 +4919,15 @@ dialog .close:hover {
 .legal-document h3,
 .legal-document p,
 .legal-document strong {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .legal-document h3 {
-  background: #EFF6F2 !important;
+  background: #FFF7ED !important;
 }
 
 .signature-summary {
-  border-color: #E2EDE6 !important;
+  border-color: #F4EBE3 !important;
 }
 
 /* ==========================================================================
@@ -4996,7 +4996,7 @@ dialog .close:hover {
 
 /* ==========================================================================
    19. COMPREHENSIVE VISION UI SYSTEM & FULL-PAGE RESKINNING
-   Eliminates all remaining legacy colors (#167360, #061C14, #d5e8dc),
+   Eliminates all remaining legacy colors (#EA580C, #121212, #FFEDD5),
    wireframe borders, and ensures hyper-faithful styling across all pages.
    ========================================================================== */
 
@@ -5080,7 +5080,7 @@ table {
 .crm-table th,
 table th {
   background: transparent !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 10px !important;
   font-weight: 800 !important;
   text-transform: uppercase !important;
@@ -5096,7 +5096,7 @@ table td {
   padding: 16px 18px !important;
   border: none !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   background: transparent !important;
   vertical-align: middle !important;
 }
@@ -5118,32 +5118,32 @@ table tr:hover td {
 [data-theme="light"] .data-table th,
 [data-theme="light"] .crm-table th,
 [data-theme="light"] table th {
-  border-bottom: 1px solid #EAF2ED !important;
-  color: #7B9485 !important;
+  border-bottom: 1px solid #FFEDD5 !important;
+  color: #71717A !important;
 }
 
 [data-theme="light"] .data-table td,
 [data-theme="light"] .crm-table td,
 [data-theme="light"] table td {
-  border-bottom: 1px solid #F7FAFC !important;
-  color: #44594D !important;
+  border-bottom: 1px solid #FAF9F6 !important;
+  color: #3F3F46 !important;
 }
 
 [data-theme="light"] .data-table td:first-child,
 [data-theme="light"] .crm-table td strong,
 [data-theme="light"] .data-table td b {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 [data-theme="light"] .data-table tr:hover td,
 [data-theme="light"] .crm-table tr:hover td,
 [data-theme="light"] table tr:hover td {
-  background: #F7FAFC !important;
+  background: #FAF9F6 !important;
 }
 
 /* --- 19.3 Calendar View Full Reskinning --- */
 .cal-secondary-sidebar {
-  background: rgba(4, 16, 12, 0.88) !important;
+  background: rgba(14, 14, 14, 0.88) !important;
   backdrop-filter: blur(40px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
   border: none !important;
@@ -5157,7 +5157,7 @@ table tr:hover td {
   font-weight: 800 !important;
   text-transform: uppercase !important;
   letter-spacing: 1.2px !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   padding: 6px 12px 12px !important;
 }
 
@@ -5165,7 +5165,7 @@ table tr:hover td {
   border: 0 !important;
   border-radius: 12px !important;
   background: transparent !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 12px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
@@ -5185,13 +5185,13 @@ table tr:hover td {
 }
 
 .cal-secondary-sidebar nav button.active {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px 0 rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0 4px 14px 0 rgba(234, 88, 12, 0.45) !important;
 }
 
 .cal-calendar {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(14, 14, 14, 0.94) 19.41%, rgba(16, 16, 16, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5210,7 +5210,7 @@ table tr:hover td {
 }
 
 .cal-switcher {
-  background: rgba(6, 28, 20, 0.6) !important;
+  background: rgba(20, 20, 20, 0.6) !important;
   border-radius: 12px !important;
   padding: 4px !important;
   border: none !important;
@@ -5224,7 +5224,7 @@ table tr:hover td {
   background: transparent !important;
   border: none !important;
   outline: none !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   border-radius: 8px !important;
   padding: 6px 14px !important;
   font-size: 11px !important;
@@ -5234,9 +5234,9 @@ table tr:hover td {
 }
 
 .cal-switcher button.selected {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4) !important;
 }
 
 .cal-week-grid {
@@ -5262,7 +5262,7 @@ table tr:hover td {
 
 .cal-week-time-col,
 .cal-week-time-label {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 11px !important;
   font-weight: 700 !important;
 }
@@ -5282,19 +5282,19 @@ table tr:hover td {
   border: none !important;
   outline: none !important;
   border-radius: 10px !important;
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.35) 0%, rgba(16, 185, 129, 0.3) 100%) !important;
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.35) 0%, rgba(251, 146, 60, 0.3) 100%) !important;
   color: #FFFFFF !important;
   padding: 8px 10px !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.25) !important;
   cursor: pointer !important;
   transition: transform 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 .cal-week-card:hover {
   transform: translateY(-2px) scale(1.02) !important;
-  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.45) !important;
   border: none !important;
 }
 
@@ -5312,13 +5312,13 @@ table tr:hover td {
 
 .cal-week-card.interview,
 .cal-week-card.is-interview {
-  background: linear-gradient(135deg, rgba(13, 148, 136, 0.35) 0%, rgba(200, 80, 255, 0.3) 100%) !important;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(200, 80, 255, 0.3) 100%) !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25) !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25) !important;
 }
 
 .cal-week-card.done {
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.35) 0%, rgba(16, 185, 129, 0.25) 100%) !important;
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.35) 0%, rgba(251, 146, 60, 0.25) 100%) !important;
   border: none !important;
   color: #FFFFFF !important;
 }
@@ -5336,7 +5336,7 @@ table tr:hover td {
 }
 
 .cal-month-weekdays {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 11px !important;
   font-weight: 800 !important;
   text-transform: uppercase !important;
@@ -5363,7 +5363,7 @@ table tr:hover td {
 .cal-month-day:hover {
   background: rgba(255, 255, 255, 0.07) !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35) !important;
 }
 
 .cal-month-day.other {
@@ -5373,15 +5373,15 @@ table tr:hover td {
 
 .cal-month-day.chosen {
   border: none !important;
-  box-shadow: 0 0 16px rgba(5, 150, 105, 0.5) !important;
+  box-shadow: 0 0 16px rgba(234, 88, 12, 0.5) !important;
 }
 
 .cal-month-day.is-today b {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   padding: 3px 8px !important;
   border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4) !important;
 }
 
 .cal-month-day b {
@@ -5391,7 +5391,7 @@ table tr:hover td {
 }
 
 .cal-month-day small {
-  color: #10B981 !important;
+  color: #FB923C !important;
   font-size: 10px !important;
 }
 
@@ -5407,7 +5407,7 @@ table tr:hover td {
 }
 
 .cal-block-row small {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 11px !important;
 }
 
@@ -5428,7 +5428,7 @@ table tr:hover td {
   background: rgba(255, 255, 255, 0.08) !important;
   border: none !important;
   outline: none !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   padding: 10px 18px !important;
   border-radius: 12px !important;
   font-size: 11px !important;
@@ -5450,10 +5450,10 @@ table tr:hover td {
 }
 
 .crm-tabs button.active {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45) !important;
 }
 
 .crm-tabs button span {
@@ -5466,7 +5466,7 @@ table tr:hover td {
 }
 
 .crm-workspace {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(14, 14, 14, 0.94) 19.41%, rgba(16, 16, 16, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5482,7 +5482,7 @@ table tr:hover td {
 }
 
 .crm-board-col {
-  background: rgba(4, 16, 12, 0.65) !important;
+  background: rgba(14, 14, 14, 0.65) !important;
   border: none !important;
   outline: none !important;
   border-radius: 16px !important;
@@ -5499,13 +5499,13 @@ table tr:hover td {
 }
 
 .crm-board-col header b {
-  background: rgba(5, 150, 105, 0.2) !important;
-  color: #10B981 !important;
+  background: rgba(234, 88, 12, 0.2) !important;
+  color: #FB923C !important;
   border-radius: 8px !important;
 }
 
 .crm-lead-card {
-  background: linear-gradient(127deg, rgba(10, 38, 28, 0.85) 0%, rgba(6, 28, 20, 0.85) 100%) !important;
+  background: linear-gradient(127deg, rgba(26, 26, 26, 0.85) 0%, rgba(20, 20, 20, 0.85) 100%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 14px !important;
@@ -5537,7 +5537,7 @@ table tr:hover td {
 }
 
 .crm-priority-box {
-  background: linear-gradient(127deg, rgba(10, 38, 28, 0.85) 0%, rgba(6, 28, 20, 0.85) 100%) !important;
+  background: linear-gradient(127deg, rgba(26, 26, 26, 0.85) 0%, rgba(20, 20, 20, 0.85) 100%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 16px !important;
@@ -5549,15 +5549,15 @@ table tr:hover td {
 }
 
 .crm-help-note {
-  background: rgba(5, 150, 105, 0.12) !important;
-  border-left: 3px solid #059669 !important;
+  background: rgba(234, 88, 12, 0.12) !important;
+  border-left: 3px solid #EA580C !important;
   border-radius: 10px !important;
-  color: #E2EDE6 !important;
+  color: #F4EBE3 !important;
 }
 
 /* --- 19.5 Fichas Iniciais, Matrículas & Pacotes --- */
 .fiche-choice {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(14, 14, 14, 0.94) 19.41%, rgba(16, 16, 16, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5573,18 +5573,18 @@ table tr:hover td {
 }
 
 .fiche-choice p {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 12.5px !important;
 }
 
 .notice {
-  background: rgba(5, 150, 105, 0.08) !important;
+  background: rgba(234, 88, 12, 0.08) !important;
   border: none !important;
   outline: none !important;
-  border-left: 4px solid #059669 !important;
+  border-left: 4px solid #EA580C !important;
   border-radius: 12px !important;
   padding: 14px 18px !important;
-  color: #E2EDE6 !important;
+  color: #F4EBE3 !important;
   margin-top: 18px !important;
   font-size: 12.5px !important;
 }
@@ -5625,7 +5625,7 @@ table tr:hover td {
 }
 
 .preferences-nav {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(14, 14, 14, 0.94) 19.41%, rgba(16, 16, 16, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5637,7 +5637,7 @@ table tr:hover td {
 }
 
 .preferences-nav-title {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 10.5px !important;
   font-weight: 800 !important;
   text-transform: uppercase !important;
@@ -5648,7 +5648,7 @@ table tr:hover td {
 .preferences-nav-item {
   background: transparent !important;
   border: none !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   border-radius: 12px !important;
   padding: 12px 14px !important;
   font-size: 13px !important;
@@ -5667,14 +5667,14 @@ table tr:hover td {
 }
 
 .preferences-nav-item.selected {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.4) !important;
   font-weight: 750 !important;
 }
 
 .preferences-tile {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(14, 14, 14, 0.94) 19.41%, rgba(16, 16, 16, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5695,12 +5695,12 @@ table tr:hover td {
 }
 
 .preferences-tile small {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 12px !important;
 }
 
 .school-hero {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(14, 14, 14, 0.94) 19.41%, rgba(16, 16, 16, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5727,14 +5727,14 @@ table tr:hover td {
 }
 
 .school-license-summary span {
-  color: #7B9485 !important;
+  color: #71717A !important;
   text-transform: uppercase !important;
   font-size: 10.5px !important;
   letter-spacing: 0.8px !important;
 }
 
 .school-card {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(14, 14, 14, 0.94) 19.41%, rgba(16, 16, 16, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5755,11 +5755,11 @@ table tr:hover td {
 }
 
 .school-card p {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .school-card.is-current {
-  box-shadow: 0 0 24px rgba(5, 150, 105, 0.4) !important;
+  box-shadow: 0 0 24px rgba(234, 88, 12, 0.4) !important;
 }
 
 /* --- 19.7 Dropdowns & Action Popovers --- */
@@ -5768,7 +5768,7 @@ table tr:hover td {
   right: 0 !important;
   top: calc(100% + 8px) !important;
   min-width: 240px !important;
-  background: rgba(6, 28, 20, 0.95) !important;
+  background: rgba(20, 20, 20, 0.95) !important;
   backdrop-filter: blur(24px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   border: none !important;
@@ -5788,7 +5788,7 @@ table tr:hover td {
   padding: 10px 14px !important;
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: #E2EDE6 !important;
+  color: #F4EBE3 !important;
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
@@ -5797,7 +5797,7 @@ table tr:hover td {
 }
 
 .contract-menu-item:hover {
-  background: rgba(5, 150, 105, 0.18) !important;
+  background: rgba(234, 88, 12, 0.18) !important;
   color: #FFFFFF !important;
 }
 
@@ -5815,18 +5815,18 @@ table tr:hover td {
 #loginPage,
 #signupPage,
 #noSchoolPage {
-  background-color: #03130E !important;
+  background-color: #0C0C0C !important;
   background-image: 
-    radial-gradient(at 82% 1%, rgba(5, 150, 105, 0.3) 0px, transparent 50%),
-    radial-gradient(at 5% 42%, rgba(13, 148, 136, 0.25) 0px, transparent 45%),
-    radial-gradient(at 95% 85%, rgba(16, 185, 129, 0.18) 0px, transparent 50%),
-    radial-gradient(at 20% 90%, rgba(5, 150, 105, 0.15) 0px, transparent 40%) !important;
+    radial-gradient(at 82% 1%, rgba(234, 88, 12, 0.3) 0px, transparent 50%),
+    radial-gradient(at 5% 42%, rgba(245, 158, 11, 0.25) 0px, transparent 45%),
+    radial-gradient(at 95% 85%, rgba(251, 146, 60, 0.18) 0px, transparent 50%),
+    radial-gradient(at 20% 90%, rgba(234, 88, 12, 0.15) 0px, transparent 40%) !important;
   min-height: 100vh !important;
 }
 
 .login-card,
 .auth-card {
-  background: linear-gradient(127.09deg, rgba(4, 16, 12, 0.94) 19.41%, rgba(4, 21, 15, 0.49) 76.65%) !important;
+  background: linear-gradient(127.09deg, rgba(14, 14, 14, 0.94) 19.41%, rgba(16, 16, 16, 0.49) 76.65%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 24px !important;
@@ -5836,7 +5836,7 @@ table tr:hover td {
 }
 
 .busy-card {
-  background: rgba(6, 28, 20, 0.95) !important;
+  background: rgba(20, 20, 20, 0.95) !important;
   border: none !important;
   outline: none !important;
   border-radius: 20px !important;
@@ -5846,7 +5846,7 @@ table tr:hover td {
 
 .busy-wheel {
   border-color: rgba(255, 255, 255, 0.15) !important;
-  border-top-color: #059669 !important;
+  border-top-color: #EA580C !important;
 }
 
 /* ==========================================================================
@@ -5856,12 +5856,12 @@ table tr:hover td {
   position: fixed !important;
   inset: 0 !important;
   z-index: 99999 !important;
-  background: #03130E !important;
+  background: #0C0C0C !important;
   background-image: 
-    radial-gradient(at 82% 1%, rgba(5, 150, 105, 0.35) 0px, transparent 50%),
-    radial-gradient(at 5% 42%, rgba(13, 148, 136, 0.28) 0px, transparent 45%),
-    radial-gradient(at 95% 85%, rgba(16, 185, 129, 0.22) 0px, transparent 50%),
-    radial-gradient(at 20% 90%, rgba(5, 150, 105, 0.18) 0px, transparent 40%) !important;
+    radial-gradient(at 82% 1%, rgba(234, 88, 12, 0.35) 0px, transparent 50%),
+    radial-gradient(at 5% 42%, rgba(245, 158, 11, 0.28) 0px, transparent 45%),
+    radial-gradient(at 95% 85%, rgba(251, 146, 60, 0.22) 0px, transparent 50%),
+    radial-gradient(at 20% 90%, rgba(234, 88, 12, 0.18) 0px, transparent 40%) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -5884,7 +5884,7 @@ table tr:hover td {
   height: 460px;
   top: -100px;
   right: -80px;
-  background: radial-gradient(circle, rgba(5, 150, 105, 0.45) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(234, 88, 12, 0.45) 0%, transparent 70%);
   animation: bootOrbFloat1 9s ease-in-out infinite alternate;
 }
 
@@ -5893,7 +5893,7 @@ table tr:hover td {
   height: 420px;
   bottom: -80px;
   left: -90px;
-  background: radial-gradient(circle, rgba(13, 148, 136, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, transparent 70%);
   animation: bootOrbFloat2 11s ease-in-out infinite alternate;
 }
 
@@ -5902,7 +5902,7 @@ table tr:hover td {
   height: 320px;
   bottom: 15%;
   right: 15%;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(251, 146, 60, 0.3) 0%, transparent 70%);
   animation: bootOrbFloat1 8s ease-in-out infinite alternate-reverse;
 }
 
@@ -5920,7 +5920,7 @@ table tr:hover td {
 .boot-card {
   position: relative !important;
   z-index: 10 !important;
-  background: linear-gradient(127.09deg, rgba(10, 38, 28, 0.85) 0%, rgba(6, 28, 20, 0.9) 100%) !important;
+  background: linear-gradient(127.09deg, rgba(26, 26, 26, 0.85) 0%, rgba(20, 20, 20, 0.9) 100%) !important;
   backdrop-filter: blur(40px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
   border: none !important;
@@ -5929,7 +5929,7 @@ table tr:hover td {
   padding: 44px 40px !important;
   width: min(420px, calc(100vw - 36px)) !important;
   text-align: center !important;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 40px rgba(5, 150, 105, 0.25) !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 40px rgba(234, 88, 12, 0.25) !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -5955,7 +5955,7 @@ table tr:hover td {
   position: absolute !important;
   inset: -10px !important;
   border-radius: 26px !important;
-  background: radial-gradient(circle, rgba(5, 150, 105, 0.6) 0%, rgba(16, 185, 129, 0.2) 60%, transparent 100%) !important;
+  background: radial-gradient(circle, rgba(234, 88, 12, 0.6) 0%, rgba(251, 146, 60, 0.2) 60%, transparent 100%) !important;
   filter: blur(14px) !important;
   animation: bootGlowPulse 2.4s ease-in-out infinite;
   pointer-events: none !important;
@@ -5965,7 +5965,7 @@ table tr:hover td {
   position: absolute !important;
   inset: -4px !important;
   border-radius: 24px !important;
-  border: 1.5px solid rgba(16, 185, 129, 0.5) !important;
+  border: 1.5px solid rgba(251, 146, 60, 0.5) !important;
   animation: bootRingExpand 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
   pointer-events: none !important;
 }
@@ -5987,14 +5987,14 @@ table tr:hover td {
   width: 68px !important;
   height: 68px !important;
   border-radius: 20px !important;
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   display: inline-grid !important;
   place-items: center !important;
   font-family: var(--camp-font), 'Plus Jakarta Sans', sans-serif !important;
   font-size: 32px !important;
   font-weight: 800 !important;
-  box-shadow: 0 8px 30px rgba(5, 150, 105, 0.65) !important;
+  box-shadow: 0 8px 30px rgba(234, 88, 12, 0.65) !important;
   border: none !important;
 }
 
@@ -6015,7 +6015,7 @@ table tr:hover td {
   font-weight: 750 !important;
   text-transform: uppercase !important;
   letter-spacing: 1.8px !important;
-  color: #10B981 !important;
+  color: #FB923C !important;
   margin: 0 0 26px 0 !important;
   opacity: 0.9 !important;
 }
@@ -6038,8 +6038,8 @@ table tr:hover td {
   height: 100% !important;
   width: 50% !important;
   border-radius: 99px !important;
-  background: linear-gradient(90deg, #059669 0%, #10B981 50%, #0D9488 100%) !important;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.8) !important;
+  background: linear-gradient(90deg, #EA580C 0%, #FB923C 50%, #F59E0B 100%) !important;
+  box-shadow: 0 0 12px rgba(251, 146, 60, 0.8) !important;
   animation: bootBarSweep 2s ease-in-out infinite;
 }
 
@@ -6054,7 +6054,7 @@ table tr:hover td {
   display: inline-flex !important;
   align-items: center !important;
   gap: 10px !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 12px !important;
   font-weight: 600 !important;
   letter-spacing: 0.4px !important;
@@ -6065,8 +6065,8 @@ table tr:hover td {
   height: 15px !important;
   border-radius: 50% !important;
   border: 2px solid rgba(255, 255, 255, 0.12) !important;
-  border-top-color: #059669 !important;
-  border-right-color: #10B981 !important;
+  border-top-color: #EA580C !important;
+  border-right-color: #FB923C !important;
   animation: bootSpin 0.85s linear infinite !important;
 }
 
@@ -6153,19 +6153,19 @@ button.btn.mini.light,
 .account-avatar,
 .sidebar .mark,
 .mark {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   border-radius: 12px !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.4) !important;
 }
 
 /* Onboarding Stage numbers */
 .onb-stage.current span,
 .onb-stage span {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4) !important;
 }
 
 /* Inherited SVG icon colors in sidebar & dropdowns */
@@ -6183,20 +6183,20 @@ button.btn.mini.light,
 .eyebrow,
 .account-create,
 .docx-report-heading.is-ok b {
-  color: #10B981 !important;
+  color: #FB923C !important;
 }
 
 [data-theme="light"] .eyebrow,
 [data-theme="light"] .account-create {
-  color: #059669 !important;
+  color: #EA580C !important;
 }
 
 /* --- Calendar Vision UI Emerald Overrides --- */
 .cal-secondary-sidebar nav button.active {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45) !important;
 }
 
 .cal-secondary-sidebar nav button:hover {
@@ -6205,24 +6205,24 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-secondary-sidebar nav button:hover {
-  background: #EBF4EE !important;
-  color: #059669 !important;
+  background: #F5F2EB !important;
+  color: #EA580C !important;
 }
 
 .cal-status,
 .cal-status-scheduled,
 .cal-status-completed {
-  color: #10B981 !important;
+  color: #FB923C !important;
 }
 
 [data-theme="light"] .cal-status,
 [data-theme="light"] .cal-status-scheduled,
 [data-theme="light"] .cal-status-completed {
-  color: #059669 !important;
+  color: #EA580C !important;
 }
 
 .cal-progress span {
-  background: linear-gradient(90deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(90deg, #EA580C 0%, #F97316 100%) !important;
   border-radius: 15px !important;
 }
 
@@ -6232,8 +6232,8 @@ button.btn.mini.light,
 .cal-slot-chip,
 .cal-student-slot,
 .cal-profile-page .cal-count {
-  background: rgba(5, 150, 105, 0.16) !important;
-  color: #10B981 !important;
+  background: rgba(234, 88, 12, 0.16) !important;
+  color: #FB923C !important;
   border: none !important;
 }
 
@@ -6242,15 +6242,15 @@ button.btn.mini.light,
 .cal-reschedule-item.selected,
 .cal-lessons-tab.is-active,
 .cal-settings-nav button.selected {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45) !important;
 }
 
 .cal-editor-event.cal-editor-occupied {
-  background: rgba(5, 150, 105, 0.35) !important;
-  border-left: 3px solid #10B981 !important;
+  background: rgba(234, 88, 12, 0.35) !important;
+  border-left: 3px solid #FB923C !important;
   color: #FFFFFF !important;
 }
 
@@ -6258,20 +6258,20 @@ button.btn.mini.light,
 .cal-skip-banner,
 .cal-schedule-mode-summary,
 .student-calendar-state {
-  background: rgba(5, 150, 105, 0.12) !important;
+  background: rgba(234, 88, 12, 0.12) !important;
   border: none !important;
-  border-left: 4px solid #059669 !important;
-  color: #E2EDE6 !important;
+  border-left: 4px solid #EA580C !important;
+  color: #F4EBE3 !important;
 }
 
 .cal-temp-badge,
 .cal-student-cta {
-  color: #10B981 !important;
+  color: #FB923C !important;
 }
 
 .cal-until-checkbox input[type="checkbox"],
 .interview-slot-option input {
-  accent-color: #059669 !important;
+  accent-color: #EA580C !important;
 }
 
 /* ==========================================================================
@@ -6341,7 +6341,7 @@ button.btn.mini.light,
 
 .home-shortcut:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 10px 25px rgba(5, 150, 105, 0.25) !important;
+  box-shadow: 0 10px 25px rgba(234, 88, 12, 0.25) !important;
   border: none !important;
 }
 
@@ -6364,30 +6364,30 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .home-shortcut b {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .home-shortcut small {
   font-size: 11px !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
 
 [data-theme="light"] .home-shortcut small {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .home-shortcut > svg:last-child {
-  color: #7B9485 !important;
+  color: #71717A !important;
   flex-shrink: 0 !important;
   margin-left: auto !important;
   transition: transform 0.18s ease, color 0.18s ease !important;
 }
 
 .home-shortcut:hover > svg:last-child {
-  color: #10B981 !important;
+  color: #FB923C !important;
   transform: translateX(3px) !important;
 }
 
@@ -6408,12 +6408,12 @@ button.btn.mini.light,
 [data-theme="light"] .cal-editor-panel,
 [data-theme="light"] .cal-calendar {
   background: #FFFFFF !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 /* Metrics above Calendar */
 .cal-metrics > div {
-  background: rgba(6, 28, 20, 0.7) !important;
+  background: rgba(20, 20, 20, 0.7) !important;
   border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
@@ -6423,7 +6423,7 @@ button.btn.mini.light,
 [data-theme="light"] .cal-metrics > div {
   background: #FFFFFF !important;
   border: none !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .cal-metrics strong {
@@ -6431,29 +6431,29 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-metrics strong {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .cal-metrics span {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 /* Teacher Picker & Controls */
 .cal-teacher-picker {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-teacher-picker select {
-  background: rgba(6, 28, 20, 0.75) !important;
+  background: rgba(20, 20, 20, 0.75) !important;
   border: none !important;
   border-radius: 10px !important;
   color: #FFFFFF !important;
 }
 
 [data-theme="light"] .cal-teacher-picker select {
-  background: #F3F8F5 !important;
+  background: #FAF9F6 !important;
   border: none !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .cal-switcher {
@@ -6463,13 +6463,13 @@ button.btn.mini.light,
 }
 
 .cal-switcher button {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-switcher .selected {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45) !important;
 }
 
 /* --- 24.4 Weekly Grid / Agenda (Image 3 Fix) --- */
@@ -6489,7 +6489,7 @@ button.btn.mini.light,
 [data-theme="light"] .cal-week-head-day {
   background: #FFFFFF !important;
   border: none !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
 }
 
@@ -6499,18 +6499,18 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-week-head-day b {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .cal-week-head-day span {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 11px !important;
 }
 
 .cal-week-head-day.is-today {
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.4) 0%, rgba(16, 185, 129, 0.3) 100%) !important;
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.4) 0%, rgba(251, 146, 60, 0.3) 100%) !important;
   border: none !important;
-  box-shadow: 0 0 16px rgba(5, 150, 105, 0.35) !important;
+  box-shadow: 0 0 16px rgba(234, 88, 12, 0.35) !important;
 }
 
 .cal-week-head-day:hover {
@@ -6518,13 +6518,13 @@ button.btn.mini.light,
 }
 
 .cal-week-time-label {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 11px !important;
   font-weight: 700 !important;
 }
 
 .cal-week-day-col {
-  background: rgba(6, 28, 20, 0.65) !important;
+  background: rgba(20, 20, 20, 0.65) !important;
   border: none !important;
   border-radius: 14px !important;
   overflow: hidden !important;
@@ -6541,19 +6541,19 @@ button.btn.mini.light,
 .cal-week-all-day {
   background: rgba(255, 255, 255, 0.03) !important;
   border-bottom: none !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 11px !important;
   font-weight: 700 !important;
 }
 
 [data-theme="light"] .cal-week-all-day {
-  background: #F3F8F5 !important;
+  background: #FAF9F6 !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
-  color: #263B30 !important;
+  color: #27272A !important;
 }
 
 .cal-week-all-day.empty {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-week-body-inner {
@@ -6561,7 +6561,7 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-week-body-inner {
-  background: linear-gradient(to bottom, transparent 0, transparent calc(100% - 1px), #EAF2ED calc(100% - 1px)) !important;
+  background: linear-gradient(to bottom, transparent 0, transparent calc(100% - 1px), #FFEDD5 calc(100% - 1px)) !important;
 }
 
 .cal-week-hour-line {
@@ -6569,11 +6569,11 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-week-hour-line {
-  border-top: 1px solid #EAF2ED !important;
+  border-top: 1px solid #FFEDD5 !important;
 }
 
 .cal-week-slot-bg {
-  background: rgba(5, 150, 105, 0.1) !important;
+  background: rgba(234, 88, 12, 0.1) !important;
   border: none !important;
 }
 
@@ -6587,12 +6587,12 @@ button.btn.mini.light,
 
 .cal-week-day-col.blocked-full .cal-week-all-day {
   background: rgba(255, 255, 255, 0.04) !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 /* --- 24.5 Weekly Slot Editor (Image 2 Fix - Grade Semanal) --- */
 .cal-editor-scroll {
-  background: rgba(6, 28, 20, 0.75) !important;
+  background: rgba(20, 20, 20, 0.75) !important;
   border: none !important;
   border-radius: 14px !important;
   backdrop-filter: blur(20px) !important;
@@ -6606,19 +6606,19 @@ button.btn.mini.light,
 }
 
 .cal-editor-head {
-  background: rgba(3, 19, 14, 0.95) !important;
+  background: rgba(12, 12, 12, 0.95) !important;
   border-bottom: none !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
 }
 
 [data-theme="light"] .cal-editor-head {
-  background: #F3F8F5 !important;
+  background: #FAF9F6 !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
 }
 
 .cal-editor-corner {
-  color: #7B9485 !important;
+  color: #71717A !important;
   border-right: none !important;
   font-weight: 700 !important;
 }
@@ -6634,11 +6634,11 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-editor-heading strong {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .cal-editor-heading small {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 10px !important;
 }
 
@@ -6649,11 +6649,11 @@ button.btn.mini.light,
 
 [data-theme="light"] .cal-editor-times,
 [data-theme="light"] .cal-editor-day {
-  border-right: 1px solid #E7F0EB !important;
+  border-right: 1px solid #FED7AA !important;
 }
 
 .cal-editor-hour-label {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-editor-target {
@@ -6663,8 +6663,8 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-editor-target {
-  background-image: linear-gradient(to bottom, #DCE8E0 1px, transparent 1px),
-                    linear-gradient(to bottom, #EFF6F2 1px, transparent 1px) !important;
+  background-image: linear-gradient(to bottom, #F3E8DF 1px, transparent 1px),
+                    linear-gradient(to bottom, #FFF7ED 1px, transparent 1px) !important;
 }
 
 .cal-editor-target:hover {
@@ -6672,11 +6672,11 @@ button.btn.mini.light,
 }
 
 .cal-editor-event {
-  background: rgba(5, 150, 105, 0.3) !important;
+  background: rgba(234, 88, 12, 0.3) !important;
   border: none !important;
-  border-left: 3px solid #059669 !important;
+  border-left: 3px solid #EA580C !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35) !important;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35) !important;
   backdrop-filter: blur(8px) !important;
 }
 
@@ -6687,9 +6687,9 @@ button.btn.mini.light,
 }
 
 .cal-editor-event.cal-editor-occupied {
-  background: linear-gradient(135deg, rgba(5, 150, 105, 0.45) 0%, rgba(16, 185, 129, 0.35) 100%) !important;
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.45) 0%, rgba(251, 146, 60, 0.35) 100%) !important;
   border: none !important;
-  border-left: 3px solid #10B981 !important;
+  border-left: 3px solid #FB923C !important;
   color: #FFFFFF !important;
 }
 
@@ -6697,20 +6697,20 @@ button.btn.mini.light,
   background: rgba(255, 255, 255, 0.06) !important;
   border: none !important;
   border-left: 3px solid rgba(255, 255, 255, 0.3) !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-editor-caption {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-editor-foot {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 /* --- 24.6 Weekly Picker (Image 4 Fix - Horários Semanais & Modais) --- */
 .cal-enrollment {
-  background: rgba(6, 28, 20, 0.75) !important;
+  background: rgba(20, 20, 20, 0.75) !important;
   border: none !important;
   border-radius: 16px !important;
   padding: 20px !important;
@@ -6736,7 +6736,7 @@ button.btn.mini.light,
 [data-theme="light"] .cal-picker-title .form-section,
 [data-theme="light"] .form-section h3,
 [data-theme="light"] .cal-enrollment h3 {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .cal-weekly-picker {
@@ -6744,7 +6744,7 @@ button.btn.mini.light,
 }
 
 .cal-wpicker-scroll {
-  background: rgba(3, 19, 14, 0.85) !important;
+  background: rgba(12, 12, 12, 0.85) !important;
   border: none !important;
   border-radius: 14px !important;
   backdrop-filter: blur(16px) !important;
@@ -6758,12 +6758,12 @@ button.btn.mini.light,
 }
 
 .cal-wpicker-header {
-  background: rgba(6, 28, 20, 0.95) !important;
+  background: rgba(20, 20, 20, 0.95) !important;
   border-bottom: none !important;
 }
 
 [data-theme="light"] .cal-wpicker-header {
-  background: #F3F8F5 !important;
+  background: #FAF9F6 !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
 }
 
@@ -6775,12 +6775,12 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-wpicker-header > * {
-  color: #0F1C16 !important;
-  border-right: 1px solid #E5EEEB !important;
+  color: #18181B !important;
+  border-right: 1px solid #F4EBE3 !important;
 }
 
 .cal-wpicker-header > span {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-weight: 600 !important;
 }
 
@@ -6791,7 +6791,7 @@ button.btn.mini.light,
 
 [data-theme="light"] .cal-wpicker-day,
 [data-theme="light"] .cal-wpicker-time {
-  border-right: 1px solid #E5EEEB !important;
+  border-right: 1px solid #F4EBE3 !important;
 }
 
 .cal-wpicker-rule {
@@ -6799,19 +6799,19 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-wpicker-rule {
-  border-bottom: 1px solid #E9F0EE !important;
+  border-bottom: 1px solid #F5EDE5 !important;
 }
 
 .cal-wpicker-time span {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-wpicker-legend {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 [data-theme="light"] .cal-wpicker-legend {
-  color: #263B30 !important;
+  color: #27272A !important;
 }
 
 .cal-wpicker-legend span {
@@ -6819,21 +6819,21 @@ button.btn.mini.light,
 }
 
 .cal-wpicker-legend strong {
-  color: #10B981 !important;
+  color: #FB923C !important;
 }
 
 [data-theme="light"] .cal-wpicker-legend strong {
-  color: #059669 !important;
+  color: #EA580C !important;
 }
 
 .cal-wpicker-dot.available {
-  background: rgba(5, 150, 105, 0.25) !important;
+  background: rgba(234, 88, 12, 0.25) !important;
   border: none !important;
 }
 
 .cal-wpicker-dot.selected {
-  background: #059669 !important;
-  box-shadow: 0 0 8px rgba(5, 150, 105, 0.6) !important;
+  background: #EA580C !important;
+  box-shadow: 0 0 8px rgba(234, 88, 12, 0.6) !important;
   border: none !important;
 }
 
@@ -6843,13 +6843,13 @@ button.btn.mini.light,
 }
 
 [data-theme="light"] .cal-wpicker-dot.occupied {
-  background: #D7E4DC !important;
+  background: #EFE3D8 !important;
 }
 
 .cal-wpicker-event {
-  background: rgba(5, 150, 105, 0.22) !important;
+  background: rgba(234, 88, 12, 0.22) !important;
   border: none !important;
-  border-left: 3px solid #059669 !important;
+  border-left: 3px solid #EA580C !important;
   border-radius: 8px !important;
   backdrop-filter: blur(8px) !important;
 }
@@ -6868,10 +6868,10 @@ button.btn.mini.light,
 }
 
 .cal-wpicker-event.is-selected {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.5) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.5) !important;
 }
 
 .cal-wpicker-event.is-busy {
@@ -6880,14 +6880,14 @@ button.btn.mini.light,
 }
 
 .cal-wpicker-event.is-busy button {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-weekly-empty {
   background: rgba(255, 255, 255, 0.03) !important;
   border: none !important;
   border-radius: 12px !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   padding: 24px !important;
 }
 
@@ -6899,7 +6899,7 @@ dialog:has(.cal-reschedule-modal),
 dialog:has(.student-profile),
 dialog:has(.template-edit-modal),
 dialog:has(.cal-enrollment) {
-  background: #061C14 !important;
+  background: #121212 !important;
   color: #FFFFFF !important;
   border: none !important;
   border-radius: 20px !important;
@@ -6914,7 +6914,7 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] dialog:has(.template-edit-modal),
 [data-theme="light"] dialog:has(.cal-enrollment) {
   background: #FFFFFF !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
   border: none !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
 }
@@ -6926,7 +6926,7 @@ dialog:has(.cal-enrollment) {
 /* --- 24.7 Additional Calendar Components (Zero Legacy White/Green) --- */
 .cal-student,
 .cal-student-card {
-  background: rgba(6, 28, 20, 0.7) !important;
+  background: rgba(20, 20, 20, 0.7) !important;
   border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
@@ -6937,7 +6937,7 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .cal-student-card {
   background: #FFFFFF !important;
   border: none !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .cal-student strong,
@@ -6947,18 +6947,18 @@ dialog:has(.cal-enrollment) {
 
 [data-theme="light"] .cal-student strong,
 [data-theme="light"] .cal-student-card strong {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .cal-student small,
 .cal-student-card small {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-lesson {
-  background: rgba(6, 28, 20, 0.7) !important;
+  background: rgba(20, 20, 20, 0.7) !important;
   border: none !important;
-  border-left: 3px solid #059669 !important;
+  border-left: 3px solid #EA580C !important;
   border-radius: 12px !important;
   color: #FFFFFF !important;
 }
@@ -6966,8 +6966,8 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .cal-lesson {
   background: #FFFFFF !important;
   border: none !important;
-  border-left: 3px solid #059669 !important;
-  color: #0F1C16 !important;
+  border-left: 3px solid #EA580C !important;
+  color: #18181B !important;
 }
 
 .cal-lesson-text strong {
@@ -6975,16 +6975,16 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .cal-lesson-text strong {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .cal-lesson-text span,
 .cal-lesson-text small {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-settings-body {
-  background: rgba(6, 28, 20, 0.7) !important;
+  background: rgba(20, 20, 20, 0.7) !important;
   border: none !important;
   border-radius: 16px !important;
   color: #FFFFFF !important;
@@ -6993,20 +6993,20 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .cal-settings-body {
   background: #FFFFFF !important;
   border: none !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .cal-settings-nav button {
   background: rgba(255, 255, 255, 0.04) !important;
   border: none !important;
   border-radius: 10px !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   transition: all 0.15s ease !important;
 }
 
 [data-theme="light"] .cal-settings-nav button {
-  background: #F3F8F5 !important;
-  color: #263B30 !important;
+  background: #FAF9F6 !important;
+  color: #27272A !important;
 }
 
 .cal-settings-nav button:hover {
@@ -7022,9 +7022,9 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .detail-item {
-  background: #F3F8F5 !important;
+  background: #FAF9F6 !important;
   border: none !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .detail-item strong {
@@ -7032,15 +7032,15 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .detail-item strong {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .detail-item span {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-profile-metrics > div {
-  background: rgba(6, 28, 20, 0.7) !important;
+  background: rgba(20, 20, 20, 0.7) !important;
   border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
@@ -7049,7 +7049,7 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .cal-profile-metrics > div {
   background: #FFFFFF !important;
   border: none !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .cal-profile-metrics strong {
@@ -7057,15 +7057,15 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .cal-profile-metrics strong {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .cal-profile-metrics span {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-schedule-mode-box {
-  background: rgba(6, 28, 20, 0.7) !important;
+  background: rgba(20, 20, 20, 0.7) !important;
   border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
@@ -7074,11 +7074,11 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .cal-schedule-mode-box {
   background: #FFFFFF !important;
   border: none !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .interview-calendar-picker {
-  background: rgba(6, 28, 20, 0.7) !important;
+  background: rgba(20, 20, 20, 0.7) !important;
   border: none !important;
   border-radius: 14px !important;
 }
@@ -7096,9 +7096,9 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .interview-slot-option {
-  background: #F3F8F5 !important;
+  background: #FAF9F6 !important;
   border: none !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .interview-slot-option strong {
@@ -7106,11 +7106,11 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .interview-slot-option strong {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 .interview-slot-option small {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 .cal-form-slots label {
@@ -7121,44 +7121,44 @@ dialog:has(.cal-enrollment) {
 }
 
 [data-theme="light"] .cal-form-slots label {
-  background: #F3F8F5 !important;
+  background: #FAF9F6 !important;
   border: none !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 /* --- 24.8 CRM & Platform Green Remnants Cleanup --- */
 .crm-btn.primary,
 .crm-btn.crm-wa,
 .crm-toggle button.active {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.4) !important;
 }
 
 .crm-box-status.is-done {
-  background: rgba(5, 150, 105, 0.2) !important;
-  color: #10B981 !important;
+  background: rgba(234, 88, 12, 0.2) !important;
+  color: #FB923C !important;
   border: none !important;
 }
 
 .crm-cal-status.is-free {
-  background: rgba(5, 150, 105, 0.15) !important;
-  color: #10B981 !important;
-  border-color: rgba(5, 150, 105, 0.3) !important;
+  background: rgba(234, 88, 12, 0.15) !important;
+  color: #FB923C !important;
+  border-color: rgba(234, 88, 12, 0.3) !important;
 }
 
 .crm-timeline-icon {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
 }
 
 .crm-help-note {
-  background: rgba(5, 150, 105, 0.12) !important;
+  background: rgba(234, 88, 12, 0.12) !important;
   border: none !important;
-  border-left: 3px solid #059669 !important;
-  color: #E2EDE6 !important;
+  border-left: 3px solid #EA580C !important;
+  color: #F4EBE3 !important;
 }
 
 .crm-board-col header b {
@@ -7236,7 +7236,7 @@ button.btn,
 .cal-switcher button:not(.selected),
 .cal-lessons-tab:not(.is-active) {
   background: rgba(255, 255, 255, 0.08) !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   border: none !important;
   outline: none !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
@@ -7261,11 +7261,11 @@ button.btn,
 .crm-tabs button.active,
 .cal-switcher button.selected,
 .cal-lessons-tab.is-active {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   border: none !important;
   outline: none !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45) !important;
 }
 
 /* Status Pills & Badges — Absolutely NO stroke borders (especially CORRIGIR DOCX) */
@@ -7298,11 +7298,11 @@ button.btn,
 .pill-signed,
 .pill-convertido,
 .pill-entrevistado {
-  background: rgba(1, 181, 116, 0.22) !important;
-  color: #05CD99 !important;
+  background: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
   border: none !important;
   outline: none !important;
-  box-shadow: 0 2px 10px rgba(1, 181, 116, 0.25) !important;
+  box-shadow: 0 2px 10px rgba(234, 88, 12, 0.25) !important;
 }
 
 /* Home Shortcuts ("Continue de onde parou") — No squishing, clean cards, crisp white SVG icons */
@@ -7331,7 +7331,7 @@ button.btn,
 
 .home-shortcut:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 10px 25px rgba(5, 150, 105, 0.25) !important;
+  box-shadow: 0 10px 25px rgba(234, 88, 12, 0.25) !important;
   border: none !important;
   outline: none !important;
 }
@@ -7342,12 +7342,12 @@ button.btn,
   min-width: 46px !important;
   min-height: 46px !important;
   border-radius: 12px !important;
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45) !important;
   flex-shrink: 0 !important;
   border: none !important;
 }
@@ -7383,27 +7383,27 @@ button.btn,
 
 .home-shortcut small {
   font-size: 11px !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
 
 .home-shortcut > svg:last-child {
-  color: #7B9485 !important;
+  color: #71717A !important;
   flex-shrink: 0 !important;
   margin-left: auto !important;
   transition: transform 0.18s ease, color 0.18s ease !important;
 }
 
 .home-shortcut:hover > svg:last-child {
-  color: #10B981 !important;
+  color: #FB923C !important;
   transform: translateX(3px) !important;
 }
 
 /* Calendar Secondary Sidebar — Dark Glass, No Green, No White */
 .cal-secondary-sidebar {
-  background: rgba(4, 16, 12, 0.94) !important;
+  background: rgba(14, 14, 14, 0.94) !important;
   border: none !important;
   border-right: none !important;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25) !important;
@@ -7412,7 +7412,7 @@ button.btn,
 }
 
 .cal-secondary-sidebar h2 {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 11px !important;
   font-weight: 800 !important;
   text-transform: uppercase !important;
@@ -7421,7 +7421,7 @@ button.btn,
 
 .cal-secondary-sidebar nav button {
   background: transparent !important;
-  color: #7B9485 !important;
+  color: #71717A !important;
   border: none !important;
   outline: none !important;
 }
@@ -7432,9 +7432,9 @@ button.btn,
 }
 
 .cal-secondary-sidebar nav button.active {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45) !important;
   border: none !important;
 }
 
@@ -7447,7 +7447,7 @@ button.btn,
 /* Modals & Dialogs — Zero-stroke Floating Glass */
 dialog,
 .camp-app-dialog {
-  background: #061C14 !important;
+  background: #121212 !important;
   color: #FFFFFF !important;
   border: none !important;
   outline: none !important;
@@ -7530,8 +7530,8 @@ dialog,
 }
 
 .account-avatar {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45) !important;
   border-radius: 12px !important;
   color: #FFFFFF !important;
   font-weight: 800 !important;
@@ -7542,7 +7542,7 @@ dialog,
    -------------------------------------------------------------------------- */
 :root:not([data-theme="light"]) .sidebar,
 [data-theme="dark"] .sidebar {
-  background: linear-gradient(180deg, #061C14 0%, #03130E 100%) !important;
+  background: linear-gradient(180deg, #121212 0%, #0C0C0C 100%) !important;
   box-shadow: 4px 0 32px rgba(0, 0, 0, 0.5) !important;
   border-right: none !important;
 }
@@ -7554,7 +7554,7 @@ dialog,
 
 :root:not([data-theme="light"]) .sidebar .brand-sub,
 [data-theme="dark"] .sidebar .brand-sub {
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
 }
 
 :root:not([data-theme="light"]) .sidebar-current-name,
@@ -7570,16 +7570,16 @@ dialog,
 
 :root:not([data-theme="light"]) .sidebar-current-name svg,
 [data-theme="dark"] .sidebar-current-name svg {
-  color: #10B981 !important;
-  stroke: #10B981 !important;
+  color: #FB923C !important;
+  stroke: #FB923C !important;
   width: 18px !important;
   height: 18px !important;
-  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.45)) !important;
+  filter: drop-shadow(0 0 6px rgba(251, 146, 60, 0.45)) !important;
 }
 
 :root:not([data-theme="light"]) .sidebar .nav-group,
 [data-theme="dark"] .sidebar .nav-group {
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
   font-size: 10.5px !important;
   letter-spacing: 1.4px !important;
   font-weight: 800 !important;
@@ -7588,15 +7588,15 @@ dialog,
 
 :root:not([data-theme="light"]) .sidebar .nav-btn,
 [data-theme="dark"] .sidebar .nav-btn {
-  color: #E2EDE6 !important;
+  color: #F4EBE3 !important;
 }
 
 :root:not([data-theme="light"]) .sidebar .nav-btn .nav-ico svg,
 :root:not([data-theme="light"]) .sidebar .nav-btn .nav-ico .camp-icon,
 [data-theme="dark"] .sidebar .nav-btn .nav-ico svg,
 [data-theme="dark"] .sidebar .nav-btn .nav-ico .camp-icon {
-  color: #8DA697 !important;
-  stroke: #8DA697 !important;
+  color: #9CA3AF !important;
+  stroke: #9CA3AF !important;
   width: 19px !important;
   height: 19px !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -7622,23 +7622,23 @@ dialog,
 
 :root:not([data-theme="light"]) .sidebar .nav-btn.active,
 [data-theme="dark"] .sidebar .nav-btn.active {
-  background: linear-gradient(127deg, rgba(5, 150, 105, 0.28) 0%, rgba(16, 185, 129, 0.12) 100%) !important;
+  background: linear-gradient(127deg, rgba(234, 88, 12, 0.32) 0%, rgba(249, 115, 22, 0.14) 100%) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
   font-weight: 750 !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(5, 150, 105, 0.25), inset 0 1px 1.5px rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(234, 88, 12, 0.3), inset 0 1px 1.5px rgba(255, 255, 255, 0.3) !important;
 }
 
 :root:not([data-theme="light"]) .sidebar .nav-btn.active .nav-ico svg,
 :root:not([data-theme="light"]) .sidebar .nav-btn.active .nav-ico .camp-icon,
 [data-theme="dark"] .sidebar .nav-btn.active .nav-ico svg,
 [data-theme="dark"] .sidebar .nav-btn.active .nav-ico .camp-icon {
-  color: #10B981 !important;
-  stroke: #10B981 !important;
-  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6)) !important;
+  color: #FB923C !important;
+  stroke: #FB923C !important;
+  filter: drop-shadow(0 0 8px rgba(251, 146, 60, 0.6)) !important;
   transform: scale(1.06) !important;
 }
 
@@ -7669,35 +7669,35 @@ dialog,
 
 :root:not([data-theme="light"]) .account-person small,
 [data-theme="dark"] .account-person small {
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
   font-size: 11.5px !important;
 }
 
 :root:not([data-theme="light"]) .account-trigger > svg,
 [data-theme="dark"] .account-trigger > svg {
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
 }
 
 /* --------------------------------------------------------------------------
    26.2 LIGHT MODE (Vision UI Elevated Card & Crisp Contrast)
    -------------------------------------------------------------------------- */
 [data-theme="light"] .sidebar {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(246, 250, 247, 0.78) 100%) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(250, 248, 245, 0.78) 100%) !important;
   backdrop-filter: blur(28px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-  box-shadow: 4px 0 32px rgba(15, 35, 25, 0.04) !important;
+  box-shadow: 4px 0 32px rgba(24, 24, 24, 0.04) !important;
   border-right: none !important;
 }
 
 [data-theme="light"] .sidebar .brand-title {
-  color: #0F1C16 !important;
+  color: #18181B !important;
   font-weight: 800 !important;
   font-size: 15.5px !important;
   letter-spacing: 0.8px !important;
 }
 
 [data-theme="light"] .sidebar .brand-sub {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 9.5px !important;
   letter-spacing: 1.4px !important;
   font-weight: 700 !important;
@@ -7711,7 +7711,7 @@ dialog,
 }
 
 [data-theme="light"] .sidebar-current-name {
-  color: #0F1C16 !important;
+  color: #18181B !important;
   font-size: 15px !important;
   font-weight: 800 !important;
   letter-spacing: -0.2px !important;
@@ -7721,15 +7721,15 @@ dialog,
 }
 
 [data-theme="light"] .sidebar-current-name svg {
-  color: #059669 !important;
-  stroke: #059669 !important;
+  color: #EA580C !important;
+  stroke: #EA580C !important;
   width: 18px !important;
   height: 18px !important;
-  filter: drop-shadow(0 2px 6px rgba(5, 150, 105, 0.35)) !important;
+  filter: drop-shadow(0 2px 6px rgba(234, 88, 12, 0.35)) !important;
 }
 
 [data-theme="light"] .sidebar .nav-group {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 10.5px !important;
   letter-spacing: 1.4px !important;
   font-weight: 800 !important;
@@ -7737,50 +7737,50 @@ dialog,
 }
 
 [data-theme="light"] .sidebar .nav-btn {
-  color: #44594D !important;
+  color: #3F3F46 !important;
   background: transparent !important;
   border: none !important;
 }
 
 [data-theme="light"] .sidebar .nav-btn .nav-ico svg,
 [data-theme="light"] .sidebar .nav-btn .nav-ico .camp-icon {
-  color: #7B9485 !important;
-  stroke: #7B9485 !important;
+  color: #71717A !important;
+  stroke: #71717A !important;
   width: 19px !important;
   height: 19px !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 [data-theme="light"] .sidebar .nav-btn:hover {
-  color: #059669 !important;
-  background: #EBF4EE !important;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.08) !important;
+  color: #EA580C !important;
+  background: #FFF7ED !important;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.08) !important;
 }
 
 [data-theme="light"] .sidebar .nav-btn:hover .nav-ico svg,
 [data-theme="light"] .sidebar .nav-btn:hover .nav-ico .camp-icon {
-  color: #059669 !important;
-  stroke: #059669 !important;
+  color: #EA580C !important;
+  stroke: #EA580C !important;
   transform: scale(1.08) !important;
 }
 
 /* Active Nav Item in Light Mode: Crisp Elevated Card with Drop Shadow */
 [data-theme="light"] .sidebar .nav-btn.active {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.90) 100%) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
   font-weight: 750 !important;
-  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 1) !important;
+  box-shadow: 0 8px 24px rgba(234, 88, 12, 0.14), inset 0 1px 1.5px rgba(255, 255, 255, 1) !important;
   border: none !important;
   border-radius: 14px !important;
 }
 
 [data-theme="light"] .sidebar .nav-btn.active .nav-ico svg,
 [data-theme="light"] .sidebar .nav-btn.active .nav-ico .camp-icon {
-  color: #059669 !important;
-  stroke: #059669 !important;
-  filter: drop-shadow(0 2px 8px rgba(5, 150, 105, 0.45)) !important;
+  color: #EA580C !important;
+  stroke: #EA580C !important;
+  filter: drop-shadow(0 2px 8px rgba(234, 88, 12, 0.45)) !important;
   transform: scale(1.06) !important;
 }
 
@@ -7789,7 +7789,7 @@ dialog,
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.80) 100%) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
-  box-shadow: 0 8px 22px rgba(15, 35, 25, 0.05), inset 0 1px 1.5px rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 8px 22px rgba(24, 24, 24, 0.05), inset 0 1px 1.5px rgba(255, 255, 255, 0.95) !important;
   border: none !important;
   border-radius: 16px !important;
   padding: 10px 14px !important;
@@ -7797,23 +7797,23 @@ dialog,
 }
 
 [data-theme="light"] .account-trigger:hover {
-  background: #F3F8F5 !important;
+  background: #FAF9F6 !important;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1) !important;
 }
 
 [data-theme="light"] .account-person b {
-  color: #0F1C16 !important;
+  color: #18181B !important;
   font-size: 13.5px !important;
   font-weight: 700 !important;
 }
 
 [data-theme="light"] .account-person small {
-  color: #7B9485 !important;
+  color: #71717A !important;
   font-size: 11.5px !important;
 }
 
 [data-theme="light"] .account-trigger > svg {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 /* Account dropdown in Light Mode */
@@ -7821,8 +7821,8 @@ dialog,
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.84) 100%) !important;
   backdrop-filter: blur(28px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-  color: #0F1C16 !important;
-  box-shadow: 0 20px 48px rgba(15, 35, 25, 0.12), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
+  color: #18181B !important;
+  box-shadow: 0 20px 48px rgba(24, 24, 24, 0.12), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
   border: none !important;
   border-radius: 18px !important;
 }
@@ -7832,24 +7832,24 @@ dialog,
 }
 
 [data-theme="light"] .account-dropdown-top b {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 [data-theme="light"] .account-dropdown-top small {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 [data-theme="light"] .account-dropdown-title {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 [data-theme="light"] .account-option {
-  color: #44594D !important;
+  color: #3F3F46 !important;
 }
 
 [data-theme="light"] .account-option:hover {
-  background: #EBF4EE !important;
-  color: #059669 !important;
+  background: #F5F2EB !important;
+  color: #EA580C !important;
 }
 
 [data-theme="light"] .account-divider {
@@ -7859,18 +7859,18 @@ dialog,
 /* Topbar chip & light buttons in Light Mode */
 [data-theme="light"] .topbar-chip {
   background: #FFFFFF !important;
-  color: #263B30 !important;
-  box-shadow: 0 2px 8px rgba(15, 35, 25, 0.06) !important;
+  color: #27272A !important;
+  box-shadow: 0 2px 8px rgba(24, 24, 24, 0.06) !important;
 }
 
 [data-theme="light"] .btn.light {
-  background: #EAF2ED !important;
-  color: #1E2E25 !important;
+  background: #FFEDD5 !important;
+  color: #18181B !important;
 }
 
 [data-theme="light"] .btn.light:hover {
-  background: #E2EDE6 !important;
-  color: #0F1C16 !important;
+  background: #F4EBE3 !important;
+  color: #18181B !important;
 }
 
 [data-theme="light"] .home-shortcut {
@@ -7879,22 +7879,22 @@ dialog,
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border: none !important;
   border-radius: 16px !important;
-  box-shadow: 0 8px 24px rgba(15, 35, 25, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 8px 24px rgba(24, 24, 24, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 0.95) !important;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 [data-theme="light"] .home-shortcut:hover {
   transform: translateY(-2px) !important;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.78) 100%) !important;
-  box-shadow: 0 14px 32px rgba(5, 150, 105, 0.14), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
+  box-shadow: 0 14px 32px rgba(234, 88, 12, 0.14), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
 }
 
 [data-theme="light"] .home-shortcut b {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 [data-theme="light"] .home-shortcut small {
-  color: #263B30 !important;
+  color: #27272A !important;
 }
 
 [data-theme="light"] dialog,
@@ -7902,56 +7902,56 @@ dialog,
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.86) 100%) !important;
   backdrop-filter: blur(36px) saturate(200%) !important;
   -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
-  color: #0F1C16 !important;
+  color: #18181B !important;
   border: none !important;
-  box-shadow: 0 28px 70px rgba(15, 35, 25, 0.16), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
+  box-shadow: 0 28px 70px rgba(24, 24, 24, 0.16), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
 }
 
 [data-theme="light"] .cal-secondary-sidebar {
   background: #FFFFFF !important;
-  color: #0F1C16 !important;
-  box-shadow: 4px 0 24px rgba(15, 35, 25, 0.06) !important;
+  color: #18181B !important;
+  box-shadow: 4px 0 24px rgba(24, 24, 24, 0.06) !important;
 }
 
 [data-theme="light"] .cal-secondary-sidebar h2 {
-  color: #7B9485 !important;
+  color: #71717A !important;
 }
 
 [data-theme="light"] .cal-secondary-sidebar nav button {
-  color: #263B30 !important;
+  color: #27272A !important;
   background: transparent !important;
 }
 
 [data-theme="light"] .cal-secondary-sidebar nav button:hover {
-  background: #EBF4EE !important;
-  color: #059669 !important;
+  background: #F5F2EB !important;
+  color: #EA580C !important;
 }
 
 [data-theme="light"] .cal-secondary-sidebar nav button.active {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35) !important;
 }
 
 /* Collapsed Calendar Shell in Light Mode */
 [data-theme="light"] .cal-admin-shell > .sidebar {
   background: #FFFFFF !important;
-  box-shadow: 4px 0 24px rgba(15, 35, 25, 0.06) !important;
+  box-shadow: 4px 0 24px rgba(24, 24, 24, 0.06) !important;
 }
 
 [data-theme="light"] .cal-admin-shell > .sidebar .account-trigger {
   background: #FFFFFF !important;
-  color: #0F1C16 !important;
-  box-shadow: 0 2px 8px rgba(15, 35, 25, 0.08) !important;
+  color: #18181B !important;
+  box-shadow: 0 2px 8px rgba(24, 24, 24, 0.08) !important;
 }
 
 [data-theme="light"] .cal-admin-shell > .sidebar .nav-btn {
-  color: #263B30 !important;
+  color: #27272A !important;
 }
 
 [data-theme="light"] .cal-admin-shell > .sidebar .nav-btn.active {
   background: #FFFFFF !important;
-  color: #059669 !important;
+  color: #EA580C !important;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
 }
 
@@ -7984,7 +7984,7 @@ dialog,
 /* 27.1 Metric Blocks (Dark Mode) - Luminous Emerald Frosted Glass */
 :root:not([data-theme="light"]) .metric,
 [data-theme="dark"] .metric {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.14) 0%, rgba(10, 42, 32, 0.88) 40%, rgba(6, 24, 18, 0.96) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.14) 0%, rgba(30, 30, 30, 0.88) 40%, rgba(18, 18, 18, 0.96) 100%) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border: none !important;
@@ -7998,9 +7998,9 @@ dialog,
 
 :root:not([data-theme="light"]) .metric:hover,
 [data-theme="dark"] .metric:hover {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.22) 0%, rgba(14, 56, 42, 0.92) 40%, rgba(8, 32, 24, 0.98) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.22) 0%, rgba(34, 34, 34, 0.92) 40%, rgba(22, 22, 22, 0.98) 100%) !important;
   transform: translateY(-3px) !important;
-  box-shadow: 0 18px 45px rgba(5, 150, 105, 0.32), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 18px 45px rgba(234, 88, 12, 0.32), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
 }
 
 :root:not([data-theme="light"]) .metric .metric-value,
@@ -8013,7 +8013,7 @@ dialog,
 
 :root:not([data-theme="light"]) .metric .metric-label,
 [data-theme="dark"] .metric .metric-label {
-  color: #D1DFD6 !important;
+  color: #D4D4D8 !important;
   font-weight: 600 !important;
   font-size: 13px !important;
   letter-spacing: -0.1px !important;
@@ -8024,19 +8024,19 @@ dialog,
   position: absolute !important;
   right: 20px !important;
   top: 22px !important;
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
   transition: all 0.2s ease !important;
 }
 
 .metric:hover .metric-go {
-  color: #10B981 !important;
+  color: #FB923C !important;
   transform: translateX(3px) !important;
 }
 
 /* 27.2 Home Shortcuts (Dark Mode) */
 :root:not([data-theme="light"]) .home-shortcut,
 [data-theme="dark"] .home-shortcut {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.12) 0%, rgba(10, 36, 28, 0.82) 40%, rgba(6, 22, 16, 0.94) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.12) 0%, rgba(26, 26, 26, 0.82) 40%, rgba(18, 18, 18, 0.94) 100%) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border: none !important;
@@ -8047,9 +8047,9 @@ dialog,
 
 :root:not([data-theme="light"]) .home-shortcut:hover,
 [data-theme="dark"] .home-shortcut:hover {
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.2) 0%, rgba(10, 36, 26, 0.9) 40%, rgba(10, 38, 28, 0.98) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.2) 0%, rgba(26, 26, 26, 0.9) 40%, rgba(26, 26, 26, 0.98) 100%) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 16px 36px rgba(5, 150, 105, 0.28), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 16px 36px rgba(234, 88, 12, 0.28), inset 0 1px 2px rgba(255, 255, 255, 0.35) !important;
 }
 
 :root:not([data-theme="light"]) .home-shortcut b,
@@ -8061,14 +8061,14 @@ dialog,
 
 :root:not([data-theme="light"]) .home-shortcut small,
 [data-theme="dark"] .home-shortcut small {
-  color: #D1DFD6 !important;
+  color: #D4D4D8 !important;
   font-size: 11.5px !important;
   font-weight: 500 !important;
 }
 
 :root:not([data-theme="light"]) .home-shortcut svg:last-child,
 [data-theme="dark"] .home-shortcut svg:last-child {
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
 }
 
 :root:not([data-theme="light"]) .home-actions-title h2,
@@ -8078,7 +8078,7 @@ dialog,
 
 :root:not([data-theme="light"]) .home-actions-title p,
 [data-theme="dark"] .home-actions-title p {
-  color: #D1DFD6 !important;
+  color: #D4D4D8 !important;
   font-size: 13.5px !important;
 }
 
@@ -8087,7 +8087,7 @@ dialog,
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.72) 100%) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
-  box-shadow: 0 14px 35px rgba(15, 35, 25, 0.05), inset 0 1px 2px rgba(255, 255, 255, 0.95), inset 0 -1px 1px rgba(0, 0, 0, 0.02) !important;
+  box-shadow: 0 14px 35px rgba(24, 24, 24, 0.05), inset 0 1px 2px rgba(255, 255, 255, 0.95), inset 0 -1px 1px rgba(0, 0, 0, 0.02) !important;
   border: none !important;
   border-radius: 20px !important;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -8096,23 +8096,23 @@ dialog,
 [data-theme="light"] .metric:hover {
   transform: translateY(-3px) !important;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.82) 100%) !important;
-  box-shadow: 0 18px 42px rgba(5, 150, 105, 0.15), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
+  box-shadow: 0 18px 42px rgba(234, 88, 12, 0.15), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
 }
 
 [data-theme="light"] .metric-value {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 [data-theme="light"] .metric-label {
-  color: #44594D !important;
+  color: #3F3F46 !important;
 }
 
 [data-theme="light"] .metric-go {
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
 }
 
 [data-theme="light"] .metric:hover .metric-go {
-  color: #059669 !important;
+  color: #EA580C !important;
 }
 
 /* 27.4 Recent Enrollments Table - Perfect Column Center Alignment */
@@ -8141,28 +8141,28 @@ dialog,
 
 :root:not([data-theme="light"]),
 [data-theme="dark"] {
-  --camp-bg: #03130E;
+  --camp-bg: #0C0C0C;
   --camp-bg-radial:
-    radial-gradient(circle at 82% 8%, rgba(5, 150, 105, 0.28) 0%, rgba(5, 150, 105, 0.08) 32%, transparent 56%),
-    radial-gradient(circle at 14% 34%, rgba(13, 148, 136, 0.20) 0%, rgba(13, 148, 136, 0.06) 26%, transparent 50%),
-    radial-gradient(ellipse at 50% 55%, rgba(5, 150, 105, 0.18) 0%, rgba(10, 38, 28, 0.10) 38%, transparent 68%),
-    radial-gradient(circle at 88% 85%, rgba(5, 150, 105, 0.26) 0%, rgba(16, 185, 129, 0.09) 30%, transparent 58%),
-    radial-gradient(circle at 18% 90%, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.05) 26%, transparent 52%),
-    linear-gradient(150deg, #05130F 0%, #071C16 35%, #09241C 60%, #061813 85%, #04100C 100%);
+    radial-gradient(circle at 82% 8%, rgba(234, 88, 12, 0.28) 0%, rgba(234, 88, 12, 0.08) 32%, transparent 56%),
+    radial-gradient(circle at 14% 34%, rgba(245, 158, 11, 0.20) 0%, rgba(245, 158, 11, 0.06) 26%, transparent 50%),
+    radial-gradient(ellipse at 50% 55%, rgba(234, 88, 12, 0.18) 0%, rgba(26, 26, 26, 0.10) 38%, transparent 68%),
+    radial-gradient(circle at 88% 85%, rgba(234, 88, 12, 0.26) 0%, rgba(251, 146, 60, 0.09) 30%, transparent 58%),
+    radial-gradient(circle at 18% 90%, rgba(251, 146, 60, 0.18) 0%, rgba(234, 88, 12, 0.05) 26%, transparent 52%),
+    linear-gradient(150deg, #0E0E0E 0%, #121212 35%, #161616 60%, #0F0F0F 85%, #090909 100%);
 }
 
 html,
 body,
 :root:not([data-theme="light"]) body,
 [data-theme="dark"] body {
-  background-color: #03130E !important;
+  background-color: #0C0C0C !important;
   background-image:
-    radial-gradient(circle at 82% 8%, rgba(5, 150, 105, 0.28) 0%, rgba(5, 150, 105, 0.08) 32%, transparent 56%),
-    radial-gradient(circle at 14% 34%, rgba(13, 148, 136, 0.20) 0%, rgba(13, 148, 136, 0.06) 26%, transparent 50%),
-    radial-gradient(ellipse at 50% 55%, rgba(5, 150, 105, 0.18) 0%, rgba(10, 38, 28, 0.10) 38%, transparent 68%),
-    radial-gradient(circle at 88% 85%, rgba(5, 150, 105, 0.26) 0%, rgba(16, 185, 129, 0.09) 30%, transparent 58%),
-    radial-gradient(circle at 18% 90%, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.05) 26%, transparent 52%),
-    linear-gradient(150deg, #03130E 0%, #051A13 35%, #07221A 60%, #041610 85%, #020C09 100%) !important;
+    radial-gradient(circle at 82% 8%, rgba(249, 115, 22, 0.16) 0%, rgba(249, 115, 22, 0.04) 34%, transparent 58%),
+    radial-gradient(circle at 14% 34%, rgba(255, 255, 255, 0.02) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 55%, rgba(255, 255, 255, 0.015) 0%, transparent 60%),
+    radial-gradient(circle at 88% 85%, rgba(249, 115, 22, 0.12) 0%, rgba(234, 88, 12, 0.03) 30%, transparent 55%),
+    radial-gradient(circle at 18% 90%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+    linear-gradient(150deg, #0D0D0D 0%, #121212 35%, #181818 60%, #121212 85%, #0C0C0C 100%) !important;
   background-attachment: fixed !important;
   background-repeat: no-repeat !important;
   background-size: cover !important;
@@ -8171,13 +8171,13 @@ body,
 
 /* Light Mode Background with luminous emerald/mint aurora */
 [data-theme="light"] body {
-  background-color: #F3F8F5 !important;
+  background-color: #FAF9F6 !important;
   background-image:
-    radial-gradient(circle at 85% 10%, rgba(5, 150, 105, 0.16) 0%, transparent 48%),
-    radial-gradient(circle at 12% 42%, rgba(16, 185, 129, 0.12) 0%, transparent 42%),
-    radial-gradient(circle at 75% 85%, rgba(13, 148, 136, 0.14) 0%, transparent 50%),
-    radial-gradient(circle at 35% 88%, rgba(52, 211, 153, 0.10) 0%, transparent 40%),
-    linear-gradient(180deg, #F3F8F5 0%, #E6F2EC 100%) !important;
+    radial-gradient(circle at 85% 10%, rgba(234, 88, 12, 0.16) 0%, transparent 48%),
+    radial-gradient(circle at 12% 42%, rgba(251, 146, 60, 0.12) 0%, transparent 42%),
+    radial-gradient(circle at 75% 85%, rgba(245, 158, 11, 0.14) 0%, transparent 50%),
+    radial-gradient(circle at 35% 88%, rgba(253, 186, 116, 0.10) 0%, transparent 40%),
+    linear-gradient(180deg, #FAF9F6 0%, #FFF7ED 100%) !important;
   background-attachment: fixed !important;
   background-repeat: no-repeat !important;
   background-size: cover !important;
@@ -8216,9 +8216,9 @@ body,
 /* ==========================================================================
    29. VISION UI HIGH-CONTRAST TYPOGRAPHY & TABLE READABILITY (DARK MODE)
    - Eliminates washed out / faded secondary texts across all pages
-   - Crisp #D1DFD6 for labels, hints, muted copy and descriptions
-   - Pristine #8DA697 for table headers, metadata and small labels
-   - Deep readable #E2EDE6 for data cells
+   - Crisp #D4D4D8 for labels, hints, muted copy and descriptions
+   - Pristine #9CA3AF for table headers, metadata and small labels
+   - Deep readable #F4EBE3 for data cells
    ========================================================================== */
 
 :root:not([data-theme="light"]) .muted,
@@ -8227,14 +8227,14 @@ body,
 [data-theme="dark"] .muted,
 [data-theme="dark"] .subtle,
 [data-theme="dark"] .leadline {
-  color: #D1DFD6 !important;
+  color: #D4D4D8 !important;
 }
 
 :root:not([data-theme="light"]) .data-table th,
 :root:not([data-theme="light"]) .crm-table th,
 [data-theme="dark"] .data-table th,
 [data-theme="dark"] .crm-table th {
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
   font-weight: 700 !important;
   letter-spacing: 0.8px !important;
   font-size: 11px !important;
@@ -8245,7 +8245,7 @@ body,
 :root:not([data-theme="light"]) .crm-table td,
 [data-theme="dark"] .data-table td,
 [data-theme="dark"] .crm-table td {
-  color: #E2EDE6 !important;
+  color: #F4EBE3 !important;
   font-size: 13.5px !important;
 }
 
@@ -8257,7 +8257,7 @@ body,
 [data-theme="dark"] .data-table td small,
 [data-theme="dark"] .crm-table td .muted,
 [data-theme="dark"] .crm-table td small {
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
 }
 
 :root:not([data-theme="light"]) .panel-head h2,
@@ -8278,7 +8278,7 @@ body,
 [data-theme="dark"] .topbar .subtle,
 [data-theme="dark"] .topbar-breadcrumb,
 [data-theme="dark"] .breadcrumb {
-  color: #D1DFD6 !important;
+  color: #D4D4D8 !important;
 }
 
 :root:not([data-theme="light"]) .topbar .subtle b,
@@ -8290,7 +8290,7 @@ body,
 :root:not([data-theme="light"]) .field-label,
 [data-theme="dark"] label,
 [data-theme="dark"] .field-label {
-  color: #D1DFD6 !important;
+  color: #D4D4D8 !important;
   font-weight: 600 !important;
 }
 
@@ -8298,7 +8298,7 @@ body,
 :root:not([data-theme="light"]) .field-hint,
 [data-theme="dark"] .form-help,
 [data-theme="dark"] .field-hint {
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
 }
 
 /* ==========================================================================
@@ -8348,7 +8348,7 @@ body,
   background: transparent !important;
   border: none !important;
   outline: none !important;
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
   font-size: 13px !important;
   font-weight: 700 !important;
   padding: 12px 18px 14px !important;
@@ -8386,14 +8386,14 @@ body,
   right: 12px !important;
   height: 3px !important;
   border-radius: 3px 3px 0 0 !important;
-  background: linear-gradient(90deg, #059669 0%, #10B981 100%) !important;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6) !important;
+  background: linear-gradient(90deg, #EA580C 0%, #F97316 100%) !important;
+  box-shadow: 0 0 10px rgba(251, 146, 60, 0.6) !important;
 }
 
 :root:not([data-theme="light"]) .crm-tabs button span,
 [data-theme="dark"] .crm-tabs button span {
   background: rgba(255, 255, 255, 0.12) !important;
-  color: #D1DFD6 !important;
+  color: #D4D4D8 !important;
   border-radius: 20px !important;
   padding: 2px 7px !important;
   font-size: 10.5px !important;
@@ -8402,8 +8402,8 @@ body,
 
 :root:not([data-theme="light"]) .crm-tabs button.active span,
 [data-theme="dark"] .crm-tabs button.active span {
-  background: rgba(5, 150, 105, 0.28) !important;
-  color: #10B981 !important;
+  background: rgba(234, 88, 12, 0.28) !important;
+  color: #FB923C !important;
 }
 
 /* Light mode tabs - Frosted Glassmorphism */
@@ -8412,7 +8412,7 @@ body,
   backdrop-filter: blur(28px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
   border: none !important;
-  box-shadow: 0 16px 42px rgba(15, 35, 25, 0.06), inset 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 16px 42px rgba(24, 24, 24, 0.06), inset 0 1px 2px rgba(255, 255, 255, 0.95) !important;
 }
 
 [data-theme="light"] .crm-tabs {
@@ -8421,7 +8421,7 @@ body,
   gap: 6px !important;
   padding: 8px 18px 0 !important;
   margin: 0 !important;
-  background: rgba(240, 248, 244, 0.55) !important;
+  background: rgba(254, 243, 235, 0.55) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
@@ -8432,7 +8432,7 @@ body,
 [data-theme="light"] .crm-tabs button {
   background: transparent !important;
   border: none !important;
-  color: #44594D !important;
+  color: #3F3F46 !important;
   font-size: 13px !important;
   font-weight: 700 !important;
   padding: 12px 18px 14px !important;
@@ -8442,17 +8442,17 @@ body,
 }
 
 [data-theme="light"] .crm-tabs button:hover {
-  color: #0F1C16 !important;
+  color: #18181B !important;
   background: rgba(0, 0, 0, 0.03) !important;
 }
 
 [data-theme="light"] .crm-tabs button.active {
-  color: #059669 !important;
+  color: #EA580C !important;
   background: rgba(255, 255, 255, 0.92) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   font-weight: 800 !important;
-  box-shadow: 0 4px 14px rgba(15, 35, 25, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 1) !important;
+  box-shadow: 0 4px 14px rgba(24, 24, 24, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 1) !important;
 }
 
 [data-theme="light"] .crm-tabs button.active::after {
@@ -8463,8 +8463,8 @@ body,
   right: 12px !important;
   height: 3px !important;
   border-radius: 3px 3px 0 0 !important;
-  background: linear-gradient(90deg, #059669 0%, #10B981 100%) !important;
-  box-shadow: 0 0 8px rgba(5, 150, 105, 0.4) !important;
+  background: linear-gradient(90deg, #EA580C 0%, #F97316 100%) !important;
+  box-shadow: 0 0 8px rgba(234, 88, 12, 0.4) !important;
 }
 
 /* 30.2 Streamlined CRM Filters Bar */
@@ -8530,9 +8530,9 @@ body,
 }
 
 .crm-filters-toggle-btn.is-active {
-  background: rgba(5, 150, 105, 0.22) !important;
-  color: #10B981 !important;
-  box-shadow: 0 0 12px rgba(5, 150, 105, 0.3) !important;
+  background: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
+  box-shadow: 0 0 12px rgba(234, 88, 12, 0.3) !important;
 }
 
 .crm-filters-bar .crm-toggle {
@@ -8587,12 +8587,12 @@ body,
   align-items: center !important;
   justify-content: space-between !important;
   padding: 12px 22px !important;
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
   font-size: 12px !important;
 }
 
 .crm-list-controls b {
-  color: #D1DFD6 !important;
+  color: #D4D4D8 !important;
   font-weight: 750 !important;
 }
 
@@ -8604,7 +8604,7 @@ body,
   padding: 20px 22px 24px !important;
   align-items: stretch !important;
   scrollbar-width: thin !important;
-  scrollbar-color: rgba(5, 150, 105, 0.4) transparent !important;
+  scrollbar-color: rgba(234, 88, 12, 0.4) transparent !important;
 }
 
 .crm-board::-webkit-scrollbar {
@@ -8617,12 +8617,12 @@ body,
 }
 
 .crm-board::-webkit-scrollbar-thumb {
-  background: rgba(5, 150, 105, 0.35) !important;
+  background: rgba(234, 88, 12, 0.35) !important;
   border-radius: 10px !important;
 }
 
 .crm-board::-webkit-scrollbar-thumb:hover {
-  background: rgba(5, 150, 105, 0.65) !important;
+  background: rgba(234, 88, 12, 0.65) !important;
 }
 
 :root:not([data-theme="light"]) .crm-board-col,
@@ -8632,7 +8632,7 @@ body,
   flex: 0 0 280px !important;
   max-height: calc(100vh - 280px) !important;
   min-height: 480px !important;
-  background: linear-gradient(127deg, rgba(255, 255, 255, 0.08) 0%, rgba(10, 36, 28, 0.68) 40%, rgba(6, 28, 20, 0.88) 100%) !important;
+  background: linear-gradient(127deg, rgba(255, 255, 255, 0.08) 0%, rgba(26, 26, 26, 0.68) 40%, rgba(20, 20, 20, 0.88) 100%) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border: none !important;
@@ -8651,13 +8651,13 @@ body,
   flex: 0 0 280px !important;
   max-height: calc(100vh - 280px) !important;
   min-height: 480px !important;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(242, 249, 245, 0.58) 100%) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.76) 0%, rgba(255, 248, 240, 0.60) 100%) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 18px !important;
-  box-shadow: 0 10px 28px rgba(15, 35, 25, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 10px 28px rgba(24, 24, 24, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 0.95) !important;
   padding: 16px 14px !important;
   display: flex !important;
   flex-direction: column !important;
@@ -8676,7 +8676,7 @@ body,
   padding: 2px 5px 12px 1px !important;
   margin-right: -2px !important;
   scrollbar-width: thin !important;
-  scrollbar-color: rgba(5, 150, 105, 0.35) transparent !important;
+  scrollbar-color: rgba(234, 88, 12, 0.35) transparent !important;
 }
 
 .crm-board-items::-webkit-scrollbar {
@@ -8688,26 +8688,26 @@ body,
 }
 
 .crm-board-items::-webkit-scrollbar-thumb {
-  background: rgba(5, 150, 105, 0.35) !important;
+  background: rgba(234, 88, 12, 0.35) !important;
   border-radius: 10px !important;
 }
 
 .crm-board-items::-webkit-scrollbar-thumb:hover {
-  background: rgba(5, 150, 105, 0.65) !important;
+  background: rgba(234, 88, 12, 0.65) !important;
 }
 
 [data-theme="light"] .crm-board-items {
-  scrollbar-color: rgba(15, 35, 25, 0.35) transparent !important;
+  scrollbar-color: rgba(24, 24, 24, 0.35) transparent !important;
 }
 
 [data-theme="light"] .crm-board-items::-webkit-scrollbar-thumb {
-  background: rgba(15, 35, 25, 0.35) !important;
+  background: rgba(24, 24, 24, 0.35) !important;
 }
 
 /* 30.7 Calendário Comercial & Docente (Fix for Bug & Glassmorphism) */
 :root:not([data-theme="light"]) .crm-due-panel,
 [data-theme="dark"] .crm-due-panel {
-  background: linear-gradient(127.09deg, rgba(6, 22, 18, 0.94) 0%, rgba(4, 16, 12, 0.88) 100%) !important;
+  background: linear-gradient(127.09deg, rgba(18, 18, 18, 0.94) 0%, rgba(14, 14, 14, 0.88) 100%) !important;
   backdrop-filter: blur(24px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   border: none !important;
@@ -8753,29 +8753,29 @@ body,
 
 :root:not([data-theme="light"]) .crm-due-item p,
 [data-theme="dark"] .crm-due-item p {
-  color: #D1DFD6 !important;
+  color: #D4D4D8 !important;
   font-size: 12px !important;
   margin: 3px 0 0 !important;
 }
 
 :root:not([data-theme="light"]) .crm-due-icon,
 [data-theme="dark"] .crm-due-icon {
-  background: rgba(5, 150, 105, 0.18) !important;
-  color: #10B981 !important;
+  background: rgba(234, 88, 12, 0.18) !important;
+  color: #FB923C !important;
   border: none !important;
   border-radius: 10px !important;
-  box-shadow: 0 0 12px rgba(5, 150, 105, 0.25) !important;
+  box-shadow: 0 0 12px rgba(234, 88, 12, 0.25) !important;
 }
 
 :root:not([data-theme="light"]) .crm-due-date,
 [data-theme="dark"] .crm-due-date {
-  color: #D1DFD6 !important;
+  color: #D4D4D8 !important;
   font-weight: 700 !important;
 }
 
 :root:not([data-theme="light"]) .crm-due-panel .crm-muted,
 [data-theme="dark"] .crm-due-panel .crm-muted {
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
   padding: 16px 0 !important;
   font-size: 13px !important;
 }
@@ -8786,7 +8786,7 @@ body,
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border: none !important;
   border-radius: 20px !important;
-  box-shadow: 0 14px 35px rgba(15, 35, 25, 0.05), inset 0 1px 2px rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 14px 35px rgba(24, 24, 24, 0.05), inset 0 1px 2px rgba(255, 255, 255, 0.95) !important;
   margin-top: 24px !important;
   overflow: hidden !important;
 }
@@ -8797,7 +8797,7 @@ body,
 }
 
 [data-theme="light"] .crm-due-head h2 {
-  color: #0F1C16 !important;
+  color: #18181B !important;
   font-size: 18px !important;
   margin: 0 !important;
 }
@@ -8807,34 +8807,34 @@ body,
 }
 
 [data-theme="light"] .crm-due-item b {
-  color: #0F1C16 !important;
+  color: #18181B !important;
 }
 
 [data-theme="light"] .crm-due-item p {
-  color: #44594D !important;
+  color: #3F3F46 !important;
 }
 
 [data-theme="light"] .crm-due-icon {
-  background: rgba(5, 150, 105, 0.12) !important;
-  color: #059669 !important;
+  background: rgba(234, 88, 12, 0.12) !important;
+  color: #EA580C !important;
   border-radius: 10px !important;
 }
 
 [data-theme="light"] .crm-due-date {
-  color: #44594D !important;
+  color: #3F3F46 !important;
 }
 
-/* 30.8 Lead Cards (3D Luminous Emerald Glassmorphism — ZERO STROKE BORDER) */
+/* 30.8 Lead Cards (3D Luminous Orange Glassmorphism — ZERO STROKE BORDER) */
 :root:not([data-theme="light"]) .crm-lead-card,
 [data-theme="dark"] .crm-lead-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(12, 48, 36, 0.86) 32%, rgba(8, 28, 22, 0.96) 100%) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(30, 30, 30, 0.86) 32%, rgba(22, 22, 22, 0.96) 100%) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 16px !important;
   padding: 14px 16px !important;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(5, 150, 105, 0.2), inset 0 1px 1.5px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(234, 88, 12, 0.2), inset 0 1px 1.5px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.35) !important;
   cursor: grab !important;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
   position: relative !important;
@@ -8852,8 +8852,8 @@ body,
 [data-theme="dark"] .crm-lead-card:hover,
 [data-theme="dark"] .crm-lead-card:focus-visible {
   transform: translateY(-3px) scale(1.01) !important;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(16, 60, 45, 0.92) 32%, rgba(10, 36, 26, 0.98) 100%) !important;
-  box-shadow: 0 16px 36px rgba(5, 150, 105, 0.35), 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(36, 36, 36, 0.92) 32%, rgba(26, 26, 26, 0.98) 100%) !important;
+  box-shadow: 0 16px 36px rgba(234, 88, 12, 0.35), 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
   outline: none !important;
 }
 
@@ -8867,7 +8867,7 @@ body,
 [data-theme="dark"] .crm-lead-card.is-dragging {
   opacity: 0.65 !important;
   transform: scale(0.98) rotate(1deg) !important;
-  box-shadow: 0 20px 42px rgba(5, 150, 105, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 20px 42px rgba(234, 88, 12, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
   cursor: grabbing !important;
 }
 
@@ -8893,7 +8893,7 @@ body,
 
 :root:not([data-theme="light"]) .crm-lead-card .crm-muted,
 [data-theme="dark"] .crm-lead-card .crm-muted {
-  color: #D1DFD6 !important;
+  color: #D4D4D8 !important;
   font-size: 11.5px !important;
   font-weight: 500 !important;
   margin-top: 2px !important;
@@ -8913,7 +8913,7 @@ body,
 :root:not([data-theme="light"]) .crm-mini-date,
 [data-theme="dark"] .crm-card-foot,
 [data-theme="dark"] .crm-mini-date {
-  color: #8DA697 !important;
+  color: #9CA3AF !important;
   font-size: 10.5px !important;
   font-weight: 600 !important;
   margin-top: 4px !important;
@@ -8922,8 +8922,8 @@ body,
 :root:not([data-theme="light"]) .crm-card-interview,
 [data-theme="dark"] .crm-card-interview {
   border-top: none !important;
-  background: rgba(5, 150, 105, 0.18) !important;
-  color: #10B981 !important;
+  background: rgba(234, 88, 12, 0.18) !important;
+  color: #FB923C !important;
   border-radius: 8px !important;
   padding: 6px 10px !important;
   margin-top: 10px !important;
@@ -8937,21 +8937,21 @@ body,
 
 :root:not([data-theme="light"]) .crm-card-interview svg,
 [data-theme="dark"] .crm-card-interview svg {
-  color: #10B981 !important;
-  stroke: #10B981 !important;
+  color: #FB923C !important;
+  stroke: #FB923C !important;
   flex-shrink: 0 !important;
 }
 
 :root:not([data-theme="light"]) .crm-card-interview.is-done,
 [data-theme="dark"] .crm-card-interview.is-done {
-  background: rgba(1, 181, 116, 0.22) !important;
-  color: #05CD99 !important;
+  background: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
 }
 
 :root:not([data-theme="light"]) .crm-card-interview.is-done svg,
 [data-theme="dark"] .crm-card-interview.is-done svg {
-  color: #05CD99 !important;
-  stroke: #05CD99 !important;
+  color: #FB923C !important;
+  stroke: #FB923C !important;
 }
 
 /* Light Mode Lead Card - Frosted Glassmorphism with Floating Elevation */
@@ -8963,7 +8963,7 @@ body,
   outline: none !important;
   border-radius: 16px !important;
   padding: 14px 16px !important;
-  box-shadow: 0 4px 14px rgba(15, 35, 25, 0.05), inset 0 1px 1.5px rgba(255, 255, 255, 1) !important;
+  box-shadow: 0 4px 14px rgba(24, 24, 24, 0.05), inset 0 1px 1.5px rgba(255, 255, 255, 1) !important;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
   cursor: grab !important;
   display: flex !important;
@@ -8978,17 +8978,17 @@ body,
 [data-theme="light"] .crm-lead-card:hover {
   transform: translateY(-3px) scale(1.01) !important;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.90) 100%) !important;
-  box-shadow: 0 14px 34px rgba(5, 150, 105, 0.16), 0 2px 8px rgba(15, 35, 25, 0.05), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
+  box-shadow: 0 14px 34px rgba(234, 88, 12, 0.16), 0 2px 8px rgba(24, 24, 24, 0.05), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
 }
 
 [data-theme="light"] .crm-lead-top strong {
-  color: #0F1C16 !important;
+  color: #18181B !important;
   font-size: 14px !important;
   font-weight: 800 !important;
 }
 
 [data-theme="light"] .crm-lead-card .crm-muted {
-  color: #44594D !important;
+  color: #3F3F46 !important;
   font-size: 12px !important;
   font-weight: 500 !important;
 }
@@ -9000,8 +9000,8 @@ body,
 }
 
 [data-theme="light"] .crm-card-interview {
-  background: rgba(5, 150, 105, 0.1) !important;
-  color: #059669 !important;
+  background: rgba(234, 88, 12, 0.1) !important;
+  color: #EA580C !important;
   border-radius: 8px !important;
   padding: 6px 10px !important;
   border: none !important;

@@ -69,14 +69,14 @@ const TRIGGER_DESCRIPTIONS={
 };
 
 const TAG_COLORS=[
- ['#166d59','Verde'],
- ['#2563eb','Azul'],
+ ['#ea580c','Laranja'],
  ['#d97706','Âmbar'],
  ['#dc2626','Vermelho'],
  ['#7c3aed','Roxo'],
  ['#db2777','Rosa'],
+ ['#2563eb','Azul'],
  ['#0891b2','Ciano'],
- ['#4f46e5','Índigo'],
+ ['#166d59','Verde'],
  ['#475569','Cinza']
 ];
 
