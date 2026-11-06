@@ -8773,3 +8773,149 @@ body,
 [data-theme="light"] .crm-due-date {
   color: #52617A !important;
 }
+
+/* 30.8 Lead Cards (3D Luminous Sapphire Glassmorphism — ZERO STROKE BORDER) */
+:root:not([data-theme="light"]) .crm-lead-card,
+[data-theme="dark"] .crm-lead-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(28, 50, 132, 0.86) 32%, rgba(16, 30, 88, 0.96) 100%) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 16px !important;
+  padding: 15px 16px !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 117, 255, 0.2), inset 0 1px 1.5px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.35) !important;
+  cursor: grab !important;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+:root:not([data-theme="light"]) .crm-lead-card:hover,
+:root:not([data-theme="light"]) .crm-lead-card:focus-visible,
+[data-theme="dark"] .crm-lead-card:hover,
+[data-theme="dark"] .crm-lead-card:focus-visible {
+  transform: translateY(-3px) scale(1.01) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(36, 64, 158, 0.92) 32%, rgba(20, 36, 105, 0.98) 100%) !important;
+  box-shadow: 0 16px 36px rgba(0, 117, 255, 0.35), 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.45) !important;
+  outline: none !important;
+}
+
+:root:not([data-theme="light"]) .crm-lead-card:active,
+[data-theme="dark"] .crm-lead-card:active {
+  transform: translateY(-1px) scale(0.99) !important;
+  cursor: grabbing !important;
+}
+
+:root:not([data-theme="light"]) .crm-lead-card.is-dragging,
+[data-theme="dark"] .crm-lead-card.is-dragging {
+  opacity: 0.65 !important;
+  transform: scale(0.98) rotate(1deg) !important;
+  box-shadow: 0 20px 42px rgba(0, 117, 255, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+  cursor: grabbing !important;
+}
+
+/* Lead Card Typography & Content */
+:root:not([data-theme="light"]) .crm-lead-top strong,
+[data-theme="dark"] .crm-lead-top strong {
+  color: #FFFFFF !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.2px !important;
+  line-height: 1.35 !important;
+}
+
+:root:not([data-theme="light"]) .crm-lead-card .crm-muted,
+[data-theme="dark"] .crm-lead-card .crm-muted {
+  color: #CBD5E1 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  margin-top: 5px !important;
+}
+
+:root:not([data-theme="light"]) .crm-card-foot,
+:root:not([data-theme="light"]) .crm-mini-date,
+[data-theme="dark"] .crm-card-foot,
+[data-theme="dark"] .crm-mini-date {
+  color: #94A3B8 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+:root:not([data-theme="light"]) .crm-card-interview,
+[data-theme="dark"] .crm-card-interview {
+  border-top: none !important;
+  background: rgba(0, 117, 255, 0.18) !important;
+  color: #21D4FD !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  margin-top: 10px !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12) !important;
+}
+
+:root:not([data-theme="light"]) .crm-card-interview svg,
+[data-theme="dark"] .crm-card-interview svg {
+  color: #21D4FD !important;
+  stroke: #21D4FD !important;
+  flex-shrink: 0 !important;
+}
+
+:root:not([data-theme="light"]) .crm-card-interview.is-done,
+[data-theme="dark"] .crm-card-interview.is-done {
+  background: rgba(1, 181, 116, 0.22) !important;
+  color: #05CD99 !important;
+}
+
+:root:not([data-theme="light"]) .crm-card-interview.is-done svg,
+[data-theme="dark"] .crm-card-interview.is-done svg {
+  color: #05CD99 !important;
+  stroke: #05CD99 !important;
+}
+
+/* Light Mode Lead Card */
+[data-theme="light"] .crm-lead-card {
+  background: #FFFFFF !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 16px !important;
+  padding: 15px 16px !important;
+  box-shadow: 0 4px 14px rgba(112, 144, 176, 0.12), 0 1px 3px rgba(112, 144, 176, 0.08) !important;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: grab !important;
+}
+
+[data-theme="light"] .crm-lead-card:hover {
+  transform: translateY(-3px) scale(1.01) !important;
+  box-shadow: 0 12px 28px rgba(112, 144, 176, 0.22) !important;
+}
+
+[data-theme="light"] .crm-lead-top strong {
+  color: #1A2340 !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+
+[data-theme="light"] .crm-lead-card .crm-muted {
+  color: #52617A !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+[data-theme="light"] .crm-card-foot,
+[data-theme="light"] .crm-mini-date {
+  color: #64748B !important;
+  font-size: 11px !important;
+}
+
+[data-theme="light"] .crm-card-interview {
+  background: rgba(0, 102, 230, 0.1) !important;
+  color: #0066E6 !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  border: none !important;
+}
