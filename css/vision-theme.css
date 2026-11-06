@@ -252,6 +252,24 @@ p {
   background: var(--camp-primary);
 }
 
+/* Accessibility Focus Rings */
+:focus-visible {
+  outline: 2px solid var(--camp-cyan) !important;
+  outline-offset: 2px !important;
+}
+
+[data-theme="light"] :focus-visible {
+  outline-color: var(--camp-primary) !important;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none !important;
+  border-color: var(--camp-primary) !important;
+  box-shadow: 0 0 0 3px var(--camp-primary-glow) !important;
+}
+
 /* ==========================================================================
    3. THEME TOGGLE BUTTON COMPONENT
    ========================================================================== */
@@ -662,6 +680,12 @@ p {
   filter: brightness(1.05);
 }
 
+.btn:active,
+.crm-btn:active,
+.home-shortcut:active {
+  transform: scale(0.97) !important;
+}
+
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -1031,10 +1055,20 @@ p {
   color: var(--camp-text) !important;
 }
 
+.data-table tr,
+.crm-table tr {
+  transition: var(--camp-transition);
+}
+
 .data-table tr:hover td,
 .crm-table tr:hover td {
   background: var(--camp-hover) !important;
   color: var(--camp-text) !important;
+}
+
+.data-table tr:hover td:first-child,
+.crm-table tr:hover td:first-child {
+  border-left: 3px solid var(--camp-primary) !important;
 }
 
 /* Status Pills */
@@ -1097,7 +1131,8 @@ p {
    9. MODALS, DIALOGS & OVERLAYS
    ========================================================================== */
 
-dialog {
+dialog,
+.camp-app-dialog {
   border: 1px solid var(--camp-border-strong) !important;
   border-radius: var(--camp-radius-xl) !important;
   background: var(--camp-surface-floating) !important;
@@ -1108,11 +1143,59 @@ dialog {
   max-height: 88vh;
   overflow-y: auto;
   backdrop-filter: blur(28px);
+  position: relative;
 }
 
-dialog::backdrop {
+dialog[open],
+.camp-app-dialog[open] {
+  animation: camp-modal-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes camp-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+dialog::backdrop,
+.camp-app-dialog::backdrop {
   background: rgba(4, 8, 24, 0.78) !important;
   backdrop-filter: blur(8px) !important;
+  animation: camp-fade-in 0.2s ease-out forwards;
+}
+
+@keyframes camp-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.camp-app-dialog {
+  width: min(540px, calc(100% - 32px)) !important;
+  padding: 24px 28px !important;
+}
+
+.camp-app-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.camp-app-dialog-content h2,
+.camp-app-dialog-content h3 {
+  color: var(--camp-text) !important;
+  margin: 0;
+}
+
+.camp-app-dialog-content p {
+  color: var(--camp-text-secondary) !important;
+  font-size: 13.5px;
+  line-height: 1.55;
+  margin: 0;
 }
 
 dialog .close {
@@ -1209,22 +1292,39 @@ dialog .close:hover {
   background: var(--camp-surface-floating) !important;
   color: var(--camp-text) !important;
   border: 1px solid var(--camp-border-strong) !important;
-  padding: 14px 20px;
-  border-radius: var(--camp-radius-md);
-  z-index: 1100;
+  padding: 14px 22px;
+  border-radius: var(--camp-radius-pill);
+  z-index: 1200;
   box-shadow: var(--camp-shadow-floating);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 13px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  transform: translateY(8px);
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(12px) scale(0.97);
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 #toast.visible {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
+}
+
+#toast[style*="8a332d"] {
+  background: var(--camp-danger-bg) !important;
+  border-color: var(--camp-danger) !important;
+  color: var(--camp-text) !important;
+  box-shadow: 0 4px 20px rgba(245, 101, 101, 0.25), var(--camp-shadow-floating) !important;
+}
+
+#toast[style*="163b38"] {
+  background: var(--camp-surface-floating) !important;
+  border-color: var(--camp-success) !important;
+  color: var(--camp-text) !important;
+  box-shadow: 0 4px 20px rgba(1, 181, 116, 0.25), var(--camp-shadow-floating) !important;
 }
 
 /* ==========================================================================
