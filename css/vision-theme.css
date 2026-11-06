@@ -286,7 +286,7 @@ textarea:focus-visible {
   align-items: center;
   gap: 8px;
   background: var(--camp-surface-raised);
-  border: 1px solid var(--camp-border);
+  border: none !important;
   color: var(--camp-text);
   padding: 8px 14px;
   border-radius: var(--camp-radius-pill);
@@ -590,7 +590,7 @@ textarea:focus-visible {
 
 .sidebar-current {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   padding: 10px 12px;
   display: flex;
@@ -707,7 +707,7 @@ textarea:focus-visible {
   border-radius: var(--camp-radius-md);
   cursor: pointer;
   background: var(--camp-surface-raised);
-  border: 1px solid var(--camp-border);
+  border: none !important;
   color: var(--camp-text);
   transition: var(--camp-transition);
 }
@@ -743,7 +743,7 @@ textarea:focus-visible {
 
 .account-dropdown {
   background: var(--camp-surface-floating) !important;
-  border: 1px solid var(--camp-border-strong) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   box-shadow: var(--camp-shadow-floating) !important;
   backdrop-filter: blur(24px);
@@ -834,7 +834,7 @@ textarea:focus-visible {
 
 .topbar-chip {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   color: var(--camp-text-secondary) !important;
   padding: 6px 12px;
   border-radius: var(--camp-radius-pill);
@@ -1033,7 +1033,7 @@ button.btn {
 
 .icon-btn {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   color: var(--camp-text) !important;
   border-radius: var(--camp-radius-sm);
   transition: var(--camp-transition);
@@ -1418,7 +1418,7 @@ button.btn {
   color: var(--camp-text-secondary) !important;
   font-size: 12px;
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   padding: 12px 16px;
   border-radius: var(--camp-radius-md);
   line-height: 1.6;
@@ -1599,7 +1599,7 @@ button.btn {
   height: 52px;
   border-radius: var(--camp-radius-md);
   background: var(--camp-surface-raised);
-  border: 1px solid var(--camp-border);
+  border: none !important;
   color: var(--camp-text-muted);
   font-size: 22px;
   margin: 0 auto 12px;
@@ -1739,7 +1739,7 @@ dialog .close:hover {
 
 .busy-card {
   background: var(--camp-surface-floating) !important;
-  border: 1px solid var(--camp-border-strong) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   padding: 24px 32px;
   color: var(--camp-text) !important;
@@ -1769,7 +1769,7 @@ dialog .close:hover {
   right: 24px;
   background: var(--camp-surface-floating) !important;
   color: var(--camp-text) !important;
-  border: 1px solid var(--camp-border-strong) !important;
+  border: none !important;
   padding: 14px 22px;
   border-radius: var(--camp-radius-pill);
   z-index: 1200;
@@ -1853,7 +1853,7 @@ dialog .close:hover {
 
 .crm-metric {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   padding: 18px 20px !important;
   box-shadow: var(--camp-shadow-card) !important;
@@ -1949,7 +1949,7 @@ dialog .close:hover {
 
 .crm-workspace {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   box-shadow: var(--camp-shadow-card) !important;
   overflow: hidden;
@@ -2013,7 +2013,7 @@ dialog .close:hover {
   display: inline-flex;
   gap: 4px;
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-pill);
   padding: 3px;
 }
@@ -2201,7 +2201,7 @@ dialog .close:hover {
   font-weight: 750;
   background: rgba(0, 117, 255, 0.14) !important;
   color: var(--camp-text) !important;
-  border: 1px solid var(--tag-color, var(--camp-primary));
+  border: none !important;
 }
 
 .crm-muted {
@@ -2214,7 +2214,7 @@ dialog .close:hover {
   align-items: center;
   gap: 6px;
   background: var(--camp-info-bg) !important;
-  border: 1px solid var(--camp-info-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-sm);
   padding: 4px 8px;
   font-size: 11px;
@@ -2234,7 +2234,7 @@ dialog .close:hover {
 
 .crm-badge {
   background: var(--camp-surface) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   color: var(--camp-text-secondary) !important;
   font-size: 11px;
   font-weight: 700;
@@ -2257,7 +2257,7 @@ dialog .close:hover {
 .crm-btn {
   font-weight: 700;
   font-size: 12px;
-  border: 1px solid var(--camp-border);
+  border: none !important;
   border-radius: var(--camp-radius-sm);
   background: var(--camp-surface-raised);
   color: var(--camp-text);
@@ -2370,7 +2370,7 @@ dialog .close:hover {
   padding: 12px 14px;
   border-radius: var(--camp-radius-md);
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2394,7 +2394,7 @@ dialog .close:hover {
 
 .crm-lead-tags-bar {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   padding: 14px;
   margin-top: 14px;
@@ -2423,7 +2423,7 @@ dialog .close:hover {
 
 .crm-tag-toggle {
   background: var(--camp-surface) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   color: var(--camp-text) !important;
   border-radius: var(--camp-radius-pill);
   padding: 5px 12px;
@@ -2456,7 +2456,7 @@ dialog .close:hover {
 
 .crm-priority-box {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   padding: 18px !important;
   display: flex;
@@ -2491,7 +2491,7 @@ dialog .close:hover {
   font-size: 11px;
   font-weight: 750;
   background: var(--camp-surface) !important;
-  border: 1px solid var(--camp-border);
+  border: none !important;
   color: var(--camp-text-secondary) !important;
 }
 
@@ -2596,7 +2596,7 @@ dialog .close:hover {
 /* CRM Mini-Week Visual Scheduler (Appointment Modal) */
 .crm-mini-week {
   margin: 10px 0 4px;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   background: var(--camp-surface-card) !important;
   overflow: hidden;
@@ -2605,7 +2605,7 @@ dialog .close:hover {
 
 .crm-mini-week-empty {
   padding: 18px 20px;
-  border: 1px dashed var(--camp-border-strong) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   background: var(--camp-surface-raised) !important;
   color: var(--camp-text-secondary) !important;
@@ -2737,7 +2737,7 @@ dialog .close:hover {
 }
 
 .crm-mini-hour-rule {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-bottom: none !important;
 }
 
 [data-theme="light"] .crm-mini-hour-rule {
@@ -2789,7 +2789,7 @@ dialog .close:hover {
 .crm-pipeline-row,
 .crm-tag-row {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   padding: 12px 14px;
   margin-bottom: 8px;
@@ -2807,7 +2807,7 @@ dialog .close:hover {
 
 .crm-pipeline-order {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border);
+  border: none !important;
   color: var(--camp-cyan) !important;
   border-radius: var(--camp-radius-pill);
   font-weight: 800;
@@ -2831,7 +2831,7 @@ dialog .close:hover {
 
 .crm-pipeline-form {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg);
   padding: 18px;
   margin-top: 18px;
@@ -2860,7 +2860,7 @@ dialog .close:hover {
 }
 
 .fiche-choice {
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   background: var(--camp-surface-raised) !important;
   border-radius: var(--camp-radius-lg);
   padding: 18px;
@@ -2891,7 +2891,7 @@ dialog .close:hover {
   place-items: center;
   color: var(--camp-cyan) !important;
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border);
+  border: none !important;
   width: 36px;
   height: 36px;
   border-radius: var(--camp-radius-md);
@@ -2914,7 +2914,7 @@ dialog .close:hover {
   overflow-y: auto;
   padding: 7px;
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border-strong) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md) !important;
   box-shadow: var(--camp-shadow-modal) !important;
   z-index: 50;
@@ -3307,7 +3307,7 @@ dialog .close:hover {
 
 .cal-temp-schedule-banner {
   background: var(--camp-warning-bg) !important;
-  border: 1px solid var(--camp-warning-border) !important;
+  border: none !important;
   border-left: 4px solid var(--camp-warning) !important;
   color: var(--camp-text) !important;
   border-radius: var(--camp-radius-md);
@@ -3318,7 +3318,7 @@ dialog .close:hover {
 .cal-temp-badge {
   background: var(--camp-warning-bg) !important;
   color: var(--camp-warning) !important;
-  border: 1px solid var(--camp-warning-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-pill);
   padding: 2px 8px;
   font-size: 10px;
@@ -3346,7 +3346,7 @@ dialog .close:hover {
 }
 
 .onb-stage {
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   background: var(--camp-surface-card) !important;
   border-radius: var(--camp-radius-md);
   color: var(--camp-text-secondary) !important;
@@ -3357,7 +3357,7 @@ dialog .close:hover {
 .onb-stage span {
   background: var(--camp-surface-raised) !important;
   color: var(--camp-text) !important;
-  border: 1px solid var(--camp-border);
+  border: none !important;
   border-radius: var(--camp-radius-pill);
   width: 28px;
   height: 28px;
@@ -3388,13 +3388,13 @@ dialog .close:hover {
 .onb-summary {
   background: var(--camp-surface-raised) !important;
   color: var(--camp-primary) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
 }
 
 .onb-guidance {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-left: 4px solid var(--camp-cyan) !important;
   border-radius: var(--camp-radius-md);
   color: var(--camp-text) !important;
@@ -3436,7 +3436,7 @@ dialog .close:hover {
 
 .onb-entry {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg);
   color: var(--camp-text) !important;
   transition: var(--camp-transition);
@@ -3450,7 +3450,7 @@ dialog .close:hover {
 
 .onb-records {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
 }
 
@@ -3472,12 +3472,12 @@ dialog .close:hover {
   padding: 12px 16px;
   border-radius: var(--camp-radius-md);
   color: var(--camp-text) !important;
-  border: 1px solid var(--camp-border);
+  border: none !important;
 }
 
 .onb-hint {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   color: var(--camp-text-secondary) !important;
   padding: 12px 16px;
@@ -3485,7 +3485,7 @@ dialog .close:hover {
 
 .onb-report-counts > div {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   padding: 12px 16px;
   text-align: center;
@@ -3507,7 +3507,7 @@ dialog .close:hover {
 
 .onb-alert {
   background: var(--camp-warning-bg) !important;
-  border: 1px solid var(--camp-warning-border) !important;
+  border: none !important;
   border-left: 4px solid var(--camp-warning) !important;
   color: var(--camp-text) !important;
   border-radius: var(--camp-radius-md);
@@ -3516,26 +3516,26 @@ dialog .close:hover {
 
 .onb-alert > .table-wrap {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
 }
 
 .onb-record-status.success {
   background: var(--camp-success-bg) !important;
   color: var(--camp-success) !important;
-  border: 1px solid var(--camp-success-border);
+  border: none !important;
 }
 
 .onb-record-status.error {
   background: var(--camp-danger-bg) !important;
   color: var(--camp-danger) !important;
-  border: 1px solid var(--camp-danger-border);
+  border: none !important;
 }
 
 .onb-record-status.neutral {
   background: var(--camp-surface) !important;
   color: var(--camp-text-secondary) !important;
-  border: 1px solid var(--camp-border);
+  border: none !important;
 }
 
 .onb-correction {
@@ -3550,19 +3550,19 @@ dialog .close:hover {
 }
 
 .onb-upload {
-  border: 1px dashed var(--camp-border-strong) !important;
+  border: none !important;
   background: var(--camp-surface-raised) !important;
   border-radius: var(--camp-radius-lg);
 }
 
 .onb-preview {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
 }
 
 .onb-blank-action {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
 }
 
@@ -3576,7 +3576,7 @@ dialog .close:hover {
 
 .onb-choice {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
 }
 
@@ -3802,7 +3802,7 @@ dialog .close:hover {
 }
 
 .guide-sidebar {
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   background: var(--camp-surface-card) !important;
   border-radius: var(--camp-radius-lg) !important;
   box-shadow: var(--camp-shadow-card) !important;
@@ -3862,7 +3862,7 @@ dialog .close:hover {
   justify-content: center;
   background: var(--camp-surface-raised) !important;
   color: var(--camp-cyan) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   padding: 10px 14px;
   font-size: 12px;
   text-decoration: none;
@@ -3882,7 +3882,7 @@ dialog .close:hover {
 
 .guide-hero {
   background: var(--camp-gradient-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   padding: 40px 44px;
   position: relative;
@@ -3927,7 +3927,7 @@ dialog .close:hover {
   padding: 6px 12px;
   border-radius: var(--camp-radius-pill);
   background: rgba(0, 117, 255, 0.16) !important;
-  border: 1px solid rgba(0, 117, 255, 0.28);
+  border: none !important;
   font-size: 11.5px;
   font-weight: 750;
   color: var(--camp-text) !important;
@@ -4203,7 +4203,7 @@ dialog .close:hover {
   color: var(--camp-cyan) !important;
   padding: 5px 10px;
   background: rgba(0, 117, 255, 0.16) !important;
-  border: 1px solid rgba(0, 117, 255, 0.25);
+  border: none !important;
   border-radius: var(--camp-radius-pill);
   font-weight: 800;
 }
@@ -4260,7 +4260,7 @@ dialog .close:hover {
   gap: 16px;
   padding: 16px 20px;
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   color: var(--camp-text) !important;
 }
@@ -4309,7 +4309,7 @@ dialog .close:hover {
 /* FAQ Details */
 .faq details {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md) !important;
   padding: 14px 18px;
   margin-bottom: 10px;
@@ -4405,7 +4405,7 @@ dialog .close:hover {
 
 .sign-panel {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   padding: 28px !important;
   margin-bottom: 20px;
@@ -4456,7 +4456,7 @@ dialog .close:hover {
 /* DOCX Validation Report */
 .docx-report {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg);
   padding: 20px;
   margin-top: 18px;
@@ -4464,7 +4464,7 @@ dialog .close:hover {
 
 .docx-report-summary {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   padding: 16px;
   margin-bottom: 14px;
@@ -4480,7 +4480,7 @@ dialog .close:hover {
 
 .docx-issue-card {
   background: var(--camp-surface-raised) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-md);
   padding: 12px 14px;
   margin-bottom: 8px;
@@ -4503,7 +4503,7 @@ dialog .close:hover {
   font-family: monospace;
   background: rgba(0, 117, 255, 0.16) !important;
   color: var(--camp-cyan) !important;
-  border: 1px solid rgba(0, 117, 255, 0.3);
+  border: none !important;
 }
 
 [data-theme="light"] .docx-marker-pill {
@@ -4512,7 +4512,7 @@ dialog .close:hover {
 
 .docx-report-error {
   background: var(--camp-danger-bg) !important;
-  border: 1px solid var(--camp-danger-border) !important;
+  border: none !important;
   color: var(--camp-danger) !important;
   padding: 14px 18px;
   border-radius: var(--camp-radius-md);
@@ -4521,7 +4521,7 @@ dialog .close:hover {
 /* Schedule Editor Inside Contract Forms */
 .schedule-editor {
   background: var(--camp-surface-card) !important;
-  border: 1px solid var(--camp-border) !important;
+  border: none !important;
   border-radius: var(--camp-radius-lg) !important;
   padding: 18px;
   margin: 16px 0;
@@ -6360,7 +6360,7 @@ button.btn.mini.light,
 /* Metrics above Calendar */
 .cal-metrics > div {
   background: rgba(11, 20, 55, 0.7) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
   backdrop-filter: blur(16px) !important;
@@ -6368,7 +6368,7 @@ button.btn.mini.light,
 
 [data-theme="light"] .cal-metrics > div {
   background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
   color: #1A2340 !important;
 }
 
@@ -6391,14 +6391,14 @@ button.btn.mini.light,
 
 .cal-teacher-picker select {
   background: rgba(15, 23, 42, 0.75) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border: none !important;
   border-radius: 10px !important;
   color: #FFFFFF !important;
 }
 
 [data-theme="light"] .cal-teacher-picker select {
   background: #F8FAFD !important;
-  border: 1px solid #D8E0EE !important;
+  border: none !important;
   color: #1A2340 !important;
 }
 
@@ -6425,7 +6425,7 @@ button.btn.mini.light,
 
 .cal-week-head-day {
   background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border: none !important;
   border-radius: 12px !important;
   color: #FFFFFF !important;
   padding: 12px 8px !important;
@@ -6434,7 +6434,7 @@ button.btn.mini.light,
 
 [data-theme="light"] .cal-week-head-day {
   background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border: none !important;
   color: #1A2340 !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
 }
@@ -6455,7 +6455,7 @@ button.btn.mini.light,
 
 .cal-week-head-day.is-today {
   background: linear-gradient(135deg, rgba(0, 117, 255, 0.4) 0%, rgba(33, 212, 253, 0.3) 100%) !important;
-  border: 1px solid rgba(0, 117, 255, 0.6) !important;
+  border: none !important;
   box-shadow: 0 0 16px rgba(0, 117, 255, 0.35) !important;
 }
 
@@ -6471,7 +6471,7 @@ button.btn.mini.light,
 
 .cal-week-day-col {
   background: rgba(11, 20, 55, 0.65) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border: none !important;
   border-radius: 14px !important;
   overflow: hidden !important;
   backdrop-filter: blur(20px) !important;
@@ -6480,13 +6480,13 @@ button.btn.mini.light,
 
 [data-theme="light"] .cal-week-day-col {
   background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
 }
 
 .cal-week-all-day {
   background: rgba(255, 255, 255, 0.03) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-bottom: none !important;
   color: #A0AEC0 !important;
   font-size: 11px !important;
   font-weight: 700 !important;
@@ -6520,7 +6520,7 @@ button.btn.mini.light,
 
 .cal-week-slot-bg {
   background: rgba(0, 117, 255, 0.1) !important;
-  border: 1px dashed rgba(0, 117, 255, 0.35) !important;
+  border: none !important;
 }
 
 .cal-week-day-col.blocked-full {
@@ -6539,7 +6539,7 @@ button.btn.mini.light,
 /* --- 24.5 Weekly Slot Editor (Image 2 Fix - Grade Semanal) --- */
 .cal-editor-scroll {
   background: rgba(11, 20, 55, 0.75) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
   border-radius: 14px !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
@@ -6548,12 +6548,12 @@ button.btn.mini.light,
 
 [data-theme="light"] .cal-editor-scroll {
   background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border: none !important;
 }
 
 .cal-editor-head {
   background: rgba(6, 11, 38, 0.95) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: none !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
 }
@@ -6565,12 +6565,12 @@ button.btn.mini.light,
 
 .cal-editor-corner {
   color: #A0AEC0 !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-right: none !important;
   font-weight: 700 !important;
 }
 
 .cal-editor-heading {
-  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-right: none !important;
 }
 
 .cal-editor-heading strong {
@@ -6590,7 +6590,7 @@ button.btn.mini.light,
 
 .cal-editor-times,
 .cal-editor-day {
-  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-right: none !important;
 }
 
 [data-theme="light"] .cal-editor-times,
@@ -6619,7 +6619,7 @@ button.btn.mini.light,
 
 .cal-editor-event {
   background: rgba(0, 117, 255, 0.3) !important;
-  border: 1px solid rgba(0, 117, 255, 0.4) !important;
+  border: none !important;
   border-left: 3px solid #0075FF !important;
   color: #FFFFFF !important;
   box-shadow: 0 4px 12px rgba(0, 117, 255, 0.35) !important;
@@ -6634,14 +6634,14 @@ button.btn.mini.light,
 
 .cal-editor-event.cal-editor-occupied {
   background: linear-gradient(135deg, rgba(0, 117, 255, 0.45) 0%, rgba(33, 212, 253, 0.35) 100%) !important;
-  border: 1px solid rgba(33, 212, 253, 0.4) !important;
+  border: none !important;
   border-left: 3px solid #21D4FD !important;
   color: #FFFFFF !important;
 }
 
 .cal-editor-event.cal-editor-free {
   background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: none !important;
   border-left: 3px solid rgba(255, 255, 255, 0.3) !important;
   color: #A0AEC0 !important;
 }
@@ -6657,7 +6657,7 @@ button.btn.mini.light,
 /* --- 24.6 Weekly Picker (Image 4 Fix - Horários Semanais & Modais) --- */
 .cal-enrollment {
   background: rgba(11, 20, 55, 0.75) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
   border-radius: 16px !important;
   padding: 20px !important;
   backdrop-filter: blur(20px) !important;
@@ -6666,7 +6666,7 @@ button.btn.mini.light,
 
 [data-theme="light"] .cal-enrollment {
   background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
 }
 
@@ -6691,7 +6691,7 @@ button.btn.mini.light,
 
 .cal-wpicker-scroll {
   background: rgba(6, 11, 38, 0.85) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
   border-radius: 14px !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
@@ -6700,12 +6700,12 @@ button.btn.mini.light,
 
 [data-theme="light"] .cal-wpicker-scroll {
   background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border: none !important;
 }
 
 .cal-wpicker-header {
   background: rgba(11, 20, 55, 0.95) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: none !important;
 }
 
 [data-theme="light"] .cal-wpicker-header {
@@ -6715,7 +6715,7 @@ button.btn.mini.light,
 
 .cal-wpicker-header > * {
   color: #FFFFFF !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-right: none !important;
   font-size: 11px !important;
   font-weight: 700 !important;
 }
@@ -6732,7 +6732,7 @@ button.btn.mini.light,
 
 .cal-wpicker-day,
 .cal-wpicker-time {
-  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-right: none !important;
 }
 
 [data-theme="light"] .cal-wpicker-day,
@@ -6774,7 +6774,7 @@ button.btn.mini.light,
 
 .cal-wpicker-dot.available {
   background: rgba(0, 117, 255, 0.25) !important;
-  border: 1px solid rgba(0, 117, 255, 0.5) !important;
+  border: none !important;
 }
 
 .cal-wpicker-dot.selected {
@@ -6794,7 +6794,7 @@ button.btn.mini.light,
 
 .cal-wpicker-event {
   background: rgba(0, 117, 255, 0.22) !important;
-  border: 1px solid rgba(0, 117, 255, 0.35) !important;
+  border: none !important;
   border-left: 3px solid #0075FF !important;
   border-radius: 8px !important;
   backdrop-filter: blur(8px) !important;
@@ -6822,7 +6822,7 @@ button.btn.mini.light,
 
 .cal-wpicker-event.is-busy {
   background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
 }
 
 .cal-wpicker-event.is-busy button {
@@ -6831,7 +6831,7 @@ button.btn.mini.light,
 
 .cal-weekly-empty {
   background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+  border: none !important;
   border-radius: 12px !important;
   color: #A0AEC0 !important;
   padding: 24px !important;
@@ -6847,7 +6847,7 @@ dialog:has(.template-edit-modal),
 dialog:has(.cal-enrollment) {
   background: #0B1437 !important;
   color: #FFFFFF !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
   border-radius: 20px !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7) !important;
 }
@@ -6861,7 +6861,7 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] dialog:has(.cal-enrollment) {
   background: #FFFFFF !important;
   color: #1A2340 !important;
-  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border: none !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
 }
 
@@ -6873,7 +6873,7 @@ dialog:has(.cal-enrollment) {
 .cal-student,
 .cal-student-card {
   background: rgba(11, 20, 55, 0.7) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
   backdrop-filter: blur(16px) !important;
@@ -6882,7 +6882,7 @@ dialog:has(.cal-enrollment) {
 [data-theme="light"] .cal-student,
 [data-theme="light"] .cal-student-card {
   background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
   color: #1A2340 !important;
 }
 
@@ -6903,7 +6903,7 @@ dialog:has(.cal-enrollment) {
 
 .cal-lesson {
   background: rgba(11, 20, 55, 0.7) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border: none !important;
   border-left: 3px solid #0075FF !important;
   border-radius: 12px !important;
   color: #FFFFFF !important;
@@ -6911,7 +6911,7 @@ dialog:has(.cal-enrollment) {
 
 [data-theme="light"] .cal-lesson {
   background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
   border-left: 3px solid #0066E6 !important;
   color: #1A2340 !important;
 }
@@ -6931,14 +6931,14 @@ dialog:has(.cal-enrollment) {
 
 .cal-settings-body {
   background: rgba(11, 20, 55, 0.7) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border: none !important;
   border-radius: 16px !important;
   color: #FFFFFF !important;
 }
 
 [data-theme="light"] .cal-settings-body {
   background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
   color: #1A2340 !important;
 }
 
@@ -6962,14 +6962,14 @@ dialog:has(.cal-enrollment) {
 
 .detail-item {
   background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border: none !important;
   border-radius: 12px !important;
   color: #FFFFFF !important;
 }
 
 [data-theme="light"] .detail-item {
   background: #F8FAFD !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
   color: #1A2340 !important;
 }
 
@@ -6987,14 +6987,14 @@ dialog:has(.cal-enrollment) {
 
 .cal-profile-metrics > div {
   background: rgba(11, 20, 55, 0.7) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
 }
 
 [data-theme="light"] .cal-profile-metrics > div {
   background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
   color: #1A2340 !important;
 }
 
@@ -7012,38 +7012,38 @@ dialog:has(.cal-enrollment) {
 
 .cal-schedule-mode-box {
   background: rgba(11, 20, 55, 0.7) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border: none !important;
   border-radius: 14px !important;
   color: #FFFFFF !important;
 }
 
 [data-theme="light"] .cal-schedule-mode-box {
   background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
   color: #1A2340 !important;
 }
 
 .interview-calendar-picker {
   background: rgba(11, 20, 55, 0.7) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
   border-radius: 14px !important;
 }
 
 [data-theme="light"] .interview-calendar-picker {
   background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
 }
 
 .interview-slot-option {
   background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
   border-radius: 12px !important;
   color: #FFFFFF !important;
 }
 
 [data-theme="light"] .interview-slot-option {
   background: #F8FAFD !important;
-  border: 1px solid #D8E0EE !important;
+  border: none !important;
   color: #1A2340 !important;
 }
 
@@ -7061,14 +7061,14 @@ dialog:has(.cal-enrollment) {
 
 .cal-form-slots label {
   background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
   border-radius: 10px !important;
   color: #FFFFFF !important;
 }
 
 [data-theme="light"] .cal-form-slots label {
   background: #F8FAFD !important;
-  border: 1px solid #D8E0EE !important;
+  border: none !important;
   color: #1A2340 !important;
 }
 
@@ -7110,4 +7110,293 @@ dialog:has(.cal-enrollment) {
 .crm-board-col header b {
   background: rgba(255, 255, 255, 0.08) !important;
   color: #FFFFFF !important;
+}
+
+
+/* ==========================================================================
+   25. ZERO-STROKE GLASSMORPHISM ENFORCEMENT & VISION UI PERFECTION
+   No 1px solid outlines/wireframes on buttons, boxes, tabs, modals, or sidebars.
+   Pure borderless frosted glass elevation.
+   ========================================================================== */
+
+/* Buttons — Absolutely NO 1px stroke borders */
+.btn,
+.btn.light,
+.btn.mini,
+.btn.mini.light,
+.btn.ghost,
+.btn.danger,
+.crm-btn,
+button.btn,
+.template-card-actions .btn,
+.actions .btn,
+.toolbar .btn,
+.home-shortcut {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Specific fix for + IMPORTAR CSV and VISUALIZAR buttons */
+.btn.light,
+.btn.mini.light {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+.btn.light:hover,
+.btn.mini.light:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  outline: none !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28) !important;
+}
+
+/* Tabs — Absolutely NO 1px stroke borders on inactive tabs */
+.tabs,
+.crm-tabs,
+.cal-switcher,
+.cal-lessons-tabs {
+  border: none !important;
+  outline: none !important;
+}
+
+.tabs .btn,
+.tabs button,
+.crm-tabs button,
+.cal-switcher button,
+.cal-lessons-tab {
+  border: none !important;
+  outline: none !important;
+}
+
+.tabs .btn.light,
+.tabs button:not(.active):not(.btn),
+.crm-tabs button:not(.active),
+.cal-switcher button:not(.selected),
+.cal-lessons-tab:not(.is-active) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #A0AEC0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+.tabs .btn.light:hover,
+.tabs button:not(.active):not(.btn):hover,
+.crm-tabs button:not(.active):hover,
+.cal-switcher button:not(.selected):hover,
+.cal-lessons-tab:not(.is-active):hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+}
+
+.tabs .btn:not(.light),
+.tabs button.active,
+.crm-tabs button.active,
+.cal-switcher button.selected,
+.cal-lessons-tab.is-active {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+}
+
+/* Status Pills & Badges — Absolutely NO stroke borders (especially CORRIGIR DOCX) */
+.pill,
+.crm-badge,
+.crm-box-status,
+.template-status,
+.cal-status,
+.topbar-chip,
+.cal-count,
+.cal-temp-badge,
+.cal-slot-chip {
+  border: none !important;
+  outline: none !important;
+}
+
+.template-status.is-inactive,
+.template-status:not(.is-active),
+.pill-void,
+.pill-perdido,
+.pill-danger {
+  background: rgba(227, 26, 26, 0.22) !important;
+  color: #FF7B7B !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 2px 10px rgba(227, 26, 26, 0.25) !important;
+}
+
+.template-status.is-active,
+.pill-signed,
+.pill-convertido,
+.pill-entrevistado {
+  background: rgba(1, 181, 116, 0.22) !important;
+  color: #05CD99 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 2px 10px rgba(1, 181, 116, 0.25) !important;
+}
+
+/* Home Shortcuts ("Continue de onde parou") — No squishing, clean cards, crisp white SVG icons */
+.home-shortcuts {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  gap: 16px !important;
+  margin-bottom: 24px !important;
+}
+
+.home-shortcut {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 18px 20px !important;
+  border-radius: 16px !important;
+  border: none !important;
+  outline: none !important;
+  background: var(--camp-surface-card) !important;
+  box-shadow: var(--camp-shadow-card) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  min-width: 0 !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+.home-shortcut:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 25px rgba(0, 117, 255, 0.25) !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.home-shortcut .shortcut-ico {
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  min-height: 46px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+  flex-shrink: 0 !important;
+  border: none !important;
+}
+
+.home-shortcut .shortcut-ico svg,
+.home-shortcut .shortcut-ico .camp-icon {
+  width: 22px !important;
+  height: 22px !important;
+  stroke: #FFFFFF !important;
+  color: #FFFFFF !important;
+  fill: none !important;
+  stroke-width: 2 !important;
+}
+
+.home-shortcut > span:nth-child(2) {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-align: left !important;
+}
+
+.home-shortcut b {
+  font-size: 14px !important;
+  font-weight: 750 !important;
+  color: #FFFFFF !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.home-shortcut small {
+  font-size: 11px !important;
+  color: #A0AEC0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.home-shortcut > svg:last-child {
+  color: #718096 !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+  transition: transform 0.18s ease, color 0.18s ease !important;
+}
+
+.home-shortcut:hover > svg:last-child {
+  color: #21D4FD !important;
+  transform: translateX(3px) !important;
+}
+
+/* Calendar Secondary Sidebar — Dark Glass, No Green, No White */
+.cal-secondary-sidebar {
+  background: rgba(6, 11, 40, 0.94) !important;
+  border: none !important;
+  border-right: none !important;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+.cal-secondary-sidebar h2 {
+  color: #718096 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.2px !important;
+}
+
+.cal-secondary-sidebar nav button {
+  background: transparent !important;
+  color: #A0AEC0 !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.cal-secondary-sidebar nav button:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+.cal-secondary-sidebar nav button.active {
+  background: linear-gradient(135deg, #0075FF 0%, #21D4FD 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(0, 117, 255, 0.45) !important;
+  border: none !important;
+}
+
+.cal-secondary-sidebar nav button .cal-nav-icon,
+.cal-secondary-sidebar nav button svg {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+/* Modals & Dialogs — Zero-stroke Floating Glass */
+dialog,
+.camp-app-dialog {
+  background: #0B1437 !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7) !important;
 }
