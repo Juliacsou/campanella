@@ -9895,7 +9895,7 @@ body,
   display: none !important;
 }
 
-/* 35.3 Dark Mode: White Horizontal Logo */
+/* 35.3 Dark Mode: Colorful Horizontal Logo */
 :root:not([data-theme="light"]) .brand-logo-light,
 [data-theme="dark"] .brand-logo-light {
   display: none !important;
@@ -9904,7 +9904,7 @@ body,
 :root:not([data-theme="light"]) .brand-logo-dark,
 [data-theme="dark"] .brand-logo-dark {
   display: block !important;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6)) !important;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5)) !important;
 }
 
 /* 35.4 Boot Screen Logo Emblem */
