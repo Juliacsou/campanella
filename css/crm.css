@@ -54,7 +54,7 @@
 .crm-lead-card.is-dragging{opacity:.48;transform:scale(.98);border-color:#EA580C}
 .crm-card-interview.is-done{color:#EA580C}
 .crm-card-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
-.crm-tag-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:800;background:color-mix(in srgb,var(--tag-color,#EA580C) 14%,#ffffff);color:var(--tag-color,#EA580C);border:1px solid color-mix(in srgb,var(--tag-color,#EA580C) 35%,#ffffff)}
+.crm-tag-chip{display:inline-flex;align-items:center;gap:5px;padding:2.5px 8.5px;border-radius:999px;font-size:10.5px;font-weight:750;background:var(--tag-color,#EA580C);color:var(--tag-text,#ffffff);border:none;box-shadow:0 1px 3px rgba(0,0,0,0.16)}
 .crm-lead-tags-bar{margin-top:16px;padding-top:14px;border-top:1px dashed #FED7AA;display:flex;flex-direction:column;gap:10px}
 .crm-lead-tags-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .crm-lead-tags-head>span{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:#71717A}

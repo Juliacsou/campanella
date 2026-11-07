@@ -1554,7 +1554,6 @@ button.btn {
 /* Status Pills & Tags (Vision UI Pure Glassmorphism — ZERO STROKE BORDERS) */
 .pill,
 .crm-badge,
-.crm-tag-chip,
 .template-status,
 .crm-box-status,
 .sign-step,
@@ -2240,22 +2239,29 @@ dialog .close:hover {
 }
 
 .crm-card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin: 6px 0;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+  margin: 6px 0 !important;
 }
 
 .crm-tag-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: var(--camp-radius-pill);
-  font-size: 10.5px;
-  font-weight: 750;
-  background: rgba(234, 88, 12, 0.14) !important;
-  color: var(--camp-text) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 2.5px 8.5px !important;
+  border-radius: 999px !important;
+  font-size: 10.5px !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.1px !important;
+  line-height: 1.25 !important;
+  background: var(--tag-color, #ea580c) !important;
+  background-color: var(--tag-color, #ea580c) !important;
+  color: var(--tag-text, #ffffff) !important;
   border: none !important;
+  outline: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16) !important;
+  white-space: nowrap !important;
 }
 
 .crm-muted {
@@ -2496,10 +2502,10 @@ dialog .close:hover {
 }
 
 .crm-tag-toggle.is-active {
-  border-color: var(--camp-primary) !important;
-  background: rgba(234, 88, 12, 0.22) !important;
-  color: var(--camp-text) !important;
-  box-shadow: 0 0 10px var(--camp-primary-glow);
+  border-color: var(--tag-color, #ea580c) !important;
+  background: color-mix(in srgb, var(--tag-color, #ea580c) 18%, transparent) !important;
+  color: var(--tag-color, #ea580c) !important;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--tag-color, #ea580c) 30%, transparent) !important;
 }
 
 .crm-info-grid {
@@ -8928,11 +8934,24 @@ body,
 }
 
 :root:not([data-theme="light"]) .crm-card-tags,
-[data-theme="dark"] .crm-card-tags {
+[data-theme="dark"] .crm-card-tags,
+[data-theme="light"] .crm-card-tags {
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 5px !important;
-  margin: 3px 0 !important;
+  margin: 4px 0 !important;
+}
+
+:root:not([data-theme="light"]) .crm-tag-chip,
+[data-theme="dark"] .crm-tag-chip,
+[data-theme="light"] .crm-tag-chip,
+.crm-lead-card .crm-tag-chip,
+.crm-board .crm-tag-chip {
+  background: var(--tag-color, #ea580c) !important;
+  background-color: var(--tag-color, #ea580c) !important;
+  color: var(--tag-text, #ffffff) !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16) !important;
 }
 
 :root:not([data-theme="light"]) .crm-card-foot,

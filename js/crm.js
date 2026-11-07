@@ -125,7 +125,18 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   const map=new Map(allTags().map(t=>[t.id,t]));
   return ids.map(id=>map.get(id)).filter(Boolean);
  };
- const renderTagBadge=t=>`<span class="crm-tag-chip" style="--tag-color:${safe(t.color||'#166d59')}">${safe(t.name)}</span>`;
+ const tagTextColor=hex=>{
+  if(!hex||typeof hex!=='string'||!hex.startsWith('#')||hex.length<7)return '#ffffff';
+  const r=parseInt(hex.slice(1,3),16)||0;
+  const g=parseInt(hex.slice(3,5),16)||0;
+  const b=parseInt(hex.slice(5,7),16)||0;
+  return (r*299+g*587+b*114)/1000>=165?'#18181b':'#ffffff';
+ };
+ const renderTagBadge=t=>{
+  const col=t?.color||'#ea580c';
+  const textCol=tagTextColor(col);
+  return `<span class="crm-tag-chip" style="--tag-color:${safe(col)};--tag-text:${textCol};">${safe(t.name)}</span>`;
+ };
 
  const resolveColumnForLead=l=>{
   const cols=pipelineColumns();
