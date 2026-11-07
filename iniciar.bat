@@ -2,6 +2,10 @@
 title Campanella V7 — Servidor Local
 echo ========================================================
 echo   CAMPANELLA V7 — SERVIDOR LOCAL
+echo ========================================================
+echo   Sincronizando com a versao mais recente do GitHub...
+git pull origin v7 2>nul || git pull origin main 2>nul || git pull 2>nul
+echo.
 echo   Acesse no navegador: http://127.0.0.1:8001
 echo ========================================================
 npx.cmd --yes http-server . -p 8001 -a 127.0.0.1 -c-1
