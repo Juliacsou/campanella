@@ -966,7 +966,6 @@ button.btn {
 .crm-btn:not(.primary),
 .tabs .btn.light,
 .tabs button:not(.btn):not(.active),
-.crm-tabs button:not(.active),
 .cal-switcher button:not(.selected) {
   background: rgba(255, 255, 255, 0.08) !important;
   border: none !important;
@@ -1000,7 +999,6 @@ button.btn {
 .crm-btn:not(.primary):hover,
 .tabs .btn.light:hover,
 .tabs button:not(.btn):not(.active):hover,
-.crm-tabs button:not(.active):hover,
 .cal-switcher button:not(.selected):hover {
   background: rgba(255, 255, 255, 0.16) !important;
   border: none !important;
@@ -7234,7 +7232,6 @@ button.btn,
 
 .tabs .btn.light,
 .tabs button:not(.active):not(.btn),
-.crm-tabs button:not(.active),
 .cal-switcher button:not(.selected),
 .cal-lessons-tab:not(.is-active) {
   background: rgba(255, 255, 255, 0.08) !important;
@@ -7248,7 +7245,6 @@ button.btn,
 
 .tabs .btn.light:hover,
 .tabs button:not(.active):not(.btn):hover,
-.crm-tabs button:not(.active):hover,
 .cal-switcher button:not(.selected):hover,
 .cal-lessons-tab:not(.is-active):hover {
   background: rgba(255, 255, 255, 0.16) !important;
@@ -7260,7 +7256,6 @@ button.btn,
 
 .tabs .btn:not(.light),
 .tabs button.active,
-.crm-tabs button.active,
 .cal-switcher button.selected,
 .cal-lessons-tab.is-active {
   background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%) !important;
@@ -8329,7 +8324,11 @@ body,
   gap: 6px !important;
   padding: 8px 18px 0 !important;
   margin: 0 !important;
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
   border-bottom: 1px solid var(--camp-divider) !important;
   border-top-left-radius: 20px !important;
   border-top-right-radius: 20px !important;
@@ -8345,6 +8344,9 @@ body,
 :root:not([data-theme="light"]) .crm-tabs button,
 [data-theme="dark"] .crm-tabs button {
   background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   border: none !important;
   outline: none !important;
   color: #9CA3AF !important;
@@ -8371,9 +8373,12 @@ body,
 :root:not([data-theme="light"]) .crm-tabs button.active,
 [data-theme="dark"] .crm-tabs button.active {
   color: #FFFFFF !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   font-weight: 800 !important;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16) !important;
+  box-shadow: none !important;
 }
 
 :root:not([data-theme="light"]) .crm-tabs button.active::after,
@@ -8405,7 +8410,7 @@ body,
   color: #FB923C !important;
 }
 
-/* Light mode tabs - Frosted Glassmorphism */
+/* Light mode tabs - Clean transparent header */
 [data-theme="light"] .crm-workspace {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.72) 100%) !important;
   backdrop-filter: blur(28px) saturate(190%) !important;
@@ -8420,38 +8425,46 @@ body,
   gap: 6px !important;
   padding: 8px 18px 0 !important;
   margin: 0 !important;
-  background: rgba(254, 243, 235, 0.55) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
   border-top-left-radius: 20px !important;
   border-top-right-radius: 20px !important;
 }
 
 [data-theme="light"] .crm-tabs button {
   background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   border: none !important;
-  color: #3F3F46 !important;
+  outline: none !important;
+  color: #64748B !important;
   font-size: 13px !important;
   font-weight: 700 !important;
   padding: 12px 18px 14px !important;
   border-radius: 12px 12px 0 0 !important;
   position: relative !important;
   transition: all 0.2s ease !important;
+  box-shadow: none !important;
 }
 
 [data-theme="light"] .crm-tabs button:hover {
-  color: #18181B !important;
+  color: #0F172A !important;
   background: rgba(0, 0, 0, 0.03) !important;
 }
 
 [data-theme="light"] .crm-tabs button.active {
   color: #EA580C !important;
-  background: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   font-weight: 800 !important;
-  box-shadow: 0 4px 14px rgba(24, 24, 24, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 1) !important;
+  box-shadow: none !important;
 }
 
 [data-theme="light"] .crm-tabs button.active::after {
@@ -8464,6 +8477,20 @@ body,
   border-radius: 3px 3px 0 0 !important;
   background: linear-gradient(90deg, #EA580C 0%, #F97316 100%) !important;
   box-shadow: 0 0 8px rgba(234, 88, 12, 0.4) !important;
+}
+
+[data-theme="light"] .crm-tabs button span {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #475569 !important;
+  border-radius: 20px !important;
+  padding: 2px 7px !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+}
+
+[data-theme="light"] .crm-tabs button.active span {
+  background: rgba(234, 88, 12, 0.15) !important;
+  color: #EA580C !important;
 }
 
 /* 30.2 Streamlined CRM Filters Bar */
