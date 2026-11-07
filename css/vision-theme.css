@@ -860,9 +860,11 @@ textarea:focus-visible {
   align-items: center;
   justify-content: space-between;
   padding: 0 36px;
-  border-bottom: 1px solid var(--camp-border) !important;
-  background: var(--camp-surface-card) !important;
-  backdrop-filter: blur(16px);
+  border-bottom: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -8197,20 +8199,17 @@ body,
   background: transparent !important;
 }
 
-/* Seamless Topbar - no solid bar blocking the ambient light */
+/* Seamless Topbar - no background blocking the ambient light in light or dark mode */
+.topbar,
 :root:not([data-theme="light"]) .topbar,
-[data-theme="dark"] .topbar {
-  background: transparent !important;
-  border-bottom: none !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-}
-
+[data-theme="dark"] .topbar,
 [data-theme="light"] .topbar {
-  background: rgba(255, 255, 255, 0.75) !important;
+  background: transparent !important;
+  background-color: transparent !important;
   border-bottom: none !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* ==========================================================================
