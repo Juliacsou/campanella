@@ -10,9 +10,12 @@
   (function() {
     try {
       var saved = localStorage.getItem('campanella:theme');
-      var theme = (saved === 'light' || saved === 'dark') ? saved : 'light';
-      document.documentElement.setAttribute('data-theme', theme);
-      document.documentElement.style.colorScheme = theme;
+      var mode = (saved === 'light' || saved === 'dark' || saved === 'system') ? saved : 'system';
+      var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var resolved = (mode === 'light' || mode === 'dark') ? mode : (systemDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', resolved);
+      document.documentElement.setAttribute('data-theme-mode', mode);
+      document.documentElement.style.colorScheme = resolved;
     } catch(e) {}
   })();
  </script>
@@ -23,11 +26,11 @@
  <link rel="stylesheet" href="./css/crm.css?v=6.18.1">
  <link rel="stylesheet" href="./css/calendar-v6.css?v=6.14.0">
  <link rel="stylesheet" href="./css/onboarding-v67.css?v=6.10.0">
- <link rel="stylesheet" href="./css/vision-theme.css?v=7.0.6">
+ <link rel="stylesheet" href="./css/vision-theme.css?v=7.0.7">
  <script defer src="https://unpkg.com/pizzip@3.2.0/dist/pizzip.js"></script>
  <script defer src="https://unpkg.com/docxtemplater@3.71.0/build/docxtemplater.js"></script>
  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
- <script type="module" src="./js/app.js?v=7.0.3"></script>
+ <script type="module" src="./js/app.js?v=7.0.4"></script>
 </head>
 <body>
  <div id="app" aria-live="polite">

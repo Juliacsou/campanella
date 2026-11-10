@@ -124,34 +124,89 @@ const ICONS={
  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
  key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 10-10m-4 0h4v4m-5 2 2 2"/>',
  sun:'<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
- moon:'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'
+ moon:'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+ monitor:'<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>'
 };
 const ico=(name,size=18)=>`<svg class="camp-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||ICONS.school}</svg>`;
-function currentTheme(){try{return document.documentElement.getAttribute('data-theme')||localStorage.getItem('campanella:theme')||'light';}catch(e){return 'light';}}
+function getThemeMode(){
+ try{
+  const saved=localStorage.getItem('campanella:theme');
+  return (saved==='light'||saved==='dark'||saved==='system')?saved:'system';
+ }catch(e){return 'system';}
+}
+function resolveTheme(mode){
+ if(mode==='light'||mode==='dark')return mode;
+ const systemDark=typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+ return systemDark?'dark':'light';
+}
+function currentTheme(){
+ try{
+  const attr=document.documentElement.getAttribute('data-theme');
+  if(attr==='light'||attr==='dark')return attr;
+  return resolveTheme(getThemeMode());
+ }catch(e){return 'light';}
+}
+function themeSelectorMarkup(){
+ const mode=getThemeMode();
+ return `<div class="theme-segmented-ctrl" role="group" aria-label="Preferência de tema">`+
+  `<button type="button" class="theme-seg-btn ${mode==='system'?'active':''}" data-action="setThemeMode" data-mode="system" title="Tema automático (baseado nas configurações do navegador)">${ico('monitor',14)}<span>Auto</span></button>`+
+  `<button type="button" class="theme-seg-btn ${mode==='light'?'active':''}" data-action="setThemeMode" data-mode="light" title="Modo Claro">${ico('sun',14)}<span>Claro</span></button>`+
+  `<button type="button" class="theme-seg-btn ${mode==='dark'?'active':''}" data-action="setThemeMode" data-mode="dark" title="Modo Escuro">${ico('moon',14)}<span>Escuro</span></button>`+
+ `</div>`;
+}
 function themeToggleMarkup(){
  const isDark=currentTheme()==='dark';
- return `<button type="button" class="theme-toggle-btn" data-action="toggleTheme" aria-label="Alternar para modo ${isDark?'claro':'escuro'}" title="Alternar tema (${isDark?'Modo Escuro':'Modo Claro'})"><span class="theme-toggle-icon">${isDark?ico('sun',16):ico('moon',16)}</span><span>${isDark?'Modo Claro':'Modo Escuro'}</span></button>`;
+ const mode=getThemeMode();
+ const title=mode==='system'?`Tema: Automático (${isDark?'Escuro':'Claro'}). Clique para alternar.`:`Tema: Modo ${isDark?'Escuro':'Claro'}. Clique para alternar.`;
+ return `<button type="button" class="theme-toggle-btn" data-action="toggleTheme" aria-label="Alternar tema" title="${title}"><span class="theme-toggle-icon">${isDark?ico('sun',16):ico('moon',16)}</span><span>${isDark?'Modo Claro':'Modo Escuro'}</span></button>`;
 }
-function applyTheme(targetTheme){
- const theme=targetTheme==='light'?'light':'dark';
+function applyTheme(targetMode,persist=true){
+ const mode=(targetMode==='light'||targetMode==='dark'||targetMode==='system')?targetMode:'system';
+ if(persist){
+  try{localStorage.setItem('campanella:theme',mode);}catch(e){}
+ }
+ const theme=resolveTheme(mode);
  document.documentElement.setAttribute('data-theme',theme);
+ document.documentElement.setAttribute('data-theme-mode',mode);
  document.documentElement.style.colorScheme=theme;
- try{localStorage.setItem('campanella:theme',theme);}catch(e){}
  document.querySelectorAll('.theme-toggle-btn').forEach(btn=>{
   const isDark=theme==='dark';
-  btn.setAttribute('aria-label',`Alternar para modo ${isDark?'claro':'escuro'}`);
-  btn.setAttribute('title',`Alternar tema (${isDark?'Modo Escuro':'Modo Claro'})`);
+  const title=mode==='system'?`Tema: Automático (${isDark?'Escuro':'Claro'})`:`Tema: Modo ${isDark?'Escuro':'Claro'}`;
+  btn.setAttribute('aria-label','Alternar tema');
+  btn.setAttribute('title',title);
   btn.innerHTML=`<span class="theme-toggle-icon">${isDark?ico('sun',16):ico('moon',16)}</span><span>${isDark?'Modo Claro':'Modo Escuro'}</span>`;
  });
- if(typeof window!=='undefined'){window.dispatchEvent(new CustomEvent('campanella:theme-changed',{detail:{theme}}));}
+ document.querySelectorAll('.theme-seg-btn').forEach(btn=>{
+  btn.classList.toggle('active',btn.dataset.mode===mode);
+ });
+ if(typeof window!=='undefined'){
+  window.dispatchEvent(new CustomEvent('campanella:theme-changed',{detail:{theme,mode}}));
+ }
 }
 if(typeof window!=='undefined'){
  window.toggleTheme=(explicit)=>{
-  const next=explicit||(currentTheme()==='dark'?'light':'dark');
-  applyTheme(next);
+  if(explicit){
+   applyTheme(explicit,true);
+  }else{
+   const next=currentTheme()==='dark'?'light':'dark';
+   applyTheme(next,true);
+  }
  };
+ window.setThemeMode=(mode)=>applyTheme(mode,true);
  window.themeToggleMarkup=themeToggleMarkup;
+ window.themeSelectorMarkup=themeSelectorMarkup;
  window.currentTheme=currentTheme;
+ window.getThemeMode=getThemeMode;
+ window.applyTheme=applyTheme;
+ if(window.matchMedia){
+  const mq=window.matchMedia('(prefers-color-scheme: dark)');
+  const handleSystemChange=()=>{
+   if(getThemeMode()==='system'){
+    applyTheme('system',false);
+   }
+  };
+  try{mq.addEventListener('change',handleSystemChange);}catch(e){mq.addListener(handleSystemChange);}
+ }
 }
 const onboarding=typeof createOnboarding==='function'?createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe,ico,today,dateBR,cpfValid,amountWords,confirm:confirmModal,toast}):null;
 const navGroups=[
@@ -201,7 +256,50 @@ async function switchSchool(id){
  await refresh();
 }
 
-function login(){return `<div class="login-wrap"><div class="login-art">${brandMarkup(false)}<div><h1>Uma escola mais organizada. Uma experiência mais humana.</h1><p>Leads, entrevistas, matrículas e contratos em um só lugar.</p></div><div class="small">© Campanella · Plataforma interna</div></div><div class="login-area" style="position:relative"><div style="position:absolute;top:20px;right:24px">${themeToggleMarkup()}</div><div class="login-card"><div class="eyebrow">Acesso da equipe</div><h2>Bem-vindo de volta</h2><p class="muted">Entre com seu e-mail e senha.</p><form id="loginForm" style="margin-top:28px;display:grid;gap:16px">${input('E-mail','email','','email')}${input('Senha','password','','password')}<button class="btn">Entrar no painel →</button></form><button type="button" class="auth-text-action" data-action="showForgotPassword">Esqueci minha senha</button><button type="button" class="auth-text-action" data-action="showSignup">Criar conta de administrador</button><p class="small muted" style="margin-top:22px">O cadastro é gratuito. É necessária uma chave para ativar cada escola.</p></div></div></div>`;}
+function login(){
+ return `<div class="login-wrap">`+
+  `<aside class="login-art">`+
+   `<div class="login-art-top">${brandMarkup(false)}</div>`+
+   `<div class="login-art-body">`+
+    `<h1 class="login-hero-title">Uma escola mais organizada. <span class="login-hero-accent">Uma experiência mais humana.</span></h1>`+
+    `<p class="login-hero-desc">Centralize captação de leads, entrevistas iniciais, agendamentos, matrículas e contratos em um só lugar.</p>`+
+    `<div class="login-features">`+
+     `<div class="login-feature-item">`+
+      `<div class="login-feature-icon">${ico('leads',18)}</div>`+
+      `<div class="login-feature-text"><strong>CRM & Captação</strong><span>Pipeline visual de leads, histórico e conversão ágil.</span></div>`+
+     `</div>`+
+     `<div class="login-feature-item">`+
+      `<div class="login-feature-icon">${ico('calendar',18)}</div>`+
+      `<div class="login-feature-text"><strong>Agenda Inteligente</strong><span>Grade de professores, bloqueios e reagendamento seguro.</span></div>`+
+     `</div>`+
+     `<div class="login-feature-item">`+
+      `<div class="login-feature-icon">${ico('contracts',18)}</div>`+
+      `<div class="login-feature-text"><strong>Contratos & Gestão</strong><span>Modelos digitais, multi-escolas e controle de licenças.</span></div>`+
+     `</div>`+
+    `</div>`+
+   `</div>`+
+   `<div class="login-art-footer"><span>© Campanella · Gestão Escolar</span><span class="login-art-pill">v7.0</span></div>`+
+  `</aside>`+
+  `<main class="login-area">`+
+   `<div class="login-header-controls">${themeSelectorMarkup()}</div>`+
+   `<div class="login-card">`+
+    `<div class="login-card-badge">${ico('lock',13)} <span>ACESSO DA EQUIPE</span></div>`+
+    `<h2 class="login-card-title">Bem-vindo de volta</h2>`+
+    `<p class="login-card-subtitle">Entre com seu e-mail e senha cadastrados.</p>`+
+    `<form id="loginForm" class="login-form">`+
+     `<label class="field"><span class="field-label">E-mail</span><div class="input-wrap"><span class="input-icon">${ico('profile',16)}</span><input name="email" type="email" placeholder="seu@email.com" autocomplete="email" required></div></label>`+
+     `<label class="field"><span class="field-label">Senha</span><div class="input-wrap"><span class="input-icon">${ico('key',16)}</span><input name="password" type="password" placeholder="••••••••" autocomplete="current-password" required></div></label>`+
+     `<button class="btn btn-login" type="submit"><span>Entrar no painel</span> ${ico('arrow',18)}</button>`+
+    `</form>`+
+    `<div class="login-links">`+
+     `<button type="button" class="auth-link" data-action="showForgotPassword">Esqueci minha senha</button>`+
+     `<button type="button" class="auth-link" data-action="showSignup">Criar conta de administrador</button>`+
+    `</div>`+
+    `<div class="login-card-footer"><p>${ico('school',14)} O cadastro é gratuito. Cada escola requer uma chave de ativação própria.</p></div>`+
+   `</div>`+
+  `</main>`+
+ `</div>`;
+}
 
 function signupPage(){return authWrap(`<div class="eyebrow">Nova conta</div><h2>Cadastre-se no Campanella</h2><p class="muted">A conta é pessoal e poderá administrar várias escolas. Para criar cada escola você precisará de uma chave própria.</p><form id="signupForm" class="auth-form">${input('Seu nome completo','name','','text')}${input('E-mail','email','','email')}${input('Senha (mínimo 8 caracteres)','password','','password')}${input('Confirme a senha','password_confirm','','password')}<button class="btn">Criar conta →</button></form><button type="button" class="auth-text-action" data-action="backLogin">Já tenho conta · entrar</button>`);}
 function signupSuccessPage(){return authWrap(`<div class="eyebrow">Conta cadastrada</div><h2>Confirme seu e-mail</h2><p class="muted">Enviamos um link de confirmação, caso o cadastro tenha sido aceito. Após confirmar, entre normalmente e informe sua chave de ativação.</p><button type="button" class="btn" data-action="backLogin">Voltar ao login</button>`);}
@@ -229,8 +327,25 @@ async function reloadLicenseState(){
 }
 function licenseBlockView(){const pending=!!currentSchool().deletion_requested_at;return `${heading('Licenciamento',pending?'Escola em exclusão':'Acesso temporariamente suspenso',pending?'O prazo de 30 dias para restauração fica disponível nas configurações da escola.':'Esta escola não pode receber novas operações enquanto não houver uma licença válida.')}<section class="panel"><div class="panel-body license-locked"><h2>${pending?'Exclusão programada':ui.schoolLicense?.suspended_at?'Licença suspensa':'Licença vencida'}</h2><p>Escola: <strong>${safe(currentSchool().name)}</strong></p><p>Validade: <strong>${safe(licenseExpiration(ui.schoolLicense))}</strong></p><p>Entre em contato com o responsável pelo Campanella para renovar via Pix. Seus registros permanecem preservados.</p><button class="btn light" data-action="navigate" data-page="settings">Abrir configurações da escola</button></div></section>`;}
 function passwordRecoveryRoute(){return new URLSearchParams(location.search).get('recuperar')==='1';}
-function authIllustration(){return `<div class="login-art">${brandMarkup(false)}<div><h1>Seu acesso, com segurança.</h1><p>Recupere sua conta para continuar administrando a escola.</p></div><div class="small">© Campanella · Plataforma interna</div></div>`;}
-function authWrap(content){return `<div class="login-wrap">${authIllustration()}<div class="login-area" style="position:relative"><div style="position:absolute;top:20px;right:24px">${themeToggleMarkup()}</div><section class="login-card auth-card">${content}</section></div></div>`;}
+function authIllustration(){
+ return `<aside class="login-art">`+
+  `<div class="login-art-top">${brandMarkup(false)}</div>`+
+  `<div class="login-art-body">`+
+   `<h1 class="login-hero-title">Seu acesso, <span class="login-hero-accent">com total segurança.</span></h1>`+
+   `<p class="login-hero-desc">Ambiente protegido para recuperação de conta e administração das suas escolas.</p>`+
+  `</div>`+
+  `<div class="login-art-footer"><span>© Campanella · Gestão Escolar</span><span class="login-art-pill">v7.0</span></div>`+
+ `</aside>`;
+}
+function authWrap(content){
+ return `<div class="login-wrap">`+
+  `${authIllustration()}`+
+  `<main class="login-area">`+
+   `<div class="login-header-controls">${themeSelectorMarkup()}</div>`+
+   `<section class="login-card auth-card">${content}</section>`+
+  `</main>`+
+ `</div>`;
+}
 function forgotPasswordPage(message=''){return authWrap(`<div class="eyebrow">Recuperação de acesso</div><h2>Esqueceu sua senha?</h2><p class="muted">Informe o e-mail utilizado para entrar no Campanella. Enviaremos um link para cadastrar uma nova senha.</p>${message?`<div class="inline-note" role="status">${safe(message)}</div>`:''}<form id="forgotPasswordForm" class="auth-form">${input('E-mail da conta','email','','email')}<button class="btn" type="submit">Enviar link de recuperação →</button></form><button type="button" class="auth-text-action" data-action="backLogin">← Voltar ao login</button>`);}
 function newPasswordPage(){return authWrap(`<div class="eyebrow">Nova senha</div><h2>Crie sua nova senha</h2><p class="muted">Digite uma senha com pelo menos 8 caracteres e confirme abaixo.</p><form id="newPasswordForm" class="auth-form">${input('Nova senha','password','','password')}${input('Confirmar senha','password_confirm','','password')}<button class="btn" type="submit">Salvar nova senha →</button></form><button type="button" class="auth-text-action" data-action="backLogin">← Voltar ao login</button>`);}
 async function initialize(){
@@ -921,6 +1036,7 @@ document.addEventListener('click',async e=>{
  x.closest('.contract-actions-dropdown')?.removeAttribute('open');
  if(action==='toggleTheme'){window.toggleTheme();return;}
  if(action==='setTheme'){window.toggleTheme(x.dataset.theme);render();return;}
+ if(action==='setThemeMode'){window.setThemeMode(x.dataset.mode);return;}
  startBusy();
  try{
  if(action.startsWith('onb'))return await onboarding.action(action,x);
