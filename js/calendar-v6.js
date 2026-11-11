@@ -59,11 +59,28 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  }
  async function loadSafe(){try{await load();}catch(e){console.warn('Calendario V6 indisponivel ate aplicar SQL 14',e);state.snapshot=null;}}
  async function getTeacherAccess(){return await call('calendar_my_access')||[];}
+ const cleanInviteToken=(raw)=>String(raw||'').split(/[#&?]/)[0].trim();
  async function processPendingInvite(){
-  const token=localStorage.getItem('campanella:v6:convite');
-  if(!token||!ui.user)return;
-  try{await call('calendar_accept_invite',{p_token:token});localStorage.removeItem('campanella:v6:convite');toast('Acesso docente ativado com sucesso.');}
-  catch(e){console.warn('Convite docente pendente:',e.message);}
+  if(!ui.user)return;
+  const raw=localStorage.getItem('campanella:v6:convite');
+  const token=cleanInviteToken(raw);
+  if(token){
+   try{
+    await call('calendar_accept_invite',{p_token:token});
+    localStorage.removeItem('campanella:v6:convite');
+    localStorage.removeItem('campanella:v6:convite_signup_done');
+    toast('Acesso docente ativado com sucesso.');
+    return;
+   }catch(e){console.warn('Convite docente pendente:',e.message);}
+  }
+  try{
+   const res=await call('accept_my_pending_invites');
+   if(Number(res?.teacher_accepted)>0){
+    localStorage.removeItem('campanella:v6:convite');
+    localStorage.removeItem('campanella:v6:convite_signup_done');
+    toast('Acesso docente ativado com sucesso.');
+   }
+  }catch(e){}
  }
  async function switchTeacherSchool(schoolId){
   if(!teacherMode())throw new Error('Acesso exclusivo do portal docente');
@@ -83,25 +100,67 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   await load();return true;
  }
 
- async function inviteLanding(token,session){
+ async function inviteLanding(rawToken,session,opts={}){
+  const token=cleanInviteToken(rawToken||localStorage.getItem('campanella:v6:convite'));
   state.inviteToken=token;
-  let preview=null;
-  try{preview=await call('calendar_invite_preview',{p_token:token});}catch(e){console.warn(e);}
-  if(!preview){document.getElementById('app').innerHTML=authWrap('<h2>Convite indisponível</h2><p class="muted">O link expirou, foi revogado ou já foi utilizado. Solicite outro convite à escola.</p><button class="btn" data-action="backLogin">Ir ao login</button>');return;}
-  localStorage.setItem('campanella:v6:convite',token);
   if(session?.user){
    ui.user=session.user;
-   try{await call('calendar_accept_invite',{p_token:token});localStorage.removeItem('campanella:v6:convite');history.replaceState({},'',location.pathname);return initialize();}
-   catch(e){document.getElementById('app').innerHTML=authWrap(`<h2>Convite para ${safe(preview.teacher_name)}</h2><p class="muted">Este convite foi emitido para <strong>${safe(preview.email)}</strong>. ${safe(e.message)}</p><button class="btn" data-action="calSwitchInviteAccount">Entrar com outro e-mail</button>`);return;}
+   if(token){
+    try{
+     await call('calendar_accept_invite',{p_token:token});
+     localStorage.removeItem('campanella:v6:convite');
+     localStorage.removeItem('campanella:v6:convite_signup_done');
+     history.replaceState({},'',location.pathname);
+     toast('Acesso docente ativado com sucesso.');
+     return initialize();
+    }catch(e){
+     try{await call('accept_my_pending_invites');}catch(_){}
+     const access=await getTeacherAccess().catch(()=>[]);
+     if(access.length){
+      localStorage.removeItem('campanella:v6:convite');
+      localStorage.removeItem('campanella:v6:convite_signup_done');
+      history.replaceState({},'',location.pathname);
+      toast('E-mail confirmado e acesso docente ativo.');
+      return initialize();
+     }
+    }
+   }else{
+    try{await call('accept_my_pending_invites');}catch(_){}
+    const access=await getTeacherAccess().catch(()=>[]);
+    if(access.length){
+     history.replaceState({},'',location.pathname);
+     toast('E-mail confirmado e acesso docente ativo.');
+     return initialize();
+    }
+   }
   }
-  const markup=`<div class="eyebrow">Convite exclusivo de professor</div><h2>Bem-vindo ao calendário</h2><p class="muted"><strong>${safe(preview.teacher_name)}</strong> · ${safe(preview.school_name)}</p><p class="form-note">Somente o endereço ${safe(preview.email)} poderá ativar este convite. O cadastro docente não está disponível no cadastro administrativo comum.</p>
-  <form id="calTeacherSignup" class="auth-form"><label class="field"><span>E-mail convidado</span><input name="email" type="email" value="${safe(preview.email)}" readonly required></label><label class="field"><span>Senha (mínimo 8 caracteres)</span><input name="password" type="password" minlength="8" required autocomplete="new-password"></label><label class="field"><span>Confirme a senha</span><input name="confirm" type="password" minlength="8" required></label><button class="btn" type="submit">Criar acesso docente</button></form>
-  <div class="divider" style="margin:24px 0;border-bottom:1px solid #e2e8f0"></div><p class="small muted">Já possui conta Campanella com este mesmo e-mail?</p>
-  <form id="calTeacherLogin" class="auth-form"><label class="field"><span>E-mail</span><input name="email" type="email" value="${safe(preview.email)}" readonly></label><label class="field"><span>Senha da conta</span><input name="password" type="password" required></label><button class="btn light" type="submit">Entrar e aceitar convite</button></form>`;
+  let preview=null;
+  if(token){try{preview=await call('calendar_invite_preview',{p_token:token});}catch(e){console.warn(e);}}
+  const savedEmail=localStorage.getItem('campanella:v6:convite_email')||localStorage.getItem('campanella:v6:convite_signup_done')||'';
+  if(!preview){
+   if(opts?.emailConfirmed||savedEmail){
+    document.getElementById('app').innerHTML=authWrap(`<div class="eyebrow">E-mail confirmado</div><h2>Acesse seu calendário docente</h2><p class="muted">Seu e-mail já foi confirmado. Digite sua senha abaixo para entrar e acessar o calendário da escola.</p><form id="calTeacherLogin" class="auth-form"><label class="field"><span>E-mail</span><input name="email" type="email" value="${safe(savedEmail)}" required></label><label class="field"><span>Senha da conta</span><input name="password" type="password" required></label><button class="btn" type="submit">Entrar no calendário →</button></form><button class="btn ghost" style="margin-top:10px" data-action="backLogin">Ir ao login principal</button>`);
+    return;
+   }
+   document.getElementById('app').innerHTML=authWrap(`<h2>Convite indisponível</h2><p class="muted">O link expirou, foi revogado ou já foi utilizado. Solicite outro convite à escola.</p><div class="divider" style="margin:20px 0;border-bottom:1px solid #e2e8f0"></div><p class="small muted">Já confirmou seu e-mail e concluiu seu cadastro? Entre abaixo:</p><form id="calTeacherLogin" class="auth-form"><label class="field"><span>E-mail</span><input name="email" type="email" required></label><label class="field"><span>Senha da conta</span><input name="password" type="password" required></label><button class="btn" type="submit">Entrar no calendário</button></form><button class="btn ghost" style="margin-top:10px" data-action="backLogin">Ir ao login</button>`);
+   return;
+  }
+  localStorage.setItem('campanella:v6:convite',token);
+  if(preview.email)localStorage.setItem('campanella:v6:convite_email',preview.email);
+  if(session?.user){
+   document.getElementById('app').innerHTML=authWrap(`<h2>Convite para ${safe(preview.teacher_name)}</h2><p class="muted">Este convite foi emitido para <strong>${safe(preview.email)}</strong>, mas você está conectado como <strong>${safe(session.user.email||'')}</strong>.</p><button class="btn" data-action="calSwitchInviteAccount">Entrar com outro e-mail</button>`);
+   return;
+  }
+  const confirmedHint=!!(opts?.emailConfirmed||preview.email_confirmed||preview.account_exists||preview.already_used||localStorage.getItem('campanella:v6:convite_signup_done')?.toLowerCase()===String(preview.email||'').toLowerCase());
+  const loginFormMarkup=`<form id="calTeacherLogin" class="auth-form"><label class="field"><span>E-mail</span><input name="email" type="email" value="${safe(preview.email)}" readonly></label><label class="field"><span>Senha da conta</span><input name="password" type="password" required></label><button class="btn ${confirmedHint?'':'light'}" type="submit">Entrar e aceitar convite</button></form>`;
+  const signupFormMarkup=`<form id="calTeacherSignup" class="auth-form"><label class="field"><span>E-mail convidado</span><input name="email" type="email" value="${safe(preview.email)}" readonly required></label><label class="field"><span>Senha (mínimo 8 caracteres)</span><input name="password" type="password" minlength="8" required autocomplete="new-password"></label><label class="field"><span>Confirme a senha</span><input name="confirm" type="password" minlength="8" required></label><button class="btn ${confirmedHint?'light':''}" type="submit">Criar acesso docente</button></form>`;
+  const markup=confirmedHint
+   ?`<div class="eyebrow">Convite exclusivo de professor</div><h2>E-mail confirmado!</h2><p class="muted"><strong>${safe(preview.teacher_name)}</strong> · ${safe(preview.school_name)}</p><div class="inline-note" role="status">Seu e-mail foi confirmado. Digite a senha que você cadastrou para ativar seu acesso e abrir o calendário.</div>${loginFormMarkup}<div class="divider" style="margin:24px 0;border-bottom:1px solid #e2e8f0"></div><p class="small muted">Ainda não cadastrou sua senha?</p>${signupFormMarkup}`
+   :`<div class="eyebrow">Convite exclusivo de professor</div><h2>Bem-vindo ao calendário</h2><p class="muted"><strong>${safe(preview.teacher_name)}</strong> · ${safe(preview.school_name)}</p><p class="form-note">Somente o endereço ${safe(preview.email)} poderá ativar este convite. O cadastro docente não está disponível no cadastro administrativo comum.</p>${signupFormMarkup}<div class="divider" style="margin:24px 0;border-bottom:1px solid #e2e8f0"></div><p class="small muted">Já possui conta Campanella ou já confirmou seu e-mail?</p>${loginFormMarkup}`;
   document.getElementById('app').innerHTML=authWrap(markup);
  }
  function teacherShell(){
-   return `<div class="shell cal-teacher-shell"><aside class="sidebar">${typeof window!=='undefined'&&window.brandMarkup?window.brandMarkup(true):'<div class="brand" aria-label="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-light" src="./assets/img/logo-horizontal-color.png" alt="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-dark" src="./assets/img/logo-horizontal-white.png" alt="Campanella"><img class="brand-logo brand-logo-icon brand-logo-light" src="./assets/img/logo-icon-color.png" alt="Campanella"><img class="brand-logo brand-logo-icon brand-logo-dark" src="./assets/img/logo-icon-white.png" alt="Campanella"></div>'}<div class="sidebar-current"><span class="sidebar-current-label">ESCOLA</span><span class="sidebar-current-name">${safe(ui.teacherSchoolName||'Minha escola')}</span>${ui.teacherAccess?.length>1?`<div class="cal-school-picker">${ui.teacherAccess.map(m=>`<button type="button" class="btn mini ${ui.schoolId===m.school_id?'':'light'}" data-action="calSwitchTeacherSchool" data-id="${m.school_id}">${safe(m.school_name)}</button>`).join('')}</div>`:''}</div><nav class="nav cal-teacher-nav">${navItems.map(([key,icon,label])=>`<button class="nav-btn ${state.page===key?'active':''}" data-action="calTeacherPage" data-page="${key}"><span class="cal-nav-icon" aria-hidden="true">${navIcon(icon)}</span><span>${label}</span></button>`).join('')}</nav><div class="sidebar-bottom"><div class="small muted" style="padding:14px">${safe(ui.user?.email||'')}</div><button class="btn mini light" style="margin:10px" data-action="logout">Sair da conta</button></div></aside><div class="workspace"><div class="topbar"><b>${safe(teacherPageTitle())}</b><div class="topbar-right">${(typeof window!=='undefined'&&window.themeToggleMarkup?window.themeToggleMarkup():'')}<span class="topbar-chip">Professor</span></div></div><main id="pageContent" class="content"></main></div></div>`;
+  return `<div class="shell cal-teacher-shell"><aside class="sidebar">${typeof window!=='undefined'&&window.brandMarkup?window.brandMarkup(true):'<div class="brand" aria-label="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-light" src="./assets/img/logo-horizontal-color.png" alt="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-dark" src="./assets/img/logo-horizontal-white.png" alt="Campanella"><img class="brand-logo brand-logo-icon brand-logo-light" src="./assets/img/logo-icon-color.png" alt="Campanella"><img class="brand-logo brand-logo-icon brand-logo-dark" src="./assets/img/logo-icon-white.png" alt="Campanella"></div>'}<div class="sidebar-current"><span class="sidebar-current-label">ESCOLA</span><span class="sidebar-current-name">${safe(ui.teacherSchoolName||'Minha escola')}</span>${ui.teacherAccess?.length>1?`<div class="cal-school-picker">${ui.teacherAccess.map(m=>`<button type="button" class="btn mini ${ui.schoolId===m.school_id?'':'light'}" data-action="calSwitchTeacherSchool" data-id="${m.school_id}">${safe(m.school_name)}</button>`).join('')}</div>`:''}${ui.schools?.length?`<button type="button" class="btn mini light" style="margin-top:8px;width:100%" data-action="switchToAdminMode">Painel administrativo</button>`:''}</div><nav class="nav cal-teacher-nav">${navItems.map(([key,icon,label])=>`<button class="nav-btn ${state.page===key?'active':''}" data-action="calTeacherPage" data-page="${key}"><span class="cal-nav-icon" aria-hidden="true">${navIcon(icon)}</span><span>${label}</span></button>`).join('')}</nav><div class="sidebar-bottom"><div class="small muted" style="padding:14px">${safe(ui.user?.email||'')}</div><button class="btn mini light" style="margin:10px" data-action="logout">Sair da conta</button></div></aside><div class="workspace"><div class="topbar"><b>${safe(teacherPageTitle())}</b><div class="topbar-right">${(typeof window!=='undefined'&&window.themeToggleMarkup?window.themeToggleMarkup():'')}<span class="topbar-chip">Professor</span></div></div><main id="pageContent" class="content"></main></div></div>`;
  }
  function dayCard(l){
   const actions=(l.status==='scheduled'||l.status==='needs_reschedule')?`<details class="contract-actions-dropdown"><summary class="table-action-btn" aria-label="Ações da aula"><span>AÇÕES</span> <span aria-hidden="true">⌄</span></summary><div class="contract-actions-popover" role="menu"><button type="button" role="menuitem" class="contract-menu-item" data-action="calReschedule" data-id="${l.id}">Reagendar para data</button><button type="button" role="menuitem" class="contract-menu-item" data-action="calSkipLesson" data-id="${l.id}">Pular data (jogar p/ o final)</button>${l.status==='scheduled'?`<button type="button" role="menuitem" class="contract-menu-item" data-action="calRecord" data-id="${l.id}">Registrar aula</button>`:''}</div></details>`:'';
@@ -627,15 +686,34 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(f.id==='calTeacherSignup'){
    const email=f.elements.email.value.trim(),password=f.elements.password.value;
    if(password.length<8||password!==f.elements.confirm.value)throw new Error('As senhas devem coincidir e ter ao menos 8 caracteres.');
-   const redirect=location.origin+location.pathname+'#professor/'+state.inviteToken;
+   const token=cleanInviteToken(state.inviteToken||localStorage.getItem('campanella:v6:convite'));
+   state.inviteToken=token;
+   if(token)localStorage.setItem('campanella:v6:convite',token);
+   localStorage.setItem('campanella:v6:convite_email',email);
+   localStorage.setItem('campanella:v6:convite_signup_done',email.toLowerCase());
+   const redirect=location.origin+location.pathname+'?professor='+encodeURIComponent(token);
    const {data:signup,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:redirect}});
    if(error)throw error;
-   if(signup.session){await call('calendar_accept_invite',{p_token:state.inviteToken});localStorage.removeItem('campanella:v6:convite');history.replaceState({},'',location.pathname);return initialize();}
-   document.getElementById('app').innerHTML=authWrap('<h2>Confirme seu e-mail</h2><p class="muted">Abra o e-mail de verificação e depois reabra o convite, ou entre pelo login. O acesso docente será ativado somente após confirmação.</p><button class="btn" data-action="backLogin">Voltar ao login</button>');return;
+   if(signup.session){await call('calendar_accept_invite',{p_token:token});localStorage.removeItem('campanella:v6:convite');localStorage.removeItem('campanella:v6:convite_signup_done');history.replaceState({},'',location.pathname);return initialize();}
+   document.getElementById('app').innerHTML=authWrap(`<div class="eyebrow">Quase lá</div><h2>Confirme seu e-mail</h2><p class="muted">Enviamos um link de confirmação para <strong>${safe(email)}</strong>. Clique no link recebido por e-mail e, em seguida, entre abaixo com sua senha para abrir o calendário.</p><form id="calTeacherLogin" class="auth-form" style="margin-top:16px"><label class="field"><span>E-mail</span><input name="email" type="email" value="${safe(email)}" readonly></label><label class="field"><span>Senha cadastrada</span><input name="password" type="password" required></label><button class="btn" type="submit">Já confirmei meu e-mail · Entrar</button></form><button class="btn ghost" style="margin-top:10px" data-action="backLogin">Voltar ao login</button>`);return;
   }
   if(f.id==='calTeacherLogin'){
-   const {error}=await sb.auth.signInWithPassword({email:f.elements.email.value,password:f.elements.password.value});if(error)throw error;
-   await call('calendar_accept_invite',{p_token:state.inviteToken});localStorage.removeItem('campanella:v6:convite');history.replaceState({},'',location.pathname);return initialize();
+   const {error}=await sb.auth.signInWithPassword({email:f.elements.email.value.trim(),password:f.elements.password.value});if(error)throw error;
+   const token=cleanInviteToken(state.inviteToken||localStorage.getItem('campanella:v6:convite'));
+   if(token){
+    try{await call('calendar_accept_invite',{p_token:token});}
+    catch(e){
+     try{await call('accept_my_pending_invites');}catch(_){}
+     const access=await getTeacherAccess().catch(()=>[]);
+     if(!access.length)throw e;
+    }
+   }else{
+    try{await call('accept_my_pending_invites');}catch(_){}
+   }
+   localStorage.removeItem('campanella:v6:convite');
+   localStorage.removeItem('campanella:v6:convite_signup_done');
+   history.replaceState({},'',location.pathname);
+   return initialize();
   }
   if(f.id==='calAdoptLegacyForm'){
    const completed=Number(f.elements.completed_before.value),slots=[...f.querySelectorAll('input[name="cal_slot"]:checked')].map(x=>x.value);

@@ -3,7 +3,7 @@ import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
 import {createCRM} from './crm.js?v=6.18.1';
-import {createCalendar} from './calendar-v6.js?v=7.0.1';
+import {createCalendar} from './calendar-v6.js?v=7.1.1';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
 import {createOnboarding} from './onboarding-v67.js?v=6.10.0';
@@ -17,7 +17,7 @@ const sb=createClient(SUPA_URL,KEY);
 // Campanella V6: calendario interno. As integracoes de assinaturas/Drive seguem suspensas.
 const EXTERNAL_SIGNATURE_ENABLED=false;
 const db={leads:[],interviews:[],packages:[],students:[],contracts:[],profiles:[],teachers:[],contract_types:[],school_settings:[],interview_invites:[],external_signatures:[],crm_followups:[],crm_appointments:[],crm_activities:[],crm_pipeline_columns:[],crm_tags:[]};
-const ui={page:'dashboard',user:null,role:null,teacherId:null,teacherSchoolName:null,teacherAccess:[],schoolId:null,schools:[],memberships:[],schoolMembers:[],isPlatformAdmin:false,schoolLicense:null,licenseActive:false,licenses:[],platformSchools:[],platformProfiles:[],platformKeys:[],platformEvents:[],platformRenewalKeys:[],platformSearch:'',platformFilter:'all',newlyIssuedKey:null,driveConnection:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',studentId:null,studentReturnPage:'directory',contractTab:'current',interviewTab:'current'};
+const ui={page:'dashboard',user:null,role:null,teacherId:null,teacherSchoolName:null,teacherAccess:[],schoolId:null,schools:[],memberships:[],schoolMembers:[],schoolAdmins:null,emailConfirmCallback:false,isPlatformAdmin:false,schoolLicense:null,licenseActive:false,licenses:[],platformSchools:[],platformProfiles:[],platformKeys:[],platformEvents:[],platformRenewalKeys:[],platformSearch:'',platformFilter:'all',newlyIssuedKey:null,driveConnection:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',studentId:null,studentReturnPage:'directory',contractTab:'current',interviewTab:'current'};
 const errors=e=>{console.error(e);toast(e?.message||String(e),true)};
 const canAdmin=()=>ui.role==='admin';
 let refreshVersion=0;
@@ -219,12 +219,13 @@ const navGroups=[
 const nav=navGroups.flatMap(g=>g[1]);
 const displayName=()=>ui.user?.user_metadata?.full_name?.trim()||ui.user?.email?.split('@')[0]||'Minha conta';
 const avatarInitials=()=>displayName().split(/\s+/).slice(0,2).map(x=>x.charAt(0)).join('').toUpperCase();
-function accountMenu(){return `<details class="account-popover"><summary class="account-trigger"><span class="account-avatar">${safe(avatarInitials())}</span><span class="account-person"><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></span>${ico('chevron',15)}</summary><div class="account-dropdown" role="group" aria-label="Menu de conta"><div class="account-dropdown-top"><span class="account-avatar">${safe(avatarInitials())}</span><div><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></div></div><div class="account-dropdown-title">Alternar escola</div>${ui.schools.map(s=>`<button class="account-option" data-action="selectSchool" data-id="${safe(s.id)}"><span class="account-option-icon">${ico('school',17)}</span><span class="account-option-label">${safe(s.name)}${s.deletion_requested_at?'<small>Exclusão agendada</small>':''}</span>${ui.schoolId===s.id?ico('check',16):''}</button>`).join('')||'<p class="account-hint">Nenhuma escola cadastrada.</p>'}<button class="account-option account-create" data-action="showActivation">${ico('plus',17)}<span>Ativar outra escola</span></button><div class="account-divider"></div><button class="account-option" data-action="navigate" data-page="profile">${ico('profile',17)}<span>Meu perfil</span></button>${ui.schoolId?`<button class="account-option" data-action="navigate" data-page="settings">${ico('settings',17)}<span>Configurações da escola</span></button>`:''}<button class="account-option" data-action="navigate" data-page="schools">${ico('school',17)}<span>Minhas escolas</span></button>${ui.isPlatformAdmin?`<button class="account-option" data-action="navigate" data-page="licenses">${ico('licenses',17)}<span>Administração geral</span></button>`:''}<div class="account-divider"></div><button class="account-option account-logout" data-action="logout">${ico('logout',17)}<span>Sair da conta</span></button></div></details>`;}
+function myTeacherInActiveSchool(){const email=ui.user?.email?.trim().toLowerCase();if(!email)return null;return (db.teachers||[]).find(t=>t.active!==false&&t.email?.trim().toLowerCase()===email)||(ui.teacherAccess||[]).find(a=>a.school_id===ui.schoolId)||null;}
+function accountMenu(){return `<details class="account-popover"><summary class="account-trigger"><span class="account-avatar">${safe(avatarInitials())}</span><span class="account-person"><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></span>${ico('chevron',15)}</summary><div class="account-dropdown" role="group" aria-label="Menu de conta"><div class="account-dropdown-top"><span class="account-avatar">${safe(avatarInitials())}</span><div><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></div></div><div class="account-dropdown-title">Alternar escola</div>${ui.schools.map(s=>`<button class="account-option" data-action="selectSchool" data-id="${safe(s.id)}"><span class="account-option-icon">${ico('school',17)}</span><span class="account-option-label">${safe(s.name)}${s.deletion_requested_at?'<small>Exclusão agendada</small>':''}</span>${ui.schoolId===s.id?ico('check',16):''}</button>`).join('')||'<p class="account-hint">Nenhuma escola cadastrada.</p>'}<button class="account-option account-create" data-action="showActivation">${ico('plus',17)}<span>Ativar outra escola</span></button><div class="account-divider"></div><button class="account-option" data-action="navigate" data-page="profile">${ico('profile',17)}<span>Meu perfil</span></button>${ui.schoolId?`<button class="account-option" data-action="navigate" data-page="settings">${ico('settings',17)}<span>Configurações da escola</span></button>`:''}${ui.schoolId&&myTeacherInActiveSchool()?`<button class="account-option" data-action="switchToTeacherMode">${ico('calendar',17)}<span>Modo professor (Minha agenda)</span></button>`:''}<button class="account-option" data-action="navigate" data-page="schools">${ico('school',17)}<span>Minhas escolas</span></button>${ui.isPlatformAdmin?`<button class="account-option" data-action="navigate" data-page="licenses">${ico('licenses',17)}<span>Administração geral</span></button>`:''}<div class="account-divider"></div><button class="account-option account-logout" data-action="logout">${ico('logout',17)}<span>Sair da conta</span></button></div></details>`;}
 function brandMarkup(isSidebar=true){return `<div class="brand" aria-label="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-light" src="./assets/img/logo-horizontal-color.png" alt="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-dark" src="./assets/img/logo-horizontal-white.png" alt="Campanella">${isSidebar?`<img class="brand-logo brand-logo-icon brand-logo-light" src="./assets/img/logo-icon-color.png" alt="Campanella"><img class="brand-logo brand-logo-icon brand-logo-dark" src="./assets/img/logo-icon-white.png" alt="Campanella">`:''}</div>`;}
 if(typeof window!=='undefined')window.brandMarkup=brandMarkup;
-function shell(){const activeName=ui.page==='student-profile'?'Perfil do aluno':ui.page==='schools'?'Minhas escolas':ui.page.startsWith('profile')?'Meu perfil':ui.page.startsWith('settings')?'Configurações da escola':nav.find(x=>x[0]===ui.page)?.[2]||'Visão geral';return `<div class="shell ${ui.page==='calendar'?'cal-admin-shell':''}"><aside class="sidebar">${brandMarkup(true)}<div class="sidebar-current"><span class="sidebar-current-label">ESCOLA ATIVA</span><span class="sidebar-current-name">${ico('school',16)} ${safe(currentSchool().name||'Nenhuma escola')}</span></div><div class="sidebar-menu">${navGroups.map(([title,links])=>`<section class="nav-section"><div class="nav-group">${title}</div><nav class="nav">${links.map(([key,iconName,label])=>`<button class="nav-btn ${ui.page===key?'active':''}" data-action="navigate" data-page="${key}"><span class="nav-ico">${ico(iconName,18)}</span><span>${label}</span></button>`).join('')}</nav></section>`).join('')}</div><div class="sidebar-bottom">${accountMenu()}</div></aside>${ui.page==='calendar'?calendar.adminNav():''}<div class="workspace"><div class="topbar"><span class="subtle">${safe(currentSchool().name)} <b> / ${safe(activeName)}</b></span><div class="topbar-right">${themeToggleMarkup()}<span class="topbar-chip">${ico('school',14)} ${safe(roleName(ui.role))}</span></div></div><main class="content" id="pageContent"></main></div></div>`;}
+function shell(){const activeName=ui.page==='student-profile'?'Perfil do aluno':ui.page==='schools'?'Minhas escolas':ui.page.startsWith('profile')?'Meu perfil':ui.page.startsWith('settings')?'Configurações da escola':nav.find(x=>x[0]===ui.page)?.[2]||'Visão geral';return `<div class="shell ${ui.page==='calendar'?'cal-admin-shell':''}"><aside class="sidebar">${brandMarkup(true)}<div class="sidebar-current"><span class="sidebar-current-label">ESCOLA ATIVA</span><span class="sidebar-current-name">${ico('school',16)} ${safe(currentSchool().name||'Nenhuma escola')}</span></div><div class="sidebar-menu">${navGroups.map(([title,links])=>`<section class="nav-section"><div class="nav-group">${title}</div><nav class="nav">${links.map(([key,iconName,label])=>`<button class="nav-btn ${ui.page===key?'active':''}" data-action="navigate" data-page="${key}"><span class="nav-ico">${ico(iconName,18)}</span><span>${label}</span></button>`).join('')}</nav></section>`).join('')}</div><div class="sidebar-bottom">${accountMenu()}</div></aside>${ui.page==='calendar'?calendar.adminNav():''}<div class="workspace"><div class="topbar"><span class="subtle">${safe(currentSchool().name)} <b> / ${safe(activeName)}</b></span><div class="topbar-right">${themeToggleMarkup()}<span class="topbar-chip">${ico('school',14)} ${safe(roleName(ui.role))}${myTeacherInActiveSchool()?' · Professor':''}</span></div></div><main class="content" id="pageContent"></main></div></div>`;}
 function currentSchool(){return ui.schools.find(x=>x.id===ui.schoolId)||{};}
-function roleName(role){return role==='admin'?'Administrador':role==='teacher'?'Professor':'Sem acesso';}
+function roleName(role){if(role==='admin')return currentSchool().admin_user_id&&currentSchool().admin_user_id===ui.user?.id?'Administrador Super':'Administrador';return role==='teacher'?'Professor':'Sem acesso';}
 function schoolLicense(id){return ui.licenses.find(l=>l.school_id===id)||null;}
 function licenseSummary(l){if(!l)return '<span class="pill pill-void">Sem licença</span>';if(l.suspended_at)return '<span class="pill pill-void">Suspensa</span>';if(l.expires_on&&l.expires_on<today())return '<span class="pill pill-void">Vencida</span>';return `<span class="pill pill-signed">${l.kind==='cortesia'?'Cortesia':'Ativa'}</span>`;}
 function fullSchoolStatus(s){if(s?.deletion_requested_at)return '<span class="pill pill-void">Exclusão agendada</span>';return licenseSummary(schoolLicense(s?.id));}
@@ -236,7 +237,7 @@ async function loadSchools(preferred){
  const schoolIds=[...new Set((memberships||[]).map(m=>m.school_id))];
  const {data:schools,error:se}=schoolIds.length?await sb.from('schools').select('id,name,admin_user_id,created_at,contact_email,contact_phone,address,deletion_requested_at,deletion_due_at,deletion_started_at').in('id',schoolIds).order('name'):{data:[],error:null};
  if(se)throw se;
- ui.schools=(schools||[]).filter(s=>s.admin_user_id===ui.user.id);
+ ui.schools=(schools||[]).filter(s=>s.admin_user_id===ui.user.id||(memberships||[]).some(m=>m.school_id===s.id&&m.role==='admin'));
  ui.memberships=(memberships||[]).filter(m=>ui.schools.some(s=>s.id===m.school_id));
  const {data:licenses,error:le}=ui.schools.length?await sb.from('school_licenses').select('*').in('school_id',ui.schools.map(x=>x.id)):{data:[],error:null};
  if(le)throw le;ui.licenses=licenses||[];
@@ -278,7 +279,7 @@ function login(){
      `</div>`+
     `</div>`+
    `</div>`+
-   `<div class="login-art-footer"><span>© Campanella · Gestão Escolar</span><span class="login-art-pill">v7.0</span></div>`+
+   `<div class="login-art-footer"><span>© Campanella · Gestão Escolar</span><span class="login-art-pill">v7.1</span></div>`+
   `</aside>`+
   `<main class="login-area">`+
    `<div class="login-header-controls">${themeSelectorMarkup()}</div>`+
@@ -286,6 +287,7 @@ function login(){
     `<div class="login-card-badge">${ico('lock',13)} <span>ACESSO DA EQUIPE</span></div>`+
     `<h2 class="login-card-title">Bem-vindo de volta</h2>`+
     `<p class="login-card-subtitle">Entre com seu e-mail e senha cadastrados.</p>`+
+    `${ui.emailConfirmCallback?'<div class="inline-note" role="status" style="margin-bottom:14px">E-mail confirmado com sucesso! Digite seu e-mail e senha para entrar.</div>':''}`+
     `<form id="loginForm" class="login-form">`+
      `<label class="field"><span class="field-label">E-mail</span><div class="input-wrap"><span class="input-icon">${ico('profile',16)}</span><input name="email" type="email" placeholder="seu@email.com" autocomplete="email" required></div></label>`+
      `<label class="field"><span class="field-label">Senha</span><div class="input-wrap"><span class="input-icon">${ico('key',16)}</span><input name="password" type="password" placeholder="••••••••" autocomplete="current-password" required></div></label>`+
@@ -348,18 +350,131 @@ function authWrap(content){
 }
 function forgotPasswordPage(message=''){return authWrap(`<div class="eyebrow">Recuperação de acesso</div><h2>Esqueceu sua senha?</h2><p class="muted">Informe o e-mail utilizado para entrar no Campanella. Enviaremos um link para cadastrar uma nova senha.</p>${message?`<div class="inline-note" role="status">${safe(message)}</div>`:''}<form id="forgotPasswordForm" class="auth-form">${input('E-mail da conta','email','','email')}<button class="btn" type="submit">Enviar link de recuperação →</button></form><button type="button" class="auth-text-action" data-action="backLogin">← Voltar ao login</button>`);}
 function newPasswordPage(){return authWrap(`<div class="eyebrow">Nova senha</div><h2>Crie sua nova senha</h2><p class="muted">Digite uma senha com pelo menos 8 caracteres e confirme abaixo.</p><form id="newPasswordForm" class="auth-form">${input('Nova senha','password','','password')}${input('Confirmar senha','password_confirm','','password')}<button class="btn" type="submit">Salvar nova senha →</button></form><button type="button" class="auth-text-action" data-action="backLogin">← Voltar ao login</button>`);}
+
+let currentAdminInviteToken='';
+const cleanTokenValue=(raw)=>String(raw||'').split(/[#&?]/)[0].trim();
+async function processPendingAdminInvite(){
+ if(!ui.user)return;
+ const token=cleanTokenValue(localStorage.getItem('campanella:v7:admin_convite'));
+ if(token){
+  try{
+   const {data,error}=await sb.rpc('school_admin_accept_invite',{p_token:token});
+   if(error)throw error;
+   localStorage.removeItem('campanella:v7:admin_convite');
+   localStorage.removeItem('campanella:v7:admin_signup_done');
+   if(data?.school_id)localStorage.setItem('campanella:escola:'+ui.user.id,data.school_id);
+   toast('Convite de administrador aceito com sucesso.');
+   return;
+  }catch(e){console.warn('Convite admin pendente:',e.message);}
+ }
+ try{
+  const {data}=await sb.rpc('accept_my_pending_invites');
+  if(Number(data?.admin_accepted)>0){
+   localStorage.removeItem('campanella:v7:admin_convite');
+   localStorage.removeItem('campanella:v7:admin_signup_done');
+   toast('Acesso de administrador ativado.');
+  }
+ }catch(e){}
+}
+async function adminInviteLanding(rawToken,session,opts={}){
+ const token=cleanTokenValue(rawToken||localStorage.getItem('campanella:v7:admin_convite'));
+ currentAdminInviteToken=token;
+ if(session?.user){
+  ui.user=session.user;
+  if(token){
+   try{
+    const {data,error}=await sb.rpc('school_admin_accept_invite',{p_token:token});
+    if(error)throw error;
+    localStorage.removeItem('campanella:v7:admin_convite');
+    localStorage.removeItem('campanella:v7:admin_signup_done');
+    if(data?.school_id)localStorage.setItem('campanella:escola:'+session.user.id,data.school_id);
+    history.replaceState({},'',location.pathname);
+    toast('Acesso administrativo ativado com sucesso.');
+    return initialize();
+   }catch(e){
+    try{await sb.rpc('accept_my_pending_invites');}catch(_){}
+    await loadSchools().catch(()=>{});
+    if(ui.schools.length){
+     localStorage.removeItem('campanella:v7:admin_convite');
+     localStorage.removeItem('campanella:v7:admin_signup_done');
+     history.replaceState({},'',location.pathname);
+     toast('E-mail confirmado e acesso administrativo ativo.');
+     return initialize();
+    }
+   }
+  }
+ }
+ let preview=null;
+ if(token){try{const {data}=await sb.rpc('school_admin_invite_preview',{p_token:token});preview=data;}catch(e){console.warn(e);}}
+ const savedEmail=localStorage.getItem('campanella:v7:admin_email')||localStorage.getItem('campanella:v7:admin_signup_done')||'';
+ if(!preview){
+  if(opts?.emailConfirmed||savedEmail){
+   $('#app').innerHTML=authWrap(`<div class="eyebrow">E-mail confirmado</div><h2>Acesse como administrador</h2><p class="muted">Seu e-mail foi confirmado. Digite sua senha abaixo para entrar no painel da escola.</p><form id="adminInviteLogin" class="auth-form"><label class="field"><span>E-mail</span><input name="email" type="email" value="${safe(savedEmail)}" required></label><label class="field"><span>Senha da conta</span><input name="password" type="password" required></label><button class="btn" type="submit">Entrar no painel →</button></form><button class="btn ghost" style="margin-top:10px" data-action="backLogin">Ir ao login principal</button>`);
+   return;
+  }
+  $('#app').innerHTML=authWrap(`<h2>Convite indisponível</h2><p class="muted">O link expirou, foi revogado ou já foi utilizado. Caso já tenha confirmado seu e-mail, entre abaixo:</p><form id="adminInviteLogin" class="auth-form"><label class="field"><span>E-mail</span><input name="email" type="email" required></label><label class="field"><span>Senha da conta</span><input name="password" type="password" required></label><button class="btn" type="submit">Entrar no painel</button></form><button class="btn ghost" style="margin-top:10px" data-action="backLogin">Ir ao login</button>`);
+  return;
+ }
+ localStorage.setItem('campanella:v7:admin_convite',token);
+ if(preview.email)localStorage.setItem('campanella:v7:admin_email',preview.email);
+ if(session?.user){
+  $('#app').innerHTML=authWrap(`<h2>Convite para ${safe(preview.full_name)}</h2><p class="muted">Este convite foi enviado para <strong>${safe(preview.email)}</strong>, mas você está conectado como <strong>${safe(session.user.email||'')}</strong>.</p><button class="btn" data-action="adminSwitchInviteAccount">Entrar com outro e-mail</button>`);
+  return;
+ }
+ const confirmedHint=!!(opts?.emailConfirmed||preview.email_confirmed||preview.account_exists||preview.already_accepted||localStorage.getItem('campanella:v7:admin_signup_done')?.toLowerCase()===String(preview.email||'').toLowerCase());
+ const roleBadge=preview.also_teacher?'Administrador e Professor':'Administrador';
+ const loginMarkup=`<form id="adminInviteLogin" class="auth-form"><label class="field"><span>E-mail</span><input name="email" type="email" value="${safe(preview.email)}" readonly></label><label class="field"><span>Senha da conta</span><input name="password" type="password" required></label><button class="btn ${confirmedHint?'':'light'}" type="submit">Entrar e ativar acesso</button></form>`;
+ const signupMarkup=`<form id="adminInviteSignup" class="auth-form"><label class="field"><span>Nome</span><input name="full_name" type="text" value="${safe(preview.full_name)}" required></label><label class="field"><span>E-mail convidado</span><input name="email" type="email" value="${safe(preview.email)}" readonly required></label><label class="field"><span>Senha (mínimo 8 caracteres)</span><input name="password" type="password" minlength="8" required autocomplete="new-password"></label><label class="field"><span>Confirme a senha</span><input name="confirm" type="password" minlength="8" required></label><button class="btn ${confirmedHint?'light':''}" type="submit">Criar conta e aceitar convite</button></form>`;
+ $('#app').innerHTML=authWrap(confirmedHint
+  ?`<div class="eyebrow">Convite · ${safe(roleBadge)}</div><h2>E-mail confirmado!</h2><p class="muted"><strong>${safe(preview.full_name)}</strong> · ${safe(preview.school_name)}</p><div class="inline-note" role="status">Seu e-mail está confirmado. Digite sua senha para entrar e ativar o acesso à escola.</div>${loginMarkup}<div class="divider" style="margin:24px 0;border-bottom:1px solid #e2e8f0"></div><p class="small muted">Ainda não definiu sua senha?</p>${signupMarkup}`
+  :`<div class="eyebrow">Convite · ${safe(roleBadge)}</div><h2>Administrar ${safe(preview.school_name)}</h2><p class="muted">Olá, <strong>${safe(preview.full_name)}</strong> (${safe(preview.email)})${preview.also_teacher?' · Inclui habilitação como professor':''}</p>${signupMarkup}<div class="divider" style="margin:24px 0;border-bottom:1px solid #e2e8f0"></div><p class="small muted">Já possui conta no Campanella ou já confirmou seu e-mail?</p>${loginMarkup}`);
+}
+async function resolveInviteAndEmailCallback(){
+ const rawHash=location.hash||'';
+ const searchParams=new URLSearchParams(location.search);
+ let profToken=cleanTokenValue(searchParams.get('professor')||(rawHash.startsWith('#professor/')?rawHash.slice('#professor/'.length):''));
+ let adminToken=cleanTokenValue(searchParams.get('admin_convite')||(rawHash.startsWith('#admin/')?rawHash.slice('#admin/'.length):''));
+ const hashParts=rawHash.split('#').filter(Boolean);
+ const authParamStr=hashParts.find(p=>p.includes('access_token=')||p.includes('error=')||p.includes('error_code=')||p.includes('type='))||'';
+ const authParams=new URLSearchParams(authParamStr);
+ const accessToken=authParams.get('access_token'),refreshToken=authParams.get('refresh_token');
+ if(accessToken&&refreshToken&&hashParts.length>1){
+  try{await sb.auth.setSession({access_token:accessToken,refresh_token:refreshToken});}catch(e){console.warn('setSession:',e.message);}
+ }
+ const type=authParams.get('type')||searchParams.get('type')||'';
+ const errorCode=authParams.get('error_code')||searchParams.get('error_code')||'';
+ const errorDesc=authParams.get('error_description')||searchParams.get('error_description')||'';
+ const isEmailConfirm=!passwordRecoveryRoute()&&(type==='signup'||type==='email'||errorCode==='otp_expired'||/email.*(link|expired|invalid)/i.test(errorDesc));
+ if((authParamStr.includes('error=')||authParamStr.includes('access_token='))&&(profToken||adminToken||isEmailConfirm)){
+  const cleanUrl=location.pathname+(profToken?`#professor/${profToken}`:adminToken?`#admin/${adminToken}`:'');
+  history.replaceState({},'',cleanUrl);
+ }
+ return {profToken,adminToken,isEmailConfirm};
+}
 async function initialize(){
  if(location.hash.startsWith('#pre-matricula/'))return publicStart(location.hash.slice(15));
  if(location.hash.startsWith('#assinar/'))return publicStart(location.hash.slice(9));
  if(location.hash.startsWith('#entrevista/'))return externalStart(location.hash.slice('#entrevista/'.length));
- if(location.hash.startsWith('#professor/')){const {data:{session}}=await sb.auth.getSession();return calendar.inviteLanding(location.hash.slice('#professor/'.length),session);}
+ const routeState=await resolveInviteAndEmailCallback();
+ if(routeState.profToken||(routeState.isEmailConfirm&&(localStorage.getItem('campanella:v6:convite')||localStorage.getItem('campanella:v6:convite_signup_done')))){
+  const {data:{session}}=await sb.auth.getSession();
+  return calendar.inviteLanding(routeState.profToken||localStorage.getItem('campanella:v6:convite')||'',session,{emailConfirmed:routeState.isEmailConfirm});
+ }
+ if(routeState.adminToken||(routeState.isEmailConfirm&&(localStorage.getItem('campanella:v7:admin_convite')||localStorage.getItem('campanella:v7:admin_signup_done')))){
+  const {data:{session}}=await sb.auth.getSession();
+  return adminInviteLanding(routeState.adminToken||localStorage.getItem('campanella:v7:admin_convite')||'',session,{emailConfirmed:routeState.isEmailConfirm});
+ }
+ if(routeState.isEmailConfirm)ui.emailConfirmCallback=true;
  if(passwordRecoveryRoute()){
   const {data:{session}}=await sb.auth.getSession();ui.user=null;
   $('#app').innerHTML=session?newPasswordPage():forgotPasswordPage('O link de recuperação está inválido ou expirou. Solicite um novo e-mail.');return;
  }
  const {data:{session},error}=await sb.auth.getSession();if(error)throw error;
  if(!session){ui.user=null;ui.schoolId=null;$('#app').innerHTML=login();return;}
- ui.user=session.user;await calendar.processPendingInvite();const {data:isMaster,error:masterError}=await sb.rpc('is_platform_admin');if(masterError)throw masterError;ui.isPlatformAdmin=!!isMaster;
+ ui.user=session.user;ui.emailConfirmCallback=false;
+ await processPendingAdminInvite();
+ await calendar.processPendingInvite();
+ const {data:isMaster,error:masterError}=await sb.rpc('is_platform_admin');if(masterError)throw masterError;ui.isPlatformAdmin=!!isMaster;
  await loadSchools();if(ui.isPlatformAdmin)await loadPlatformData();
  if(!ui.schoolId){if(await calendar.enterTeacherIfApplicable()){calendar.renderCalendar();return;}if(ui.isPlatformAdmin){ui.page='licenses';render();}else $('#app').innerHTML=noSchoolPage();return;}
  await refresh();
@@ -375,7 +490,7 @@ async function refresh(){
  if(version!==refreshVersion||ui.schoolId!==schoolId)return;
  if(memberError)throw memberError;
  const schoolMembers=members||[];
- const myMember=schoolMembers.find(m=>m.user_id===ui.user?.id);
+ const myMember=schoolMembers.find(m=>m.user_id===ui.user?.id)||((currentSchool().admin_user_id===ui.user?.id)?{user_id:ui.user.id,role:'admin'}:null);
  if(!myMember){await loadSchools();if(!ui.schoolId){$('#app').innerHTML=noSchoolPage();return;}ui.page='dashboard';return refresh();}
  try{await sb.rpc('crm_sync_pipeline',{p_school:schoolId});}catch(e){console.warn('Sync pipeline:',e?.message);}
  const newData={};
@@ -395,6 +510,8 @@ async function refresh(){
  if(version!==refreshVersion||ui.schoolId!==schoolId)return;
  ui.schoolMembers=schoolMembers;ui.role='admin';
  Object.assign(db,newData);
+ try{const {data:admData,error:admErr}=await sb.rpc('school_admin_list',{p_school:schoolId});if(!admErr&&admData)ui.schoolAdmins=admData;else ui.schoolAdmins=null;}catch(e){ui.schoolAdmins=null;}
+ try{ui.teacherAccess=await calendar.getTeacherAccess();}catch(e){ui.teacherAccess=[];}
  // Integracao Google preservada no codigo, mas inativa para o produto atual.
  ui.driveConnection=null;
  await calendar.loadSafe();
@@ -752,12 +869,62 @@ const profileSections=[
 ];
 const schoolSections=[
  ['settings-identity','school','Informações da escola','Nome, contato e endereço'],
+ ['settings-admin','profile','Administradores e permissões','Administrador responsável, convites de administradores e função de professor'],
  ['settings-import','students','Importação de Alunos e Matrículas','Importe alunos, complete cadastros e matricule em lote'],
  ['settings-license','key','Licença e ativação','Validade e código de renovação'],
- ['settings-admin','profile','Administrador responsável','Transferência de administração'],
  // ['settings-backup','school','Backup no Google Drive','Conectar o Drive desta escola'], // recurso preservado para uso futuro
  ['settings-deletion','trash','Exclusão da escola','Agendamento e restauração']
 ];
+function isSuperAdmin(s=currentSchool()){return !!(ui.isPlatformAdmin||(s?.admin_user_id&&ui.user?.id&&s.admin_user_id===ui.user.id));}
+function resolveSchoolAdminsList(s=currentSchool()){
+ if(ui.schoolAdmins?.school_id===s?.id&&Array.isArray(ui.schoolAdmins?.admins)&&ui.schoolAdmins.admins.length)return ui.schoolAdmins.admins;
+ const members=(ui.schoolMembers||[]).filter(m=>m.role==='admin');
+ const ids=[...new Set([s?.admin_user_id,...members.map(m=>m.user_id)].filter(Boolean))];
+ return ids.map(uid=>{
+  const prof=(db.profiles||[]).find(p=>p.id===uid)||(uid===ui.user?.id?{id:uid,email:ui.user.email}:null);
+  const email=String(prof?.email||(uid===ui.user?.id?ui.user?.email:'')||'').trim().toLowerCase();
+  const fullName=(uid===ui.user?.id&&ui.user?.user_metadata?.full_name)||email.split('@')[0]||'Administrador';
+  const teacher=(db.teachers||[]).find(t=>email&&t.email?.trim().toLowerCase()===email);
+  return {user_id:uid,full_name:fullName,email:email||'—',is_super:uid===s?.admin_user_id,teacher_id:teacher?.id||null,is_teacher:!!(teacher&&teacher.active!==false)};
+ });
+}
+function settingsAdminsPanel(s,pending){
+ const superUser=isSuperAdmin(s),admins=resolveSchoolAdminsList(s);
+ const invites=(ui.schoolAdmins?.school_id===s?.id&&Array.isArray(ui.schoolAdmins?.invites))?ui.schoolAdmins.invites:[];
+ const superAdminRow=admins.find(a=>a.is_super)||{email:ui.user?.email||'—',full_name:ui.user?.user_metadata?.full_name||'Administrador Super'};
+ const adminRows=admins.map(a=>{
+  const canToggleTeacher=!pending&&(superUser||a.user_id===ui.user?.id);
+  const canRemove=!pending&&superUser&&!a.is_super;
+  return row([
+   `<b>${safe(a.full_name||'Administrador')}</b><div class="muted">${safe(a.email||'—')}</div>`,
+   a.is_super?'<span class="pill pill-signed">Administrador Super</span>':'<span class="pill">Administrador</span>',
+   a.is_teacher?'<span class="pill pill-signed">Também é professor</span>':'<span class="pill">Apenas administração</span>',
+   `<div class="actions">${canToggleTeacher?`<button type="button" class="table-action-btn ${a.is_teacher?'':'primary'}" data-action="adminToggleTeacher" data-id="${safe(a.user_id)}" data-enable="${a.is_teacher?'false':'true'}" data-name="${safe(a.full_name||'')}">${ico('teachers',14)} <span>${a.is_teacher?'Desativar como professor':'Tornar professor'}</span></button>`:''}${canRemove?`<button type="button" class="table-action-btn danger" data-action="removeSchoolAdmin" data-id="${safe(a.user_id)}" data-email="${safe(a.email||'')}">${ico('trash',14)} <span>Remover admin</span></button>`:''}</div>`
+  ]);
+ });
+ const inviteRows=invites.map(inv=>row([
+  `<b>${safe(inv.full_name)}</b><div class="muted">${safe(inv.email)}</div>`,
+  inv.also_teacher?'<span class="pill pill-sent">Admin + Professor</span>':'<span class="pill">Administrador</span>',
+  inv.expires_at?dateBR(String(inv.expires_at).slice(0,10)):'14 dias',
+  `<div class="actions">${inv.invite_token?`<button type="button" class="table-action-btn" data-action="copyAdminInviteLink" data-token="${safe(inv.invite_token)}">${ico('key',14)} <span>Copiar link</span></button>`:''}${superUser?`<button type="button" class="table-action-btn danger" data-action="revokeAdminInvite" data-id="${safe(inv.id)}">${ico('trash',14)} <span>Revogar</span></button>`:''}</div>`
+ ]));
+ const inviteSection=superUser
+  ?`<h3 class="form-section" style="margin-top:24px">Convidar novo administrador</h3><p class="muted">O convidado receberá acesso administrativo a esta escola e, se marcado abaixo, também será habilitado como professor.</p><form id="inviteAdminForm" class="license-form"><div class="form-grid">${input('Nome completo','full_name','','text')}${input('E-mail do novo administrador','email','','email')}<label class="field wide checkrow"><input type="checkbox" name="also_teacher" value="1"> Também cadastrar e habilitar como professor desta escola</label></div><div class="form-footer"><button class="btn" type="submit" ${pending?'disabled':''}>${ico('plus',16)} Convidar administrador</button></div></form>${invites.length?`<h3 class="form-section" style="margin-top:24px">Convites pendentes</h3>${table(['Convidado','Perfil','Expira em','Ações'],inviteRows)}`:''}`
+  :`<p class="form-note" style="margin-top:16px">Somente o <b>Administrador Super</b> (${safe(superAdminRow.email)}) pode convidar ou remover outros administradores.</p>`;
+ const teamPanel=preferencesPanel(
+  'Administradores da escola',
+  'Gerencie os administradores desta unidade e habilite administradores (incluindo o Administrador Super) para também atuarem como professores.',
+  `${table(['Administrador','Cargo','Atuação docente','Ações'],adminRows,'Nenhum administrador encontrado.')}${inviteSection}`,
+  'profile'
+ );
+ const transferPanel=preferencesPanel(
+  'Administrador responsável',
+  'Transfira a titularidade de Administrador Super para outra conta existente.',
+  `<p><b>${safe(superAdminRow.email)}</b> <span class="pill pill-signed" style="margin-left:6px">Administrador Super</span></p><p class="muted">A licença e os registros continuam pertencendo à escola. O novo titular passa a ser o Administrador Super.</p><form id="transferAdminForm" class="license-form"><label class="field"><span>E-mail do novo Administrador Super</span><input name="email" type="email" placeholder="admin@escola.com.br" required ${pending||!superUser?'disabled':''}></label><div class="form-footer"><button class="btn light" ${pending||!superUser?'disabled':''}>Transferir administração</button></div></form>`,
+  'lock'
+ );
+ return `${teamPanel}${transferPanel}`;
+}
 function preferencesOverview(sections,description){return `<div class="preferences-intro"><span class="preferences-intro-icon">${ico('settings',26)}</span><h2>Escolha uma configuração</h2><p>${safe(description)}</p></div><div class="preferences-overview-grid">${sections.map(([page,icon,label,hint])=>`<button class="preferences-tile" type="button" data-action="navigate" data-page="${page}"><span class="preferences-tile-icon">${ico(icon,21)}</span><span><b>${safe(label)}</b><small>${safe(hint)}</small></span>${ico('arrow',18)}</button>`).join('')}</div>`;}
 function preferencesLayout(scope,headingText,description,sections,selection,main){return `${heading(scope,headingText,description)}<div class="preferences-layout"><nav class="preferences-nav" aria-label="${safe(headingText)}"><div class="preferences-nav-title">Configurações</div><button class="preferences-nav-item ${selection===sections[0][0].split('-')[0]?'selected':''}" type="button" data-action="navigate" data-page="${sections[0][0].split('-')[0]}">${ico('dashboard',18)}<span>Visão geral</span></button>${sections.map(([page,icon,label])=>`<button class="preferences-nav-item ${selection===page?'selected':''}" type="button" data-action="navigate" data-page="${page}">${ico(icon,18)}<span>${safe(label)}</span>${ico('arrow',14)}</button>`).join('')}</nav><div class="preferences-main">${main}</div></div>`;}
 function preferencesPanel(title,description,body,icon='settings',extra=''){return `<section class="panel preferences-panel"><div class="preferences-panel-heading"><span class="preferences-panel-symbol">${ico(icon,22)}</span><div><h2>${safe(title)}</h2><p>${safe(description)}</p></div></div><div class="preferences-panel-body">${body}</div>${extra}</section>`;}
@@ -771,15 +938,15 @@ function profileView(){const user=ui.user||{},name=user.user_metadata?.full_name
  return preferencesLayout('Conta pessoal','Configurações do perfil','Gerencie sua conta pessoal separadamente das escolas.',profileSections,section,main);
 }
 function schoolRemovalNotice(s){if(!s.deletion_requested_at)return '';const canRestore=s.deletion_due_at&&new Date(s.deletion_due_at)>new Date()&&!s.deletion_started_at;return `<section class="deletion-banner"><div>${ico('trash',25)}<div><b>Exclusão agendada</b><p>Esta escola está desativada. Você pode cancelar a exclusão até ${new Date(s.deletion_due_at).toLocaleString('pt-BR')}. Depois disso, os dados serão removidos pela rotina do servidor.</p></div></div>${canRestore?`<button class="btn light" data-action="restoreSchool" data-id="${safe(s.id)}">${ico('restore',16)} Restaurar escola</button>`:`<strong>Prazo encerrado · limpeza em andamento</strong>`}</section>`;}
-function settingsView(){const s=currentSchool(),l=ui.schoolLicense,section=ui.page;const pending=!!s.deletion_requested_at,ownerEmail=ui.user?.email||'—';
+function settingsView(){const s=currentSchool(),l=ui.schoolLicense,section=ui.page;const pending=!!s.deletion_requested_at;
  let main='';
  if(section==='settings-import')main=onboarding.view();
  else if(section==='settings-identity')main=preferencesPanel('Informações da escola','Atualize os dados institucionais da unidade.',`<form id="schoolDetailsForm" class="license-form">${input('Nome da escola','name',s.name)}${input('E-mail institucional','contact_email',s.contact_email||'','email',false)}${input('Telefone / WhatsApp','contact_phone',s.contact_phone||'','text',false)}<label class="field"><span>Endereço da escola</span><textarea name="address" maxlength="500" rows="3">${safe(s.address||'')}</textarea></label><div class="form-footer"><button class="btn" ${pending?'disabled':''}>Salvar informações</button></div></form>`,'school');
  else if(section==='settings-license')main=preferencesPanel('Licença e ativação','Consulte o estado atual da sua licença ou aplique uma nova chave.',`<div class="school-license-summary"><div><span>Estado</span>${fullSchoolStatus(s)}</div><div><span>Modalidade</span><b>${safe(l?.kind==='cortesia'?'Cortesia / teste':l?'Paga':'Não definida')}</b></div><div><span>Validade</span><b>${safe(licenseExpiration(l))}</b></div></div><p class="form-note">O pagamento é combinado diretamente com o Campanella. Cada escola usa a própria licença.</p><form id="renewSchoolKeyForm" class="license-form"><label class="field"><span>Aplicar nova chave de licença</span><input type="text" name="key" placeholder="CAMP-XXXXXXXX-..." autocomplete="off" spellcheck="false" required></label><div class="form-footer"><button class="btn light" ${pending?'disabled':''}>${ico('key',16)} Aplicar código</button></div></form>`,'key');
- else if(section==='settings-admin')main=preferencesPanel('Administrador responsável','Transfira a administração para outra conta existente.',`<p><b>${safe(ownerEmail)}</b></p><p class="muted">A licença e os registros continuam pertencendo à escola. O administrador anterior perde o acesso após a transferência.</p><form id="transferAdminForm" class="license-form"><label class="field"><span>E-mail do novo administrador</span><input name="email" type="email" placeholder="admin@escola.com.br" required></label><div class="form-footer"><button class="btn light" ${pending?'disabled':''}>Transferir administração</button></div></form>`,'profile');
+ else if(section==='settings-admin')main=settingsAdminsPanel(s,pending);
  else if(section==='settings-backup')main=preferencesPanel('Backup no Google Drive','Cada escola autoriza seu próprio Drive. Os PDFs finais e certificados são copiados após a assinatura.',`<div class="school-license-summary"><div><span>Conexão</span><b>${ui.driveConnection?.connected?'Drive conectado':'Não conectado'}</b></div><div><span>Último backup</span><b>${ui.driveConnection?.last_success_at?new Date(ui.driveConnection.last_success_at).toLocaleString('pt-BR'):'Ainda não realizado'}</b></div></div>${ui.driveConnection?.last_error?`<p class="notice">${safe(ui.driveConnection.last_error)}</p>`:''}<p class="form-note">O backup fica sob controle da conta Google autorizada por esta escola. Não inclua contas compartilhadas sem autorização. O Drive poderá ser desconectado aqui.</p><div class="form-footer">${ui.driveConnection?.connected?`<button class="btn light" data-action="driveConnect" ${pending?'disabled':''}>Trocar conta Google</button><button class="btn danger" data-action="driveDisconnect">Desconectar Drive</button>`:`<button class="btn" data-action="driveConnect" ${pending?'disabled':''}>Conectar Google Drive</button>`}</div>`,'school');
- else if(section==='settings-deletion')main=preferencesPanel('Exclusão da escola','Gerencie a exclusão programada com prazo de 30 dias.',`<div class="settings-danger-copy"><p>Ao solicitar a exclusão, o acesso operacional é interrompido. Você tem <b>30 dias para restaurar</b> a escola. Depois, o sistema poderá apagar permanentemente seus dados e arquivos.</p></div>${pending?(s.deletion_due_at&&new Date(s.deletion_due_at)>new Date()&&!s.deletion_started_at?`<button class="btn light" data-action="restoreSchool" data-id="${safe(s.id)}">${ico('restore',16)} Cancelar exclusão</button>`:'<p class="muted">Prazo para restauração encerrado.</p>'):`<button class="btn danger" data-action="deleteSchool" ${!canAdmin()?'disabled':''}>${ico('trash',16)} Solicitar exclusão</button>`}`,'trash');
- else main=`<div class="settings-hero"><span class="school-hero-icon">${ico('school',28)}</span><div><div class="eyebrow">Escola selecionada</div><h2>${safe(s.name)}</h2><div class="settings-hero-meta">${fullSchoolStatus(s)}<span>${safe(licenseExpiration(l))}</span></div></div></div>${preferencesOverview(schoolSections,'Selecione uma categoria para gerenciar a instituição, a licença, o administrador ou a exclusão da escola.')}`;
+ else if(section==='settings-deletion')main=preferencesPanel('Exclusão da escola','Gerencie a exclusão programada com prazo de 30 dias.',`<div class="settings-danger-copy"><p>Ao solicitar a exclusão, o acesso operacional é interrompido. Você tem <b>30 dias para restaurar</b> a escola. Depois, o sistema poderá apagar permanentemente seus dados e arquivos.</p></div>${pending?(s.deletion_due_at&&new Date(s.deletion_due_at)>new Date()&&!s.deletion_started_at?`<button class="btn light" data-action="restoreSchool" data-id="${safe(s.id)}">${ico('restore',16)} Cancelar exclusão</button>`:'<p class="muted">Prazo para restauração encerrado.</p>'):`<button class="btn danger" data-action="deleteSchool" ${!canAdmin()||!isSuperAdmin(s)?'disabled':''}>${ico('trash',16)} Solicitar exclusão</button>`}`,'trash');
+ else main=`<div class="settings-hero"><span class="school-hero-icon">${ico('school',28)}</span><div><div class="eyebrow">Escola selecionada</div><h2>${safe(s.name)}</h2><div class="settings-hero-meta">${fullSchoolStatus(s)}<span>${safe(licenseExpiration(l))}</span></div></div></div>${preferencesOverview(schoolSections,'Selecione uma categoria para gerenciar a instituição, a licença, os administradores ou a exclusão da escola.')}`;
  const notice=pending?schoolRemovalNotice(s):'';
  return `${notice}${preferencesLayout('Escola','Configurações da escola',`Administração de ${safe(s.name||'sua unidade')} organizada por categorias.`,schoolSections,section,main)}`;
 }
@@ -806,13 +973,18 @@ function licensesView(){const schools=ui.platformSchools,keys=ui.platformKeys,re
 function teachersView(){
  const active=db.teachers.filter(t=>t.active!==false).length;
  const rows=db.teachers.slice().sort((a,b)=>(b.active!==false)-(a.active!==false)||a.name.localeCompare(b.name,'pt-BR'));
+ const admins=resolveSchoolAdminsList();
  return `${heading('Equipe','Professores','Cadastre professores e gerencie o acesso deles à agenda.','<button class="btn" data-action="editTeacher">＋ Novo professor</button>')}
  <div class="teacher-stats"><div><strong>${active}</strong><span>Ativos</span></div><div><strong>${rows.length-active}</strong><span>Inativos</span></div><div><strong>${rows.length}</strong><span>Total</span></div></div>
- ${card('Equipe docente',table(['Professor','E-mail','Situação','Ações'],rows.map(t=>row([
-  `<b>${safe(t.name)}</b>`,t.email?`<a href="mailto:${safe(t.email)}">${safe(t.email)}</a>`:'<span class="muted">Não cadastrado</span>',
-  `<span class="pill ${t.active!==false?'pill-signed':''}">${t.active!==false?'Ativo':'Inativo'}</span>`,
-  teacherActionsMenu(t)
- ])),'Nenhum professor cadastrado.'))}<p class="form-note">Se houver histórico vinculado, o professor será desativado em vez de apagado.</p>`;
+ ${card('Equipe docente',table(['Professor','E-mail','Situação','Ações'],rows.map(t=>{
+  const adm=t.email?admins.find(a=>a.email&&a.email.toLowerCase()===t.email.toLowerCase()):null;
+  const admBadge=adm?(adm.is_super?' <span class="pill pill-sent">Administrador Super</span>':' <span class="pill">Administrador</span>'):'';
+  return row([
+   `<b>${safe(t.name)}</b>${admBadge}`,t.email?`<a href="mailto:${safe(t.email)}">${safe(t.email)}</a>`:'<span class="muted">Não cadastrado</span>',
+   `<span class="pill ${t.active!==false?'pill-signed':''}">${t.active!==false?'Ativo':'Inativo'}</span>`,
+   teacherActionsMenu(t)
+  ]);
+ }),'Nenhum professor cadastrado.'))}<p class="form-note">Se houver histórico vinculado, o professor será desativado em vez de apagado. Para habilitar administradores como professores, acesse <b>Configurações da escola → Administradores e permissões</b>.</p>`;
 }
 function teacherForm(id){const t=lookup('teachers',id)||{};showModal(`<div class="eyebrow">Equipe e ensino</div><h2>${id?'Editar professor':'Novo professor'}</h2><p class="modal-intro">O e-mail será utilizado para enviar um convite de acesso exclusivo ao calendário do professor.</p><form id="teacherForm" data-id="${safe(id||'')}"><div class="form-grid">${input('Nome completo','name',t.name)}${input('E-mail profissional','email',t.email||'','email')}<label class="field wide"><span>Situação</span><select name="active"><option value="true" ${t.active!==false?'selected':''}>Ativo</option><option value="false" ${t.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar professor</button></div></form>`);}
 async function createInterviewInviteLink(leadId,teacherId){
@@ -1119,6 +1291,50 @@ document.addEventListener('click',async e=>{
  if(action==='removeLead'){if(!await window.campanellaConfirm('Excluir este lead? Contratos e fichas existentes impedem exclusão.','Excluir lead','Excluir'))return;const {error}=await sb.from('leads').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;toast('Lead excluído.');return refresh();}
  if(action==='removePackage'){if(!await window.campanellaConfirm('Excluir pacote? Pacotes utilizados não podem ser excluídos.','Excluir pacote','Excluir'))return;const {error}=await sb.from('packages').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;toast('Pacote excluído.');return refresh();}
  if(action==='voidContract'){if(!await window.campanellaConfirm('Cancelar contrato e invalidar seu link?'))return;const {error}=await sb.rpc('void_manual_contract',{p_contract_id:id});if(error)throw error;toast('Contrato cancelado.');return refresh();}
+ if(action==='adminSwitchInviteAccount'){await sb.auth.signOut();return adminInviteLanding(currentAdminInviteToken,null);}
+ if(action==='switchToTeacherMode'){
+  const t=myTeacherInActiveSchool();
+  if(!t)throw new Error('Habilite sua conta como professor em Configurações da escola → Administradores e permissões.');
+  ui.role='teacher';ui.teacherId=t.id||t.teacher_id;ui.teacherSchoolName=currentSchool().name||'Minha escola';
+  await calendar.load();calendar.renderCalendar();return;
+ }
+ if(action==='switchToAdminMode'){
+  if(!ui.schools.length)throw new Error('Sua conta não possui escolas administradas.');
+  ui.role='admin';ui.schoolId=ui.schoolId||ui.schools[0].id;ui.page='dashboard';
+  await refresh();return;
+ }
+ if(action==='adminToggleTeacher'){
+  const enable=x.dataset.enable==='true',name=x.dataset.name||displayName();
+  if(!enable&&!await window.campanellaConfirm(`Desativar a atuação como professor de ${name}? O acesso administrativo será mantido.`))return;
+  const {error}=await sb.rpc('school_admin_toggle_teacher',{p_school:ui.schoolId,p_user_id:id,p_enable:enable,p_name:name});
+  if(error){
+   const adm=resolveSchoolAdminsList().find(a=>a.user_id===id);
+   if(adm?.email&&adm.email!=='—'){
+    const existing=db.teachers.find(t=>t.email?.toLowerCase()===adm.email.toLowerCase());
+    await save('teachers',{name:name||adm.full_name,email:adm.email.toLowerCase(),active:enable},existing?.id);
+   }else throw error;
+  }
+  toast(enable?'Administrador habilitado também como professor.':'Atuação como professor desativada.');
+  return refresh();
+ }
+ if(action==='removeSchoolAdmin'){
+  if(!isSuperAdmin())throw new Error('Somente o Administrador Super pode remover outros administradores.');
+  if(!await window.campanellaConfirm(`Remover o acesso administrativo de ${x.dataset.email||'este usuário'} nesta escola?`,'Remover administrador','Remover'))return;
+  const {error}=await sb.rpc('school_admin_remove_member',{p_school:ui.schoolId,p_user_id:id});if(error)throw error;
+  toast('Administrador removido da escola.');return refresh();
+ }
+ if(action==='revokeAdminInvite'){
+  if(!isSuperAdmin())throw new Error('Somente o Administrador Super pode revogar convites.');
+  if(!await window.campanellaConfirm('Revogar este convite de administrador?'))return;
+  const {error}=await sb.rpc('school_admin_revoke_invite',{p_school:ui.schoolId,p_invite_id:id});if(error)throw error;
+  toast('Convite revogado.');return refresh();
+ }
+ if(action==='copyAdminInviteLink'){
+  const token=x.dataset.token||'';
+  const link=token?(location.origin+location.pathname+'#admin/'+token):($('#generatedAdminLink')?.textContent||'');
+  if(!link)throw new Error('Link de convite indisponível.');
+  await navigator.clipboard.writeText(link);toast('Link de convite copiado.');return;
+ }
  }catch(error){errors(error)}finally{finishBusy()}
 });
 document.addEventListener('click',e=>{if(e.target.closest('#externalPreviewBtn'))externalPreview().catch(errors);});
@@ -1190,6 +1406,54 @@ document.addEventListener('submit',async event=>{
  try{
  if(f.id.startsWith('onb')){await onboarding.submit(f);return;}
  if(f.id.startsWith('cal')){await calendar.submit(f);return;}
+ if(f.id==='inviteAdminForm'){
+  if(!isSuperAdmin())throw new Error('Somente o Administrador Super pode convidar administradores.');
+  const name=f.elements.full_name.value.trim(),email=f.elements.email.value.trim().toLowerCase(),alsoTeacher=!!f.elements.also_teacher?.checked;
+  if(name.length<2)throw new Error('Informe o nome completo do administrador.');
+  const {data,error}=await sb.rpc('school_admin_create_invite',{p_school:ui.schoolId,p_name:name,p_email:email,p_also_teacher:alsoTeacher});
+  if(error){
+   if(error.code==='PGRST202'||/school_admin_create_invite/i.test(error.message||''))throw new Error('Execute o arquivo sql/23_upgrade_v71_multi_admins_e_convites.sql no SQL Editor do Supabase para habilitar os convites de administrador.');
+   throw error;
+  }
+  f.reset();await refresh();
+  if(data?.already_member){toast('Este usuário já possui conta e foi vinculado como administrador da escola!');return;}
+  const link=location.origin+location.pathname+'#admin/'+data.token;
+  showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">↗</div><div class="eyebrow">Convite de administrador</div><h2>Link para ${safe(name)}</h2><p class="modal-intro">Envie este link para <b>${safe(email)}</b> ativar o acesso administrativo${alsoTeacher?' e docente':''} na escola.</p><div class="link-field" id="generatedAdminLink">${safe(link)}</div><p class="form-note">Válido por 14 dias. O convidado poderá usar uma conta existente ou criar sua senha pelo link.</p><div class="form-footer"><button class="btn ghost" type="button" data-action="close">Fechar</button><button class="btn" type="button" data-action="copyAdminInviteLink" data-token="${safe(data.token)}">Copiar link</button></div></div>`);
+  return;
+ }
+ if(f.id==='adminInviteSignup'){
+  const fullName=f.elements.full_name.value.trim(),email=f.elements.email.value.trim(),password=f.elements.password.value;
+  if(fullName.length<2)throw new Error('Informe seu nome completo.');
+  if(password.length<8||password!==f.elements.confirm.value)throw new Error('As senhas devem coincidir e ter pelo menos 8 caracteres.');
+  const token=cleanTokenValue(currentAdminInviteToken||localStorage.getItem('campanella:v7:admin_convite'));
+  currentAdminInviteToken=token;
+  if(token)localStorage.setItem('campanella:v7:admin_convite',token);
+  localStorage.setItem('campanella:v7:admin_email',email);
+  localStorage.setItem('campanella:v7:admin_signup_done',email.toLowerCase());
+  const redirect=location.origin+location.pathname+'?admin_convite='+encodeURIComponent(token);
+  const {data:signup,error}=await sb.auth.signUp({email,password,options:{data:{full_name:fullName},emailRedirectTo:redirect}});
+  if(error)throw error;
+  if(signup.session){
+   const {data:acc,error:accErr}=await sb.rpc('school_admin_accept_invite',{p_token:token});if(accErr)throw accErr;
+   localStorage.removeItem('campanella:v7:admin_convite');localStorage.removeItem('campanella:v7:admin_signup_done');
+   if(acc?.school_id)localStorage.setItem('campanella:escola:'+signup.session.user.id,acc.school_id);
+   history.replaceState({},'',location.pathname);return initialize();
+  }
+  $('#app').innerHTML=authWrap(`<div class="eyebrow">Quase lá</div><h2>Confirme seu e-mail</h2><p class="muted">Enviamos um link de confirmação para <strong>${safe(email)}</strong>. Clique no link recebido por e-mail e, em seguida, entre abaixo com sua senha para acessar a escola.</p><form id="adminInviteLogin" class="auth-form" style="margin-top:16px"><label class="field"><span>E-mail</span><input name="email" type="email" value="${safe(email)}" readonly></label><label class="field"><span>Senha cadastrada</span><input name="password" type="password" required></label><button class="btn" type="submit">Já confirmei meu e-mail · Entrar</button></form><button class="btn ghost" style="margin-top:10px" data-action="backLogin">Voltar ao login</button>`);
+  return;
+ }
+ if(f.id==='adminInviteLogin'){
+  const {data:signIn,error}=await sb.auth.signInWithPassword({email:f.elements.email.value.trim(),password:f.elements.password.value});if(error)throw error;
+  const token=cleanTokenValue(currentAdminInviteToken||localStorage.getItem('campanella:v7:admin_convite'));
+  if(token){
+   try{
+    const {data:acc,error:accErr}=await sb.rpc('school_admin_accept_invite',{p_token:token});if(accErr)throw accErr;
+    if(acc?.school_id&&signIn?.user?.id)localStorage.setItem('campanella:escola:'+signIn.user.id,acc.school_id);
+   }catch(e){try{await sb.rpc('accept_my_pending_invites');}catch(_){}}
+  }else{try{await sb.rpc('accept_my_pending_invites');}catch(_){}}
+  localStorage.removeItem('campanella:v7:admin_convite');localStorage.removeItem('campanella:v7:admin_signup_done');
+  history.replaceState({},'',location.pathname);return initialize();
+ }
  if(f.id==='externalSignForm'){await externalSend(f);return;}
  if(f.id==='externalCodeForm'){await externalVerify(f.elements.code.value);return;}
  if(f.id==='externalInterviewForm'){await externalSave(f);return;}
@@ -1210,8 +1474,8 @@ document.addEventListener('submit',async event=>{
  if(f.id==='manageLicenseForm'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');const d=formData(f),args={p_school:f.dataset.school,p_action:d.action,p_days:d.action==='extend'?Number(d.days):null,p_expires_on:d.action==='set_date'?d.expires_on:null,p_note:d.note.trim()||null};
   const {error}=await sb.rpc('manage_school_license',args);if(error)throw error;closeModal();await loadSchools(ui.schoolId);await loadPlatformData();await reloadLicenseState();toast('Licença atualizada.');return ui.schoolId?refresh():render();}
  if(f.id==='transferAdminForm'||f.id==='platformTransferForm'){const email=f.elements.email.value.trim(),schoolId=f.id==='transferAdminForm'?ui.schoolId:f.dataset.school;
-  if(!await window.campanellaConfirm('Confirmar transferência da administração? O administrador anterior perderá o acesso a esta escola.'))return;
-  const {error}=await sb.rpc('transfer_school_admin',{p_school:schoolId,p_email:email});if(error)throw error;closeModal();await loadSchools();if(ui.isPlatformAdmin)await loadPlatformData();toast('Administração transferida.');return ui.schoolId?refresh():render();}
+  if(!await window.campanellaConfirm('Confirmar transferência da titularidade de Administrador Super?'))return;
+  const {error}=await sb.rpc('transfer_school_admin',{p_school:schoolId,p_email:email});if(error)throw error;closeModal();await loadSchools();if(ui.isPlatformAdmin)await loadPlatformData();toast('Titularidade de Administrador Super transferida.');return ui.schoolId?refresh():render();}
  if(f.id==='loginForm'){const {error}=await sb.auth.signInWithPassword({email:f.elements.email.value,password:f.elements.password.value});if(error)throw error;await initialize();return;}
  if(f.id==='forgotPasswordForm'){
   const email=f.elements.email.value.trim();
@@ -1461,7 +1725,7 @@ async function completePreEnrollment(f){
  history.replaceState({},'',location.pathname+'#pre-matricula-concluida');
  $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div>${themeToggleMarkup()}</header><main class="sign-main"><section class="sign-panel"><div class="eyebrow">Cadastro recebido</div><h1>Pré-matrícula concluída!</h1><p class="leadline">Seus dados foram enviados à escola. A administração preparará o contrato e combinará com você a assinatura por outro meio.</p><div class="notice">Nenhum contrato foi assinado nesta etapa. Aguarde as orientações da escola.</div></section></main></div>`;
 }
-window.addEventListener('hashchange',()=>{if(location.hash.startsWith('#assinar/')||location.hash.startsWith('#pre-matricula/')||location.hash.startsWith('#entrevista/')||location.hash.startsWith('#professor/'))location.reload()});
+window.addEventListener('hashchange',()=>{if(location.hash.includes('access_token=')||location.hash.includes('error='))return;if(location.hash.startsWith('#assinar/')||location.hash.startsWith('#pre-matricula/')||location.hash.startsWith('#entrevista/')||location.hash.startsWith('#professor/')||location.hash.startsWith('#admin/'))location.reload()});
 sb.auth.onAuthStateChange((event)=>{
  if(event==='PASSWORD_RECOVERY'){
   history.replaceState({},'',location.pathname+'?recuperar=1');

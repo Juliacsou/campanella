@@ -31,7 +31,11 @@ export async function authorized(req:Request,schoolId?:string,contractId?:string
  }
  if(!school)throw new Error('Escola não informada.');
  const {data:owner,error:ownerError}=await service.from('schools').select('id,admin_user_id,deletion_requested_at').eq('id',school).maybeSingle();
- if(ownerError||!owner||owner.admin_user_id!==data.user.id||owner.deletion_requested_at)throw new Error('Acesso negado a esta escola.');
+ if(ownerError||!owner||owner.deletion_requested_at)throw new Error('Acesso negado a esta escola.');
+ if(owner.admin_user_id!==data.user.id){
+  const {data:member,error:memberError}=await service.from('school_members').select('role').eq('school_id',school).eq('user_id',data.user.id).eq('role','admin').maybeSingle();
+  if(memberError||!member)throw new Error('Acesso negado a esta escola.');
+ }
  if(requireActive){const {data:license,error:licError}=await service.rpc('has_active_school_license',{p_school:school});if(licError||!license)throw new Error('Licença da escola indisponível.');}
  return {user:data.user,schoolId:school};
 }
