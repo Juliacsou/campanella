@@ -902,14 +902,20 @@ function settingsAdminsPanel(s,pending){
    `<div class="actions">${canToggleTeacher?`<button type="button" class="table-action-btn ${a.is_teacher?'':'primary'}" data-action="adminToggleTeacher" data-id="${safe(a.user_id)}" data-enable="${a.is_teacher?'false':'true'}" data-name="${safe(a.full_name||'')}">${ico('teachers',14)} <span>${a.is_teacher?'Desativar como professor':'Tornar professor'}</span></button>`:''}${canRemove?`<button type="button" class="table-action-btn danger" data-action="removeSchoolAdmin" data-id="${safe(a.user_id)}" data-email="${safe(a.email||'')}">${ico('trash',14)} <span>Remover admin</span></button>`:''}</div>`
   ]);
  });
- const inviteRows=invites.map(inv=>row([
-  `<b>${safe(inv.full_name)}</b><div class="muted">${safe(inv.email)}</div>`,
-  inv.also_teacher?'<span class="pill pill-sent">Admin + Professor</span>':'<span class="pill">Administrador</span>',
-  inv.expires_at?dateBR(String(inv.expires_at).slice(0,10)):'14 dias',
-  `<div class="actions">${inv.invite_token?`<button type="button" class="table-action-btn" data-action="copyAdminInviteLink" data-token="${safe(inv.invite_token)}">${ico('key',14)} <span>Copiar link</span></button>`:''}${superUser?`<button type="button" class="table-action-btn danger" data-action="revokeAdminInvite" data-id="${safe(inv.id)}">${ico('trash',14)} <span>Revogar</span></button>`:''}</div>`
- ]));
+ const inviteRows=invites.map(inv=>{
+  const link=typeof location!=='undefined'?location.origin+location.pathname+'#admin/'+(inv.invite_token||''):'';
+  const waText=encodeURIComponent(`Olá, ${inv.full_name}! Segue seu link exclusivo de acesso administrativo ao Campanella:\n${link}`);
+  const mailSub=encodeURIComponent(`Convite de administrador · ${currentSchool().name||'Campanella'}`);
+  const mailBody=encodeURIComponent(`Olá, ${inv.full_name}!\n\nSegue seu link exclusivo para ativar o acesso administrativo na escola:\n${link}`);
+  return row([
+   `<b>${safe(inv.full_name)}</b><div class="muted">${safe(inv.email)}</div>`,
+   inv.also_teacher?'<span class="pill pill-sent">Admin + Professor</span>':'<span class="pill">Administrador</span>',
+   inv.expires_at?dateBR(String(inv.expires_at).slice(0,10)):'14 dias',
+   `<div class="actions">${inv.invite_token?`<button type="button" class="table-action-btn" data-action="copyAdminInviteLink" data-token="${safe(inv.invite_token)}">${ico('key',14)} <span>Copiar link</span></button><a class="table-action-btn" href="https://wa.me/?text=${waText}" target="_blank" rel="noopener">${ico('arrow',14)} <span>WhatsApp</span></a><a class="table-action-btn" href="mailto:${encodeURIComponent(inv.email)}?subject=${mailSub}&body=${mailBody}">${ico('profile',14)} <span>E-mail</span></a>`:''}${superUser?`<button type="button" class="table-action-btn danger" data-action="revokeAdminInvite" data-id="${safe(inv.id)}">${ico('trash',14)} <span>Revogar</span></button>`:''}</div>`
+  ]);
+ });
  const inviteSection=superUser
-  ?`<h3 class="form-section" style="margin-top:24px">Convidar novo administrador</h3><p class="muted">O convidado receberá acesso administrativo a esta escola e, se marcado abaixo, também será habilitado como professor.</p><form id="inviteAdminForm" class="license-form"><div class="form-grid">${input('Nome completo','full_name','','text')}${input('E-mail do novo administrador','email','','email')}<label class="field wide checkrow"><input type="checkbox" name="also_teacher" value="1"> Também cadastrar e habilitar como professor desta escola</label></div><div class="form-footer"><button class="btn" type="submit" ${pending?'disabled':''}>${ico('plus',16)} Convidar administrador</button></div></form>${invites.length?`<h3 class="form-section" style="margin-top:24px">Convites pendentes</h3>${table(['Convidado','Perfil','Expira em','Ações'],inviteRows)}`:''}`
+  ?`<h3 class="form-section" style="margin-top:24px">Convidar novo administrador</h3><p class="muted">Gere um link exclusivo e seguro para enviar ao convidado por WhatsApp ou e-mail. Ao abrir o link, ele definirá sua senha e ativará o acesso administrativo (e opcionalmente docente) nesta escola.</p><form id="inviteAdminForm" class="license-form"><div class="form-grid">${input('Nome completo','full_name','','text')}${input('E-mail do novo administrador','email','','email')}<label class="field wide checkrow"><input type="checkbox" name="also_teacher" value="1"> Também cadastrar e habilitar como professor desta escola</label></div><div class="form-footer"><button class="btn" type="submit" ${pending?'disabled':''}>${ico('plus',16)} Gerar link de convite</button></div></form>${invites.length?`<h3 class="form-section" style="margin-top:24px">Convites pendentes</h3><p class="muted" style="margin-bottom:12px">Estes são os links de convite gerados. Você pode copiar ou reenviar por WhatsApp/e-mail a qualquer momento:</p>${table(['Convidado','Perfil','Expira em','Ações'],inviteRows)}`:''}`
   :`<p class="form-note" style="margin-top:16px">Somente o <b>Administrador Super</b> (${safe(superAdminRow.email)}) pode convidar ou remover outros administradores.</p>`;
  const teamPanel=preferencesPanel(
   'Administradores da escola',
@@ -1418,7 +1424,10 @@ document.addEventListener('submit',async event=>{
   f.reset();await refresh();
   if(data?.already_member){toast('Este usuário já possui conta e foi vinculado como administrador da escola!');return;}
   const link=location.origin+location.pathname+'#admin/'+data.token;
-  showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">↗</div><div class="eyebrow">Convite de administrador</div><h2>Link para ${safe(name)}</h2><p class="modal-intro">Envie este link para <b>${safe(email)}</b> ativar o acesso administrativo${alsoTeacher?' e docente':''} na escola.</p><div class="link-field" id="generatedAdminLink">${safe(link)}</div><p class="form-note">Válido por 14 dias. O convidado poderá usar uma conta existente ou criar sua senha pelo link.</p><div class="form-footer"><button class="btn ghost" type="button" data-action="close">Fechar</button><button class="btn" type="button" data-action="copyAdminInviteLink" data-token="${safe(data.token)}">Copiar link</button></div></div>`);
+  const waMsg=encodeURIComponent(`Olá, ${name}! Segue seu link exclusivo para acessar o painel administrativo da escola no Campanella:\n${link}`);
+  const mailSubject=encodeURIComponent(`Convite de administrador · ${currentSchool().name||'Campanella'}`);
+  const mailBody=encodeURIComponent(`Olá, ${name}!\n\nVocê foi convidado para a administração da escola no Campanella.\n\nAcesse o link abaixo para ativar sua conta e entrar no painel:\n${link}\n\nAtenciosamente,\n${displayName()}`);
+  showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">↗</div><div class="eyebrow">Convite de administrador</div><h2>Link exclusivo para ${safe(name)}</h2><p class="modal-intro">O link seguro foi gerado. <b>Envie este link para ${safe(email)}</b> (pelo WhatsApp ou por e-mail) para que ele crie a senha e ative o acesso administrativo${alsoTeacher?' e docente':''} na escola:</p><div class="link-field" id="generatedAdminLink">${safe(link)}</div><p class="form-note">Válido por 14 dias. Ao abrir o link, o convidado definirá sua senha ou entrará com sua conta existente.</p><div class="form-footer"><button class="btn ghost" type="button" data-action="close">Fechar</button><button class="btn" type="button" data-action="copyAdminInviteLink" data-token="${safe(data.token)}">Copiar link</button><a class="btn light" href="https://wa.me/?text=${waMsg}" target="_blank" rel="noopener">Enviar no WhatsApp</a><a class="btn light" href="mailto:${encodeURIComponent(email)}?subject=${mailSubject}&body=${mailBody}">Abrir no meu E-mail</a></div></div>`);
   return;
  }
  if(f.id==='adminInviteSignup'){
