@@ -16,11 +16,11 @@
   --camp-bg: #0C0C0C;
   --camp-bg-secondary: #121212;
   --camp-bg-radial:
-    radial-gradient(circle at 82% 8%, rgba(234, 88, 12, 0.28) 0%, rgba(234, 88, 12, 0.08) 32%, transparent 56%),
-    radial-gradient(circle at 14% 34%, rgba(245, 158, 11, 0.20) 0%, rgba(245, 158, 11, 0.06) 26%, transparent 50%),
-    radial-gradient(ellipse at 50% 55%, rgba(234, 88, 12, 0.18) 0%, rgba(26, 26, 26, 0.10) 38%, transparent 68%),
-    radial-gradient(circle at 88% 85%, rgba(234, 88, 12, 0.26) 0%, rgba(251, 146, 60, 0.09) 30%, transparent 58%),
-    radial-gradient(circle at 18% 90%, rgba(251, 146, 60, 0.18) 0%, rgba(234, 88, 12, 0.05) 26%, transparent 52%),
+    radial-gradient(ellipse 80% 50% at 85% 0%, rgba(249, 115, 22, 0.025) 0%, transparent 60%),
+    radial-gradient(circle at 14% 34%, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.02) 26%, transparent 50%),
+    radial-gradient(ellipse at 50% 55%, rgba(234, 88, 12, 0.06) 0%, transparent 68%),
+    radial-gradient(circle at 88% 85%, rgba(249, 115, 22, 0.08) 0%, transparent 58%),
+    radial-gradient(circle at 18% 90%, rgba(251, 146, 60, 0.06) 0%, transparent 52%),
     linear-gradient(150deg, #0E0E0E 0%, #121212 35%, #161616 60%, #0F0F0F 85%, #090909 100%);
   
   /* Surfaces — Vision UI Signature Glassmorphism */
@@ -33,7 +33,7 @@
   /* Inputs & Interactive Controls */
   --camp-input: rgba(20, 20, 20, 0.75);
   --camp-input-focus: rgba(30, 30, 30, 0.90);
-  --camp-input-border: rgba(255, 255, 255, 0.12);
+  --camp-input-border: transparent;
   --camp-hover: rgba(255, 255, 255, 0.06);
   --camp-hover-strong: rgba(234, 88, 12, 0.18);
 
@@ -105,9 +105,9 @@
   /* Backgrounds */
   --camp-bg: #FAF9F6;
   --camp-bg-secondary: #F5F2EB;
-  --camp-bg-radial: radial-gradient(at 85% 0%, rgba(234, 88, 12, 0.12) 0px, transparent 55%),
-                    radial-gradient(at 5% 45%, rgba(245, 158, 11, 0.08) 0px, transparent 50%),
-                    radial-gradient(at 50% 90%, rgba(251, 146, 60, 0.08) 0px, transparent 40%);
+  --camp-bg-radial: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(249, 115, 22, 0.03) 0px, transparent 60%),
+                    radial-gradient(at 5% 45%, rgba(245, 158, 11, 0.03) 0px, transparent 50%),
+                    radial-gradient(at 50% 90%, rgba(251, 146, 60, 0.03) 0px, transparent 40%);
   
   /* Surfaces — Authentic Frosted Glassmorphism */
   --camp-surface: rgba(255, 255, 255, 0.85);
@@ -117,9 +117,9 @@
   --camp-surface-card-border: transparent;
 
   /* Inputs & Interactive Controls */
-  --camp-input: rgba(255, 255, 255, 0.75);
-  --camp-input-focus: rgba(255, 255, 255, 0.96);
-  --camp-input-border: rgba(234, 88, 12, 0.22);
+  --camp-input: #FFFFFF;
+  --camp-input-focus: #FFFFFF;
+  --camp-input-border: transparent;
   --camp-hover: rgba(234, 88, 12, 0.06);
   --camp-hover-strong: rgba(234, 88, 12, 0.12);
 
@@ -1052,9 +1052,21 @@ button.btn {
   padding: 10px 16px !important;
 }
 
-.btn.ghost:hover {
+:root:not([data-theme="light"]) .btn.ghost:hover,
+[data-theme="dark"] .btn.ghost:hover {
   background: rgba(255, 255, 255, 0.08) !important;
   color: #FFFFFF !important;
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .btn.ghost {
+  color: #52525B !important;
+  background: transparent !important;
+}
+
+[data-theme="light"] .btn.ghost:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: #18181B !important;
   transform: translateY(-1px);
 }
 
@@ -1070,17 +1082,32 @@ button.btn {
   min-height: auto !important;
 }
 
-.btn.mini.light {
+:root:not([data-theme="light"]) .btn.mini.light,
+[data-theme="dark"] .btn.mini.light {
   background: rgba(255, 255, 255, 0.08) !important;
   border: none !important;
   color: #FFFFFF !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
 }
 
-.btn.mini.light:hover {
+:root:not([data-theme="light"]) .btn.mini.light:hover,
+[data-theme="dark"] .btn.mini.light:hover {
   background: rgba(255, 255, 255, 0.18) !important;
   border: none !important;
   color: #FFFFFF !important;
+}
+
+[data-theme="light"] .btn.mini.light {
+  background: #FFFFFF !important;
+  border: none !important;
+  color: #27272A !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .btn.mini.light:hover {
+  background: #F5F2EB !important;
+  border: none !important;
+  color: #EA580C !important;
 }
 
 .icon-btn {
@@ -1241,13 +1268,35 @@ button.btn {
 .crm-metric::after {
   content: '';
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 90px;
-  height: 90px;
-  background: radial-gradient(circle, var(--camp-primary-glow) 0%, transparent 70%);
-  opacity: 0.35;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse 70% 60% at 100% 0%, rgba(249, 115, 22, 0.06) 0%, rgba(234, 88, 12, 0.015) 50%, transparent 80%);
+  opacity: 0.65;
   pointer-events: none;
+  transition: opacity 0.25s ease, background 0.25s ease;
+}
+
+[data-theme="light"] .metric::after,
+[data-theme="light"] .crm-metric::after {
+  background: radial-gradient(ellipse 70% 60% at 100% 0%, rgba(249, 115, 22, 0.05) 0%, rgba(253, 186, 116, 0.015) 50%, transparent 80%);
+  opacity: 0.7;
+}
+
+.metric:hover::after,
+.crm-metric:hover::after {
+  opacity: 0.95;
+}
+
+:root:not([data-theme="light"]) .metric:hover::after,
+[data-theme="dark"] .metric:hover::after,
+:root:not([data-theme="light"]) .crm-metric:hover::after,
+[data-theme="dark"] .crm-metric:hover::after {
+  background: radial-gradient(ellipse 75% 65% at 100% 0%, rgba(249, 115, 22, 0.10) 0%, rgba(234, 88, 12, 0.02) 50%, transparent 80%);
+}
+
+[data-theme="light"] .metric:hover::after,
+[data-theme="light"] .crm-metric:hover::after {
+  background: radial-gradient(ellipse 75% 65% at 100% 0%, rgba(249, 115, 22, 0.09) 0%, rgba(253, 186, 116, 0.03) 50%, transparent 80%);
 }
 
 .metric-icon,
@@ -1430,17 +1479,60 @@ button.btn {
 .crm-filters input,
 .crm-filters select,
 .toolbar select,
-.cal-teacher-picker select {
+.cal-teacher-picker select,
+.crm-pipeline-form input,
+.crm-pipeline-form select,
+.modal input,
+.modal select,
+.modal textarea,
+dialog input,
+dialog select,
+dialog textarea {
   padding: 12px 14px !important;
-  border: 1px solid var(--camp-input-border) !important;
+  border: none !important;
+  outline: none !important;
   background: var(--camp-input) !important;
   color: var(--camp-text) !important;
   border-radius: var(--camp-radius-md) !important;
   width: 100%;
   min-width: 0;
-  outline: 0;
   transition: var(--camp-transition);
   box-sizing: border-box;
+}
+
+:root:not([data-theme="light"]) .field input,
+:root:not([data-theme="light"]) .field select,
+:root:not([data-theme="light"]) .field textarea,
+:root:not([data-theme="light"]) .crm-filters input,
+:root:not([data-theme="light"]) .crm-filters select,
+:root:not([data-theme="light"]) .crm-pipeline-form input,
+:root:not([data-theme="light"]) .crm-pipeline-form select,
+[data-theme="dark"] .field input,
+[data-theme="dark"] .field select,
+[data-theme="dark"] .field textarea,
+[data-theme="dark"] .crm-filters input,
+[data-theme="dark"] .crm-filters select,
+[data-theme="dark"] .crm-pipeline-form input,
+[data-theme="dark"] .crm-pipeline-form select {
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.08), 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="light"] .field input,
+[data-theme="light"] .field select,
+[data-theme="light"] .field textarea,
+[data-theme="light"] .crm-filters input,
+[data-theme="light"] .crm-filters select,
+[data-theme="light"] .crm-pipeline-form input,
+[data-theme="light"] .crm-pipeline-form select,
+[data-theme="light"] .modal input,
+[data-theme="light"] .modal select,
+[data-theme="light"] .modal textarea,
+[data-theme="light"] dialog input,
+[data-theme="light"] dialog select,
+[data-theme="light"] dialog textarea {
+  background: #FFFFFF !important;
+  color: #18181B !important;
+  box-shadow: 0 2px 8px -2px rgba(24, 24, 27, 0.08), 0 1px 3px rgba(24, 24, 27, 0.04), inset 0 1px 1px #FFFFFF !important;
 }
 
 .field input:focus,
@@ -1450,10 +1542,16 @@ button.btn {
 .crm-filters input:focus,
 .crm-filters select:focus,
 .toolbar select:focus,
-.cal-teacher-picker select:focus {
-  border-color: var(--camp-primary) !important;
-  background: var(--camp-input-focus) !important;
-  box-shadow: 0 0 0 3px var(--camp-primary-glow) !important;
+.cal-teacher-picker select:focus,
+.crm-pipeline-form input:focus,
+.crm-pipeline-form select:focus,
+.modal input:focus,
+.modal select:focus,
+dialog input:focus,
+dialog select:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2.5px rgba(234, 88, 12, 0.35), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
 }
 
 .field input::placeholder,
@@ -2895,6 +2993,66 @@ dialog .close:hover {
   border-radius: var(--camp-radius-lg);
   padding: 18px;
   margin-top: 18px;
+}
+
+.crm-color-picker-row input[type="color"] {
+  width: 44px !important;
+  height: 40px !important;
+  padding: 3px !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+}
+
+.crm-color-swatch {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+  cursor: pointer !important;
+  transition: transform 0.15s ease !important;
+}
+
+.crm-color-swatch:hover {
+  transform: scale(1.15) !important;
+}
+
+/* File Picker (Import Leads CSV) — Zero Stroke Border */
+input[type="file"],
+.field input[type="file"] {
+  padding: 8px 12px !important;
+  border: none !important;
+  outline: none !important;
+  cursor: pointer !important;
+}
+
+input[type="file"]::-webkit-file-upload-button {
+  border: none !important;
+  outline: none !important;
+  background: rgba(234, 88, 12, 0.14) !important;
+  color: #EA580C !important;
+  font-weight: 750 !important;
+  font-size: 11px !important;
+  padding: 6px 14px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  margin-right: 12px !important;
+  transition: all 0.15s ease !important;
+}
+
+input[type="file"]::-webkit-file-upload-button:hover {
+  background: rgba(234, 88, 12, 0.24) !important;
+}
+
+:root:not([data-theme="light"]) input[type="file"]::-webkit-file-upload-button,
+[data-theme="dark"] input[type="file"]::-webkit-file-upload-button {
+  background: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
 }
 
 /* Fiche Created Popup & Choices */
@@ -5554,11 +5712,19 @@ table tr:hover td {
   color: #FFFFFF !important;
 }
 
-.crm-help-note {
+:root:not([data-theme="light"]) .crm-help-note,
+[data-theme="dark"] .crm-help-note {
   background: rgba(234, 88, 12, 0.12) !important;
   border-left: 3px solid #EA580C !important;
   border-radius: 10px !important;
-  color: #F4EBE3 !important;
+  color: #FDBA74 !important;
+}
+
+[data-theme="light"] .crm-help-note {
+  background: rgba(234, 88, 12, 0.10) !important;
+  border-left: 3px solid #EA580C !important;
+  border-radius: 10px !important;
+  color: #9A3412 !important;
 }
 
 /* --- 19.5 Fichas Iniciais, Matrículas & Pacotes --- */
@@ -7873,11 +8039,19 @@ dialog:has(.cal-enrollment) {
   border: none !important;
 }
 
-.crm-help-note {
+:root:not([data-theme="light"]) .crm-help-note,
+[data-theme="dark"] .crm-help-note {
   background: rgba(234, 88, 12, 0.12) !important;
   border: none !important;
   border-left: 3px solid #EA580C !important;
-  color: #F4EBE3 !important;
+  color: #FDBA74 !important;
+}
+
+[data-theme="light"] .crm-help-note {
+  background: rgba(234, 88, 12, 0.10) !important;
+  border: none !important;
+  border-left: 3px solid #EA580C !important;
+  color: #9A3412 !important;
 }
 
 .crm-board-col header b {
@@ -7910,8 +8084,10 @@ button.btn,
 }
 
 /* Specific fix for + IMPORTAR CSV and VISUALIZAR buttons */
-.btn.light,
-.btn.mini.light {
+:root:not([data-theme="light"]) .btn.light,
+:root:not([data-theme="light"]) .btn.mini.light,
+[data-theme="dark"] .btn.light,
+[data-theme="dark"] .btn.mini.light {
   background: rgba(255, 255, 255, 0.08) !important;
   color: #FFFFFF !important;
   border: none !important;
@@ -7921,14 +8097,35 @@ button.btn,
   -webkit-backdrop-filter: blur(20px) !important;
 }
 
-.btn.light:hover,
-.btn.mini.light:hover {
+:root:not([data-theme="light"]) .btn.light:hover,
+:root:not([data-theme="light"]) .btn.mini.light:hover,
+[data-theme="dark"] .btn.light:hover,
+[data-theme="dark"] .btn.mini.light:hover {
   background: rgba(255, 255, 255, 0.16) !important;
   color: #FFFFFF !important;
   border: none !important;
   outline: none !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28) !important;
+}
+
+[data-theme="light"] .btn.light,
+[data-theme="light"] .btn.mini.light {
+  background: #FFFFFF !important;
+  color: #27272A !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .btn.light:hover,
+[data-theme="light"] .btn.mini.light:hover {
+  background: #F5F2EB !important;
+  color: #EA580C !important;
+  border: none !important;
+  outline: none !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.18) !important;
 }
 
 /* Tabs — Absolutely NO 1px stroke borders on inactive tabs */
@@ -8859,11 +9056,11 @@ dialog,
 [data-theme="dark"] {
   --camp-bg: #0C0C0C;
   --camp-bg-radial:
-    radial-gradient(circle at 82% 8%, rgba(234, 88, 12, 0.28) 0%, rgba(234, 88, 12, 0.08) 32%, transparent 56%),
-    radial-gradient(circle at 14% 34%, rgba(245, 158, 11, 0.20) 0%, rgba(245, 158, 11, 0.06) 26%, transparent 50%),
-    radial-gradient(ellipse at 50% 55%, rgba(234, 88, 12, 0.18) 0%, rgba(26, 26, 26, 0.10) 38%, transparent 68%),
-    radial-gradient(circle at 88% 85%, rgba(234, 88, 12, 0.26) 0%, rgba(251, 146, 60, 0.09) 30%, transparent 58%),
-    radial-gradient(circle at 18% 90%, rgba(251, 146, 60, 0.18) 0%, rgba(234, 88, 12, 0.05) 26%, transparent 52%),
+    radial-gradient(ellipse 80% 50% at 85% 0%, rgba(249, 115, 22, 0.025) 0%, transparent 60%),
+    radial-gradient(circle at 14% 34%, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.02) 26%, transparent 50%),
+    radial-gradient(ellipse at 50% 55%, rgba(234, 88, 12, 0.06) 0%, transparent 68%),
+    radial-gradient(circle at 88% 85%, rgba(249, 115, 22, 0.08) 0%, transparent 58%),
+    radial-gradient(circle at 18% 90%, rgba(251, 146, 60, 0.06) 0%, transparent 52%),
     linear-gradient(150deg, #0E0E0E 0%, #121212 35%, #161616 60%, #0F0F0F 85%, #090909 100%);
 }
 
@@ -8873,11 +9070,11 @@ body,
 [data-theme="dark"] body {
   background-color: #0C0C0C !important;
   background-image:
-    radial-gradient(circle at 82% 8%, rgba(249, 115, 22, 0.16) 0%, rgba(249, 115, 22, 0.04) 34%, transparent 58%),
-    radial-gradient(circle at 14% 34%, rgba(255, 255, 255, 0.02) 0%, transparent 45%),
-    radial-gradient(ellipse at 50% 55%, rgba(255, 255, 255, 0.015) 0%, transparent 60%),
-    radial-gradient(circle at 88% 85%, rgba(249, 115, 22, 0.12) 0%, rgba(234, 88, 12, 0.03) 30%, transparent 55%),
-    radial-gradient(circle at 18% 90%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 50% at 85% 0%, rgba(249, 115, 22, 0.025) 0%, transparent 60%),
+    radial-gradient(circle at 14% 34%, rgba(255, 255, 255, 0.015) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 55%, rgba(255, 255, 255, 0.01) 0%, transparent 60%),
+    radial-gradient(circle at 88% 85%, rgba(249, 115, 22, 0.04) 0%, transparent 55%),
+    radial-gradient(circle at 18% 90%, rgba(255, 255, 255, 0.015) 0%, transparent 50%),
     linear-gradient(150deg, #0D0D0D 0%, #121212 35%, #181818 60%, #121212 85%, #0C0C0C 100%) !important;
   background-attachment: fixed !important;
   background-repeat: no-repeat !important;
@@ -8889,10 +9086,10 @@ body,
 [data-theme="light"] body {
   background-color: #FAF9F6 !important;
   background-image:
-    radial-gradient(circle at 85% 10%, rgba(234, 88, 12, 0.16) 0%, transparent 48%),
-    radial-gradient(circle at 12% 42%, rgba(251, 146, 60, 0.12) 0%, transparent 42%),
-    radial-gradient(circle at 75% 85%, rgba(245, 158, 11, 0.14) 0%, transparent 50%),
-    radial-gradient(circle at 35% 88%, rgba(253, 186, 116, 0.10) 0%, transparent 40%),
+    radial-gradient(ellipse 80% 50% at 85% 0%, rgba(249, 115, 22, 0.03) 0%, transparent 60%),
+    radial-gradient(circle at 12% 42%, rgba(251, 146, 60, 0.04) 0%, transparent 42%),
+    radial-gradient(circle at 75% 85%, rgba(245, 158, 11, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 35% 88%, rgba(253, 186, 116, 0.03) 0%, transparent 40%),
     linear-gradient(180deg, #FAF9F6 0%, #FFF7ED 100%) !important;
   background-attachment: fixed !important;
   background-repeat: no-repeat !important;
@@ -9232,18 +9429,50 @@ body,
 
 .crm-filters-bar .crm-search input {
   width: 100% !important;
-  padding: 10px 14px 10px 40px !important;
+  padding: 0 16px 0 42px !important;
   border-radius: 12px !important;
   font-size: 13px !important;
   height: 42px !important;
+  border: none !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s ease !important;
 }
 
-.crm-filters-bar .crm-search-icon {
+:root:not([data-theme="light"]) .crm-filters-bar .crm-search input,
+[data-theme="dark"] .crm-filters-bar .crm-search input {
+  background: rgba(20, 20, 20, 0.75) !important;
+  color: #FFFFFF !important;
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.08), 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="light"] .crm-filters-bar .crm-search input {
+  background: #FFFFFF !important;
+  color: #18181B !important;
+  box-shadow: 0 2px 8px -2px rgba(24, 24, 27, 0.08), 0 1px 3px rgba(24, 24, 27, 0.04), inset 0 1px 1px #FFFFFF !important;
+}
+
+.crm-filters-bar .crm-search input:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2.5px rgba(234, 88, 12, 0.35), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+.crm-filters-bar .crm-search-icon,
+.crm-search-icon {
   position: absolute !important;
-  left: 13px !important;
-  top: 12px !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
   color: var(--camp-text-muted) !important;
   pointer-events: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  height: 18px !important;
+  width: 18px !important;
+  z-index: 2 !important;
 }
 
 .crm-filter-tag-wrap {
@@ -9258,6 +9487,21 @@ body,
   border-radius: 12px !important;
   font-size: 12.5px !important;
   font-weight: 600 !important;
+  border: none !important;
+  outline: none !important;
+}
+
+:root:not([data-theme="light"]) .crm-filter-tag-wrap select,
+[data-theme="dark"] .crm-filter-tag-wrap select {
+  background: rgba(20, 20, 20, 0.75) !important;
+  color: #FFFFFF !important;
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.08), 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="light"] .crm-filter-tag-wrap select {
+  background: #FFFFFF !important;
+  color: #18181B !important;
+  box-shadow: 0 2px 8px -2px rgba(24, 24, 27, 0.08), 0 1px 3px rgba(24, 24, 27, 0.04), inset 0 1px 1px #FFFFFF !important;
 }
 
 .crm-filters-toggle-btn {
@@ -9270,6 +9514,30 @@ body,
   gap: 8px !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
+  border: none !important;
+  outline: none !important;
+}
+
+:root:not([data-theme="light"]) .crm-filters-toggle-btn,
+[data-theme="dark"] .crm-filters-toggle-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #D4D4D8 !important;
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.08), 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="light"] .crm-filters-toggle-btn {
+  background: #FFFFFF !important;
+  color: #18181B !important;
+  box-shadow: 0 2px 8px -2px rgba(24, 24, 27, 0.08), 0 1px 3px rgba(24, 24, 27, 0.04), inset 0 1px 1px #FFFFFF !important;
+}
+
+.crm-filters-toggle-btn:hover {
+  transform: translateY(-1px) !important;
+}
+
+[data-theme="light"] .crm-filters-toggle-btn:hover {
+  background: #F5F2EB !important;
+  color: #EA580C !important;
 }
 
 .crm-filters-toggle-btn.is-active {
@@ -9282,10 +9550,10 @@ body,
   margin-left: auto !important;
 }
 
-/* 30.3 Collapsible Advanced Filters Drawer */
+/* 30.3 Collapsible Advanced Filters Drawer — Seamless Transparent Background */
 .crm-advanced-filters {
   padding: 16px 22px 20px !important;
-  background: rgba(0, 0, 0, 0.15) !important;
+  background: transparent !important;
   border-top: 1px solid var(--camp-divider) !important;
   animation: crmFilterFadeIn 0.2s ease-out !important;
 }
@@ -9313,9 +9581,24 @@ body,
 
 .crm-advanced-grid select {
   height: 38px !important;
-  padding: 0 10px !important;
+  padding: 0 12px !important;
   border-radius: 10px !important;
   font-size: 12px !important;
+  border: none !important;
+  outline: none !important;
+}
+
+:root:not([data-theme="light"]) .crm-advanced-grid select,
+[data-theme="dark"] .crm-advanced-grid select {
+  background: rgba(20, 20, 20, 0.75) !important;
+  color: #FFFFFF !important;
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.08), 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="light"] .crm-advanced-grid select {
+  background: #FFFFFF !important;
+  color: #18181B !important;
+  box-shadow: 0 2px 6px -1px rgba(24, 24, 27, 0.08), 0 1px 3px rgba(24, 24, 27, 0.04), inset 0 1px 1px #FFFFFF !important;
 }
 
 .crm-advanced-actions {
@@ -9382,7 +9665,7 @@ body,
   outline: none !important;
   border-radius: 18px !important;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32), inset 0 1px 1.5px rgba(255, 255, 255, 0.16) !important;
-  padding: 16px 14px !important;
+  padding: 16px 6px 14px 6px !important;
   display: flex !important;
   flex-direction: column !important;
   box-sizing: border-box !important;
@@ -9394,20 +9677,25 @@ body,
   flex: 0 0 280px !important;
   max-height: calc(100vh - 280px) !important;
   min-height: 480px !important;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.76) 0%, rgba(255, 248, 240, 0.60) 100%) !important;
+  background: linear-gradient(180deg, rgba(244, 242, 238, 0.78) 0%, rgba(240, 236, 230, 0.68) 100%) !important;
   backdrop-filter: blur(24px) saturate(190%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 18px !important;
   box-shadow: 0 10px 28px rgba(24, 24, 24, 0.04), inset 0 1px 1.5px rgba(255, 255, 255, 0.95) !important;
-  padding: 16px 14px !important;
+  padding: 16px 6px 14px 6px !important;
   display: flex !important;
   flex-direction: column !important;
   box-sizing: border-box !important;
 }
 
-/* 30.6 Internal Vertical Scroll for Each Pipeline Column */
+.crm-board-col-head {
+  padding: 0 9px 12px 9px !important;
+  margin-bottom: 8px !important;
+}
+
+/* 30.6 Internal Vertical Scroll for Each Pipeline Column — 9px lateral clearance prevents shadow clipping */
 .crm-board-items {
   display: flex !important;
   flex-direction: column !important;
@@ -9416,8 +9704,8 @@ body,
   min-height: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 2px 5px 12px 1px !important;
-  margin-right: -2px !important;
+  padding: 6px 9px 16px 9px !important;
+  margin: 0 !important;
   scrollbar-width: thin !important;
   scrollbar-color: rgba(234, 88, 12, 0.35) transparent !important;
 }
@@ -9577,7 +9865,7 @@ body,
   outline: none !important;
   border-radius: 16px !important;
   padding: 14px 16px !important;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(234, 88, 12, 0.2), inset 0 1px 1.5px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(234, 88, 12, 0.2), inset 0 1px 1.5px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.35) !important;
   cursor: grab !important;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
   position: relative !important;
@@ -9710,16 +9998,15 @@ body,
   stroke: #FB923C !important;
 }
 
-/* Light Mode Lead Card - Frosted Glassmorphism with Floating Elevation */
 [data-theme="light"] .crm-lead-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.82) 100%) !important;
+  background: #FFFFFF !important;
   backdrop-filter: blur(16px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
   border: none !important;
   outline: none !important;
   border-radius: 16px !important;
   padding: 14px 16px !important;
-  box-shadow: 0 4px 14px rgba(24, 24, 24, 0.05), inset 0 1px 1.5px rgba(255, 255, 255, 1) !important;
+  box-shadow: 0 4px 12px -2px rgba(24, 24, 27, 0.12), 0 2px 6px -1px rgba(24, 24, 27, 0.08), inset 0 1px 1px #FFFFFF !important;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
   cursor: grab !important;
   display: flex !important;
@@ -9732,9 +10019,9 @@ body,
 }
 
 [data-theme="light"] .crm-lead-card:hover {
-  transform: translateY(-3px) scale(1.01) !important;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.90) 100%) !important;
-  box-shadow: 0 14px 34px rgba(234, 88, 12, 0.16), 0 2px 8px rgba(24, 24, 24, 0.05), inset 0 1px 2px rgba(255, 255, 255, 1) !important;
+  transform: translateY(-2px) scale(1.005) !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 12px 28px -2px rgba(234, 88, 12, 0.22), 0 4px 10px -1px rgba(24, 24, 27, 0.10), inset 0 1px 2px #FFFFFF !important;
 }
 
 [data-theme="light"] .crm-lead-top strong {
