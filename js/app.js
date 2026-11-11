@@ -293,7 +293,22 @@ function platformPlansShowcase(currentPlanId = null){
  </section>`;
 }
 
-const errors=e=>{console.error(e);toast(e?.message||String(e),true)};
+const errors=e=>{
+ console.error(e);
+ toast(e?.message||String(e),true);
+ const appEl=document.getElementById('app');
+ if(appEl&&appEl.querySelector('.boot')){
+  appEl.innerHTML=`<div class="auth-wrap"><div class="auth-card" style="text-align:center;max-width:460px;margin:60px auto;padding:36px 28px;">
+   <div class="eyebrow" style="color:var(--camp-danger,#d9534f);margin-bottom:8px;">Falha de inicialização</div>
+   <h2 style="margin-bottom:12px;">Não foi possível carregar o sistema</h2>
+   <p class="muted" style="font-size:14px;margin-bottom:20px;line-height:1.5;">${safe(e?.message||'Ocorreu um erro ao carregar os dados da plataforma.')}</p>
+   <div style="display:flex;flex-direction:column;gap:10px;">
+    <button type="button" class="btn" onclick="location.reload()">Recarregar página</button>
+    <button type="button" class="btn light" onclick="localStorage.clear();sessionStorage.clear();location.reload()">Limpar dados locais e tentar novamente</button>
+   </div>
+  </div></div>`;
+ }
+};
 const canAdmin=()=>ui.role==='admin';
 let refreshVersion=0;
 const lookup=(table,id)=>db[table].find(x=>x.id===id);
@@ -361,7 +376,7 @@ function alertModal(message,title='Aviso',buttonLabel='Entendi'){
 }
 window.campanellaConfirm=confirmModal;
 window.campanellaAlert=alertModal;
-const heading=(eyebrow,title,sub,action='')=>`<header class="page-head"><div>${eyebrow?`<div class="eyebrow">${eyebrow}</div>`:''}<h1>${title}</h1>${sub?`<p class="leadline">${sub}</p>`:''}</div>${action}</header>`;
+function heading(eyebrow,title,sub,action=''){return `<header class="page-head"><div>${eyebrow?`<div class="eyebrow">${eyebrow}</div>`:''}<h1>${title}</h1>${sub?`<p class="leadline">${sub}</p>`:''}</div>${action}</header>`;}
 const card=(title,body,extra='')=>`<section class="panel"><div class="panel-head"><h2>${title}</h2>${extra}</div>${body}</section>`;
 const empty=text=>`<div class="empty"><span class="empty-symbol">✳</span>${safe(text)}</div>`;
 const row=(columns)=>`<tr>${columns.map(c=>`<td>${c}</td>`).join('')}</tr>`;
@@ -402,7 +417,7 @@ const ICONS={
  moon:'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
  monitor:'<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>'
 };
-const ico=(name,size=18)=>`<svg class="camp-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||ICONS.school}</svg>`;
+function ico(name,size=18){return `<svg class="camp-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||ICONS.school}</svg>`;}
 function getThemeMode(){
  try{
   const saved=localStorage.getItem('campanella:theme');
@@ -1557,9 +1572,8 @@ function licensesView(){
  </section>
  <section class="panel">
   <div class="panel-head"><h2>Movimentações recentes</h2></div>
-  ${table(['Data','Escola','Alteração','Observação'],ui.platformEvents.slice(0,35).map(ev=>row([new Date(ev.created_at).toLocaleString('pt-BR'),safe(schools.find(s=>s.id===ev.school_id)?.name||'—'),safe(ev.action.replaceAll('_',' ')),safe(ev.detail?.observacao||ev.detail?.plano?`Plano: ${ev.detail.plano}`:'—')]))),'Nenhuma movimentação.')}
+  ${table(['Data','Escola','Alteração','Observação'],ui.platformEvents.slice(0,35).map(ev=>row([new Date(ev.created_at).toLocaleString('pt-BR'),safe(schools.find(s=>s.id===ev.school_id)?.name||'—'),safe(ev.action.replaceAll('_',' ')),safe(ev.detail?.observacao||ev.detail?.plano?`Plano: ${ev.detail.plano}`:'—')])), 'Nenhuma movimentação.')}
  </section>`;
-}
 }
 function teachersView(){
  const active=db.teachers.filter(t=>t.active!==false).length;

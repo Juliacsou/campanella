@@ -1,10 +1,18 @@
 // Testes de regressao para Planos de Uso, Limites de Capacidade e Adicionais (V7.2)
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync, readdirSync} from 'node:fs';
+import {execSync} from 'node:child_process';
 import vm from 'node:vm';
 
 const base = new URL('../', import.meta.url);
 const get = p => readFileSync(new URL(p, base), 'utf8');
+
+console.log('0. Validando sintaxe de todos os arquivos JS do projeto...');
+for (const f of readdirSync(new URL('js/', base))) {
+  if (f.endsWith('.js')) {
+    execSync(`node --check js/${f}`, {stdio: 'pipe'});
+  }
+}
 
 const sqlLicencas = get('sql/08_upgrade_licencas.sql');
 const sqlPlanos = get('sql/24_upgrade_v72_planos_limites_licencas.sql');
