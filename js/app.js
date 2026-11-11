@@ -18,6 +18,187 @@ const sb=createClient(SUPA_URL,KEY);
 const EXTERNAL_SIGNATURE_ENABLED=false;
 const db={leads:[],interviews:[],packages:[],students:[],contracts:[],profiles:[],teachers:[],contract_types:[],school_settings:[],interview_invites:[],external_signatures:[],crm_followups:[],crm_appointments:[],crm_activities:[],crm_pipeline_columns:[],crm_tags:[]};
 const ui={page:'dashboard',user:null,role:null,teacherId:null,teacherSchoolName:null,teacherAccess:[],schoolId:null,schools:[],memberships:[],schoolMembers:[],schoolAdmins:null,emailConfirmCallback:false,isPlatformAdmin:false,schoolLicense:null,licenseActive:false,licenses:[],platformSchools:[],platformProfiles:[],platformKeys:[],platformEvents:[],platformRenewalKeys:[],platformSearch:'',platformFilter:'all',newlyIssuedKey:null,driveConnection:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',studentId:null,studentReturnPage:'directory',contractTab:'current',interviewTab:'current'};
+
+// Campanella V7.2 - Planos de Uso, Limites e Adicionais
+const PLAN_CONFIGS={
+ crm:{id:'crm',name:'CRM',badgeClass:'pill-crm',price:69,baseStudents:0,baseTeachers:0,crmOnly:true,desc:'Somente CRM'},
+ essencial:{id:'essencial',name:'Essencial',badgeClass:'pill-essencial',price:129,baseStudents:30,baseTeachers:3,crmOnly:false,desc:'30 alunos + 3 professores'},
+ profissional:{id:'profissional',name:'Profissional',badgeClass:'pill-profissional',price:179,baseStudents:50,baseTeachers:5,crmOnly:false,desc:'50 alunos + 5 professores'},
+ avancado:{id:'avancado',name:'Avançado',badgeClass:'pill-avancado',price:279,baseStudents:100,baseTeachers:10,crmOnly:false,desc:'100 alunos + 10 professores'},
+ ilimitado:{id:'ilimitado',name:'Ilimitado (Legado)',badgeClass:'pill-signed',price:0,baseStudents:999999,baseTeachers:999999,crmOnly:false,desc:'Sem limites de alunos e professores'}
+};
+const ADDON_PRICES={studentPack:15,studentPackSize:10,teacher:10};
+const MANAGEMENT_PAGES=['directory','students','teachers','calendar','packages','contracts','templates'];
+
+function getSchoolPlanConfig(l){
+ const planKey=(l?.plan||'essencial').toLowerCase();
+ return PLAN_CONFIGS[planKey]||PLAN_CONFIGS.essencial;
+}
+function schoolPlanLimits(l){
+ const cfg=getSchoolPlanConfig(l);
+ const packs=Math.max(0,Number(l?.extra_students_packs||0));
+ const extraProfs=Math.max(0,Number(l?.extra_teachers||0));
+ const maxStudents=cfg.crmOnly?0:(cfg.baseStudents>=999999?999999:cfg.baseStudents+(packs*ADDON_PRICES.studentPackSize));
+ const maxTeachers=cfg.crmOnly?0:(cfg.baseTeachers>=999999?999999:cfg.baseTeachers+extraProfs);
+ const monthlyPrice=cfg.price+(packs*ADDON_PRICES.studentPack)+(extraProfs*ADDON_PRICES.teacher);
+ return {
+  plan:cfg.id,
+  planName:cfg.name,
+  badgeClass:cfg.badgeClass,
+  crmOnly:cfg.crmOnly,
+  desc:cfg.desc,
+  baseStudents:cfg.baseStudents,
+  extraStudentsPacks:packs,
+  extraStudents:packs*ADDON_PRICES.studentPackSize,
+  maxStudents,
+  baseTeachers:cfg.baseTeachers,
+  extraTeachers:extraProfs,
+  maxTeachers,
+  basePrice:cfg.price,
+  monthlyPrice
+ };
+}
+function currentSchoolActiveStudentsCount(){
+ return (db.students||[]).filter(s=>studentCategory(s)==='active').length;
+}
+function currentSchoolActiveTeachersCount(){
+ return (db.teachers||[]).filter(t=>t.active!==false).length;
+}
+function isCurrentSchoolCrmOnly(){
+ const l=ui.schoolLicense||schoolLicense(ui.schoolId);
+ return !!getSchoolPlanConfig(l).crmOnly;
+}
+function licensePlanOptions(selected='essencial',includeUnlimited=false){
+ const plans=[
+  ['crm','CRM · Somente CRM (R$ 69/mês)'],
+  ['essencial','Essencial · 30 alunos + 3 professores (R$ 129/mês)'],
+  ['profissional','Profissional · 50 alunos + 5 professores (R$ 179/mês)'],
+  ['avancado','Avançado · 100 alunos + 10 professores (R$ 279/mês)']
+ ];
+ if(includeUnlimited) plans.push(['ilimitado','Ilimitado · Legado sem restrições (R$ 0/mês)']);
+ return `<label class="field"><span>Plano da licença</span><select name="plan" id="licensePlanSelector">${plans.map(([v,n])=>`<option value="${v}" ${v===selected?'selected':''}>${n}</option>`).join('')}</select></label>`;
+}
+function licenseAddonsFields(packs=0,teachers=0){
+ return `<div class="license-addons-grid" id="licenseAddonsGrid">
+  <label class="field"><span>Pacotes de +10 alunos (+R$ 15/mês cada)</span><input type="number" name="extra_students_packs" id="licenseExtraPacks" min="0" max="100" value="${Number(packs)||0}"></label>
+  <label class="field"><span>Professores extras (+R$ 10/mês cada)</span><input type="number" name="extra_teachers" id="licenseExtraTeachers" min="0" max="50" value="${Number(teachers)||0}"></label>
+ </div>
+ <div class="license-pricing-calc" id="licenseCalcPreview"></div>`;
+}
+function updateLicenseCalcPreview(formEl){
+ if(!formEl)return;
+ const planKey=formEl.elements.plan?.value||'essencial';
+ const packs=Math.max(0,Number(formEl.elements.extra_students_packs?.value||0));
+ const extraProfs=Math.max(0,Number(formEl.elements.extra_teachers?.value||0));
+ const cfg=PLAN_CONFIGS[planKey]||PLAN_CONFIGS.essencial;
+ const previewEl=formEl.querySelector('#licenseCalcPreview');
+ if(!previewEl)return;
+ const addonsGrid=formEl.querySelector('#licenseAddonsGrid');
+ if(cfg.crmOnly){
+  if(addonsGrid)addonsGrid.style.display='none';
+  previewEl.innerHTML=`<div class="calc-pill crm-calc"><b>Plano Somente CRM:</b> Sem gestão de alunos e professores. Total: <strong>R$ ${cfg.price},00 / mês</strong></div>`;
+  return;
+ }
+ if(addonsGrid)addonsGrid.style.display='grid';
+ const totalStudents=cfg.baseStudents>=999999?'Ilimitado':(cfg.baseStudents+(packs*10));
+ const totalProfs=cfg.baseTeachers>=999999?'Ilimitado':(cfg.baseTeachers+extraProfs);
+ const totalMonthly=cfg.price+(packs*15)+(extraProfs*10);
+ previewEl.innerHTML=`<div class="calc-pill"><span>Capacidade total: <strong>${totalStudents} alunos ativos</strong> · <strong>${totalProfs} professores</strong></span><span>Mensalidade estimada: <strong>R$ ${totalMonthly},00 / mês</strong></span></div>`;
+}
+function planUpgradeBlockedView(page){
+ const pageLabels={
+  directory:'Cadastro de Alunos',
+  students:'Gestão de Matrículas',
+  teachers:'Equipe de Professores',
+  calendar:'Agenda e Calendário de Aulas',
+  packages:'Pacotes de Cursos',
+  contracts:'Contratos Digitais',
+  templates:'Modelos de Contratos'
+ };
+ const label=pageLabels[page]||'esta ferramenta';
+ return `${heading('Plano CRM','Recurso exclusivo dos Planos de Gestão',`A ferramenta <b>${safe(label)}</b> está disponível nos planos de gestão escolar.`)}
+ <section class="panel plan-upgrade-panel">
+  <div class="plan-upgrade-hero">
+   <div class="plan-upgrade-icon">${ico('lock',32)}</div>
+   <h2>Desbloqueie ${safe(label)} para sua escola</h2>
+   <p>Sua escola está utilizando o plano <strong>CRM (Somente CRM · R$ 69/mês)</strong>. Para gerenciar alunos, matrículas, contratos digitais e agenda de professores, faça upgrade para um dos nossos planos de gestão completos.</p>
+  </div>
+  <div class="plans-comparison-grid">
+   <div class="plan-tier-card">
+    <div class="plan-tier-head">
+     <span class="pill pill-essencial">Essencial</span>
+     <div class="plan-tier-price">R$ 129<span>/mês</span></div>
+     <p class="plan-tier-cap">30 alunos ativos + 3 professores</p>
+    </div>
+    <ul class="plan-tier-features">
+     <li>${ico('check',14)} CRM completo de leads e fichas</li>
+     <li>${ico('check',14)} Gestão de alunos e matrículas</li>
+     <li>${ico('check',14)} Contratos digitais com assinatura</li>
+     <li>${ico('check',14)} Agenda dos professores</li>
+    </ul>
+   </div>
+   <div class="plan-tier-card is-popular">
+    <div class="plan-tier-head">
+     <span class="pill pill-profissional">Profissional</span>
+     <div class="plan-tier-price">R$ 179<span>/mês</span></div>
+     <p class="plan-tier-cap">50 alunos ativos + 5 professores</p>
+    </div>
+    <ul class="plan-tier-features">
+     <li>${ico('check',14)} Todos os recursos do Essencial</li>
+     <li>${ico('check',14)} Mais capacidade para escolas em crescimento</li>
+     <li>${ico('check',14)} Suporte a upgrades de capacidade</li>
+    </ul>
+   </div>
+   <div class="plan-tier-card">
+    <div class="plan-tier-head">
+     <span class="pill pill-avancado">Avançado</span>
+     <div class="plan-tier-price">R$ 279<span>/mês</span></div>
+     <p class="plan-tier-cap">100 alunos ativos + 10 professores</p>
+    </div>
+    <ul class="plan-tier-features">
+     <li>${ico('check',14)} Todos os recursos liberados</li>
+     <li>${ico('check',14)} Capacidade expandida para grandes unidades</li>
+     <li>${ico('check',14)} Gestão completa sem fricção</li>
+    </ul>
+   </div>
+  </div>
+  <div class="plan-upgrade-addons-box">
+   <h3>Upgrades e adicionais sob medida</h3>
+   <p>Você também pode contratar capacidade extra a qualquer momento:</p>
+   <div class="plan-addons-chips">
+    <span><b>+10 alunos ativos:</b> R$ 15/mês</span>
+    <span><b>+1 professor ativo:</b> R$ 10/mês</span>
+   </div>
+  </div>
+  <div class="plan-upgrade-cta">
+   <button class="btn" data-action="navigate" data-page="leads">${ico('leads',16)} Continuar usando CRM</button>
+   <button class="btn light" data-action="contactUpgradeSupport">${ico('school',16)} Solicitar upgrade de plano</button>
+  </div>
+ </section>`;
+}
+function contactUpgradeModal(){
+ const s=currentSchool();
+ const l=ui.schoolLicense;
+ const limits=schoolPlanLimits(l);
+ showModal(`<div class="eyebrow">Atendimento Campanella</div><h2>Upgrade de plano e adicionais</h2>
+ <p class="modal-intro">Personalize a capacidade de <b>${safe(s.name||'sua escola')}</b> de acordo com o crescimento da sua unidade.</p>
+ <div class="detail-grid" style="margin-bottom:16px">
+  <div class="detail-item"><span>Plano atual</span><strong><span class="pill ${limits.badgeClass}">${limits.planName}</span></strong></div>
+  <div class="detail-item"><span>Capacidade</span><strong>${limits.crmOnly?'Somente CRM':`${limits.maxStudents} alunos · ${limits.maxTeachers} profs`}</strong></div>
+ </div>
+ <div class="upgrade-contact-card">
+  <h3>Opções de ampliação:</h3>
+  <ul style="margin:12px 0 16px 20px;line-height:1.7;">
+   <li><b>Upgrade para Profissional (50 alunos + 5 profs):</b> R$ 179/mês</li>
+   <li><b>Upgrade para Avançado (100 alunos + 10 profs):</b> R$ 279/mês</li>
+   <li><b>Pacote de +10 alunos ativos:</b> R$ 15/mês</li>
+   <li><b>+1 professor ativo:</b> R$ 10/mês</li>
+  </ul>
+  <p class="form-note">Fale diretamente com o suporte da plataforma para liberar imediatamente a nova capacidade sem perder nenhum dado ou contrato existente.</p>
+ </div>
+ <div class="form-footer"><button type="button" class="btn" data-action="close">Entendi</button></div>`);
+}
+
 const errors=e=>{console.error(e);toast(e?.message||String(e),true)};
 const canAdmin=()=>ui.role==='admin';
 let refreshVersion=0;
@@ -223,12 +404,30 @@ function myTeacherInActiveSchool(){const email=ui.user?.email?.trim().toLowerCas
 function accountMenu(){return `<details class="account-popover"><summary class="account-trigger"><span class="account-avatar">${safe(avatarInitials())}</span><span class="account-person"><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></span>${ico('chevron',15)}</summary><div class="account-dropdown" role="group" aria-label="Menu de conta"><div class="account-dropdown-top"><span class="account-avatar">${safe(avatarInitials())}</span><div><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></div></div><div class="account-dropdown-title">Alternar escola</div>${ui.schools.map(s=>`<button class="account-option" data-action="selectSchool" data-id="${safe(s.id)}"><span class="account-option-icon">${ico('school',17)}</span><span class="account-option-label">${safe(s.name)}${s.deletion_requested_at?'<small>Exclusão agendada</small>':''}</span>${ui.schoolId===s.id?ico('check',16):''}</button>`).join('')||'<p class="account-hint">Nenhuma escola cadastrada.</p>'}<button class="account-option account-create" data-action="showActivation">${ico('plus',17)}<span>Ativar outra escola</span></button><div class="account-divider"></div><button class="account-option" data-action="navigate" data-page="profile">${ico('profile',17)}<span>Meu perfil</span></button>${ui.schoolId?`<button class="account-option" data-action="navigate" data-page="settings">${ico('settings',17)}<span>Configurações da escola</span></button>`:''}${ui.schoolId&&myTeacherInActiveSchool()?`<button class="account-option" data-action="switchToTeacherMode">${ico('calendar',17)}<span>Modo professor (Minha agenda)</span></button>`:''}<button class="account-option" data-action="navigate" data-page="schools">${ico('school',17)}<span>Minhas escolas</span></button>${ui.isPlatformAdmin?`<button class="account-option" data-action="navigate" data-page="licenses">${ico('licenses',17)}<span>Administração geral</span></button>`:''}<div class="account-divider"></div><button class="account-option account-logout" data-action="logout">${ico('logout',17)}<span>Sair da conta</span></button></div></details>`;}
 function brandMarkup(isSidebar=true){return `<div class="brand" aria-label="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-light" src="./assets/img/logo-horizontal-color.png" alt="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-dark" src="./assets/img/logo-horizontal-white.png" alt="Campanella">${isSidebar?`<img class="brand-logo brand-logo-icon brand-logo-light" src="./assets/img/logo-icon-color.png" alt="Campanella"><img class="brand-logo brand-logo-icon brand-logo-dark" src="./assets/img/logo-icon-white.png" alt="Campanella">`:''}</div>`;}
 if(typeof window!=='undefined')window.brandMarkup=brandMarkup;
-function shell(){const activeName=ui.page==='student-profile'?'Perfil do aluno':ui.page==='schools'?'Minhas escolas':ui.page.startsWith('profile')?'Meu perfil':ui.page.startsWith('settings')?'Configurações da escola':nav.find(x=>x[0]===ui.page)?.[2]||'Visão geral';return `<div class="shell ${ui.page==='calendar'?'cal-admin-shell':''}"><aside class="sidebar">${brandMarkup(true)}<div class="sidebar-current"><span class="sidebar-current-label">ESCOLA ATIVA</span><span class="sidebar-current-name">${ico('school',16)} ${safe(currentSchool().name||'Nenhuma escola')}</span></div><div class="sidebar-menu">${navGroups.map(([title,links])=>`<section class="nav-section"><div class="nav-group">${title}</div><nav class="nav">${links.map(([key,iconName,label])=>`<button class="nav-btn ${ui.page===key?'active':''}" data-action="navigate" data-page="${key}"><span class="nav-ico">${ico(iconName,18)}</span><span>${label}</span></button>`).join('')}</nav></section>`).join('')}</div><div class="sidebar-bottom">${accountMenu()}</div></aside>${ui.page==='calendar'?calendar.adminNav():''}<div class="workspace"><div class="topbar"><span class="subtle">${safe(currentSchool().name)} <b> / ${safe(activeName)}</b></span><div class="topbar-right">${themeToggleMarkup()}<span class="topbar-chip">${ico('school',14)} ${safe(roleName(ui.role))}${myTeacherInActiveSchool()?' · Professor':''}</span></div></div><main class="content" id="pageContent"></main></div></div>`;}
+function shell(){
+ const activeName=ui.page==='student-profile'?'Perfil do aluno':ui.page==='schools'?'Minhas escolas':ui.page.startsWith('profile')?'Meu perfil':ui.page.startsWith('settings')?'Configurações da escola':nav.find(x=>x[0]===ui.page)?.[2]||'Visão geral';
+ const crmOnly=isCurrentSchoolCrmOnly();
+ return `<div class="shell ${ui.page==='calendar'?'cal-admin-shell':''}"><aside class="sidebar">${brandMarkup(true)}<div class="sidebar-current"><span class="sidebar-current-label">ESCOLA ATIVA</span><span class="sidebar-current-name">${ico('school',16)} ${safe(currentSchool().name||'Nenhuma escola')}</span></div><div class="sidebar-menu">${navGroups.map(([title,links])=>`<section class="nav-section"><div class="nav-group">${title}</div><nav class="nav">${links.map(([key,iconName,label])=>{
+  const isLocked=crmOnly&&MANAGEMENT_PAGES.includes(key);
+  return `<button class="nav-btn ${ui.page===key?'active':''} ${isLocked?'is-crm-locked':''}" data-action="navigate" data-page="${key}"><span class="nav-ico">${ico(iconName,18)}</span><span>${label}</span>${isLocked?`<span class="nav-upgrade-pill">${ico('lock',10)} Upgrade</span>`:''}</button>`;
+ }).join('')}</nav></section>`).join('')}</div><div class="sidebar-bottom">${accountMenu()}</div></aside>${ui.page==='calendar'?calendar.adminNav():''}<div class="workspace"><div class="topbar"><span class="subtle">${safe(currentSchool().name)} <b> / ${safe(activeName)}</b></span><div class="topbar-right">${themeToggleMarkup()}<span class="topbar-chip">${ico('school',14)} ${safe(roleName(ui.role))}${myTeacherInActiveSchool()?' · Professor':''}</span></div></div><main class="content" id="pageContent"></main></div></div>`;
+}
 function currentSchool(){return ui.schools.find(x=>x.id===ui.schoolId)||{};}
 function roleName(role){if(role==='admin')return currentSchool().admin_user_id&&currentSchool().admin_user_id===ui.user?.id?'Administrador Super':'Administrador';return role==='teacher'?'Professor':'Sem acesso';}
 function schoolLicense(id){return ui.licenses.find(l=>l.school_id===id)||null;}
-function licenseSummary(l){if(!l)return '<span class="pill pill-void">Sem licença</span>';if(l.suspended_at)return '<span class="pill pill-void">Suspensa</span>';if(l.expires_on&&l.expires_on<today())return '<span class="pill pill-void">Vencida</span>';return `<span class="pill pill-signed">${l.kind==='cortesia'?'Cortesia':'Ativa'}</span>`;}
-function fullSchoolStatus(s){if(s?.deletion_requested_at)return '<span class="pill pill-void">Exclusão agendada</span>';return licenseSummary(schoolLicense(s?.id));}
+function licenseSummary(l){
+ if(!l)return '<span class="pill pill-void">Sem licença</span>';
+ const limits=typeof schoolPlanLimits==='function'?schoolPlanLimits(l):{badgeClass:'pill-essencial',planName:'Essencial'};
+ const planBadge=`<span class="pill ${limits.badgeClass}">${limits.planName}</span>`;
+ if(l.suspended_at)return `${planBadge} <span class="pill pill-void">Suspensa</span>`;
+ if(l.expires_on&&l.expires_on<today())return `${planBadge} <span class="pill pill-void">Vencida</span>`;
+ return `${planBadge} <span class="pill pill-signed">${l.kind==='cortesia'?'Cortesia':'Ativa'}</span>`;
+}
+function fullSchoolStatus(s){
+ if(s?.deletion_requested_at)return '<span class="pill pill-void">Exclusão agendada</span>';
+ return licenseSummary(schoolLicense(s?.id));
+}
+
 function licenseExpiration(l){return !l?'Não definida':l.expires_on?dateBR(l.expires_on):'Sem vencimento';}
 function noSchoolPage(){return authWrap(`<div class="eyebrow">Primeiro acesso</div><h2>Ative sua escola</h2><p class="muted">Sua conta está pronta. Informe a chave de ativação fornecida pelo Campanella. Cada chave cadastra uma única escola.</p>${activationForm()}<button class="auth-text-action" data-action="logout">Sair da conta</button>`);}
 async function loadSchools(preferred){
@@ -312,9 +511,9 @@ async function loadPlatformData(){
  const [schools,profiles,licenses,keys,events,renewals]=await Promise.all([
   sb.from('schools').select('id,name,admin_user_id,created_at,contact_email,contact_phone,address,deletion_requested_at,deletion_due_at,deletion_started_at').order('created_at',{ascending:false}),
   sb.from('profiles').select('id,email'),sb.from('school_licenses').select('*'),
-  sb.from('license_keys').select('id,recipient_name,recipient_email,school_name,kind,validity_mode,validity_days,expires_on,created_at,revoked_at,redeemed_at,redeemed_school_id,code_suffix').order('created_at',{ascending:false}).limit(300),
+  sb.from('license_keys').select('id,recipient_name,recipient_email,school_name,kind,validity_mode,validity_days,expires_on,created_at,revoked_at,redeemed_at,redeemed_school_id,code_suffix,plan,extra_students_packs,extra_teachers').order('created_at',{ascending:false}).limit(300),
   sb.from('license_events').select('id,school_id,key_id,action,detail,created_at').order('created_at',{ascending:false}).limit(100),
-  sb.from('school_renewal_keys').select('id,school_id,code_suffix,recipient_email,kind,validity_mode,validity_days,expires_on,created_at,revoked_at,redeemed_at').order('created_at',{ascending:false}).limit(300)
+  sb.from('school_renewal_keys').select('id,school_id,code_suffix,recipient_email,kind,validity_mode,validity_days,expires_on,created_at,revoked_at,redeemed_at,plan,extra_students_packs,extra_teachers').order('created_at',{ascending:false}).limit(300)
  ]);
  for(const result of [schools,profiles,licenses,keys,events,renewals])if(result.error)throw result.error;
  ui.platformSchools=schools.data||[];ui.platformProfiles=profiles.data||[];ui.licenses=licenses.data||[];ui.platformKeys=keys.data||[];ui.platformEvents=events.data||[];ui.platformRenewalKeys=renewals.data||[];
@@ -531,6 +730,10 @@ function render(){
  if(ui.page==='settings-backup'&&!EXTERNAL_SIGNATURE_ENABLED)ui.page='settings';
  if(ui.page==='settings'||ui.page.startsWith('settings-')){$('#pageContent').innerHTML=settingsView();return;}
  if(!ui.licenseActive){$('#pageContent').innerHTML=licenseBlockView();return;}
+ if(isCurrentSchoolCrmOnly()&&MANAGEMENT_PAGES.includes(ui.page)){
+  $('#pageContent').innerHTML=planUpgradeBlockedView(ui.page);
+  return;
+ }
  const func={dashboard,calendar:calendar.view,leads:crm.view,interviews:interviewsView,contracts:contractsView,students:studentsView,directory:directoryView,teachers:teachersView,packages:packagesView,templates:templatesView}[ui.page]||dashboard;
  $('#pageContent').innerHTML=func();
 }
@@ -538,9 +741,51 @@ function enrollmentState(c){if(c.status==='closed'||c.status==='superseded')retu
 function enrollmentTag(c){if(c.status==='signed'&&c.audit?.method==='manual_registry')return `<span class="pill pill-signed">${enrollmentState(c)==='expired'?'Expirada · Manual':enrollmentState(c)==='scheduled'?'Agendada · Manual':'Assinado · Manual'}</span>`;const st=enrollmentState(c);return st==='closed'?'<span class="pill">Encerrada</span>':st==='scheduled'?'<span class="pill pill-sent">Agendada</span>':st==='expired'?'<span class="pill pill-sent">Expirada</span>':st==='active'?'<span class="pill pill-signed">Ativa</span>':contractTag(c);}
 function contractTag(c){if(c.status==='pre_enrolled')return '<span class="pill pill-sent">Pré-matrícula feita</span>';if(c.status==='ready_manual')return '<span class="pill pill-sent">Contrato gerado · Assinatura pendente</span>';if(c.status==='sent'&&!externalSignatureFor(c.id))return '<span class="pill pill-sent">Aguardando pré-matrícula</span>';if(c.status==='signed'&&c.audit?.method==='manual_registry')return '<span class="pill pill-signed">Assinado · Registro manual</span>';return c.status==='draft'?'<span class="pill">A enviar</span>':c.status==='sent'?'<span class="pill pill-sent">Enviado</span>':c.status==='signed'?(enrollmentState(c)==='expired'?'<span class="pill pill-sent">Expirado</span>':'<span class="pill pill-signed">Ativo</span>'):c.status==='closed'||c.status==='superseded'?'<span class="pill">Encerrado</span>':c.status==='void'?'<span class="pill pill-void">Cancelado</span>':tag(c.status);}
 function expiryBadge(c){const d=diffDays(c.terms?.end_date||'');return `<span class="pill ${d<=30?'pill-sent':'pill-signed'}">${d<0?'Expirou há '+(-d)+' dias':d===0?'Expira hoje':d+' dias'}</span>`;}
-function dashboard(){const signed=db.contracts.filter(c=>c.status==='signed');const exp=signed.filter(c=>diffDays(c.terms.end_date)<=30);const awaiting=db.contracts.filter(c=>['sent','pre_enrolled','ready_manual'].includes(c.status));const pending=db.leads.filter(l=>l.crm_outcome==='open'&&l.status!=='convertido').length;const fichas=db.leads.filter(l=>l.status!=='convertido'&&!!l.ficha_iniciada_at&&l.ficha_status!=='archived'&&!db.contracts.some(c=>c.lead_id===l.id&&c.status!=='void')).length;
- const metrics=[['leads','Leads em andamento',pending,'leads'],['interviews','Fichas sem contrato',fichas,'interviews'],['contracts','Pré-matrículas e contratos pendentes',awaiting.length,'contracts'],['students','Matrículas a vencer',exp.length,'students']];
- return `${heading('','Visão geral','')}<div class="metric-grid">${metrics.map(([type,label,value,target])=>`<button type="button" class="metric metric-action" data-action="navigate" data-page="${target}"><span class="metric-icon">${ico(type,23)}</span><span class="metric-value">${value}</span><span class="metric-label">${label}</span><span class="metric-go">${ico('arrow',16)}</span></button>`).join('')}</div><section class="home-actions"><div class="home-actions-title"><h2>Acesso rápido</h2><p class="muted">Continue de onde parou</p></div><div class="home-shortcuts">${[['leads','CRM e interessados','Acompanhe o primeiro contato'],['directory','Alunos','Consulte o histórico dos alunos'],['contracts','Contratos','Gerencie assinaturas e documentos'],['teachers','Professores','Organize sua equipe']].map(([type,title,subtitle])=>`<button class="home-shortcut" data-action="navigate" data-page="${type}"><span class="shortcut-ico">${ico(type,23)}</span><span><b>${title}</b><small>${subtitle}</small></span>${ico('arrow',16)}</button>`).join('')}</div></section>${card('Matrículas recentes',`<div class="recent-enrollments-table">${table(['Aluno','Pacote','Fim','Estado'],signed.sort((a,b)=>a.terms.end_date.localeCompare(b.terms.end_date)).slice(0,8).map(c=>row([safe(lookup('students',c.student_id)?.full_name),safe(c.terms.package_name),dateBR(c.terms.end_date),enrollmentTag(c)])))}</div>`)}`;
+function dashboard(){
+ const isCrm=isCurrentSchoolCrmOnly();
+ const signed=db.contracts.filter(c=>c.status==='signed');
+ const exp=signed.filter(c=>diffDays(c.terms.end_date)<=30);
+ const awaiting=db.contracts.filter(c=>['sent','pre_enrolled','ready_manual'].includes(c.status));
+ const pending=db.leads.filter(l=>l.crm_outcome==='open'&&l.status!=='convertido').length;
+ const fichas=db.leads.filter(l=>l.status!=='convertido'&&!!l.ficha_iniciada_at&&l.ficha_status!=='archived'&&!db.contracts.some(c=>c.lead_id===l.id&&c.status!=='void')).length;
+ const agendamentos=(db.crm_appointments||[]).filter(a=>!a.completed_at&&(!a.date||a.date>=today())).length;
+ const convertidos=db.leads.filter(l=>l.status==='convertido').length;
+
+ const metrics=isCrm?[
+  ['leads','Leads em andamento',pending,'leads'],
+  ['interviews','Fichas de nivelamento',fichas,'interviews'],
+  ['calendar','Agendamentos do CRM',agendamentos,'leads'],
+  ['check','Leads convertidos',convertidos,'leads']
+ ]:[
+  ['leads','Leads em andamento',pending,'leads'],
+  ['interviews','Fichas sem contrato',fichas,'interviews'],
+  ['contracts','Pré-matrículas e contratos pendentes',awaiting.length,'contracts'],
+  ['students','Matrículas a vencer',exp.length,'students']
+ ];
+
+ const shortcuts=isCrm?[
+  ['leads','CRM e interessados','Acompanhe o funil de atendimento e contatos'],
+  ['interviews','Fichas de nivelamento','Consulte entrevistas realizadas']
+ ]:[
+  ['leads','CRM e interessados','Acompanhe o primeiro contato'],
+  ['directory','Alunos','Consulte o histórico dos alunos'],
+  ['contracts','Contratos','Gerencie assinaturas e documentos'],
+  ['teachers','Professores','Organize sua equipe']
+ ];
+
+ const bottomSection=isCrm?`
+ <section class="panel plan-upgrade-panel" style="margin-top:20px">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+   <div>
+    <span class="pill pill-crm">Plano Somente CRM</span>
+    <h3 style="margin:6px 0 4px 0">Quer gerenciar matrículas, contratos e professores?</h3>
+    <p class="muted small">Conheça nossos planos de gestão escolar (Essencial, Profissional e Avançado) a partir de R$ 129/mês.</p>
+   </div>
+   <button class="btn light" data-action="contactUpgradeSupport">${ico('school',16)} Ver planos e upgrades</button>
+  </div>
+ </section>`:card('Matrículas recentes',`<div class="recent-enrollments-table">${table(['Aluno','Pacote','Fim','Estado'],signed.sort((a,b)=>a.terms.end_date.localeCompare(b.terms.end_date)).slice(0,8).map(c=>row([safe(lookup('students',c.student_id)?.full_name),safe(c.terms.package_name),dateBR(c.terms.end_date),enrollmentTag(c)])))}</div>`);
+
+ return `${heading('','Visão geral','')}<div class="metric-grid">${metrics.map(([type,label,value,target])=>`<button type="button" class="metric metric-action" data-action="navigate" data-page="${target}"><span class="metric-icon">${ico(type,23)}</span><span class="metric-value">${value}</span><span class="metric-label">${label}</span><span class="metric-go">${ico('arrow',16)}</span></button>`).join('')}</div><section class="home-actions"><div class="home-actions-title"><h2>Acesso rápido</h2><p class="muted">Continue de onde parou</p></div><div class="home-shortcuts">${shortcuts.map(([type,title,subtitle])=>`<button class="home-shortcut" data-action="navigate" data-page="${type}"><span class="shortcut-ico">${ico(type,23)}</span><span><b>${title}</b><small>${subtitle}</small></span>${ico('arrow',16)}</button>`).join('')}</div></section>${bottomSection}`;
 }
 function leadsView(){
  const list=db.leads.filter(l=>l.status!=='convertido'&&(!ui.search||[l.name,l.phone,l.guardian_name].join(' ').toLowerCase().includes(ui.search))&&(ui.leadStatus==='all'||ui.leadStatus==='com_ficha'&&!!l.ficha_iniciada_at||ui.leadStatus==='sem_ficha'&&!l.ficha_iniciada_at||ui.leadStatus===l.status));
@@ -948,7 +1193,66 @@ function settingsView(){const s=currentSchool(),l=ui.schoolLicense,section=ui.pa
  let main='';
  if(section==='settings-import')main=onboarding.view();
  else if(section==='settings-identity')main=preferencesPanel('Informações da escola','Atualize os dados institucionais da unidade.',`<form id="schoolDetailsForm" class="license-form">${input('Nome da escola','name',s.name)}${input('E-mail institucional','contact_email',s.contact_email||'','email',false)}${input('Telefone / WhatsApp','contact_phone',s.contact_phone||'','text',false)}<label class="field"><span>Endereço da escola</span><textarea name="address" maxlength="500" rows="3">${safe(s.address||'')}</textarea></label><div class="form-footer"><button class="btn" ${pending?'disabled':''}>Salvar informações</button></div></form>`,'school');
- else if(section==='settings-license')main=preferencesPanel('Licença e ativação','Consulte o estado atual da sua licença ou aplique uma nova chave.',`<div class="school-license-summary"><div><span>Estado</span>${fullSchoolStatus(s)}</div><div><span>Modalidade</span><b>${safe(l?.kind==='cortesia'?'Cortesia / teste':l?'Paga':'Não definida')}</b></div><div><span>Validade</span><b>${safe(licenseExpiration(l))}</b></div></div><p class="form-note">O pagamento é combinado diretamente com o Campanella. Cada escola usa a própria licença.</p><form id="renewSchoolKeyForm" class="license-form"><label class="field"><span>Aplicar nova chave de licença</span><input type="text" name="key" placeholder="CAMP-XXXXXXXX-..." autocomplete="off" spellcheck="false" required></label><div class="form-footer"><button class="btn light" ${pending?'disabled':''}>${ico('key',16)} Aplicar código</button></div></form>`,'key');
+ else if(section==='settings-license'){
+  const limits=schoolPlanLimits(l);
+  const activeStudents=currentSchoolActiveStudentsCount();
+  const activeTeachers=currentSchoolActiveTeachersCount();
+  const studentsPct=limits.maxStudents>0&&limits.maxStudents<999999?Math.min(100,Math.round((activeStudents/limits.maxStudents)*100)):0;
+  const teachersPct=limits.maxTeachers>0&&limits.maxTeachers<999999?Math.min(100,Math.round((activeTeachers/limits.maxTeachers)*100)):0;
+  const planBody=`<div class="school-plan-card">
+   <div class="school-plan-header">
+    <div>
+     <div class="eyebrow">Plano contratado</div>
+     <h3><span class="pill ${limits.badgeClass}">${limits.planName}</span></h3>
+    </div>
+    <div class="school-plan-price">
+     <strong>R$ ${limits.monthlyPrice},00</strong><span>/mês</span>
+    </div>
+   </div>
+   <div class="school-license-summary">
+    <div><span>Situação</span>${fullSchoolStatus(s)}</div>
+    <div><span>Modalidade</span><b>${safe(l?.kind==='cortesia'?'Cortesia / teste':l?'Paga':'Não definida')}</b></div>
+    <div><span>Vencimento</span><b>${safe(licenseExpiration(l))}</b></div>
+   </div>
+   ${limits.crmOnly?`
+   <div class="crm-plan-notice">
+    <p><strong>Plano Somente CRM:</strong> Sua escola tem acesso liberado aos módulos de CRM, leads, pipeline e agendamentos.</p>
+    <p class="small muted">Para utilizar matrículas, contratos digitais e agenda docente, solicite upgrade para um dos nossos planos de gestão escolar (Essencial, Profissional ou Avançado).</p>
+    <button class="btn light mini" type="button" data-action="contactUpgradeSupport" style="margin-top:10px">${ico('school',14)} Ver opções de upgrade</button>
+   </div>`:`
+   <div class="plan-usage-section">
+    <div class="plan-usage-item">
+     <div class="plan-usage-labels">
+      <span><b>Alunos ativos:</b> ${activeStudents} de ${limits.maxStudents>=999999?'Ilimitado':limits.maxStudents}${limits.extraStudentsPacks>0?` (${limits.baseStudents} base + ${limits.extraStudents} adicionais)`:''}</span>
+      <span><b>${limits.maxStudents>=999999?'Livre':studentsPct+'%'}</b></span>
+     </div>
+     <div class="plan-progress-track">
+      <div class="plan-progress-fill ${studentsPct>=90?'danger':studentsPct>=75?'warning':''}" style="width:${limits.maxStudents>=999999?100:studentsPct}%"></div>
+     </div>
+    </div>
+    <div class="plan-usage-item" style="margin-top:16px">
+     <div class="plan-usage-labels">
+      <span><b>Professores ativos:</b> ${activeTeachers} de ${limits.maxTeachers>=999999?'Ilimitado':limits.maxTeachers}${limits.extraTeachers>0?` (${limits.baseTeachers} base + ${limits.extraTeachers} adicionais)`:''}</span>
+      <span><b>${limits.maxTeachers>=999999?'Livre':teachersPct+'%'}</b></span>
+     </div>
+     <div class="plan-progress-track">
+      <div class="plan-progress-fill ${teachersPct>=90?'danger':teachersPct>=75?'warning':''}" style="width:${limits.maxTeachers>=999999?100:teachersPct}%"></div>
+     </div>
+    </div>
+   </div>
+   <div class="plan-upgrade-hint">
+    <h4>Precisa de mais capacidade?</h4>
+    <p>Você pode expandir os limites da sua escola a qualquer momento:</p>
+    <div class="plan-addons-chips">
+     <span><b>+10 alunos ativos:</b> R$ 15/mês</span>
+     <span><b>+1 professor ativo:</b> R$ 10/mês</span>
+    </div>
+    <div style="margin-top:12px"><button class="btn light mini" type="button" data-action="contactUpgradeSupport">${ico('school',14)} Falar com suporte para upgrade</button></div>
+   </div>`}
+  </div>
+  <form id="renewSchoolKeyForm" class="license-form"><label class="field"><span>Aplicar nova chave de licença</span><input type="text" name="key" placeholder="CAMP-XXXXXXXX-..." autocomplete="off" spellcheck="false" required></label><div class="form-footer"><button class="btn light" ${pending?'disabled':''}>${ico('key',16)} Aplicar código</button></div></form>`;
+  main=preferencesPanel('Licença, Plano e Capacidade','Consulte o plano atual, o consumo de alunos e professores ou aplique uma nova chave.',planBody,'key');
+ }
  else if(section==='settings-admin')main=settingsAdminsPanel(s,pending);
  else if(section==='settings-backup')main=preferencesPanel('Backup no Google Drive','Cada escola autoriza seu próprio Drive. Os PDFs finais e certificados são copiados após a assinatura.',`<div class="school-license-summary"><div><span>Conexão</span><b>${ui.driveConnection?.connected?'Drive conectado':'Não conectado'}</b></div><div><span>Último backup</span><b>${ui.driveConnection?.last_success_at?new Date(ui.driveConnection.last_success_at).toLocaleString('pt-BR'):'Ainda não realizado'}</b></div></div>${ui.driveConnection?.last_error?`<p class="notice">${safe(ui.driveConnection.last_error)}</p>`:''}<p class="form-note">O backup fica sob controle da conta Google autorizada por esta escola. Não inclua contas compartilhadas sem autorização. O Drive poderá ser desconectado aqui.</p><div class="form-footer">${ui.driveConnection?.connected?`<button class="btn light" data-action="driveConnect" ${pending?'disabled':''}>Trocar conta Google</button><button class="btn danger" data-action="driveDisconnect">Desconectar Drive</button>`:`<button class="btn" data-action="driveConnect" ${pending?'disabled':''}>Conectar Google Drive</button>`}</div>`,'school');
  else if(section==='settings-deletion')main=preferencesPanel('Exclusão da escola','Gerencie a exclusão programada com prazo de 30 dias.',`<div class="settings-danger-copy"><p>Ao solicitar a exclusão, o acesso operacional é interrompido. Você tem <b>30 dias para restaurar</b> a escola. Depois, o sistema poderá apagar permanentemente seus dados e arquivos.</p></div>${pending?(s.deletion_due_at&&new Date(s.deletion_due_at)>new Date()&&!s.deletion_started_at?`<button class="btn light" data-action="restoreSchool" data-id="${safe(s.id)}">${ico('restore',16)} Cancelar exclusão</button>`:'<p class="muted">Prazo para restauração encerrado.</p>'):`<button class="btn danger" data-action="deleteSchool" ${!canAdmin()||!isSuperAdmin(s)?'disabled':''}>${ico('trash',16)} Solicitar exclusão</button>`}`,'trash');
@@ -960,21 +1264,206 @@ function schoolsView(){return `${heading('Conta e unidades','Minhas escolas','Al
 function activationModal(){showModal(`<div class="eyebrow">Nova unidade</div><h2>Ativar outra escola</h2><p class="modal-intro">Cada nova escola precisa de uma chave própria, emitida pelo proprietário do Campanella. O administrador da escola será você.</p>${activationForm()}`);}
 function renameSchoolForm(){showModal(`<h2>Renomear escola</h2><p class="modal-intro">Altera apenas o nome, mantendo a licença e todos os registros.</p><form id="renameSchoolForm">${input('Nome da escola','name',currentSchool().name)}<div class="form-footer"><button class="btn">Salvar nome</button></div></form>`);}
 function licensePeriodOptions(){return `<label class="field"><span>Validade</span><select name="validity_mode" id="licenseValidity"><option value="days">Dias após a ativação</option><option value="date">Data de vencimento exata</option><option value="unlimited">Sem vencimento</option></select></label><div id="licensePeriodFields"><label class="field"><span>Quantidade de dias</span><input name="validity_days" type="number" min="1" max="3650" value="30" required></label></div>`;}
-function licenseCreateForm(){showModal(`<div class="eyebrow">Administração Campanella</div><h2>Gerar chave de ativação</h2><p class="modal-intro">A chave será vinculada ao destinatário e valerá para a criação de uma única escola.</p><form id="issueLicenseForm" class="license-form">${input('Nome do destinatário','recipient_name')}${input('E-mail autorizado','recipient_email','','email')}${input('Nome da escola','school_name')}<label class="field"><span>Modalidade</span><select name="kind"><option value="paga">Licença paga (Pix manual)</option><option value="cortesia">Cortesia / testador</option></select></label>${licensePeriodOptions()}<div class="notice">A chave será exibida uma única vez. O prazo em dias começa na data da ativação; a data exata é fixa.</div><div class="form-footer"><button class="btn">Gerar chave</button></div></form>`);}
-function licenseManageForm(id){const school=ui.platformSchools.find(s=>s.id===id),license=schoolLicense(id);if(!school)return;
- showModal(`<div class="eyebrow">Gerenciar licença</div><h2>${safe(school.name)}</h2><p class="modal-intro">${licenseSummary(license)} · Tipo: ${safe(license?.kind)} · Vencimento: ${safe(licenseExpiration(license))}</p><form id="manageLicenseForm" data-school="${safe(id)}"><label class="field"><span>Ação</span><select name="action" id="licenseManageAction"><option value="extend">Adicionar dias ao vencimento</option><option value="set_date">Definir uma data de vencimento</option><option value="unlimited">Liberar cortesia sem vencimento</option><option value="mark_paid">Marcar como paga</option><option value="mark_courtesy">Marcar como cortesia</option><option value="suspend">Suspender acesso</option><option value="resume">Reativar acesso</option></select></label><div id="licenseManageFields"><label class="field"><span>Adicionar dias</span><input name="days" type="number" min="1" max="3650" value="30" required></label></div><label class="field"><span>Observação opcional</span><textarea name="note" rows="2" placeholder="Ex.: Pix recebido em 03/11"></textarea></label><div class="form-footer"><button class="btn">Confirmar alteração</button></div></form>`);}
+function licenseCreateForm(){
+ showModal(`<div class="eyebrow">Administração Campanella</div><h2>Gerar chave de ativação</h2><p class="modal-intro">A chave será vinculada ao destinatário e valerá para a criação de uma única escola com o plano e limites escolhidos.</p>
+ <form id="issueLicenseForm" class="license-form">
+  ${input('Nome do destinatário','recipient_name')}
+  ${input('E-mail autorizado','recipient_email','','email')}
+  ${input('Nome da escola','school_name')}
+  <label class="field"><span>Modalidade</span>
+   <select name="kind">
+    <option value="paga">Licença paga (Pix manual)</option>
+    <option value="cortesia">Cortesia / testador</option>
+   </select>
+  </label>
+  ${licensePlanOptions('essencial',false)}
+  ${licenseAddonsFields(0,0)}
+  ${licensePeriodOptions()}
+  <div class="notice">A chave será exibida uma única vez. O plano e os adicionais definidos entrarão em vigor automaticamente na ativação.</div>
+  <div class="form-footer"><button class="btn">Gerar chave</button></div>
+ </form>`);
+ const f=$('#issueLicenseForm');
+ if(f){
+  updateLicenseCalcPreview(f);
+  f.addEventListener('input',()=>updateLicenseCalcPreview(f));
+  f.addEventListener('change',()=>updateLicenseCalcPreview(f));
+  $('#licenseValidity')?.addEventListener('change',updateLicensePeriodFields);
+ }
+}
+function licenseManageForm(id){
+ const school=ui.platformSchools.find(s=>s.id===id),license=schoolLicense(id);if(!school)return;
+ const limits=schoolPlanLimits(license);
+ showModal(`<div class="eyebrow">Gerenciar licença</div><h2>${safe(school.name)}</h2>
+ <p class="modal-intro">${licenseSummary(license)} · Vencimento: ${safe(licenseExpiration(license))}</p>
+ <form id="manageLicenseForm" data-school="${safe(id)}">
+  <label class="field"><span>Ação</span>
+   <select name="action" id="licenseManageAction">
+    <option value="set_plan_and_addons">Alterar plano e adicionais</option>
+    <option value="extend">Adicionar dias ao vencimento</option>
+    <option value="set_date">Definir uma data de vencimento</option>
+    <option value="unlimited">Liberar cortesia sem vencimento</option>
+    <option value="mark_paid">Marcar como paga</option>
+    <option value="mark_courtesy">Marcar como cortesia</option>
+    <option value="suspend">Suspender acesso</option>
+    <option value="resume">Reativar acesso</option>
+   </select>
+  </label>
+  <div id="licenseManageFields"></div>
+  <div class="form-section-title" style="margin-top:16px"><b>Plano e capacidade da escola</b></div>
+  ${licensePlanOptions(limits.plan,true)}
+  ${licenseAddonsFields(limits.extraStudentsPacks,limits.extraTeachers)}
+  <label class="field" style="margin-top:14px"><span>Observação opcional</span><textarea name="note" rows="2" placeholder="Ex.: Pix recebido em 03/11">${safe(license?.note||'')}</textarea></label>
+  <div class="form-footer"><button class="btn">Confirmar alteração</button></div>
+ </form>`);
+ const f=$('#manageLicenseForm');
+ const act=$('#licenseManageAction');
+ function syncActionFields(){
+  const v=act?.value;
+  const flds=$('#licenseManageFields');
+  if(!flds)return;
+  if(v==='extend')flds.innerHTML=`<label class="field"><span>Adicionar dias</span><input name="days" type="number" min="1" max="3650" value="30" required></label>`;
+  else if(v==='set_date')flds.innerHTML=`<label class="field"><span>Nova data de vencimento</span><input name="expires_on" type="date" min="${today()}" value="${license?.expires_on||today()}" required></label>`;
+  else flds.innerHTML='';
+ }
+ if(act)act.addEventListener('change',syncActionFields);
+ syncActionFields();
+ if(f){
+  updateLicenseCalcPreview(f);
+  f.addEventListener('input',()=>updateLicenseCalcPreview(f));
+  f.addEventListener('change',()=>updateLicenseCalcPreview(f));
+ }
+}
 function platformTransferForm(id){const school=ui.platformSchools.find(s=>s.id===id);if(!school)return;showModal(`<h2>Trocar administrador</h2><p class="modal-intro">${safe(school.name)}. Essa alteração mantém a licença e todos os cadastros, mas revoga o acesso do administrador anterior.</p><form id="platformTransferForm" data-school="${safe(id)}">${input('E-mail do novo administrador','email','','email')}<div class="form-footer"><button class="btn">Transferir administração</button></div></form>`);}
-function schoolRenewalForm(id){const s=ui.platformSchools.find(x=>x.id===id);if(!s)return;const email=ui.platformProfiles.find(p=>p.id===s.admin_user_id)?.email||'Administrador';showModal(`<div class="eyebrow">Nova licença para escola existente</div><h2>${safe(s.name)}</h2><p class="modal-intro">O código será válido SOMENTE para esta escola, para o administrador <b>${safe(email)}</b>. Não cria outra escola.</p><form id="issueRenewalForm" class="license-form" data-school="${safe(id)}"><label class="field"><span>Tipo da licença</span><select name="kind"><option value="paga">Paga (Pix recebido)</option><option value="cortesia">Cortesia / teste</option></select></label>${licensePeriodOptions()}<p class="form-note">O prazo começa quando o administrador aplicar a chave. É possível também alterar a validade diretamente em Gerenciar.</p><div class="form-footer"><button class="btn">Gerar nova chave</button></div></form>`);}
-function platformSchoolDetail(id){const s=ui.platformSchools.find(x=>x.id===id);if(!s)return;const l=schoolLicense(id),email=ui.platformProfiles.find(p=>p.id===s.admin_user_id)?.email||'Sem administrador',events=ui.platformEvents.filter(e=>e.school_id===id).slice(0,15);showModal(`<div class="eyebrow">Administração da plataforma</div><h2>${safe(s.name)}</h2><p class="modal-intro">${fullSchoolStatus(s)} · ${safe(email)}</p><div class="detail-grid"><div class="detail-item"><span>Modalidade</span><strong>${safe(l?.kind==='cortesia'?'Cortesia':'Paga')}</strong></div><div class="detail-item"><span>Vencimento</span><strong>${safe(licenseExpiration(l))}</strong></div><div class="detail-item"><span>Cadastro</span><strong>${dateBR(s.created_at?.slice(0,10))}</strong></div></div><p class="form-note">Contato: ${safe(s.contact_email||'Não informado')} · ${safe(s.contact_phone||'Sem telefone')}<br>Endereço: ${safe(s.address||'Não informado')}</p>${s.deletion_requested_at?`<p class="notice">Exclusão agendada para ${new Date(s.deletion_due_at).toLocaleString('pt-BR')}.</p><button class="btn light" data-action="restoreSchool" data-id="${safe(s.id)}">Restaurar escola</button>`:''}<div class="form-footer"><button class="btn light" data-action="platformTransfer" data-id="${safe(id)}">Trocar administrador</button><button class="btn light" data-action="manageLicense" data-id="${safe(id)}">Gerenciar licença</button><button class="btn" data-action="issueRenewal" data-id="${safe(id)}" ${s.deletion_requested_at?'disabled':''}>Nova chave</button></div><h3 class="form-section">Histórico recente</h3>${events.length?`<div class="school-event-list">${events.map(ev=>`<div><span>${new Date(ev.created_at).toLocaleString('pt-BR')}</span><b>${safe(ev.action.replaceAll('_',' '))}</b><small>${safe(ev.detail?.observacao||'')}</small></div>`).join('')}</div>`:'<p class="muted">Nenhuma movimentação registrada.</p>'}`);}
-function licensesView(){const schools=ui.platformSchools,keys=ui.platformKeys,renewals=ui.platformRenewalKeys;
+function schoolRenewalForm(id){
+ const s=ui.platformSchools.find(x=>x.id===id);if(!s)return;
+ const l=schoolLicense(id);
+ const limits=schoolPlanLimits(l);
+ const email=ui.platformProfiles.find(p=>p.id===s.admin_user_id)?.email||'Administrador';
+ showModal(`<div class="eyebrow">Nova licença para escola existente</div><h2>${safe(s.name)}</h2><p class="modal-intro">O código será válido SOMENTE para esta escola, para o administrador <b>${safe(email)}</b>. Você pode renovar mantendo o plano ou aplicando upgrade.</p>
+ <form id="issueRenewalForm" class="license-form" data-school="${safe(id)}">
+  <label class="field"><span>Tipo da licença</span>
+   <select name="kind">
+    <option value="paga">Paga (Pix recebido)</option>
+    <option value="cortesia">Cortesia / teste</option>
+   </select>
+  </label>
+  ${licensePlanOptions(limits.plan,true)}
+  ${licenseAddonsFields(limits.extraStudentsPacks,limits.extraTeachers)}
+  ${licensePeriodOptions()}
+  <p class="form-note">O novo plano e adicionais passam a valer no momento em que o administrador aplicar o código.</p>
+  <div class="form-footer"><button class="btn">Gerar nova chave</button></div>
+ </form>`);
+ const f=$('#issueRenewalForm');
+ if(f){
+  updateLicenseCalcPreview(f);
+  f.addEventListener('input',()=>updateLicenseCalcPreview(f));
+  f.addEventListener('change',()=>updateLicenseCalcPreview(f));
+  $('#licenseValidity')?.addEventListener('change',updateLicensePeriodFields);
+ }
+}
+function platformSchoolDetail(id){
+ const s=ui.platformSchools.find(x=>x.id===id);if(!s)return;
+ const l=schoolLicense(id);
+ const limits=schoolPlanLimits(l);
+ const email=ui.platformProfiles.find(p=>p.id===s.admin_user_id)?.email||'Sem administrador';
+ const events=ui.platformEvents.filter(e=>e.school_id===id).slice(0,15);
+ showModal(`<div class="eyebrow">Administração da plataforma</div><h2>${safe(s.name)}</h2>
+ <p class="modal-intro">${fullSchoolStatus(s)} · ${safe(email)}</p>
+ <div class="detail-grid">
+  <div class="detail-item"><span>Modalidade</span><strong>${safe(l?.kind==='cortesia'?'Cortesia':'Paga')}</strong></div>
+  <div class="detail-item"><span>Plano</span><strong><span class="pill ${limits.badgeClass}">${limits.planName}</span></strong></div>
+  <div class="detail-item"><span>Mensalidade</span><strong>R$ ${limits.monthlyPrice},00 / mês</strong></div>
+  <div class="detail-item"><span>Vencimento</span><strong>${safe(licenseExpiration(l))}</strong></div>
+  <div class="detail-item"><span>Capacidade de alunos</span><strong>${limits.crmOnly?'Somente CRM':`${limits.maxStudents} alunos ativos`}</strong></div>
+  <div class="detail-item"><span>Equipe docente</span><strong>${limits.crmOnly?'Somente CRM':`${limits.maxTeachers} professores`}</strong></div>
+ </div>
+ <p class="form-note" style="margin-top:14px">Contato: ${safe(s.contact_email||'Não informado')} · ${safe(s.contact_phone||'Sem telefone')}<br>Endereço: ${safe(s.address||'Não informado')}</p>
+ ${s.deletion_requested_at?`<p class="notice">Exclusão agendada para ${new Date(s.deletion_due_at).toLocaleString('pt-BR')}.</p><button class="btn light" data-action="restoreSchool" data-id="${safe(s.id)}">Restaurar escola</button>`:''}
+ <div class="form-footer">
+  <button class="btn light" data-action="platformTransfer" data-id="${safe(id)}">Trocar administrador</button>
+  <button class="btn light" data-action="manageLicense" data-id="${safe(id)}">Gerenciar licença & plano</button>
+  <button class="btn" data-action="issueRenewal" data-id="${safe(id)}" ${s.deletion_requested_at?'disabled':''}>Nova chave</button>
+ </div>
+ <h3 class="form-section">Histórico recente</h3>
+ ${events.length?`<div class="school-event-list">${events.map(ev=>`<div><span>${new Date(ev.created_at).toLocaleString('pt-BR')}</span><b>${safe(ev.action.replaceAll('_',' '))}</b><small>${safe(ev.detail?.observacao||ev.detail?.plano?`Plano: ${ev.detail.plano}`:'')}</small></div>`).join('')}</div>`:'<p class="muted">Nenhuma movimentação registrada.</p>'}`);
+}
+function licensesView(){
+ const schools=ui.platformSchools,keys=ui.platformKeys,renewals=ui.platformRenewalKeys;
  const active=schools.filter(s=>!s.deletion_requested_at&&schoolLicense(s.id)&&!schoolLicense(s.id).suspended_at&&(!schoolLicense(s.id).expires_on||schoolLicense(s.id).expires_on>=today())).length;
  const expired=schools.filter(s=>!s.deletion_requested_at&&schoolLicense(s.id)?.expires_on&&schoolLicense(s.id).expires_on<today()&&!schoolLicense(s.id).suspended_at).length;
  const suspended=schools.filter(s=>s.deletion_requested_at||schoolLicense(s.id)?.suspended_at).length;
+ const crmCount=schools.filter(s=>schoolPlanLimits(schoolLicense(s.id)).crmOnly).length;
  const isMatch=s=>[s.name,ui.platformProfiles.find(p=>p.id===s.admin_user_id)?.email,s.contact_email].join(' ').toLowerCase().includes(ui.platformSearch.toLowerCase());
  const status=s=>s.deletion_requested_at?'deleting':schoolLicense(s.id)?.suspended_at?'suspended':!schoolLicense(s.id)?'missing':schoolLicense(s.id).expires_on&&schoolLicense(s.id).expires_on<today()?'expired':'active';
- const filtered=schools.filter(s=>isMatch(s)&&(ui.platformFilter==='all'||ui.platformFilter===status(s)||ui.platformFilter==='courtesy'&&schoolLicense(s.id)?.kind==='cortesia'));
+ const filtered=schools.filter(s=>{
+  if(!isMatch(s))return false;
+  if(ui.platformFilter==='all')return true;
+  if(ui.platformFilter==='courtesy')return schoolLicense(s.id)?.kind==='cortesia';
+  if(ui.platformFilter.startsWith('plan_')){
+   return schoolPlanLimits(schoolLicense(s.id)).plan===ui.platformFilter.replace('plan_','');
+  }
+  return ui.platformFilter===status(s);
+ });
  const code=ui.newlyIssuedKey?`<section class="license-key-reveal"><div class="eyebrow">Código recém-gerado · copie agora</div><p class="license-code">${safe(ui.newlyIssuedKey)}</p><div class="actions"><button class="btn" data-action="copyIssuedKey">Copiar código</button><button class="btn ghost" data-action="hideIssuedKey">Ocultar</button></div><p class="small muted">Este código não será exibido novamente. Envie ao administrador da escola.</p></section>`:'';
- return `${heading('Administração da plataforma','Gestão de escolas','Visão de todos os clientes do Campanella, independentemente das escolas da sua conta.',`<button class="btn" data-action="issueLicense">${ico('plus',17)} Gerar chave para nova escola</button>`)}${code}<div class="metric-grid platform-metrics"><div class="metric"><span class="metric-icon">${ico('school',22)}</span><div class="metric-value">${schools.length}</div><div class="metric-label">Escolas cadastradas</div></div><div class="metric"><span class="metric-icon">${ico('check',22)}</span><div class="metric-value">${active}</div><div class="metric-label">Licenças ativas</div></div><div class="metric"><span class="metric-icon">${ico('calendar',22)}</span><div class="metric-value">${expired}</div><div class="metric-label">Licenças vencidas</div></div><div class="metric"><span class="metric-icon">${ico('lock',22)}</span><div class="metric-value">${suspended}</div><div class="metric-label">Suspensas / exclusão</div></div></div><section class="panel"><div class="panel-head"><h2>Escolas e clientes</h2><span class="muted small">${filtered.length} resultado(s)</span></div><div class="panel-body"><div class="platform-filters"><input type="search" class="search" id="platformSearch" placeholder="Buscar escola ou administrador" value="${safe(ui.platformSearch)}" aria-label="Buscar escolas"><select id="platformFilter" aria-label="Filtrar escolas">${[['all','Todas as escolas'],['active','Ativas'],['expired','Vencidas'],['suspended','Suspensas'],['courtesy','Cortesias'],['deleting','Exclusão agendada'],['missing','Sem licença']].map(([v,n])=>`<option value="${v}" ${ui.platformFilter===v?'selected':''}>${n}</option>`).join('')}</select></div></div>${table(['Escola','Administrador','Situação','Validade','Gerenciar'],filtered.map(s=>{const l=schoolLicense(s.id),email=ui.platformProfiles.find(p=>p.id===s.admin_user_id)?.email||'Sem administrador';return row([`<strong>${safe(s.name)}</strong><div class="muted">${safe(s.contact_email||'Sem e-mail institucional')}</div>`,safe(email),`${fullSchoolStatus(s)}<div class="muted">${safe(l?.kind==='cortesia'?'Cortesia':'Paga')}</div>`,safe(licenseExpiration(l)),`<div class="actions"><button class="table-action-btn" data-action="platformSchoolDetail" data-id="${safe(s.id)}">${ico('eye',14)} <span>DETALHES</span></button><button class="table-action-btn primary" data-action="issueRenewal" data-id="${safe(s.id)}" ${s.deletion_requested_at?'disabled':''}>${ico('key',14)} <span>Nova chave</span></button></div>`]);}),'Nenhuma escola encontrada.')}</section><section class="panel"><div class="panel-head"><h2>Chaves emitidas</h2><span class="muted small">${keys.filter(k=>!k.redeemed_at&&!k.revoked_at).length+renewals.filter(k=>!k.redeemed_at&&!k.revoked_at).length} disponíveis</span></div>${table(['Destinatário','Escola','Modalidade / prazo','Situação','Ação'],[...renewals.map(k=>({key:k,isRenewal:true})),...keys.map(k=>({key:k,isRenewal:false}))].sort((a,b)=>b.key.created_at.localeCompare(a.key.created_at)).slice(0,100).map(({key:k,isRenewal})=>row([safe(k.recipient_email),`<strong>${safe(isRenewal?schools.find(s=>s.id===k.school_id)?.name||'Escola removida':k.school_name)}</strong><div class="muted">${isRenewal?'Renovação':'Ativação inicial'}</div>`,`${safe(k.kind==='cortesia'?'Cortesia':'Paga')} · ${safe(k.validity_mode==='days'?k.validity_days+' dias':k.validity_mode==='date'?dateBR(k.expires_on):'Sem vencimento')}`,k.redeemed_at?'<span class="pill pill-signed">Utilizada</span>':k.revoked_at?'<span class="pill pill-void">Revogada</span>':'<span class="pill pill-sent">Disponível</span>',`<div class="actions"><span class="muted small">••••${safe(k.code_suffix)}</span>${!k.redeemed_at&&!k.revoked_at?`<button class="table-action-btn danger" data-action="${isRenewal?'revokeRenewal':'revokeKey'}" data-id="${safe(k.id)}">${ico('trash',14)} <span>REVOGAR</span></button>`:''}</div>`])),'Nenhuma chave emitida.')}</section><section class="panel"><div class="panel-head"><h2>Movimentações recentes</h2></div>${table(['Data','Escola','Alteração','Observação'],ui.platformEvents.slice(0,35).map(ev=>row([new Date(ev.created_at).toLocaleString('pt-BR'),safe(schools.find(s=>s.id===ev.school_id)?.name||'—'),safe(ev.action.replaceAll('_',' ')),safe(ev.detail?.observacao||'—')])),'Nenhuma movimentação.')}</section>`;
+
+ return `${heading('Administração da plataforma','Gestão de escolas','Visão de todos os clientes do Campanella, planos contratados e limites de capacidade.',`<button class="btn" data-action="issueLicense">${ico('plus',17)} Gerar chave para nova escola</button>`)}
+ ${code}
+ <div class="metric-grid platform-metrics">
+  <div class="metric"><span class="metric-icon">${ico('school',22)}</span><div class="metric-value">${schools.length}</div><div class="metric-label">Escolas cadastradas</div></div>
+  <div class="metric"><span class="metric-icon">${ico('check',22)}</span><div class="metric-value">${active}</div><div class="metric-label">Licenças ativas</div></div>
+  <div class="metric"><span class="metric-icon">${ico('calendar',22)}</span><div class="metric-value">${expired}</div><div class="metric-label">Licenças vencidas</div></div>
+  <div class="metric"><span class="metric-icon">${ico('leads',22)}</span><div class="metric-value">${crmCount}</div><div class="metric-label">Escolas no Plano CRM</div></div>
+ </div>
+ <section class="panel">
+  <div class="panel-head"><h2>Escolas e clientes</h2><span class="muted small">${filtered.length} resultado(s)</span></div>
+  <div class="panel-body">
+   <div class="platform-filters">
+    <input type="search" class="search" id="platformSearch" placeholder="Buscar escola ou administrador" value="${safe(ui.platformSearch)}" aria-label="Buscar escolas">
+    <select id="platformFilter" aria-label="Filtrar escolas">
+     ${[['all','Todas as escolas'],['active','Ativas'],['expired','Vencidas'],['plan_crm','Plano CRM (Somente CRM)'],['plan_essencial','Plano Essencial'],['plan_profissional','Plano Profissional'],['plan_avancado','Plano Avançado'],['suspended','Suspensas'],['courtesy','Cortesias'],['deleting','Exclusão agendada'],['missing','Sem licença']].map(([v,n])=>`<option value="${v}" ${ui.platformFilter===v?'selected':''}>${n}</option>`).join('')}
+    </select>
+   </div>
+  </div>
+  ${table(['Escola','Administrador','Plano / Capacidade','Situação','Validade','Ações'],filtered.map(s=>{
+   const l=schoolLicense(s.id);
+   const limits=schoolPlanLimits(l);
+   const email=ui.platformProfiles.find(p=>p.id===s.admin_user_id)?.email||'Sem administrador';
+   const capDesc=limits.crmOnly?'Somente CRM':`${limits.maxStudents} alunos · ${limits.maxTeachers} profs`;
+   const addonsNote=limits.extraStudentsPacks>0||limits.extraTeachers>0?` <small class="muted">(+${limits.extraStudentsPacks*10} al / +${limits.extraTeachers} pf)</small>`:'';
+   const planCell=`<div><span class="pill ${limits.badgeClass}">${limits.planName}</span><div class="muted small">${capDesc}${addonsNote} · <b>R$ ${limits.monthlyPrice}/mês</b></div></div>`;
+   return row([
+    `<strong>${safe(s.name)}</strong><div class="muted">${safe(s.contact_email||'Sem e-mail institucional')}</div>`,
+    safe(email),
+    planCell,
+    `${fullSchoolStatus(s)}<div class="muted">${safe(l?.kind==='cortesia'?'Cortesia':'Paga')}</div>`,
+    safe(licenseExpiration(l)),
+    `<div class="actions">
+      <button class="table-action-btn" data-action="platformSchoolDetail" data-id="${safe(s.id)}">${ico('eye',14)} <span>DETALHES</span></button>
+      <button class="table-action-btn" data-action="manageLicense" data-id="${safe(s.id)}">${ico('settings',14)} <span>PLANO</span></button>
+      <button class="table-action-btn primary" data-action="issueRenewal" data-id="${safe(s.id)}" ${s.deletion_requested_at?'disabled':''}>${ico('key',14)} <span>Nova chave</span></button>
+     </div>`
+   ]);
+  }),'Nenhuma escola encontrada.')}
+ </section>
+ <section class="panel">
+  <div class="panel-head"><h2>Chaves emitidas</h2><span class="muted small">${keys.filter(k=>!k.redeemed_at&&!k.revoked_at).length+renewals.filter(k=>!k.redeemed_at&&!k.revoked_at).length} disponíveis</span></div>
+  ${table(['Destinatário','Escola','Plano / Prazo','Situação','Ação'],[...renewals.map(k=>({key:k,isRenewal:true})),...keys.map(k=>({key:k,isRenewal:false}))].sort((a,b)=>b.key.created_at.localeCompare(a.key.created_at)).slice(0,100).map(({key:k,isRenewal})=>{
+   const kLimits=schoolPlanLimits(k);
+   const planText=`<span class="pill ${kLimits.badgeClass}">${kLimits.planName}</span> ${safe(k.kind==='cortesia'?'Cortesia':'Paga')} · ${safe(k.validity_mode==='days'?k.validity_days+' dias':k.validity_mode==='date'?dateBR(k.expires_on):'Sem vencimento')}`;
+   return row([
+    safe(k.recipient_email),
+    `<strong>${safe(isRenewal?schools.find(s=>s.id===k.school_id)?.name||'Escola removida':k.school_name)}</strong><div class="muted">${isRenewal?'Renovação':'Ativação inicial'}</div>`,
+    planText,
+    k.redeemed_at?'<span class="pill pill-signed">Utilizada</span>':k.revoked_at?'<span class="pill pill-void">Revogada</span>':'<span class="pill pill-sent">Disponível</span>',
+    `<div class="actions"><span class="muted small">••••${safe(k.code_suffix)}</span>${!k.redeemed_at&&!k.revoked_at?`<button class="table-action-btn danger" data-action="${isRenewal?'revokeRenewal':'revokeKey'}" data-id="${safe(k.id)}">${ico('trash',14)} <span>REVOGAR</span></button>`:''}</div>`
+   ]);
+  }),'Nenhuma chave emitida.')}
+ </section>
+ <section class="panel">
+  <div class="panel-head"><h2>Movimentações recentes</h2></div>
+  ${table(['Data','Escola','Alteração','Observação'],ui.platformEvents.slice(0,35).map(ev=>row([new Date(ev.created_at).toLocaleString('pt-BR'),safe(schools.find(s=>s.id===ev.school_id)?.name||'—'),safe(ev.action.replaceAll('_',' ')),safe(ev.detail?.observacao||ev.detail?.plano?`Plano: ${ev.detail.plano}`:'—')]))),'Nenhuma movimentação.')}
+ </section>`;
+}
 }
 function teachersView(){
  const active=db.teachers.filter(t=>t.active!==false).length;
@@ -1228,7 +1717,7 @@ document.addEventListener('click',async e=>{
  if(action==='selectSchool')return switchSchool(id);
  if(action==='showActivation')return activationModal();
  if(action==='configureSchoolSignature'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Assinatura eletrônica não disponível nesta versão.');return schoolSignatureModal();}
- if(action==='importStudents')return studentImportModal();
+ if(action==='importStudents'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('alunos');const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();if(cur>=lim.maxStudents){window.campanellaAlert(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Para importar novos alunos, faça upgrade de plano ou adquira pacotes de +10 alunos.`,'Limite atingido');return contactUpgradeModal('alunos');}return studentImportModal();}
  if(action==='platformSchoolDetail'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return platformSchoolDetail(id);}
  if(action==='issueRenewal'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return schoolRenewalForm(id);}
  if(action==='deleteSchool'){if(!canAdmin())throw new Error('Acesso restrito');return showModal(`<div class="eyebrow">Zona de perigo</div><h2>Excluir ${safe(currentSchool().name)}?</h2><p class="modal-intro">Os cadastros serão bloqueados imediatamente. Você poderá restaurar a escola durante 30 dias; após isso, a exclusão definitiva eliminará os registros e os arquivos da unidade.</p><form id="deleteSchoolForm"><label class="field"><span>Digite exatamente: <strong>${safe(currentSchool().name)}</strong></span><input name="confirm_name" required autocomplete="off"></label><div class="form-footer"><button class="btn ghost" type="button" data-action="close">Cancelar</button><button class="btn danger" type="submit">Agendar exclusão</button></div></form>`);}
@@ -1247,12 +1736,13 @@ document.addEventListener('click',async e=>{
  if(action==='startFiche'){const lead=lookup('leads',id);if(!lead||lead.status==='convertido')throw new Error('Lead indisponível.');if(!lead.ficha_iniciada_at)await save('leads',{ficha_iniciada_at:new Date().toISOString(),ficha_status:'open'},id);await refresh();return ficheCreatedPopup(id);}
  if(action==='navigateFiche'){const lead=lookup('leads',id),interview=db.interviews.find(i=>i.lead_id===id);ui.page='interviews';ui.search=lead?.name?.toLowerCase()||'';ui.interviewTab=lead?(['lost','archived'].includes(ficheStage(lead,interview))?ficheStage(lead,interview):'current'):'current';return render();}
  if(action==='externalPreview')return externalPreview();
- if(action==='newContract')return contractForm(id);
+ if(action==='contactUpgradeSupport')return contactUpgradeModal(x?.dataset?.reason||'');
+ if(action==='newContract'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('contratos');return contractForm(id);}
  if(action==='studentDetail')return studentDetail(id);
  if(action==='studentProfileBack'){ui.page=ui.studentReturnPage||'directory';ui.studentId=null;return render();}
- if(action==='editStudent')return studentForm(id);
- if(action==='editTeacher')return teacherForm(id);
- if(action==='teacherToggle'){const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');if(!await window.campanellaConfirm(`${t.active!==false?'Desativar':'Reativar'} ${t.name}?`))return;await save('teachers',{active:t.active===false},id);toast(t.active!==false?'Professor desativado.':'Professor reativado.');return refresh();}
+ if(action==='editStudent'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('alunos');if(!id){const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();if(cur>=lim.maxStudents){window.campanellaAlert(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Para cadastrar novos alunos, faça upgrade de plano ou adquira pacotes de +10 alunos.`,'Limite atingido');return contactUpgradeModal('alunos');}}return studentForm(id);}
+ if(action==='editTeacher'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('professores');if(!id){const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();if(cur>=lim.maxTeachers){window.campanellaAlert(`Limite de professores ativos atingido (${cur}/${lim.maxTeachers} no plano ${lim.planName}). Para cadastrar novos professores, faça upgrade de plano ou adquira professores adicionais.`,'Limite atingido');return contactUpgradeModal('professores');}}return teacherForm(id);}
+ if(action==='teacherToggle'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('professores');const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');if(t.active===false){const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();if(cur>=lim.maxTeachers){window.campanellaAlert(`Não é possível reativar este professor: o limite do plano ${lim.planName} (${lim.maxTeachers} professores ativos) já foi atingido. Faça upgrade de plano ou adquira professores adicionais.`,'Limite atingido');return contactUpgradeModal('professores');}}if(!await window.campanellaConfirm(`${t.active!==false?'Desativar':'Reativar'} ${t.name}?`))return;await save('teachers',{active:t.active===false},id);toast(t.active!==false?'Professor desativado.':'Professor reativado.');return refresh();}
  if(action==='teacherRemove'){const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');const linked=db.interviews.some(i=>i.teacher_id===id)||db.interview_invites.some(i=>i.teacher_id===id)||(db.crm_appointments||[]).some(i=>i.teacher_id===id)||db.contracts.some(c=>c.terms?.teacher_id===id);
   if(linked){if(!await window.campanellaConfirm(`O professor ${t.name} possui histórico. Ele será DESATIVADO para preservar contratos e entrevistas. Continuar?`))return;await save('teachers',{active:false},id);toast('Professor desativado. Histórico preservado.');return refresh();}
   if(!await window.campanellaConfirm(`Excluir DEFINITIVAMENTE o professor ${t.name}? Esta ação não pode ser desfeita.`,'Excluir professor','Excluir'))return;
@@ -1260,7 +1750,7 @@ document.addEventListener('click',async e=>{
   toast('Professor excluído.');return refresh();}
 
  if(action==='inviteInterview')return inviteInterview(id);
- if(action==='manualEnrollment')return manualEnrollmentForm(id);
+ if(action==='manualEnrollment'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('matriculas');return manualEnrollmentForm(id);}
  if(action==='toggleSchedule'){const el=$('#scheduleEditor');if(el)el.hidden=!el.hidden;return;}
  if(action==='enrollmentTab'){ui.enrollmentTab=x.dataset.tab;return render();}
  if(action==='interviewTab'){ui.interviewTab=x.dataset.tab;ui.interviewStatus='all';return render();}
@@ -1275,7 +1765,7 @@ document.addEventListener('click',async e=>{
  if(action==='toggleContractType'){const t=lookup('contract_types',id);if(!t)return;if(!t.active&&!analyzeContractMarkers(t.body_text||'',t.kind).valid)throw new Error('Corrija o DOCX antes de ativar este modelo. Abra Editar e confira a lista de campos.');await save('contract_types',{active:!t.active},id);toast('Disponibilidade alterada.');return refresh();}
  if(action==='removeContractType'){const t=lookup('contract_types',id);if(!t)return;const inUse=db.contracts.some(c=>c.contract_type_id===id);if(!await window.campanellaConfirm(inUse?'Modelo utilizado em contratos. Deseja desativá-lo para novas matrículas?':'Excluir definitivamente o modelo? Contratos já gerados não são alterados.'))return;if(inUse){await save('contract_types',{active:false},id);}else{for(const pkg of db.packages.filter(p=>p.contract_type_id===id))await save('packages',{contract_type_id:null},pkg.id);const {error}=await sb.from('contract_types').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;}toast('Modelo atualizado.');return refresh();}
  if(action==='previewContract')return previewContract(id);
- if(action==='renew')return renewForm(id);
+ if(action==='renew'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('rematriculas');return renewForm(id);}
  if(action==='externalSend'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Assinatura eletrônica indisponível nesta versão.');return externalSendForm(id);}
  if(action==='externalStatus'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração desativada.');const result=await v5Request('contract-signing',{action:'status',contractId:id});toast(`AssinAPI: ${result.providerStatus||result.localStatus||'pendente'}`);await refresh();return;}
  if(action==='externalCancel'){if(!await window.campanellaConfirm('Cancelar a solicitação de assinatura na AssinAPI?'))return;await v5Request('contract-signing',{action:'cancel',contractId:id});toast('Assinatura cancelada.');return refresh();}
@@ -1471,16 +1961,16 @@ document.addEventListener('submit',async event=>{
  if(f.id==='schoolDetailsForm'){const d=formData(f);const {error}=await sb.rpc('update_school_details',{p_school:ui.schoolId,p_name:d.name,p_email:d.contact_email||'',p_phone:d.contact_phone||'',p_address:d.address||''});if(error)throw error;await loadSchools(ui.schoolId);toast('Informações da escola atualizadas.');return render();}
  if(f.id==='deleteSchoolForm'){const {error}=await sb.rpc('schedule_school_deletion',{p_school:ui.schoolId,p_confirm_name:f.elements.confirm_name.value});if(error)throw error;closeModal();await loadSchools(ui.schoolId);toast('Exclusão agendada por 30 dias.');return refresh();}
  if(f.id==='renewSchoolKeyForm'){const {error}=await sb.rpc('redeem_school_renewal_key',{p_school:ui.schoolId,p_key:f.elements.key.value.trim()});if(error)throw error;await loadSchools(ui.schoolId);toast('Licença atualizada pela nova chave.');return refresh();}
- if(f.id==='issueRenewalForm'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');const d=formData(f);const {data,error}=await sb.rpc('issue_school_renewal_key',{p_school:f.dataset.school,p_kind:d.kind,p_validity_mode:d.validity_mode,p_validity_days:d.validity_mode==='days'?Number(d.validity_days):null,p_expires_on:d.validity_mode==='date'?d.expires_on:null});if(error)throw error;ui.newlyIssuedKey=data.key;closeModal();await loadPlatformData();render();toast('Chave de renovação gerada. Copie agora.');return;}
+ if(f.id==='issueRenewalForm'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');const d=formData(f);const {data,error}=await sb.rpc('issue_school_renewal_key',{p_school:f.dataset.school,p_kind:d.kind,p_validity_mode:d.validity_mode,p_validity_days:d.validity_mode==='days'?Number(d.validity_days):null,p_expires_on:d.validity_mode==='date'?d.expires_on:null,p_plan:d.plan||'essencial',p_extra_students_packs:Number(d.extra_students_packs)||0,p_extra_teachers:Number(d.extra_teachers)||0});if(error)throw error;ui.newlyIssuedKey=data.key;closeModal();await loadPlatformData();render();toast('Chave de renovação gerada. Copie agora.');return;}
  if(f.id==='signupForm'){const email=f.elements.email.value.trim(),password=f.elements.password.value;
   if(f.elements.name.value.trim().length<2)throw new Error('Informe seu nome completo.');
   if(password.length<8||password!==f.elements.password_confirm.value)throw new Error('Use uma senha de pelo menos 8 caracteres e confirme corretamente.');
   const {error}=await sb.auth.signUp({email,password,options:{data:{full_name:f.elements.name.value.trim()},emailRedirectTo:location.origin+location.pathname}});if(error)throw error;$('#app').innerHTML=signupSuccessPage();return;}
  if(f.id==='activationForm'){const key=f.elements.key.value.trim();const {data,error}=await sb.rpc('activate_school_license',{p_key:key});if(error)throw error;if($('#modal').open)closeModal();ui.page='dashboard';await loadSchools(data);if(ui.isPlatformAdmin)await loadPlatformData();toast('Escola ativada!');return refresh();}
  if(f.id==='issueLicenseForm'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');const d=formData(f);const mode=d.validity_mode;
-  const args={p_recipient_name:d.recipient_name.trim(),p_recipient_email:d.recipient_email.trim(),p_school_name:d.school_name.trim(),p_kind:d.kind,p_validity_mode:mode,p_validity_days:mode==='days'?Number(d.validity_days):null,p_expires_on:mode==='date'?d.expires_on:null};
+  const args={p_recipient_name:d.recipient_name.trim(),p_recipient_email:d.recipient_email.trim(),p_school_name:d.school_name.trim(),p_kind:d.kind,p_validity_mode:mode,p_validity_days:mode==='days'?Number(d.validity_days):null,p_expires_on:mode==='date'?d.expires_on:null,p_plan:d.plan||'essencial',p_extra_students_packs:Number(d.extra_students_packs)||0,p_extra_teachers:Number(d.extra_teachers)||0};
   const {data,error}=await sb.rpc('issue_license_key',args);if(error)throw error;ui.newlyIssuedKey=data.key;closeModal();await loadPlatformData();render();toast('Chave gerada. Copie antes de sair desta página.');return;}
- if(f.id==='manageLicenseForm'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');const d=formData(f),args={p_school:f.dataset.school,p_action:d.action,p_days:d.action==='extend'?Number(d.days):null,p_expires_on:d.action==='set_date'?d.expires_on:null,p_note:d.note.trim()||null};
+ if(f.id==='manageLicenseForm'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');const d=formData(f),args={p_school:f.dataset.school,p_action:d.action,p_days:d.action==='extend'?Number(d.days):null,p_expires_on:d.action==='set_date'?d.expires_on:null,p_note:d.note.trim()||null,p_plan:d.plan||null,p_extra_students_packs:d.extra_students_packs!=null?Number(d.extra_students_packs):null,p_extra_teachers:d.extra_teachers!=null?Number(d.extra_teachers):null};
   const {error}=await sb.rpc('manage_school_license',args);if(error)throw error;closeModal();await loadSchools(ui.schoolId);await loadPlatformData();await reloadLicenseState();toast('Licença atualizada.');return ui.schoolId?refresh():render();}
  if(f.id==='transferAdminForm'||f.id==='platformTransferForm'){const email=f.elements.email.value.trim(),schoolId=f.id==='transferAdminForm'?ui.schoolId:f.dataset.school;
   if(!await window.campanellaConfirm('Confirmar transferência da titularidade de Administrador Super?'))return;
@@ -1509,6 +1999,9 @@ document.addEventListener('submit',async event=>{
   await refresh();interviewInviteReady(link,leadId);return;
  }
  if(f.id==='csvForm'){
+  if(isCurrentSchoolCrmOnly())throw new Error('O plano CRM não inclui gestão de alunos e importação em massa. Faça upgrade para o plano Essencial ou superior.');
+  const lim=schoolPlanLimits(),curActive=currentSchoolActiveStudentsCount();
+  if(curActive>=lim.maxStudents)throw new Error(`Limite de alunos ativos atingido (${curActive}/${lim.maxStudents} no plano ${lim.planName}). Adquira pacotes de +10 alunos antes de importar.`);
   const file=f.elements.csv_file.files[0];if(!file||file.size>300000)throw new Error('CSV deve ter no máximo 300 KB.');
   const rows=parseCSV(await file.text());if(rows.length>200)throw new Error('Importe no máximo 200 alunos por arquivo.');
   const cpfs=rows.map(x=>onlyDigits(x.cpf)).filter(Boolean),{data:existing,error:exerr}=await sb.from('students').select('cpf').eq('school_id',ui.schoolId).in('cpf',cpfs.length?cpfs:['-']);if(exerr)throw exerr;
@@ -1559,6 +2052,7 @@ document.addEventListener('submit',async event=>{
   const created=await save('contracts',{lead_id:lead,interview_id:i.id,...snapshot,created_by:ui.user.id});toast('Pré-matrícula iniciada. Compartilhe o link de cadastro.');await refresh();if(created.kind!=='dupla'){await sendLink(created.id);return;}
  }
  else if(f.id==='renewForm'){
+  if(isCurrentSchoolCrmOnly())throw new Error('O plano CRM inclui apenas a gestão de leads e pipeline. Faça upgrade para o plano Essencial ou superior para realizar rematrículas.');
   await calendar.ensureEnrollmentDates(f);
   const original=lookup('contracts',f.dataset.original),p=lookup('packages',f.elements.package_id.value);if(!original)throw new Error('Contrato anterior indisponível.');
   if(p?.kind==='dupla')throw new Error('Rematrícula de dupla ainda não implementada.');
@@ -1570,6 +2064,7 @@ document.addEventListener('submit',async event=>{
   const renewed=await save('contracts',{lead_id:original.lead_id,student_id:original.student_id,previous_contract_id:original.id,...snapshot,status:'pre_enrolled',student_snapshot:{...s,custom_fields:{...snapshot.terms.custom_fields}},created_by:ui.user.id});closeModal();await refresh();toast('Rematrícula preparada: baixe o contrato sem assinaturas na lista de contratos.');ui.page='contracts';render();return;
  }
  else if(f.id==='manualEnrollmentForm'){
+  if(isCurrentSchoolCrmOnly())throw new Error('O plano CRM inclui apenas a gestão de leads e pipeline. Faça upgrade para o plano Essencial ou superior para cadastrar matrículas.');
   await calendar.ensureEnrollmentDates(f);
   const student=lookup('students',f.dataset.student),p=lookup('packages',f.elements.package_id.value);if(!student)throw new Error('Aluno não encontrado.');
   const count=Number(f.elements.lessons_count.value),freq=Number(f.elements.weekly_frequency.value);
@@ -1586,12 +2081,26 @@ document.addEventListener('submit',async event=>{
   const enrollment=await save('contracts',{lead_id:leadId,student_id:student.id,interview_id:interview.id,...snap,status:'pre_enrolled',student_snapshot:{...student,custom_fields:{...snap.terms.custom_fields}},created_by:ui.user.id});closeModal();await refresh();toast('Cadastro pronto. Gere o contrato sem assinaturas na área Contratos.');ui.page='contracts';render();return;
  }
  else if(f.id==='teacherForm'){
+  if(isCurrentSchoolCrmOnly())throw new Error('O plano CRM não inclui gestão de professores e agenda. Faça upgrade para o plano Essencial ou superior.');
+  const willBeActive=f.elements.active.value==='true';
+  const isEditing=!!f.dataset.id;
+  const existingTeacher=isEditing?lookup('teachers',f.dataset.id):null;
+  const wasActive=existingTeacher?existingTeacher.active!==false:false;
+  if(willBeActive&&(!isEditing||!wasActive)){
+   const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();
+   if(cur>=lim.maxTeachers)throw new Error(`Limite de professores ativos atingido (${cur}/${lim.maxTeachers} no plano ${lim.planName}). Faça upgrade de plano ou adquira adicionais.`);
+  }
   const name=f.elements.name.value.trim(),email=f.elements.email.value.trim().toLowerCase();
   if(name.length<2||name.length>180||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)throw new Error('Informe nome e e-mail válidos.');
   if(db.teachers.some(t=>t.id!==f.dataset.id&&t.email?.toLowerCase()===email))throw new Error('Este e-mail já está associado a outro professor da escola.');
-  await save('teachers',{name,email,active:f.elements.active.value==='true'},f.dataset.id||undefined);toast('Professor salvo.');
+  await save('teachers',{name,email,active:willBeActive},f.dataset.id||undefined);toast('Professor salvo.');
  }
  else if(f.id==='studentForm'){
+  if(isCurrentSchoolCrmOnly())throw new Error('O plano CRM não inclui gestão de alunos e matrículas. Faça upgrade para o plano Essencial ou superior.');
+  if(!f.dataset.id){
+   const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();
+   if(cur>=lim.maxStudents)throw new Error(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Faça upgrade de plano ou adquira pacotes de +10 alunos.`);
+  }
   const d=formData(f),minor=!!f.elements.is_minor.checked;
   if(d.full_name.trim().length<2||d.full_name.trim().length>180)throw new Error('Informe o nome completo do aluno.');
   let phone=onlyDigits(d.phone);if(phone.startsWith('55')&&[12,13].includes(phone.length))phone=phone.slice(2);

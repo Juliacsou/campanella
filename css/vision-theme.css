@@ -10791,3 +10791,381 @@ body,
 .sidebar .brand > div > .brand-sub {
   display: none !important;
 }
+
+/* =============================================================================
+   36. CAMPANELLA V7.2 - PLANOS DE USO, LIMITES E CAPACIDADE (DESIGN SYSTEM VISION UI)
+   ============================================================================= */
+
+/* Plan Badges & Pills */
+.pill-crm {
+  background: rgba(100, 116, 139, 0.22) !important;
+  color: #94A3B8 !important;
+  font-weight: 800 !important;
+  border-radius: var(--camp-radius-pill) !important;
+  padding: 3px 9px !important;
+}
+
+[data-theme="light"] .pill-crm {
+  background: rgba(100, 116, 139, 0.14) !important;
+  color: #475569 !important;
+}
+
+.pill-essencial {
+  background: rgba(14, 165, 233, 0.22) !important;
+  color: #38BDF8 !important;
+  font-weight: 800 !important;
+  border-radius: var(--camp-radius-pill) !important;
+  padding: 3px 9px !important;
+}
+
+[data-theme="light"] .pill-essencial {
+  background: rgba(14, 165, 233, 0.14) !important;
+  color: #0284C7 !important;
+}
+
+.pill-profissional {
+  background: rgba(168, 85, 247, 0.22) !important;
+  color: #C084FC !important;
+  font-weight: 800 !important;
+  border-radius: var(--camp-radius-pill) !important;
+  padding: 3px 9px !important;
+}
+
+[data-theme="light"] .pill-profissional {
+  background: rgba(168, 85, 247, 0.14) !important;
+  color: #7E22CE !important;
+}
+
+.pill-avancado {
+  background: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
+  font-weight: 800 !important;
+  border-radius: var(--camp-radius-pill) !important;
+  padding: 3px 9px !important;
+  box-shadow: 0 2px 10px rgba(234, 88, 12, 0.25) !important;
+}
+
+[data-theme="light"] .pill-avancado {
+  background: rgba(234, 88, 12, 0.14) !important;
+  color: #C2410C !important;
+}
+
+/* Sidebar Lock Badge for CRM Only */
+.nav-btn .nav-upgrade-pill {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: var(--camp-radius-pill);
+  background: rgba(100, 116, 139, 0.22);
+  color: #94A3B8;
+  opacity: 0.85;
+}
+
+[data-theme="light"] .nav-btn .nav-upgrade-pill {
+  background: rgba(100, 116, 139, 0.15);
+  color: #64748B;
+}
+
+/* Plan Upgrade Blocked View (Hero & Comparativo de Planos) */
+.plan-upgrade-panel {
+  padding: 32px 28px !important;
+}
+
+.plan-upgrade-hero {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 36px auto;
+}
+
+.plan-upgrade-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px auto;
+  border-radius: 50%;
+  background: rgba(234, 88, 12, 0.16);
+  color: var(--camp-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 18px var(--camp-primary-glow);
+}
+
+.plan-upgrade-hero h2 {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: var(--camp-text);
+}
+
+.plan-upgrade-hero p {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--camp-text-secondary);
+}
+
+/* Comparison Cards Grid */
+.plans-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+@media (max-width: 900px) {
+  .plans-comparison-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.plan-tier-card {
+  border-radius: var(--camp-radius-card);
+  background: var(--camp-surface-card);
+  border: 1px solid var(--camp-border);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.plan-tier-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--camp-shadow);
+}
+
+.plan-tier-card.is-popular {
+  border-color: rgba(234, 88, 12, 0.45);
+  background: linear-gradient(180deg, rgba(234, 88, 12, 0.08) 0%, var(--camp-surface-card) 40%);
+}
+
+.plan-tier-card.is-popular::after {
+  content: "MAIS ESCOLHIDO";
+  position: absolute;
+  top: -11px;
+  right: 20px;
+  background: var(--camp-gradient-primary);
+  color: #FFFFFF;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: var(--camp-radius-pill);
+}
+
+.plan-tier-head {
+  margin-bottom: 20px;
+}
+
+.plan-tier-price {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--camp-text);
+  margin: 12px 0 6px 0;
+}
+
+.plan-tier-price span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--camp-text-secondary);
+}
+
+.plan-tier-cap {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--camp-text-secondary);
+}
+
+.plan-tier-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--camp-text);
+  flex-grow: 1;
+}
+
+.plan-tier-features li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plan-tier-features li svg {
+  color: var(--camp-primary);
+  flex-shrink: 0;
+}
+
+.plan-upgrade-addons-box {
+  background: var(--camp-surface-raised);
+  border-radius: var(--camp-radius-card);
+  padding: 20px 24px;
+  margin-bottom: 26px;
+  border: 1px solid var(--camp-border);
+}
+
+.plan-upgrade-addons-box h3 {
+  font-size: 15px;
+  font-weight: 750;
+  margin-bottom: 6px;
+  color: var(--camp-text);
+}
+
+.plan-upgrade-addons-box p {
+  font-size: 13px;
+  color: var(--camp-text-secondary);
+  margin-bottom: 12px;
+}
+
+.plan-addons-chips {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.plan-addons-chips span {
+  background: var(--camp-surface-card);
+  padding: 8px 14px;
+  border-radius: var(--camp-radius-pill);
+  font-size: 12.5px;
+  color: var(--camp-text);
+  border: 1px solid var(--camp-border);
+}
+
+.plan-upgrade-cta {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* School License & Plan Summary in Settings */
+.school-plan-card {
+  background: var(--camp-surface-raised);
+  border-radius: var(--camp-radius-card);
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--camp-border);
+}
+
+.school-plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--camp-border);
+}
+
+.school-plan-price {
+  text-align: right;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--camp-text);
+}
+
+.school-plan-price span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--camp-text-secondary);
+}
+
+.plan-usage-section {
+  margin: 20px 0;
+}
+
+.plan-usage-item {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.plan-usage-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--camp-text);
+}
+
+.plan-progress-track {
+  height: 8px;
+  background: var(--camp-surface);
+  border-radius: var(--camp-radius-pill);
+  overflow: hidden;
+  position: relative;
+}
+
+.plan-progress-fill {
+  height: 100%;
+  border-radius: var(--camp-radius-pill);
+  background: var(--camp-gradient-primary);
+  transition: width 0.3s ease;
+}
+
+.plan-progress-fill.warning {
+  background: var(--camp-warning);
+}
+
+.plan-progress-fill.danger {
+  background: var(--camp-danger);
+}
+
+.plan-upgrade-hint {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--camp-border);
+}
+
+.plan-upgrade-hint h4 {
+  font-size: 14px;
+  font-weight: 750;
+  margin-bottom: 6px;
+  color: var(--camp-text);
+}
+
+.crm-plan-notice {
+  background: rgba(100, 116, 139, 0.12);
+  border-radius: var(--camp-radius-card);
+  padding: 16px 20px;
+  margin-top: 16px;
+}
+
+/* Dynamic License Calculation & Addons in Modal */
+.license-addons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.license-pricing-calc {
+  margin: 14px 0;
+}
+
+.license-pricing-calc .calc-pill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--camp-surface-raised);
+  border: 1px solid var(--camp-border);
+  padding: 12px 16px;
+  border-radius: var(--camp-radius-card);
+  font-size: 12.5px;
+  color: var(--camp-text);
+}
+
+.license-pricing-calc .calc-pill strong {
+  color: var(--camp-primary);
+}
+
+.license-pricing-calc .crm-calc {
+  justify-content: center;
+  background: rgba(100, 116, 139, 0.12);
+}
+
