@@ -37,10 +37,9 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- Atualizar licenças existentes caso alguma seja de cortesia legada sem plano
+-- Atualizar todas as licenças pré-existentes para acesso total sem limites
 UPDATE public.school_licenses
-SET plan = 'avancado'
-WHERE plan IS NULL OR (plan = 'essencial' AND note ILIKE '%legado%');
+SET plan = 'ilimitado', extra_students_packs = 0, extra_teachers = 0;
 
 -- Colunas em license_keys
 ALTER TABLE public.license_keys
