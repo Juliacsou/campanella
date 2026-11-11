@@ -496,8 +496,9 @@ begin
     and accepted_at is null
     and revoked_at is null;
 
-  v_token := encode(gen_random_bytes(24), 'hex');
-  v_hash := encode(digest(v_token, 'sha256'), 'hex');
+  -- Gera token criptograficamente seguro via pg_catalog nativo sem depender de extensões externas
+  v_token := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
+  v_hash := encode(sha256(convert_to(v_token, 'utf8')), 'hex');
 
   insert into public.school_admin_invites (
     school_id, email, full_name, also_teacher, token_hash, invite_token, expires_at, created_by
@@ -551,7 +552,7 @@ begin
     return null;
   end if;
 
-  v_hash := encode(digest(v_clean, 'sha256'), 'hex');
+  v_hash := encode(sha256(convert_to(v_clean, 'utf8')), 'hex');
 
   select * into v_invite
   from public.school_admin_invites i
@@ -609,7 +610,7 @@ begin
     raise exception 'Token de convite inválido.';
   end if;
 
-  v_hash := encode(digest(v_clean, 'sha256'), 'hex');
+  v_hash := encode(sha256(convert_to(v_clean, 'utf8')), 'hex');
 
   select * into v_invite
   from public.school_admin_invites i
@@ -834,7 +835,7 @@ begin
         if v_clean = '' then
           return null;
         end if;
-        v_hash := encode(digest(v_clean, 'sha256'), 'hex');
+        v_hash := encode(sha256(convert_to(v_clean, 'utf8')), 'hex');
 
         select
           i.id,
@@ -899,7 +900,7 @@ begin
         if v_clean = '' then
           raise exception 'Convite inválido.';
         end if;
-        v_hash := encode(digest(v_clean, 'sha256'), 'hex');
+        v_hash := encode(sha256(convert_to(v_clean, 'utf8')), 'hex');
 
         select i.*, coalesce(i.email, t.email) as target_email
         into v_inv
