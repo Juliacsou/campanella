@@ -30,9 +30,9 @@
   --camp-surface-card: linear-gradient(127.09deg, rgba(26, 26, 26, 0.94) 0%, rgba(18, 18, 18, 0.88) 100%);
   --camp-surface-card-border: none;
 
-  /* Inputs & Interactive Controls */
-  --camp-input: rgba(20, 20, 20, 0.75);
-  --camp-input-focus: rgba(30, 30, 30, 0.90);
+  /* Inputs & Interactive Controls (Recessed Cavity / Baixo-Relevo) */
+  --camp-input: rgba(0, 0, 0, 0.45);
+  --camp-input-focus: rgba(0, 0, 0, 0.60);
   --camp-input-border: transparent;
   --camp-hover: rgba(255, 255, 255, 0.06);
   --camp-hover-strong: rgba(234, 88, 12, 0.18);
@@ -1500,21 +1500,49 @@ dialog textarea {
   box-sizing: border-box;
 }
 
+:root:not([data-theme="light"]) input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="range"]):not([type="color"]):not([type="file"]),
+:root:not([data-theme="light"]) select,
+:root:not([data-theme="light"]) textarea,
 :root:not([data-theme="light"]) .field input,
 :root:not([data-theme="light"]) .field select,
 :root:not([data-theme="light"]) .field textarea,
+:root:not([data-theme="light"]) .search,
 :root:not([data-theme="light"]) .crm-filters input,
 :root:not([data-theme="light"]) .crm-filters select,
+:root:not([data-theme="light"]) .crm-search input,
 :root:not([data-theme="light"]) .crm-pipeline-form input,
 :root:not([data-theme="light"]) .crm-pipeline-form select,
+:root:not([data-theme="light"]) .crm-inline-col-select,
+:root:not([data-theme="light"]) .modal input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="range"]):not([type="color"]):not([type="file"]),
+:root:not([data-theme="light"]) .modal select,
+:root:not([data-theme="light"]) .modal textarea,
+:root:not([data-theme="light"]) dialog input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="range"]):not([type="color"]):not([type="file"]),
+:root:not([data-theme="light"]) dialog select,
+:root:not([data-theme="light"]) dialog textarea,
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="range"]):not([type="color"]):not([type="file"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea,
 [data-theme="dark"] .field input,
 [data-theme="dark"] .field select,
 [data-theme="dark"] .field textarea,
+[data-theme="dark"] .search,
 [data-theme="dark"] .crm-filters input,
 [data-theme="dark"] .crm-filters select,
+[data-theme="dark"] .crm-search input,
 [data-theme="dark"] .crm-pipeline-form input,
-[data-theme="dark"] .crm-pipeline-form select {
-  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.08), 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+[data-theme="dark"] .crm-pipeline-form select,
+[data-theme="dark"] .crm-inline-col-select,
+[data-theme="dark"] .modal input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="range"]):not([type="color"]):not([type="file"]),
+[data-theme="dark"] .modal select,
+[data-theme="dark"] .modal textarea,
+[data-theme="dark"] dialog input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="range"]):not([type="color"]):not([type="file"]),
+[data-theme="dark"] dialog select,
+[data-theme="dark"] dialog textarea {
+  background: rgba(0, 0, 0, 0.45) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65), inset 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 
 [data-theme="light"] .field input,
@@ -1535,23 +1563,71 @@ dialog textarea {
   box-shadow: 0 2px 8px -2px rgba(24, 24, 27, 0.08), 0 1px 3px rgba(24, 24, 27, 0.04), inset 0 1px 1px #FFFFFF !important;
 }
 
-.field input:focus,
-.field select:focus,
-.field textarea:focus,
-.search:focus,
-.crm-filters input:focus,
-.crm-filters select:focus,
-.toolbar select:focus,
-.cal-teacher-picker select:focus,
-.crm-pipeline-form input:focus,
-.crm-pipeline-form select:focus,
-.modal input:focus,
-.modal select:focus,
-dialog input:focus,
-dialog select:focus {
+/* Focus states - Light Mode */
+[data-theme="light"] .field input:focus,
+[data-theme="light"] .field select:focus,
+[data-theme="light"] .field textarea:focus,
+[data-theme="light"] .search:focus,
+[data-theme="light"] .crm-filters input:focus,
+[data-theme="light"] .crm-filters select:focus,
+[data-theme="light"] .toolbar select:focus,
+[data-theme="light"] .cal-teacher-picker select:focus,
+[data-theme="light"] .crm-pipeline-form input:focus,
+[data-theme="light"] .crm-pipeline-form select:focus,
+[data-theme="light"] .modal input:focus,
+[data-theme="light"] .modal select:focus,
+[data-theme="light"] .modal textarea:focus,
+[data-theme="light"] dialog input:focus,
+[data-theme="light"] dialog select:focus,
+[data-theme="light"] dialog textarea:focus {
   border: none !important;
   outline: none !important;
   box-shadow: 0 0 0 2.5px rgba(234, 88, 12, 0.35), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Focus states - Dark Mode (Maintains recessed cavity + brand orange ring) */
+:root:not([data-theme="light"]) input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="range"]):not([type="color"]):not([type="file"]):focus,
+:root:not([data-theme="light"]) select:focus,
+:root:not([data-theme="light"]) textarea:focus,
+:root:not([data-theme="light"]) .field input:focus,
+:root:not([data-theme="light"]) .field select:focus,
+:root:not([data-theme="light"]) .field textarea:focus,
+:root:not([data-theme="light"]) .search:focus,
+:root:not([data-theme="light"]) .crm-filters input:focus,
+:root:not([data-theme="light"]) .crm-filters select:focus,
+:root:not([data-theme="light"]) .crm-search input:focus,
+:root:not([data-theme="light"]) .crm-pipeline-form input:focus,
+:root:not([data-theme="light"]) .crm-pipeline-form select:focus,
+:root:not([data-theme="light"]) .crm-inline-col-select:focus,
+:root:not([data-theme="light"]) .modal input:focus,
+:root:not([data-theme="light"]) .modal select:focus,
+:root:not([data-theme="light"]) .modal textarea:focus,
+:root:not([data-theme="light"]) dialog input:focus,
+:root:not([data-theme="light"]) dialog select:focus,
+:root:not([data-theme="light"]) dialog textarea:focus,
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="range"]):not([type="color"]):not([type="file"]):focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] .field input:focus,
+[data-theme="dark"] .field select:focus,
+[data-theme="dark"] .field textarea:focus,
+[data-theme="dark"] .search:focus,
+[data-theme="dark"] .crm-filters input:focus,
+[data-theme="dark"] .crm-filters select:focus,
+[data-theme="dark"] .crm-search input:focus,
+[data-theme="dark"] .crm-pipeline-form input:focus,
+[data-theme="dark"] .crm-pipeline-form select:focus,
+[data-theme="dark"] .crm-inline-col-select:focus,
+[data-theme="dark"] .modal input:focus,
+[data-theme="dark"] .modal select:focus,
+[data-theme="dark"] .modal textarea:focus,
+[data-theme="dark"] dialog input:focus,
+[data-theme="dark"] dialog select:focus,
+[data-theme="dark"] dialog textarea:focus {
+  border: none !important;
+  outline: none !important;
+  background: rgba(0, 0, 0, 0.60) !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65), 0 0 0 2px rgba(234, 88, 12, 0.45) !important;
 }
 
 .field input::placeholder,
@@ -6530,18 +6606,21 @@ table tr:hover td {
 [data-theme="dark"] .login-card .field input,
 :root:not([data-theme="light"]) .auth-card .field input,
 [data-theme="dark"] .auth-card .field input {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: none !important;
+  outline: none !important;
   color: #FFFFFF !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65), inset 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 
 :root:not([data-theme="light"]) .login-card .field input:focus,
 [data-theme="dark"] .login-card .field input:focus,
 :root:not([data-theme="light"]) .auth-card .field input:focus,
 [data-theme="dark"] .auth-card .field input:focus {
-  border-color: #FB923C !important;
-  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.28) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  outline: none !important;
+  background: rgba(0, 0, 0, 0.60) !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65), 0 0 0 2px rgba(234, 88, 12, 0.45) !important;
 }
 
 /* Primary Submit Button */
@@ -9441,9 +9520,11 @@ body,
 
 :root:not([data-theme="light"]) .crm-filters-bar .crm-search input,
 [data-theme="dark"] .crm-filters-bar .crm-search input {
-  background: rgba(20, 20, 20, 0.75) !important;
+  background: rgba(0, 0, 0, 0.45) !important;
   color: #FFFFFF !important;
-  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.08), 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65), inset 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 
 [data-theme="light"] .crm-filters-bar .crm-search input {
@@ -9452,7 +9533,15 @@ body,
   box-shadow: 0 2px 8px -2px rgba(24, 24, 27, 0.08), 0 1px 3px rgba(24, 24, 27, 0.04), inset 0 1px 1px #FFFFFF !important;
 }
 
-.crm-filters-bar .crm-search input:focus {
+:root:not([data-theme="light"]) .crm-filters-bar .crm-search input:focus,
+[data-theme="dark"] .crm-filters-bar .crm-search input:focus {
+  border: none !important;
+  outline: none !important;
+  background: rgba(0, 0, 0, 0.60) !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65), 0 0 0 2px rgba(234, 88, 12, 0.45) !important;
+}
+
+[data-theme="light"] .crm-filters-bar .crm-search input:focus {
   border: none !important;
   outline: none !important;
   box-shadow: 0 0 0 2.5px rgba(234, 88, 12, 0.35), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
@@ -9493,9 +9582,19 @@ body,
 
 :root:not([data-theme="light"]) .crm-filter-tag-wrap select,
 [data-theme="dark"] .crm-filter-tag-wrap select {
-  background: rgba(20, 20, 20, 0.75) !important;
+  background: rgba(0, 0, 0, 0.45) !important;
   color: #FFFFFF !important;
-  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.08), 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65), inset 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+:root:not([data-theme="light"]) .crm-filter-tag-wrap select:focus,
+[data-theme="dark"] .crm-filter-tag-wrap select:focus {
+  border: none !important;
+  outline: none !important;
+  background: rgba(0, 0, 0, 0.60) !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65), 0 0 0 2px rgba(234, 88, 12, 0.45) !important;
 }
 
 [data-theme="light"] .crm-filter-tag-wrap select {
@@ -9590,9 +9689,19 @@ body,
 
 :root:not([data-theme="light"]) .crm-advanced-grid select,
 [data-theme="dark"] .crm-advanced-grid select {
-  background: rgba(20, 20, 20, 0.75) !important;
+  background: rgba(0, 0, 0, 0.45) !important;
   color: #FFFFFF !important;
-  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.08), 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65), inset 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+:root:not([data-theme="light"]) .crm-advanced-grid select:focus,
+[data-theme="dark"] .crm-advanced-grid select:focus {
+  border: none !important;
+  outline: none !important;
+  background: rgba(0, 0, 0, 0.60) !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65), 0 0 0 2px rgba(234, 88, 12, 0.45) !important;
 }
 
 [data-theme="light"] .crm-advanced-grid select {
