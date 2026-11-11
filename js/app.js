@@ -354,20 +354,24 @@ async function confirmExternalSignature(){
  });
 }
 function toast(msg,bad=false){const el=$('#toast');el.textContent=msg;el.style.background=bad?'#8a332d':'#163b38';el.classList.add('visible');clearTimeout(toast.timeout);toast.timeout=setTimeout(()=>el.classList.remove('visible'),3900)}
-function showModal(content){$('#modal-body').innerHTML=content;if(!$('#modal').open)$('#modal').showModal();}
-function closeModal(){$('#modal').close()}
+function lockModalScroll(){document.body.classList.add('modal-open');document.documentElement.classList.add('modal-open');}
+function unlockModalScroll(){if(!document.querySelector('dialog[open]')){document.body.classList.remove('modal-open');document.documentElement.classList.remove('modal-open');}}
+function showModal(content){const m=$('#modal');$('#modal-body').innerHTML=content;lockModalScroll();if(!m.open)m.showModal();m.scrollTop=0;}
+function closeModal(){const m=$('#modal');if(m&&m.open)m.close();unlockModalScroll();}
 function escapeHtmlText(v){return safe(v==null?'':String(v)).replace(/\n/g,'<br>');}
 function toModalMessage(message){return Array.isArray(message)?message.join('\n'):String(message||'');}
 function independentDialog(body,buttons){
  return new Promise(resolve=>{
   const d=document.createElement('dialog');d.className='camp-app-dialog';
   d.innerHTML=`<div class="camp-app-dialog-content">${body}<div class="form-footer">${buttons.map((b,i)=>`<button type="button" class="btn ${b.secondary?'ghost':''}" data-choice="${i}">${safe(b.label)}</button>`).join('')}</div></div>`;
-  const finish=v=>{if(d.open)d.close();d.remove();resolve(v)};
+  const finish=v=>{if(d.open)d.close();d.remove();unlockModalScroll();resolve(v)};
   d.addEventListener('cancel',e=>{e.preventDefault();finish(false)},{once:true});
   d.addEventListener('click',e=>{const el=e.target.closest('[data-choice]');if(el)finish(buttons[+el.dataset.choice].value)});
-  document.body.append(d);d.showModal();
+  document.body.append(d);lockModalScroll();d.showModal();d.scrollTop=0;
  });
 }
+document.addEventListener('close',e=>{if(e.target&&e.target.tagName==='DIALOG')unlockModalScroll();},true);
+document.addEventListener('cancel',e=>{if(e.target&&e.target.tagName==='DIALOG')setTimeout(unlockModalScroll,10);},true);
 function confirmModal(message,title='Confirmar ação',confirmLabel='Confirmar',cancelLabel='Cancelar'){
  return independentDialog(`<h2>${safe(title)}</h2><p class="modal-intro modal-alert-copy">${escapeHtmlText(toModalMessage(message))}</p>`,[{label:cancelLabel,value:false,secondary:true},{label:confirmLabel,value:true}]);
 }

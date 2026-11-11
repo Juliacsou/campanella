@@ -1836,47 +1836,81 @@ dialog textarea {
    9. MODALS, DIALOGS & OVERLAYS
    ========================================================================== */
 
+/* Universal Background Scroll Lock for ALL Modals/Popups in the system */
+html:has(dialog[open]),
+body:has(dialog[open]),
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+}
+
 dialog,
-.camp-app-dialog {
+dialog:modal,
+dialog[open],
+.camp-app-dialog,
+.camp-app-dialog[open],
+#modal,
+#modal[open] {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
   border: none !important;
   border-radius: var(--camp-radius-xl) !important;
   background: var(--camp-surface-floating) !important;
   color: var(--camp-text) !important;
   box-shadow: var(--camp-shadow-floating) !important;
   padding: 28px;
-  width: min(740px, calc(100% - 32px));
-  max-height: 88vh;
-  overflow-y: auto;
+  width: min(740px, calc(100vw - 32px));
+  max-width: min(740px, calc(100vw - 32px));
+  max-height: min(92vh, 92dvh) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
   backdrop-filter: blur(28px);
-  position: relative;
+  -webkit-backdrop-filter: blur(28px);
+  box-sizing: border-box !important;
+  z-index: 99999 !important;
 }
 
 dialog[open],
 .camp-app-dialog[open] {
-  animation: camp-modal-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: camp-modal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 @keyframes camp-modal-in {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(12px);
+    transform: translate(-50%, -46%) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
 dialog::backdrop,
 .camp-app-dialog::backdrop {
-  background: rgba(11, 11, 11, 0.78) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0, 0, 0, 0.78) !important;
   backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
   animation: camp-fade-in 0.2s ease-out forwards;
+  z-index: 99998 !important;
 }
 
-@keyframes camp-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Wide Modals (CRM Lead Detail & Student Profiles) */
+#modal:has(.crm-detail),
+#modal:has(.student-profile) {
+  width: min(1110px, calc(100vw - 32px)) !important;
+  max-width: min(1110px, calc(100vw - 32px)) !important;
+  max-height: min(92vh, 92dvh) !important;
+  padding: 0 !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
 }
 
 .camp-app-dialog {
@@ -2540,119 +2574,248 @@ dialog .close:hover {
   width: 100%;
 }
 
-/* CRM Lead Detail Drawer & Sections */
-.crm-detail {
-  background: var(--camp-surface-card) !important;
-  color: var(--camp-text) !important;
-  border-radius: var(--camp-radius-lg);
-  overflow: hidden;
+/* ==========================================================================
+   11. CRM LEAD DETAIL (FICHA DO LEAD) — DARK & LIGHT HARMONY
+   ========================================================================== */
+
+/* CRM Detail Container & Header */
+:root:not([data-theme="light"]) .crm-detail,
+[data-theme="dark"] .crm-detail {
+  background: #111114 !important;
+  color: #FFFFFF !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
 }
 
-.crm-detail-top {
-  background: var(--camp-surface-raised) !important;
-  border-bottom: 1px solid var(--camp-border) !important;
-  padding: 22px 24px;
+[data-theme="light"] .crm-detail {
+  background: #FAF8F5 !important;
+  color: #18181B !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
 }
 
-.crm-detail-top h2 {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--camp-text) !important;
-  margin: 4px 0 8px;
+:root:not([data-theme="light"]) .crm-detail-top,
+[data-theme="dark"] .crm-detail-top {
+  background: #16161B !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 24px 28px !important;
+}
+
+[data-theme="light"] .crm-detail-top {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #ECE7DE !important;
+  padding: 24px 28px !important;
+}
+
+:root:not([data-theme="light"]) .crm-detail-top h2,
+[data-theme="dark"] .crm-detail-top h2 {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  color: #FFFFFF !important;
+  margin: 4px 0 10px !important;
+  text-align: left !important;
+}
+
+[data-theme="light"] .crm-detail-top h2 {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  color: #18181B !important;
+  margin: 4px 0 10px !important;
+  text-align: left !important;
 }
 
 .crm-detail-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
 }
 
 .crm-detail-body {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  padding: 24px 28px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 22px !important;
 }
 
-.crm-section-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--camp-border) !important;
+/* Sections inside CRM Detail */
+:root:not([data-theme="light"]) .crm-detail .crm-section,
+[data-theme="dark"] .crm-detail .crm-section {
+  background: #18181E !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 18px !important;
+  padding: 22px 24px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
 }
 
-.crm-section-title h3 {
-  font-size: 17px !important;
-  font-weight: 800;
-  color: var(--camp-text) !important;
-  letter-spacing: -0.02em;
-  margin: 0;
+[data-theme="light"] .crm-detail .crm-section {
+  background: #F4F0E8 !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 18px !important;
+  padding: 22px 24px !important;
+  box-shadow: 0 4px 16px rgba(24, 24, 27, 0.04) !important;
 }
 
+:root:not([data-theme="light"]) .crm-section-title,
+[data-theme="dark"] .crm-section-title {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 18px !important;
+  padding-bottom: 14px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="light"] .crm-section-title {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 18px !important;
+  padding-bottom: 14px !important;
+  border-bottom: 1px solid #E5E0D6 !important;
+}
+
+:root:not([data-theme="light"]) .crm-section-title h3,
+[data-theme="dark"] .crm-section-title h3 {
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  color: #FFFFFF !important;
+  letter-spacing: -0.01em !important;
+  text-align: left !important;
+  margin: 0 !important;
+}
+
+[data-theme="light"] .crm-section-title h3 {
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  color: #18181B !important;
+  letter-spacing: -0.01em !important;
+  text-align: left !important;
+  margin: 0 !important;
+}
+
+/* Dados do lead tiles (Grid of 8 items) */
 .crm-lead-data-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 12px;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)) !important;
+  gap: 12px !important;
 }
 
-.crm-data-item {
-  padding: 12px 14px;
-  border-radius: var(--camp-radius-md);
-  background: var(--camp-surface-raised) !important;
+/* Dark Mode: Smooth flat tiles ("lisos") with clear background contrast */
+:root:not([data-theme="light"]) .crm-data-item,
+[data-theme="dark"] .crm-data-item {
+  padding: 13px 15px !important;
+  border-radius: 12px !important;
+  background: #23232B !important;
   border: none !important;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
+  outline: none !important;
+  box-shadow: none !important; /* Smooth / liso */
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+  min-width: 0 !important;
 }
 
-.crm-data-item span {
-  font-size: 11px;
-  font-weight: 750;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--camp-text-secondary) !important;
+:root:not([data-theme="light"]) .crm-data-item span,
+[data-theme="dark"] .crm-data-item span {
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  color: #A1A1AA !important;
+  text-align: left !important;
 }
 
-.crm-data-item strong {
-  font-size: 13.5px;
-  font-weight: 750;
-  color: var(--camp-text) !important;
-  overflow-wrap: anywhere;
+:root:not([data-theme="light"]) .crm-data-item strong,
+[data-theme="dark"] .crm-data-item strong {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
+  text-align: left !important;
+  overflow-wrap: anywhere !important;
 }
 
-.crm-lead-tags-bar {
-  background: var(--camp-surface-raised) !important;
+/* Light Mode: Crisp white floating tiles on warm cream background */
+[data-theme="light"] .crm-data-item {
+  padding: 13px 15px !important;
+  border-radius: 12px !important;
+  background: #FFFFFF !important;
   border: none !important;
-  border-radius: var(--camp-radius-md);
-  padding: 14px;
-  margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  outline: none !important;
+  box-shadow: 0 2px 8px rgba(24, 24, 27, 0.06), 0 1px 2px rgba(24, 24, 27, 0.03) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+}
+
+[data-theme="light"] .crm-data-item span {
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  color: #71717A !important;
+  text-align: left !important;
+}
+
+[data-theme="light"] .crm-data-item strong {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #18181B !important;
+  text-align: left !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* Tags bar inside Lead Data */
+:root:not([data-theme="light"]) .crm-lead-tags-bar,
+[data-theme="dark"] .crm-lead-tags-bar {
+  background: #23232B !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  margin-top: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+[data-theme="light"] .crm-lead-tags-bar {
+  background: #FFFFFF !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 2px 8px rgba(24, 24, 27, 0.06) !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  margin-top: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
 }
 
 .crm-lead-tags-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
   color: var(--camp-text-secondary) !important;
-  font-size: 11px;
-  font-weight: 750;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
 }
 
 .crm-lead-tags-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
 }
 
 .crm-tag-toggle {
@@ -2660,93 +2823,242 @@ dialog .close:hover {
   border: none !important;
   color: var(--camp-text) !important;
   border-radius: var(--camp-radius-pill);
-  padding: 5px 12px;
-  font-size: 11.5px;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  padding: 5px 12px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
   transition: var(--camp-transition);
 }
 
-.crm-tag-toggle:hover {
-  border-color: var(--camp-border-strong) !important;
-  background: var(--camp-hover) !important;
-}
-
 .crm-tag-toggle.is-active {
-  border-color: var(--tag-color, #ea580c) !important;
   background: color-mix(in srgb, var(--tag-color, #ea580c) 18%, transparent) !important;
   color: var(--tag-color, #ea580c) !important;
   box-shadow: 0 0 10px color-mix(in srgb, var(--tag-color, #ea580c) 30%, transparent) !important;
 }
 
+/* Etapas do atendimento (4 Milestone Priority Boxes) */
 .crm-info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
 }
 
-.crm-priority-box {
-  background: var(--camp-surface-raised) !important;
+@media (max-width: 760px) {
+  .crm-info-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Dark Mode: Priority Box */
+:root:not([data-theme="light"]) .crm-priority-box,
+[data-theme="dark"] .crm-priority-box {
+  background: #23232B !important;
   border: none !important;
-  border-radius: var(--camp-radius-lg) !important;
-  padding: 18px !important;
-  display: flex;
-  flex-direction: column;
+  outline: none !important;
+  border-radius: 16px !important;
+  padding: 18px 20px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+  display: flex !important;
+  flex-direction: column !important;
   gap: 12px !important;
+  text-align: left !important;
 }
 
-.crm-box-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--camp-border) !important;
+:root:not([data-theme="light"]) .crm-box-header,
+[data-theme="dark"] .crm-box-header {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  text-align: left !important;
 }
 
-.crm-box-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--camp-text) !important;
-  letter-spacing: -0.01em;
+:root:not([data-theme="light"]) .crm-box-title,
+[data-theme="dark"] .crm-box-title {
+  color: #FFFFFF !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  text-align: left !important;
+  margin: 0 !important;
+  width: 100% !important;
+  letter-spacing: -0.01em !important;
 }
 
-.crm-box-status {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  padding: 3px 10px;
-  border-radius: var(--camp-radius-pill);
-  font-size: 11px;
-  font-weight: 750;
-  background: var(--camp-surface) !important;
-  border: none !important;
-  color: var(--camp-text-secondary) !important;
+:root:not([data-theme="light"]) .crm-box-status,
+[data-theme="dark"] .crm-box-status {
+  align-self: flex-start !important;
 }
 
-.crm-box-status.is-done {
-  background: var(--camp-success-bg) !important;
-  color: var(--camp-success) !important;
-  border-color: var(--camp-success-border) !important;
-}
-
-.crm-box-status.is-lost {
-  background: var(--camp-danger-bg) !important;
-  color: var(--camp-danger) !important;
-  border-color: var(--camp-danger-border) !important;
-}
-
-.crm-priority-box p {
+:root:not([data-theme="light"]) .crm-priority-box p,
+[data-theme="dark"] .crm-priority-box p {
   font-size: 12.5px !important;
-  line-height: 1.5;
-  color: var(--camp-text-secondary) !important;
-  margin: 0;
-  flex-grow: 1;
+  line-height: 1.5 !important;
+  color: #D4D4D8 !important;
+  margin: 0 !important;
+  text-align: left !important;
+  flex-grow: 1 !important;
+}
+
+/* Light Mode: Priority Box (White surface, dark legible text, justified left) */
+[data-theme="light"] .crm-priority-box {
+  background: #FFFFFF !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 16px !important;
+  padding: 18px 20px !important;
+  box-shadow: 0 4px 16px rgba(24, 24, 27, 0.06), 0 1px 3px rgba(24, 24, 27, 0.03) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  text-align: left !important;
+}
+
+[data-theme="light"] .crm-box-header {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid #ECE7DE !important;
+  text-align: left !important;
+}
+
+[data-theme="light"] .crm-box-title {
+  color: #18181B !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  text-align: left !important;
+  margin: 0 !important;
+  width: 100% !important;
+  letter-spacing: -0.01em !important;
+}
+
+[data-theme="light"] .crm-box-status {
+  align-self: flex-start !important;
+}
+
+[data-theme="light"] .crm-priority-box p {
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+  color: #52525B !important;
+  margin: 0 !important;
+  text-align: left !important;
+  flex-grow: 1 !important;
+}
+
+/* Action Buttons in Section Header (WhatsApp & Editar dados) */
+.crm-section-title-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+}
+
+:root:not([data-theme="light"]) .crm-section-title-actions a.crm-btn,
+[data-theme="dark"] .crm-section-title-actions a.crm-btn {
+  background: rgba(34, 197, 94, 0.18) !important;
+  color: #4ADE80 !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  font-size: 12.5px !important;
+  font-weight: 750 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  box-shadow: 0 2px 10px rgba(34, 197, 94, 0.2) !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+}
+
+:root:not([data-theme="light"]) .crm-section-title-actions a.crm-btn:hover,
+[data-theme="dark"] .crm-section-title-actions a.crm-btn:hover {
+  background: rgba(34, 197, 94, 0.28) !important;
+  color: #86EFAC !important;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+:root:not([data-theme="light"]) .crm-section-title-actions button.crm-btn,
+[data-theme="dark"] .crm-section-title-actions button.crm-btn {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  font-size: 12.5px !important;
+  font-weight: 750 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+:root:not([data-theme="light"]) .crm-section-title-actions button.crm-btn:hover,
+[data-theme="dark"] .crm-section-title-actions button.crm-btn:hover {
+  background: rgba(234, 88, 12, 0.22) !important;
+  color: #FB923C !important;
+  box-shadow: 0 0 12px rgba(234, 88, 12, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+[data-theme="light"] .crm-section-title-actions a.crm-btn {
+  background: rgba(34, 197, 94, 0.12) !important;
+  color: #15803D !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  font-size: 12.5px !important;
+  font-weight: 750 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.15) !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+}
+
+[data-theme="light"] .crm-section-title-actions a.crm-btn:hover {
+  background: rgba(34, 197, 94, 0.22) !important;
+  color: #166534 !important;
+  transform: translateY(-1px) !important;
+}
+
+[data-theme="light"] .crm-section-title-actions button.crm-btn {
+  background: #FFFFFF !important;
+  color: #18181B !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  font-size: 12.5px !important;
+  font-weight: 750 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  box-shadow: 0 2px 8px rgba(24, 24, 27, 0.08) !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+[data-theme="light"] .crm-section-title-actions button.crm-btn:hover {
+  background: #FFF7ED !important;
+  color: #EA580C !important;
+  transform: translateY(-1px) !important;
 }
 
 .crm-box-actions {
@@ -5766,26 +6078,16 @@ table tr:hover td {
   font-weight: 750 !important;
 }
 
-.crm-info-grid > div,
-.crm-data-item {
-  background: rgba(255, 255, 255, 0.04) !important;
+:root:not([data-theme="light"]) .crm-info-grid > div:not(.crm-priority-box) {
+  background: #23232B !important;
   border: none !important;
   outline: none !important;
-  border-radius: 12px !important;
-  padding: 14px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
-.crm-priority-box {
-  background: linear-gradient(127deg, rgba(26, 26, 26, 0.85) 0%, rgba(20, 20, 20, 0.85) 100%) !important;
+[data-theme="light"] .crm-info-grid > div:not(.crm-priority-box) {
+  background: #FFFFFF !important;
   border: none !important;
   outline: none !important;
-  border-radius: 16px !important;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
-}
-
-.crm-box-title {
-  color: #FFFFFF !important;
 }
 
 :root:not([data-theme="light"]) .crm-help-note,
