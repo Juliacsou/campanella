@@ -11169,3 +11169,26 @@ body,
   background: rgba(100, 116, 139, 0.12);
 }
 
+.plan-tier-card.is-current-plan {
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.3);
+}
+
+.plan-current-tag {
+  position: absolute;
+  top: -11px;
+  left: 20px;
+  background: #10b981;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.plans-showcase-meta {
+  font-size: 13px;
+  color: var(--camp-text-muted);
+}
+
