@@ -1004,6 +1004,48 @@ function onPackageSelection(form,p){
  const type=form.elements.type_option;
  if(type){const kind=form.dataset.kind||'individual';type.innerHTML=contractOptions(kind,p?.id);renderContractExtra();}
 }
+function financialSectionHTML({total='', installments='6', installmentAmount='', firstInstallmentAmount='', firstDueDate='', secondDueDate='', hasCustomFirst=false, showExtenso=false, totalExtenso=''}){
+ const firstDue=firstDueDate||today();
+ const secondDue=secondDueDate||(firstDue?plusMonth(firstDue):'');
+ const firstAmt=firstInstallmentAmount||installmentAmount||'';
+ return `
+  ${input('Valor total (R$)','total_amount',total,'number')}
+  ${showExtenso?input('Valor por extenso','total_extenso',totalExtenso||amountWords(total||0),'text'):''}
+  ${input('Número de parcelas','installments',installments,'number')}
+  <label class="field wide checkrow" style="margin:4px 0 8px 0">
+    <input type="checkbox" name="has_custom_first_installment" class="toggle-first-inst" ${hasCustomFirst?'checked':''}>
+    <span>Primeira parcela com valor ou data diferente (entrada / matrícula)</span>
+  </label>
+  <div class="custom-first-block wide form-grid" style="${hasCustomFirst?'':'display:none;'}background:var(--bg-muted,rgba(255,255,255,0.03));border:1px dashed var(--border-color,rgba(255,255,255,0.15));border-radius:8px;padding:12px;margin-bottom:12px">
+    ${input('Valor da 1ª parcela (R$)','first_installment_amount',firstAmt,'number',false)}
+    ${input('Vencimento das demais parcelas','second_due_date',secondDue,'date',false)}
+  </div>
+  <label class="field"><span class="installment-amount-label">${hasCustomFirst?'Valor das demais parcelas (R$)':'Valor da parcela'}</span><input name="installment_amount" type="number" step="0.01" value="${safe(installmentAmount)}" required></label>
+  <label class="field"><span class="first-due-label">${hasCustomFirst?'Vencimento da 1ª parcela':'Primeiro vencimento'}</span><input name="first_due_date" type="date" value="${safe(firstDue)}" required></label>
+ `;
+}
+function toggleCustomFirstInstallment(f){
+ if(!f)return;
+ const checked=!!f.elements.has_custom_first_installment?.checked;
+ const block=f.querySelector('.custom-first-block');
+ const amountLabel=f.querySelector('.installment-amount-label');
+ const dueLabel=f.querySelector('.first-due-label');
+ if(block)block.style.display=checked?'grid':'none';
+ if(amountLabel)amountLabel.textContent=checked?'Valor das demais parcelas (R$)':'Valor da parcela';
+ if(dueLabel)dueLabel.textContent=checked?'Vencimento da 1ª parcela':'Primeiro vencimento';
+ if(checked){
+  if(f.elements.first_installment_amount&&!f.elements.first_installment_amount.value){
+   f.elements.first_installment_amount.value=f.elements.installment_amount?.value||'';
+  }
+  if(f.elements.second_due_date&&!f.elements.second_due_date.value&&f.elements.first_due_date?.value){
+   f.elements.second_due_date.value=plusMonth(f.elements.first_due_date.value);
+  }
+ }else{
+  if(f.elements.first_installment_amount)f.elements.first_installment_amount.value='';
+  if(f.elements.second_due_date)f.elements.second_due_date.value='';
+ }
+ updateInstallment(f);
+}
 function interviewForm(leadId){
  const l=lookup('leads',leadId),i=db.interviews.find(x=>x.lead_id===leadId)||{},p=lookup('packages',i.package_id);
  if(!l)throw new Error('Interessado não encontrado.');
@@ -1018,11 +1060,7 @@ function interviewForm(leadId){
  ${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}
  ${input('Data de início','start_date',i.start_date||today(),'date')}${input('Data de término do contrato','end_date',i.end_date||'','date')}
  <div class="wide" id="calPickerHost">${calendar.getFormPicker(responsible,i.start_date||today(),false,i.calendar_slot_ids||[],true)}</div>
- ${input('Valor total (R$)','total_amount',i.total_amount??p?.default_total??'','number')}
- ${input('Valor total por extenso','total_extenso',i.total_extenso||amountWords(i.total_amount??p?.default_total??0),'text')}
- ${input('Número de parcelas','installments',i.installments||6,'number')}
- <label class="field"><span>Valor por parcela (R$) · editável</span><input type="number" name="installment_amount" step="0.01" value="${safe(i.installment_amount||'')}"></label>
- ${input('Primeiro vencimento','first_due_date',i.first_due_date||today(),'date')}
+ ${financialSectionHTML({total:i.total_amount??p?.default_total??'',showExtenso:true,totalExtenso:i.total_extenso,installments:i.installments||'6',installmentAmount:i.installment_amount||'',firstInstallmentAmount:i.first_installment_amount||'',firstDueDate:i.first_due_date||today(),secondDueDate:i.second_due_date||'',hasCustomFirst:!!i.has_custom_first_installment})}
  <label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${x===i.payment_method?'selected':''}>${x}</option>`).join('')}</select></label>
  <div class="wide"><label class="field"><span>Observações internas</span><textarea name="notes">${safe(i.notes||'')}</textarea></label></div></div>
  
@@ -1235,9 +1273,7 @@ function renewForm(id){
  ${input('Quantidade de aulas','lessons_count',t.lessons_count,'number')}${input('Aulas por semana','weekly_frequency',t.weekly_frequency,'number')}${input('Data de início','start_date',start,'date')}
  ${input('Data final','end_date',t.end_date>start?t.end_date:'','date')}
  <div class="wide" id="calPickerHost">${calendar.getFormPicker(t.teacher_id,start)}</div>
- ${input('Valor total (R$)','total_amount',t.total_amount,'number')}${input('Valor por extenso','total_extenso',t.total_extenso||amountWords(t.total_amount))}${input('Parcelas','installments',t.installments,'number')}
- <label class="field"><span>Valor da parcela (editável)</span><input name="installment_amount" type="number" step="0.01" value="${safe(t.installment_amount)}"></label>
- ${input('Primeiro vencimento','first_due_date',start,'date')}<label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${t.payment_method===x?'selected':''}>${x}</option>`).join('')}</select></label>
+ ${financialSectionHTML({total:t.total_amount,showExtenso:true,totalExtenso:t.total_extenso,installments:t.installments,installmentAmount:t.installment_amount,firstInstallmentAmount:t.first_installment_amount||'',firstDueDate:start,secondDueDate:t.second_due_date||'',hasCustomFirst:!!t.has_custom_first_installment})}<label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${t.payment_method===x?'selected':''}>${x}</option>`).join('')}</select></label>
  </div><div id="contractExtraFields"></div>
  <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar rematrícula e preparar contrato</button></div></form>`);
  updateInstallment($('#renewForm'));renderContractExtra();calendar.autoPreview($('#renewForm'));
@@ -1656,7 +1692,7 @@ function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;
  const teacherId=s.calendar_teacher_id||'';
  const selectedSlots=s.calendar_slot_ids||[];
  const pkgs=db.packages.filter(p=>p.active&&p.kind!=='dupla');
- showModal(`<h2>Criar matrícula de ${safe(s.full_name)}</h2><p class="modal-intro">O aluno já está cadastrado. Gere um contrato agora ou feche para deixar sem matrícula.</p><form id="manualEnrollmentForm" data-student="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid"><label class="field wide"><span>Modalidade de matrícula</span><select name="enrollment_mode" id="manualEnrollmentMode"><option value="package">Pacote cadastrado</option><option value="custom">Pacote personalizado (saldo de aulas restantes)</option><option value="recurrence">Recorrência até o fim do contrato</option></select></label><label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active),teacherId)}</select></label>${input('Curso','course','Inglês')}<label class="field wide" id="manualPackageField"><span>Pacote</span><select name="package_id" id="manualPackage"><option value="">Selecione um pacote cadastrado</option>${options(pkgs)}</select></label><div class="wide" id="calPickerHost">${calendar.getFormPicker(teacherId,today(),false,selectedSlots,true)}</div>${input('Início','start_date',today(),'date')}${input('Data de término do contrato','end_date','','date')}${input('Aulas','lessons_count','','number')}${input('Aulas por semana','weekly_frequency','2','number')}${input('Valor total','total_amount','','number')}${input('Parcelas','installments','6','number')}${input('Valor da parcela','installment_amount','','number')}${input('Primeiro vencimento','first_due_date',today(),'date')}<label class="field"><span>Pagamento</span><select name="payment_method"><option>Boleto</option><option>PIX</option><option>Cartão</option><option>Transferência</option></select></label><label class="field wide"><span>Modelo de contrato</span><select name="type_option" id="manualContractType">${contractOptions(s.is_minor?'menor':'individual',null)}</select></label></div><div id="contractExtraFields"></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Salvar dados e preparar contrato</button></div></form>`);
+ showModal(`<h2>Criar matrícula de ${safe(s.full_name)}</h2><p class="modal-intro">O aluno já está cadastrado. Gere um contrato agora ou feche para deixar sem matrícula.</p><form id="manualEnrollmentForm" data-student="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid"><label class="field wide"><span>Modalidade de matrícula</span><select name="enrollment_mode" id="manualEnrollmentMode"><option value="package">Pacote cadastrado</option><option value="custom">Pacote personalizado (saldo de aulas restantes)</option><option value="recurrence">Recorrência até o fim do contrato</option></select></label><label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active),teacherId)}</select></label>${input('Curso','course','Inglês')}<label class="field wide" id="manualPackageField"><span>Pacote</span><select name="package_id" id="manualPackage"><option value="">Selecione um pacote cadastrado</option>${options(pkgs)}</select></label><div class="wide" id="calPickerHost">${calendar.getFormPicker(teacherId,today(),false,selectedSlots,true)}</div>${input('Início','start_date',today(),'date')}${input('Data de término do contrato','end_date','','date')}${input('Aulas','lessons_count','','number')}${input('Aulas por semana','weekly_frequency','2','number')}${financialSectionHTML({total:'',installments:'6',installmentAmount:'',firstDueDate:today()})}<label class="field"><span>Pagamento</span><select name="payment_method"><option>Boleto</option><option>PIX</option><option>Cartão</option><option>Transferência</option></select></label><label class="field wide"><span>Modelo de contrato</span><select name="type_option" id="manualContractType">${contractOptions(s.is_minor?'menor':'individual',null)}</select></label></div><div id="contractExtraFields"></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Salvar dados e preparar contrato</button></div></form>`);
  const f=$('#manualEnrollmentForm');
  if(f){
   if(f.elements.lessons_count){f.elements.lessons_count.readOnly=true;f.elements.lessons_count.placeholder='Selecione um pacote acima';}
@@ -1773,28 +1809,128 @@ function renderContract(c,student,{unsigned=false}={}){
 function downloadHTML(content,filename){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([docFrame(content)],{type:'text/html;charset=utf-8'}));a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);}
 
 async function save(table,payload,id){if(!ui.schoolId)throw new Error('Selecione uma escola.');const record=id?payload:{...payload,school_id:ui.schoolId};let q=id?sb.from(table).update(record).eq('id',id).eq('school_id',ui.schoolId).select():sb.from(table).insert(record).select();const {data,error}=await q;if(error)throw error;if(!data?.length)throw new Error('Operação não autorizada ou não concluída.');return data[0];}
+async function saveInterview(payload,id){
+ try{
+  return await save('interviews',payload,id);
+ }catch(err){
+  const msg=String(err?.message||'')+String(err?.details||'');
+  if(msg.includes('column')||err?.code==='PGRST204'||err?.code==='42703'){
+   const copy={...payload};
+   delete copy.second_due_date;
+   delete copy.has_custom_first_installment;
+   delete copy.demais_parcelas;
+   return await save('interviews',copy,id);
+  }
+  throw err;
+ }
+}
 function financialFields(f,lessonCount,expectedFrequency){
  const schedule=f.querySelector('.cal-enrollment:not([data-no-slots])')?[]:readSchedule(f,expectedFrequency);
  const start=f.elements.start_date.value,end=f.elements.end_date.value;
  if(!start||!end||end<start)throw new Error('Informe uma data final válida, igual ou posterior ao início.');
- const total=Number(f.elements.total_amount.value),n=Number(f.elements.installments.value),part=Math.round(total/n*100)/100;
+ const total=Number(f.elements.total_amount.value),n=Number(f.elements.installments.value);
  if(!Number.isFinite(total)||total<0||!Number.isInteger(n)||n<1||n>48)throw new Error('Confira valor total e número de parcelas.');
- const cents=Math.round(total*100),firstCents=cents-Math.round(cents/n)*(n-1);
- if(firstCents<0)throw new Error('Revise os valores das parcelas.');
- return {lesson_schedule:schedule,weekly_days:schedule.map(x=>x.day),lesson_time:schedule[0]?.time||null,start_date:start,end_date:end,total_amount:total,total_extenso:amountWords(total),installments:n,installment_amount:part,first_installment_amount:firstCents/100,first_due_date:f.elements.first_due_date.value,payment_method:f.elements.payment_method.value};
+ const hasCustom=!!f.elements.has_custom_first_installment?.checked;
+ let firstAmount,partAmount,firstDue,secondDue;
+ firstDue=f.elements.first_due_date.value;
+ if(hasCustom && n > 1){
+  firstAmount=Number(f.elements.first_installment_amount?.value);
+  partAmount=Number(f.elements.installment_amount?.value);
+  if(!Number.isFinite(firstAmount)||firstAmount<0)throw new Error('Informe o valor da primeira parcela.');
+  if(!Number.isFinite(partAmount)||partAmount<0)throw new Error('Informe o valor das demais parcelas.');
+  secondDue=f.elements.second_due_date?.value||(firstDue?plusMonth(firstDue):'');
+ }else{
+  partAmount=Math.round(total/n*100)/100;
+  const cents=Math.round(total*100),firstCents=cents-Math.round(cents/n)*(n-1);
+  if(firstCents<0)throw new Error('Revise os valores das parcelas.');
+  firstAmount=firstCents/100;
+  secondDue=firstDue?plusMonth(firstDue):'';
+ }
+ return {
+  lesson_schedule:schedule,
+  weekly_days:schedule.map(x=>x.day),
+  lesson_time:schedule[0]?.time||null,
+  start_date:start,
+  end_date:end,
+  total_amount:total,
+  total_extenso:amountWords(total),
+  installments:n,
+  installment_amount:partAmount,
+  first_installment_amount:firstAmount,
+  first_due_date:firstDue,
+  second_due_date:secondDue,
+  has_custom_first_installment:hasCustom,
+  demais_parcelas:n>1?n-1:0,
+  payment_method:f.elements.payment_method.value
+ };
 }
-function buildTerms(i,p){const count=i.lessons_count??p?.lessons_count,freq=i.weekly_frequency??p?.weekly_frequency;
- return {package_id:p?.id||null,package_name:p?.name||'Personalizado',course:i.course||'Inglês',teacher_id:i.teacher_id,teacher_name:lookup('teachers',i.teacher_id)?.name||'',lessons_count:count,weekly_frequency:freq,weekly_days:i.weekly_days,lesson_time:i.lesson_time,lesson_schedule:normalSchedule(i.lesson_schedule,i.weekly_days,i.lesson_time),start_date:i.start_date,end_date:i.end_date,total_amount:i.total_amount,total_extenso:i.total_extenso,installments:i.installments,installment_amount:i.installment_amount,first_installment_amount:i.first_installment_amount??i.installment_amount,first_due_date:i.first_due_date,payment_method:i.payment_method};
+function buildTerms(i,p){
+ const count=i.lessons_count??p?.lessons_count,freq=i.weekly_frequency??p?.weekly_frequency;
+ const n=Number(i.installments||1);
+ const firstDue=i.first_due_date||today();
+ const secondDue=i.second_due_date||(firstDue?plusMonth(firstDue):'');
+ const firstAmt=i.first_installment_amount!=null?Number(i.first_installment_amount):Number(i.installment_amount||0);
+ return {
+  package_id:p?.id||null,
+  package_name:p?.name||'Personalizado',
+  course:i.course||'Inglês',
+  teacher_id:i.teacher_id,
+  teacher_name:lookup('teachers',i.teacher_id)?.name||'',
+  lessons_count:count,
+  weekly_frequency:freq,
+  weekly_days:i.weekly_days,
+  lesson_time:i.lesson_time,
+  lesson_schedule:normalSchedule(i.lesson_schedule,i.weekly_days,i.lesson_time),
+  start_date:i.start_date,
+  end_date:i.end_date,
+  total_amount:i.total_amount,
+  total_extenso:i.total_extenso,
+  installments:n,
+  installment_amount:i.installment_amount,
+  first_installment_amount:firstAmt,
+  first_due_date:firstDue,
+  second_due_date:secondDue,
+  has_custom_first_installment:i.has_custom_first_installment!=null?!!i.has_custom_first_installment:(n>1&&Math.abs(firstAmt-Number(i.installment_amount||0))>0.009),
+  demais_parcelas:n>1?n-1:0,
+  payment_method:i.payment_method
+ };
 }
 function updateInstallment(f,edited='total_amount'){
  if(!f?.elements.total_amount||!f.elements.installments||!f.elements.installment_amount)return;
  const n=Number(f.elements.installments.value);if(!Number.isInteger(n)||n<1||n>48)return;
- if(edited==='installment_amount'){
-  const p=Number(f.elements.installment_amount.value);if(!Number.isFinite(p)||p<0)return;
-  f.elements.total_amount.value=(Math.round(p*100)*n/100).toFixed(2);
+ const hasCustom=!!f.elements.has_custom_first_installment?.checked;
+ if(hasCustom && n > 1){
+  const firstInput=f.elements.first_installment_amount;
+  const regularInput=f.elements.installment_amount;
+  const totalInput=f.elements.total_amount;
+  if(['first_installment_amount','total_amount','installments'].includes(edited)){
+   const total=Number(totalInput.value);
+   let first=Number(firstInput?.value);
+   if(!Number.isFinite(first) || first<0 || (edited==='total_amount' && !firstInput?.value)){
+    first=Math.round(total/n*100)/100;
+    if(firstInput)firstInput.value=first.toFixed(2);
+   }
+   const remainingTotal=Math.max(0, total - first);
+   const remainingParts=n - 1;
+   const regular=(Math.round(remainingTotal / remainingParts * 100) / 100).toFixed(2);
+   regularInput.value=regular;
+  }else if(edited==='installment_amount'){
+   const regular=Number(regularInput.value);
+   let first=Number(firstInput?.value||0);
+   if(Number.isFinite(regular) && regular>=0){
+    const computedTotal=(first + regular * (n - 1)).toFixed(2);
+    totalInput.value=computedTotal;
+   }
+  }
  }else{
-  const total=Number(f.elements.total_amount.value);if(!Number.isFinite(total)||total<0)return;
-  f.elements.installment_amount.value=(Math.round(total/n*100)/100).toFixed(2);
+  if(edited==='installment_amount'){
+   const p=Number(f.elements.installment_amount.value);if(!Number.isFinite(p)||p<0)return;
+   f.elements.total_amount.value=(Math.round(p*100)*n/100).toFixed(2);
+  }else{
+   const total=Number(f.elements.total_amount.value);if(!Number.isFinite(total)||total<0)return;
+   f.elements.installment_amount.value=(Math.round(total/n*100)/100).toFixed(2);
+   if(f.elements.first_installment_amount)f.elements.first_installment_amount.value=f.elements.installment_amount.value;
+  }
  }
  if(f.elements.total_extenso)f.elements.total_extenso.value=amountWords(Number(f.elements.total_amount.value));
 }
@@ -2004,13 +2140,24 @@ document.addEventListener('input',e=>{
   const view=ui.page==='leads'?null:ui.page==='interviews'?interviewsView():ui.page==='contracts'?contractsView():ui.page==='students'?studentsView():ui.page==='directory'?directoryView():null;
   if(view){$('#pageContent').innerHTML=view;$('#search').focus();$('#search').setSelectionRange(pos,pos);}
  }
- if(['total_amount','installments','installment_amount'].includes(e.target.name)&&['interviewForm','renewForm','manualEnrollmentForm','externalInterviewForm'].includes(e.target.form?.id))updateInstallment(e.target.form,e.target.name);
+ if(['total_amount','installments','installment_amount','first_installment_amount'].includes(e.target.name)&&['interviewForm','renewForm','manualEnrollmentForm','externalInterviewForm'].includes(e.target.form?.id))updateInstallment(e.target.form,e.target.name);
  if(e.target.name==='end_date'&&e.target.form?.id==='manualEnrollmentForm'&&e.target.form.elements.enrollment_mode?.value==='recurrence'){
   if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value))calendar.autoPreview(e.target.form);
  }
 });
 document.addEventListener('change',async e=>{
  if(e.target.matches('[data-onb-map], [data-onb-edit-line]')){onboarding.change(e);return;}
+ if(e.target.name==='has_custom_first_installment'){
+  toggleCustomFirstInstallment(e.target.form);
+  return;
+ }
+ if(e.target.name==='first_due_date'&&e.target.form?.elements.has_custom_first_installment?.checked){
+  const second=e.target.form.elements.second_due_date;
+  if(second&&(!second.value||second.dataset.auto!=='0')){
+   second.value=plusMonth(e.target.value);
+  }
+ }
+ if(e.target.name==='second_due_date')e.target.dataset.auto='0';
  if(e.target.name==='calendar_teacher_id'&&e.target.form?.id==='studentForm'){
   const host=$('#studentScheduleHost');
   if(host)host.innerHTML=renderStudentScheduleHost(e.target.value,[]);
@@ -2244,7 +2391,7 @@ document.addEventListener('submit',async event=>{
   const values=financialFields(f,count,freq);
   const schedules=planned.lesson_schedule.map(x=>({...x,slot_id:dbCalendarSlotId(x,selected)}));
   if(schedules.some(x=>!x.slot_id))throw new Error('Os horários selecionados não coincidem com a grade do professor. Atualize a ficha.');
-  await save('interviews',{lead_id:f.dataset.lead,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,interviewer_id:ui.user.id,interviewer_teacher_id:interviewer,calendar_slot_ids:selected,teacher_id:teacher,course:f.elements.course.value.trim(),pipeline_status:'open',archived_at:null,...values,lesson_schedule:schedules,weekly_days:planned.weekly_days,lesson_time:planned.lesson_time,notes:f.elements.notes.value},f.dataset.id||undefined);toast('Ficha inicial salva com os horários do professor.');
+  await saveInterview({lead_id:f.dataset.lead,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,interviewer_id:ui.user.id,interviewer_teacher_id:interviewer,calendar_slot_ids:selected,teacher_id:teacher,course:f.elements.course.value.trim(),pipeline_status:'open',archived_at:null,...values,lesson_schedule:schedules,weekly_days:planned.weekly_days,lesson_time:planned.lesson_time,notes:f.elements.notes.value},f.dataset.id||undefined);toast('Ficha inicial salva com os horários do professor.');
  }
  else if(f.id==='contractForm'){
   const lead=f.dataset.lead,i=db.interviews.find(v=>v.lead_id===lead),p=lookup('packages',i.package_id);
@@ -2283,7 +2430,7 @@ document.addEventListener('submit',async event=>{
   if(!leadId){const lead=await save('leads',{name:student.full_name,guardian_name:student.guardian_name,phone:student.phone,status:'convertido'});leadId=lead.id;await save('students',{lead_id:leadId},student.id);}
   let interview=db.interviews.find(x=>x.lead_id===leadId);
   const values={lead_id:leadId,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,interviewer_id:ui.user.id,teacher_id:f.elements.teacher_id.value,course:f.elements.course.value.trim(),...fields};
-  interview=await save('interviews',values,interview?.id);
+  interview=await saveInterview(values,interview?.id);
   const terms={...fields,enrollment_mode:mode,package_id:p?.id||null,package_name:mode==='recurrence'?'Recorrência até o fim':(p?.name||'Personalizado'),course:values.course,teacher_id:values.teacher_id,teacher_name:lookup('teachers',values.teacher_id)?.name||'',lessons_count:count,weekly_frequency:freq};
   const snap=snapshotFromForm(f,null,await calendar.applyTerms(f,terms));
   const isPreexisting=f.elements.type_option?.value==='preexisting';

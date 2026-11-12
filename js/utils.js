@@ -14,16 +14,29 @@ export function cpfValid(value){const s=onlyDigits(value);if(s.length!==11||/^(\
 export async function sha256(s){const a=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(a)].map(n=>n.toString(16).padStart(2,'0')).join('')}
 export function randomToken(){const a=new Uint8Array(32);crypto.getRandomValues(a);return [...a].map(n=>n.toString(16).padStart(2,'0')).join('')}
 export function plusMonth(s){const [y,m,d]=s.split('-').map(Number);const x=new Date(Date.UTC(y,m,1)),end=new Date(Date.UTC(x.getUTCFullYear(),x.getUTCMonth()+1,0)).getUTCDate();return `${x.getUTCFullYear()}-${String(x.getUTCMonth()+1).padStart(2,'0')}-${String(Math.min(d,end)).padStart(2,'0')}`;}
-export function valuesFor(c,s={}){let t=c.terms||{},minor=c.kind==='menor';const custom=Object.fromEntries(Object.entries({...t.custom_fields,...s.custom_fields}).filter(([k])=>/^[a-z][a-z0-9_]{1,39}$/.test(k)&&!(/^(contratante_|contratado_|aluno_|assinatura_)/.test(k))&&!new Set(['pacote','curso','qtd_aulas','grade_horarios','valor_total','valor_total_extenso','parcelas','valor_parcela','valor_primeira_parcela','primeiro_vencimento','segundo_vencimento','forma_pagamento','data_inicio','data_fim','professor','dias','horario','data_assinatura_extenso']).has(k)).map(([k,v])=>[k,String(v??'')]));return {...custom,
+export function valuesFor(c,s={}){let t=c.terms||{},minor=c.kind==='menor';
+ const n=Number(t.installments||1);
+ const firstAmount=t.first_installment_amount!=null?Number(t.first_installment_amount):Number(t.installment_amount||0);
+ const regularAmount=Number(t.installment_amount||0);
+ const firstDueDate=t.first_due_date?dateBR(t.first_due_date):'';
+ const secondDueDate=t.second_due_date?dateBR(t.second_due_date):(t.first_due_date?dateBR(plusMonth(t.first_due_date)):'');
+ const remainingCount=n>1?n-1:0;
+ const reservedKeys=new Set(['pacote','curso','qtd_aulas','grade_horarios','valor_total','valor_total_extenso','parcelas','valor_parcela','valor_primeira_parcela','valor_primeira_parcela_extenso','primeiro_vencimento','vencimento_primeira_parcela','segundo_vencimento','vencimento_demais_parcelas','valor_demais_parcelas','valor_demais_parcelas_extenso','qtd_demais_parcelas','forma_pagamento','data_inicio','data_fim','professor','dias','horario','data_assinatura_extenso']);
+ const custom=Object.fromEntries(Object.entries({...t.custom_fields,...s.custom_fields}).filter(([k])=>/^[a-z][a-z0-9_]{1,39}$/.test(k)&&!(/^(contratante_|contratado_|aluno_|assinatura_)/.test(k))&&!reservedKeys.has(k)).map(([k,v])=>[k,String(v??'')]));return {...custom,
  aluno_nome:s.full_name||'A preencher',aluno_data_nascimento:dateBR(s.birth_date),aluno_cpf:s.cpf||'A preencher',aluno_email:s.email||'A preencher',
  contratante_nome:(minor?s.guardian_name:s.full_name)||'A preencher',contratante_data_nascimento:dateBR(minor?s.guardian_birth_date:s.birth_date),contratante_cpf:(minor?s.guardian_cpf:s.cpf)||'A preencher',
  contratante_endereco:(minor?s.guardian_address:s.address)||'A preencher',contratante_cep:(minor?s.guardian_cep:s.cep)||'A preencher',
  contratante_telefone:(minor?s.guardian_phone:s.phone)||'A preencher',contratante_email:(minor?s.guardian_email:s.email)||'A preencher',
- contratado_nome:t.school_name||c.school_name||c.owner_name||'A preencher',pacote:t.package_name||'A preencher',valor_total:money(t.total_amount),valor_total_extenso:t.total_extenso||'valor indicado numericamente',
+ contratado_nome:t.school_name||c.school_name||c.owner_name||'A preencher',pacote:t.package_name||'A preencher',valor_total:money(t.total_amount),valor_total_extenso:t.total_extenso||amountWords(t.total_amount),
  qtd_aulas:String(t.lessons_count||''),data_inicio:dateBR(t.start_date),data_fim:dateBR(t.end_date),
  dias:(t.weekly_days||[]).map(d=>fullDays[d]).join(' e '),horario:(Array.isArray(t.lesson_schedule)&&t.lesson_schedule.length?t.lesson_schedule.map(x=>`${fullDays[x.day]} às ${x.time}`).join(' e '):String(t.lesson_time||'').slice(0,5)),grade_horarios:(Array.isArray(t.lesson_schedule)?t.lesson_schedule:[]).map(x=>`${fullDays[x.day]}: ${x.time}`).join(' | '),
- parcelas:String(t.installments||''),primeiro_vencimento:dateBR(t.first_due_date),
- segundo_vencimento:t.first_due_date?dateBR(plusMonth(t.first_due_date)):'',valor_parcela:money(t.installment_amount),valor_primeira_parcela:money(t.first_installment_amount??t.installment_amount),curso:t.course||'Inglês',professor:t.teacher_name||'',forma_pagamento:t.payment_method||'',
+ parcelas:String(n),primeiro_vencimento:firstDueDate,vencimento_primeira_parcela:firstDueDate,
+ segundo_vencimento:secondDueDate,vencimento_demais_parcelas:secondDueDate,
+ valor_parcela:money(regularAmount),valor_demais_parcelas:money(regularAmount),
+ valor_parcela_extenso:amountWords(regularAmount),valor_demais_parcelas_extenso:amountWords(regularAmount),
+ valor_primeira_parcela:money(firstAmount),valor_primeira_parcela_extenso:amountWords(firstAmount),
+ qtd_demais_parcelas:String(remainingCount),
+ curso:t.course||'Inglês',professor:t.teacher_name||'',forma_pagamento:t.payment_method||'',
  data_assinatura_extenso:c.signed_at?new Intl.DateTimeFormat('pt-BR',{dateStyle:'long'}).format(new Date(c.signed_at)):(c.manualUnsigned?'____ de ______________ de ________':'data da assinatura eletrônica')};}
 export function contractHTML(c,s){const fields=valuesFor(c,s);return String(c.template_html||'').replace(/\{\{([a-z0-9_]+)\}\}/g,(_,key)=>key==='assinatura_contratante'||key==='assinatura_contratado'?`{{${key}}}`:safe(fields[key]??''));}
 export function formData(form){return Object.fromEntries(new FormData(form).entries())}

@@ -26,7 +26,13 @@ export const CONTRACT_BASE_FIELDS = Object.freeze([
  {key:'aluno_email',label:'E-mail do aluno (modelo de menor)',who:'contratante',minor:true},
  {key:'valor_total_extenso',label:'Valor por extenso',who:'contratado'},
  {key:'valor_primeira_parcela',label:'Valor da primeira parcela',who:'contratado'},
+ {key:'valor_primeira_parcela_extenso',label:'Valor da 1ª parcela por extenso',who:'contratado'},
+ {key:'vencimento_primeira_parcela',label:'Vencimento da 1ª parcela',who:'contratado'},
  {key:'segundo_vencimento',label:'Segundo vencimento',who:'contratado'},
+ {key:'vencimento_demais_parcelas',label:'Vencimento das demais parcelas',who:'contratado'},
+ {key:'valor_demais_parcelas',label:'Valor das demais parcelas',who:'contratado'},
+ {key:'valor_demais_parcelas_extenso',label:'Valor das demais parcelas por extenso',who:'contratado'},
+ {key:'qtd_demais_parcelas',label:'Quantidade de demais parcelas',who:'contratado'},
  {key:'professor',label:'Professor',who:'contratado'},
  {key:'dias',label:'Dias da semana',who:'contratado'},
  {key:'horario',label:'Horario',who:'contratado'},
@@ -36,7 +42,7 @@ export const CONTRACT_MARKER = /<<([a-z][a-z0-9_]{1,39})\/(contratante|contratad
 export const CONTRACT_RESERVED = new Set(CONTRACT_BASE_FIELDS.map(x=>x.key));
 const BASE_MAP=new Map(CONTRACT_BASE_FIELDS.map(x=>[x.key,x]));
 const ALIASES={
- cpf:'contratante_cpf',nome:'contratante_nome',nome_completo:'contratante_nome',email:'contratante_email',cel:'contratante_telefone',telefone:'contratante_telefone',endereco:'contratante_endereco',cep:'contratante_cep',data_de_nascimento:'contratante_data_nascimento',data_nascimento:'contratante_data_nascimento',parcela:'valor_parcela',mensalidade:'valor_parcela',preco:'valor_total',pacote_contratado:'pacote',quantidade_de_aulas:'qtd_aulas'
+ cpf:'contratante_cpf',nome:'contratante_nome',nome_completo:'contratante_nome',email:'contratante_email',cel:'contratante_telefone',telefone:'contratante_telefone',endereco:'contratante_endereco',cep:'contratante_cep',data_de_nascimento:'contratante_data_nascimento',data_nascimento:'contratante_data_nascimento',parcela:'valor_parcela',mensalidade:'valor_parcela',preco:'valor_total',pacote_contratado:'pacote',quantidade_de_aulas:'qtd_aulas',valor_1a_parcela:'valor_primeira_parcela',vencimento_1a_parcela:'vencimento_primeira_parcela',parcelas_demais:'qtd_demais_parcelas'
 };
 export const markerFor=(key,who)=>`<<${key}/${who}>>`;
 export function requiredBaseFields(kind='individual'){

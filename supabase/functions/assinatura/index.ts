@@ -18,7 +18,15 @@ const hash=async(s:string)=>Array.from(new Uint8Array(await crypto.subtle.digest
 const digits=(s:unknown)=>String(s||'').replace(/\D/g,'');
 function cpfValid(v:unknown){const n=digits(v);if(n.length!==11||/^(\d)\1{10}$/.test(n))return false;for(let t=9;t<11;t++){let sum=0;for(let i=0;i<t;i++)sum+=Number(n[i])*(t+1-i);if(((sum*10)%11)%10!==Number(n[t]))return false;}return true;}
 function isMinor(birth:string){const b=birth.split('-').map(Number),t=todayBR().split('-').map(Number);let age=t[0]-b[0];if(t[1]<b[1]||(t[1]===b[1]&&t[2]<b[2]))age--;return age<18;}
-function values(c:any,s:any,signedDate:string){const t=c.terms,minor=c.kind==='menor';return {
+function values(c:any,s:any,signedDate:string){
+ const t=c.terms||{},minor=c.kind==='menor';
+ const n=Number(t.installments||1);
+ const firstDue=brDate(t.first_due_date);
+ const secondDue=t.second_due_date?brDate(t.second_due_date):brDate(nextDue(t.first_due_date));
+ const firstAmount=t.first_installment_amount!=null?Number(t.first_installment_amount):Number(t.installment_amount||0);
+ const regularAmount=Number(t.installment_amount||0);
+ const remainingCount=n>1?n-1:0;
+ return {
  aluno_nome:s.full_name,aluno_cpf:s.cpf,aluno_email:s.email,
  contratante_nome:minor?s.guardian_name:s.full_name,contratante_cpf:minor?s.guardian_cpf:s.cpf,
  contratante_endereco:minor?s.guardian_address:s.address,contratante_cep:minor?s.guardian_cep:s.cep,
@@ -27,8 +35,12 @@ function values(c:any,s:any,signedDate:string){const t=c.terms,minor=c.kind==='m
  valor_total:money(t.total_amount),valor_total_extenso:t.total_extenso||'valor conforme indicado',
  qtd_aulas:String(t.lessons_count),data_inicio:brDate(t.start_date),data_fim:brDate(t.end_date),
  dias:(t.weekly_days||[]).map((d:number)=>weekdays[d]).join(' e '),horario:(Array.isArray(t.lesson_schedule)&&t.lesson_schedule.length?t.lesson_schedule.map((x:any)=>`${weekdays[x.day]} às ${x.time}`).join(' e '):String(t.lesson_time||'').slice(0,5)),grade_horarios:(Array.isArray(t.lesson_schedule)?t.lesson_schedule:[]).map((x:any)=>`${weekdays[x.day]}: ${x.time}`).join(' | '),
- parcelas:String(t.installments),primeiro_vencimento:brDate(t.first_due_date),segundo_vencimento:brDate(nextDue(t.first_due_date)),
- valor_parcela:money(t.installment_amount),valor_primeira_parcela:money(t.first_installment_amount??t.installment_amount),curso:String(t.course||'Inglês'),professor:String(t.teacher_name||''),forma_pagamento:String(t.payment_method||''),data_assinatura_extenso:longDate(signedDate),...Object.fromEntries(Object.entries({...t.custom_fields,...s.custom_fields}).filter(([k])=>/^[a-z][a-z0-9_]{1,39}$/.test(k)).map(([k,v])=>[k,String(v??'')]))
+ parcelas:String(n),primeiro_vencimento:firstDue,vencimento_primeira_parcela:firstDue,
+ segundo_vencimento:secondDue,vencimento_demais_parcelas:secondDue,
+ valor_parcela:money(regularAmount),valor_demais_parcelas:money(regularAmount),
+ valor_primeira_parcela:money(firstAmount),
+ qtd_demais_parcelas:String(remainingCount),
+ curso:String(t.course||'Inglês'),professor:String(t.teacher_name||''),forma_pagamento:String(t.payment_method||''),data_assinatura_extenso:longDate(signedDate),...Object.fromEntries(Object.entries({...t.custom_fields,...s.custom_fields}).filter(([k])=>/^[a-z][a-z0-9_]{1,39}$/.test(k)).map(([k,v])=>[k,String(v??'')]))
 };}
 function render(c:any,s:any,date:string,signature?:string){
  const v=values(c,s,date),template=String(c.template_html||'');
