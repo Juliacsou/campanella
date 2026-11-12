@@ -25,6 +25,13 @@ for (const fn of [
   assert.ok(sql.includes(fn), `Falta função SQL: ${fn}`);
 }
 assert.ok(sql.includes('create table if not exists public.school_admin_invites'));
+assert.ok(sql.includes('add column if not exists token_hash text'));
+assert.ok(sql.includes('add column if not exists invite_token text'));
+assert.ok(sql.includes('add column if not exists created_by uuid'));
+
+const sql25 = fs.readFileSync(new URL('../sql/25_upgrade_v73_fix_admin_invites_columns.sql', import.meta.url), 'utf8');
+assert.ok(sql25.includes('add column if not exists token_hash text'));
+assert.ok(sql25.includes('school_admin_invites_token_hash_key'));
 
 // 2. Garantir que Administradores está em Configurações (settings-admin) e NÃO no menu lateral (navGroups)
 const navGroupsBlock = app.slice(app.indexOf('const navGroups='), app.indexOf('const nav=navGroups'));

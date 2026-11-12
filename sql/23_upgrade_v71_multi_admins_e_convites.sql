@@ -88,6 +88,7 @@ where s.admin_user_id is not null
 on conflict (school_id, user_id) do update set role = 'admin';
 
 -- 2. Restringir exclusão da escola e transferência de propriedade ao Administrador Super
+drop function if exists public.schedule_school_deletion(uuid, text);
 create or replace function public.schedule_school_deletion(p_school uuid, p_confirm_name text)
 returns jsonb
 language plpgsql
@@ -224,6 +225,28 @@ create table if not exists public.school_admin_invites (
   created_at timestamptz not null default now()
 );
 
+-- Garantir que as colunas existam mesmo se a tabela preexistia
+alter table public.school_admin_invites
+  add column if not exists token_hash text,
+  add column if not exists invite_token text,
+  add column if not exists created_by uuid references auth.users(id) on delete set null;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' and table_name = 'school_admin_invites' and column_name = 'token'
+  ) then
+    alter table public.school_admin_invites alter column token drop not null;
+  end if;
+  if not exists (
+    select 1 from pg_constraint 
+    where conrelid = 'public.school_admin_invites'::regclass and conname = 'school_admin_invites_token_hash_key'
+  ) then
+    alter table public.school_admin_invites add constraint school_admin_invites_token_hash_key unique (token_hash);
+  end if;
+end $$;
+
 create index if not exists idx_school_admin_invites_school
   on public.school_admin_invites(school_id, created_at desc);
 
@@ -259,6 +282,7 @@ create policy "profiles_select_same_school"
   );
 
 -- 4. RPC: Listar administradores, status de professor e convites pendentes da escola
+drop function if exists public.school_admin_list(uuid);
 create or replace function public.school_admin_list(p_school uuid)
 returns jsonb
 language plpgsql
@@ -341,6 +365,7 @@ end;
 $$;
 
 -- 5. RPC: Alternar papel de professor para um administrador (Super ou convidado)
+drop function if exists public.school_admin_toggle_teacher(uuid, uuid, boolean, text);
 create or replace function public.school_admin_toggle_teacher(
   p_school uuid,
   p_user_id uuid,
@@ -431,6 +456,7 @@ end;
 $$;
 
 -- 6. RPC: Convidar novo administrador da escola (exclusivo do Administrador Super)
+drop function if exists public.school_admin_create_invite(uuid, text, text, boolean);
 create or replace function public.school_admin_create_invite(
   p_school uuid,
   p_name text,
@@ -535,6 +561,7 @@ end;
 $$;
 
 -- 7. RPC: Visualizar convite de administrador (público via token)
+drop function if exists public.school_admin_invite_preview(text);
 create or replace function public.school_admin_invite_preview(p_token text)
 returns jsonb
 language plpgsql
@@ -590,6 +617,7 @@ end;
 $$;
 
 -- 8. RPC: Aceitar convite de administrador
+drop function if exists public.school_admin_accept_invite(text);
 create or replace function public.school_admin_accept_invite(p_token text)
 returns jsonb
 language plpgsql
@@ -659,6 +687,7 @@ end;
 $$;
 
 -- 9. RPC: Remover administrador convidado ou revogar convite (exclusivo do Administrador Super)
+drop function if exists public.school_admin_remove_member(uuid, uuid);
 create or replace function public.school_admin_remove_member(p_school uuid, p_user_id uuid)
 returns jsonb
 language plpgsql
@@ -697,6 +726,7 @@ begin
 end;
 $$;
 
+drop function if exists public.school_admin_revoke_invite(uuid, uuid);
 create or replace function public.school_admin_revoke_invite(p_school uuid, p_invite_id uuid)
 returns jsonb
 language plpgsql
@@ -724,6 +754,7 @@ $$;
 
 -- 10. RPC: Auto-ativar convites pendentes (administrador e professor) para o e-mail já autenticado
 -- Resolve definitivamente casos em que o usuário confirmou o e-mail e depois entrou pelo login ou reabriu o link.
+drop function if exists public.accept_my_pending_invites();
 create or replace function public.accept_my_pending_invites()
 returns jsonb
 language plpgsql
