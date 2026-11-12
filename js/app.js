@@ -30,16 +30,32 @@ const PLAN_CONFIGS={
 const ADDON_PRICES={studentPack:15,studentPackSize:10,teacher:10};
 const MANAGEMENT_PAGES=['directory','students','teachers','calendar','packages','contracts','templates'];
 
+function currentSchoolLicense(){
+ return (typeof ui!=='undefined'&&ui.schoolLicense)||((typeof ui!=='undefined'&&ui.schoolId&&typeof schoolLicense==='function')?schoolLicense(ui.schoolId):null);
+}
+function resolveLicensePlan(l){
+ if(!l){
+  const activeLic=currentSchoolLicense();
+  if(activeLic?.plan)return String(activeLic.plan).toLowerCase();
+  return 'ilimitado';
+ }
+ if(l.plan)return String(l.plan).toLowerCase();
+ if(l.kind==='cortesia'||String(l.note||'').toLowerCase().includes('legado'))return 'ilimitado';
+ return 'ilimitado';
+}
 function getSchoolPlanConfig(l){
- const planKey=(l?.plan||'essencial').toLowerCase();
- return PLAN_CONFIGS[planKey]||PLAN_CONFIGS.essencial;
+ const lic=(l!==undefined)?l:currentSchoolLicense();
+ const planKey=resolveLicensePlan(lic);
+ return PLAN_CONFIGS[planKey]||PLAN_CONFIGS.ilimitado;
 }
 function schoolPlanLimits(l){
- const cfg=getSchoolPlanConfig(l);
- const packs=Math.max(0,Number(l?.extra_students_packs||0));
- const extraProfs=Math.max(0,Number(l?.extra_teachers||0));
- const maxStudents=cfg.crmOnly?0:(cfg.baseStudents>=999999?999999:cfg.baseStudents+(packs*ADDON_PRICES.studentPackSize));
- const maxTeachers=cfg.crmOnly?0:(cfg.baseTeachers>=999999?999999:cfg.baseTeachers+extraProfs);
+ const lic=(l!==undefined)?l:currentSchoolLicense();
+ const cfg=getSchoolPlanConfig(lic);
+ const isUnlimited=cfg.id==='ilimitado'||cfg.baseTeachers>=999999;
+ const packs=Math.max(0,Number(lic?.extra_students_packs||0));
+ const extraProfs=Math.max(0,Number(lic?.extra_teachers||0));
+ const maxStudents=cfg.crmOnly?0:(isUnlimited?999999:cfg.baseStudents+(packs*ADDON_PRICES.studentPackSize));
+ const maxTeachers=cfg.crmOnly?0:(isUnlimited?999999:cfg.baseTeachers+extraProfs);
  const monthlyPrice=cfg.price+(packs*ADDON_PRICES.studentPack)+(extraProfs*ADDON_PRICES.teacher);
  return {
   plan:cfg.id,
@@ -55,7 +71,8 @@ function schoolPlanLimits(l){
   extraTeachers:extraProfs,
   maxTeachers,
   basePrice:cfg.price,
-  monthlyPrice
+  monthlyPrice,
+  isUnlimited
  };
 }
 function currentSchoolActiveStudentsCount(){
@@ -1831,7 +1848,7 @@ document.addEventListener('click',async e=>{
  if(action==='selectSchool')return switchSchool(id);
  if(action==='showActivation')return activationModal();
  if(action==='configureSchoolSignature'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Assinatura eletrônica não disponível nesta versão.');return schoolSignatureModal();}
- if(action==='importStudents'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('alunos');const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();if(cur>=lim.maxStudents){window.campanellaAlert(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Para importar novos alunos, faça upgrade de plano ou adquira pacotes de +10 alunos.`,'Limite atingido');return contactUpgradeModal('alunos');}return studentImportModal();}
+ if(action==='importStudents'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('alunos');const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();if(!lim.isUnlimited&&cur>=lim.maxStudents){window.campanellaAlert(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Para importar novos alunos, faça upgrade de plano ou adquira pacotes de +10 alunos.`,'Limite atingido');return contactUpgradeModal('alunos');}return studentImportModal();}
  if(action==='platformSchoolDetail'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return platformSchoolDetail(id);}
  if(action==='issueRenewal'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return schoolRenewalForm(id);}
  if(action==='deleteSchool'){if(!canAdmin())throw new Error('Acesso restrito');return showModal(`<div class="eyebrow">Zona de perigo</div><h2>Excluir ${safe(currentSchool().name)}?</h2><p class="modal-intro">Os cadastros serão bloqueados imediatamente. Você poderá restaurar a escola durante 30 dias; após isso, a exclusão definitiva eliminará os registros e os arquivos da unidade.</p><form id="deleteSchoolForm"><label class="field"><span>Digite exatamente: <strong>${safe(currentSchool().name)}</strong></span><input name="confirm_name" required autocomplete="off"></label><div class="form-footer"><button class="btn ghost" type="button" data-action="close">Cancelar</button><button class="btn danger" type="submit">Agendar exclusão</button></div></form>`);}
@@ -1854,9 +1871,9 @@ document.addEventListener('click',async e=>{
  if(action==='newContract'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('contratos');return contractForm(id);}
  if(action==='studentDetail')return studentDetail(id);
  if(action==='studentProfileBack'){ui.page=ui.studentReturnPage||'directory';ui.studentId=null;return render();}
- if(action==='editStudent'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('alunos');if(!id){const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();if(cur>=lim.maxStudents){window.campanellaAlert(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Para cadastrar novos alunos, faça upgrade de plano ou adquira pacotes de +10 alunos.`,'Limite atingido');return contactUpgradeModal('alunos');}}return studentForm(id);}
- if(action==='editTeacher'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('professores');if(!id){const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();if(cur>=lim.maxTeachers){window.campanellaAlert(`Limite de professores ativos atingido (${cur}/${lim.maxTeachers} no plano ${lim.planName}). Para cadastrar novos professores, faça upgrade de plano ou adquira professores adicionais.`,'Limite atingido');return contactUpgradeModal('professores');}}return teacherForm(id);}
- if(action==='teacherToggle'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('professores');const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');if(t.active===false){const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();if(cur>=lim.maxTeachers){window.campanellaAlert(`Não é possível reativar este professor: o limite do plano ${lim.planName} (${lim.maxTeachers} professores ativos) já foi atingido. Faça upgrade de plano ou adquira professores adicionais.`,'Limite atingido');return contactUpgradeModal('professores');}}if(!await window.campanellaConfirm(`${t.active!==false?'Desativar':'Reativar'} ${t.name}?`))return;await save('teachers',{active:t.active===false},id);toast(t.active!==false?'Professor desativado.':'Professor reativado.');return refresh();}
+ if(action==='editStudent'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('alunos');if(!id){const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();if(!lim.isUnlimited&&cur>=lim.maxStudents){window.campanellaAlert(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Para cadastrar novos alunos, faça upgrade de plano ou adquira pacotes de +10 alunos.`,'Limite atingido');return contactUpgradeModal('alunos');}}return studentForm(id);}
+ if(action==='editTeacher'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('professores');if(!id){const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();if(!lim.isUnlimited&&cur>=lim.maxTeachers){window.campanellaAlert(`Limite de professores ativos atingido (${cur}/${lim.maxTeachers} no plano ${lim.planName}). Para cadastrar novos professores, faça upgrade de plano ou adquira professores adicionais.`,'Limite atingido');return contactUpgradeModal('professores');}}return teacherForm(id);}
+ if(action==='teacherToggle'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('professores');const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');if(t.active===false){const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();if(!lim.isUnlimited&&cur>=lim.maxTeachers){window.campanellaAlert(`Não é possível reativar este professor: o limite do plano ${lim.planName} (${lim.maxTeachers} professores ativos) já foi atingido. Faça upgrade de plano ou adquira professores adicionais.`,'Limite atingido');return contactUpgradeModal('professores');}}if(!await window.campanellaConfirm(`${t.active!==false?'Desativar':'Reativar'} ${t.name}?`))return;await save('teachers',{active:t.active===false},id);toast(t.active!==false?'Professor desativado.':'Professor reativado.');return refresh();}
  if(action==='teacherRemove'){const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');const linked=db.interviews.some(i=>i.teacher_id===id)||db.interview_invites.some(i=>i.teacher_id===id)||(db.crm_appointments||[]).some(i=>i.teacher_id===id)||db.contracts.some(c=>c.terms?.teacher_id===id);
   if(linked){if(!await window.campanellaConfirm(`O professor ${t.name} possui histórico. Ele será DESATIVADO para preservar contratos e entrevistas. Continuar?`))return;await save('teachers',{active:false},id);toast('Professor desativado. Histórico preservado.');return refresh();}
   if(!await window.campanellaConfirm(`Excluir DEFINITIVAMENTE o professor ${t.name}? Esta ação não pode ser desfeita.`,'Excluir professor','Excluir'))return;
@@ -2115,7 +2132,7 @@ document.addEventListener('submit',async event=>{
  if(f.id==='csvForm'){
   if(isCurrentSchoolCrmOnly())throw new Error('O plano CRM não inclui gestão de alunos e importação em massa. Faça upgrade para o plano Essencial ou superior.');
   const lim=schoolPlanLimits(),curActive=currentSchoolActiveStudentsCount();
-  if(curActive>=lim.maxStudents)throw new Error(`Limite de alunos ativos atingido (${curActive}/${lim.maxStudents} no plano ${lim.planName}). Adquira pacotes de +10 alunos antes de importar.`);
+  if(!lim.isUnlimited&&curActive>=lim.maxStudents)throw new Error(`Limite de alunos ativos atingido (${curActive}/${lim.maxStudents} no plano ${lim.planName}). Adquira pacotes de +10 alunos antes de importar.`);
   const file=f.elements.csv_file.files[0];if(!file||file.size>300000)throw new Error('CSV deve ter no máximo 300 KB.');
   const rows=parseCSV(await file.text());if(rows.length>200)throw new Error('Importe no máximo 200 alunos por arquivo.');
   const cpfs=rows.map(x=>onlyDigits(x.cpf)).filter(Boolean),{data:existing,error:exerr}=await sb.from('students').select('cpf').eq('school_id',ui.schoolId).in('cpf',cpfs.length?cpfs:['-']);if(exerr)throw exerr;
@@ -2202,7 +2219,7 @@ document.addEventListener('submit',async event=>{
   const wasActive=existingTeacher?existingTeacher.active!==false:false;
   if(willBeActive&&(!isEditing||!wasActive)){
    const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();
-   if(cur>=lim.maxTeachers)throw new Error(`Limite de professores ativos atingido (${cur}/${lim.maxTeachers} no plano ${lim.planName}). Faça upgrade de plano ou adquira adicionais.`);
+   if(!lim.isUnlimited&&cur>=lim.maxTeachers)throw new Error(`Limite de professores ativos atingido (${cur}/${lim.maxTeachers} no plano ${lim.planName}). Faça upgrade de plano ou adquira adicionais.`);
   }
   const name=f.elements.name.value.trim(),email=f.elements.email.value.trim().toLowerCase();
   if(name.length<2||name.length>180||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)throw new Error('Informe nome e e-mail válidos.');
@@ -2213,7 +2230,7 @@ document.addEventListener('submit',async event=>{
   if(isCurrentSchoolCrmOnly())throw new Error('O plano CRM não inclui gestão de alunos e matrículas. Faça upgrade para o plano Essencial ou superior.');
   if(!f.dataset.id){
    const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();
-   if(cur>=lim.maxStudents)throw new Error(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Faça upgrade de plano ou adquira pacotes de +10 alunos.`);
+   if(!lim.isUnlimited&&cur>=lim.maxStudents)throw new Error(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Faça upgrade de plano ou adquira pacotes de +10 alunos.`);
   }
   const d=formData(f),minor=!!f.elements.is_minor.checked;
   if(d.full_name.trim().length<2||d.full_name.trim().length>180)throw new Error('Informe o nome completo do aluno.');

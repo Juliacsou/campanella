@@ -124,6 +124,20 @@ assert.equal(avancado.basePrice, 279);
 assert.equal(avancado.monthlyPrice, 319);
 assert.equal(avancado.maxStudents, 120);
 assert.equal(avancado.maxTeachers, 11);
+assert.equal(avancado.isUnlimited, false);
+
+// Testar regras do plano Ilimitado (acesso total legado/cortesia)
+const ilimitado = sandbox.testCalculateLimits({ plan: 'ilimitado' });
+assert.equal(ilimitado.plan, 'ilimitado');
+assert.equal(ilimitado.isUnlimited, true);
+assert.equal(ilimitado.maxStudents, 999999);
+assert.equal(ilimitado.maxTeachers, 999999);
+
+// Testar fallback quando a função é chamada sem argumentos (deve assumir ilimitado/ativo com segurança)
+const padraoSemParametro = sandbox.testCalculateLimits();
+assert.equal(padraoSemParametro.plan, 'ilimitado');
+assert.equal(padraoSemParametro.isUnlimited, true);
+assert.equal(padraoSemParametro.maxTeachers, 999999);
 
 console.log('3. Validando bloqueios e interface no frontend...');
 
