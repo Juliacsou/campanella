@@ -1655,7 +1655,17 @@ function studentForm(id){const s=lookup('students',id)||{},minor=!!s.is_minor;
 function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;
  const teacherId=s.calendar_teacher_id||'';
  const selectedSlots=s.calendar_slot_ids||[];
- showModal(`<h2>Criar matrícula de ${safe(s.full_name)}</h2><p class="modal-intro">O aluno já está cadastrado. Gere um contrato agora ou feche para deixar sem matrícula.</p><form id="manualEnrollmentForm" data-student="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid"><label class="field wide"><span>Modalidade de matrícula</span><select name="enrollment_mode" id="manualEnrollmentMode"><option value="package">Pacote cadastrado</option><option value="custom">Pacote personalizado (saldo de aulas restantes)</option><option value="recurrence">Recorrência até o fim do contrato</option></select></label><label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active),teacherId)}</select></label>${input('Curso','course','Inglês')}<label class="field wide" id="manualPackageField"><span>Pacote</span><select name="package_id" id="manualPackage">${weeksOrCustom()}${options(db.packages.filter(p=>p.active&&p.kind!=='dupla'))}</select></label>${input('Aulas','lessons_count','','number')}${input('Aulas por semana','weekly_frequency','2','number')}${input('Início','start_date',today(),'date')}${input('Data de término do contrato','end_date','','date')}<div class="wide" id="calPickerHost">${calendar.getFormPicker(teacherId,today(),false,selectedSlots)}</div>${input('Valor total','total_amount','','number')}${input('Parcelas','installments','6','number')}${input('Valor da parcela','installment_amount','','number')}${input('Primeiro vencimento','first_due_date',today(),'date')}<label class="field"><span>Pagamento</span><select name="payment_method"><option>Boleto</option><option>PIX</option><option>Cartão</option><option>Transferência</option></select></label><label class="field wide"><span>Modelo de contrato</span><select name="type_option" id="manualContractType">${contractOptions(s.is_minor?'menor':'individual',null)}</select></label></div><div id="contractExtraFields"></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Salvar dados e preparar contrato</button></div></form>`);renderContractExtra();calendar.autoPreview($('#manualEnrollmentForm'));}
+ const pkgs=db.packages.filter(p=>p.active&&p.kind!=='dupla');
+ showModal(`<h2>Criar matrícula de ${safe(s.full_name)}</h2><p class="modal-intro">O aluno já está cadastrado. Gere um contrato agora ou feche para deixar sem matrícula.</p><form id="manualEnrollmentForm" data-student="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid"><label class="field wide"><span>Modalidade de matrícula</span><select name="enrollment_mode" id="manualEnrollmentMode"><option value="package">Pacote cadastrado</option><option value="custom">Pacote personalizado (saldo de aulas restantes)</option><option value="recurrence">Recorrência até o fim do contrato</option></select></label><label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active),teacherId)}</select></label>${input('Curso','course','Inglês')}<label class="field wide" id="manualPackageField"><span>Pacote</span><select name="package_id" id="manualPackage"><option value="">Selecione um pacote cadastrado</option>${options(pkgs)}</select></label><div class="wide" id="calPickerHost">${calendar.getFormPicker(teacherId,today(),false,selectedSlots,true)}</div>${input('Início','start_date',today(),'date')}${input('Data de término do contrato','end_date','','date')}${input('Aulas','lessons_count','','number')}${input('Aulas por semana','weekly_frequency','2','number')}${input('Valor total','total_amount','','number')}${input('Parcelas','installments','6','number')}${input('Valor da parcela','installment_amount','','number')}${input('Primeiro vencimento','first_due_date',today(),'date')}<label class="field"><span>Pagamento</span><select name="payment_method"><option>Boleto</option><option>PIX</option><option>Cartão</option><option>Transferência</option></select></label><label class="field wide"><span>Modelo de contrato</span><select name="type_option" id="manualContractType">${contractOptions(s.is_minor?'menor':'individual',null)}</select></label></div><div id="contractExtraFields"></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Salvar dados e preparar contrato</button></div></form>`);
+ const f=$('#manualEnrollmentForm');
+ if(f){
+  if(f.elements.lessons_count){f.elements.lessons_count.readOnly=true;f.elements.lessons_count.placeholder='Selecione um pacote acima';}
+  if(f.elements.weekly_frequency){f.elements.weekly_frequency.readOnly=true;}
+  if(f.elements.end_date){f.elements.end_date.readOnly=true;f.elements.end_date.placeholder='Calculado pelas aulas';}
+ }
+ renderContractExtra();
+ calendar.autoPreview(f);
+}
 
 function guardianHTML(s,minor){return minor?`<h3 class="form-section">Responsável</h3><div class="form-grid">${input('Nome do responsável','guardian_name',s.guardian_name,'text',false)}${input('Data nascimento','guardian_birth_date',s.guardian_birth_date,'date',false)}${input('CPF','guardian_cpf',s.guardian_cpf,'text',false)}${input('Telefone','guardian_phone',s.guardian_phone,'text',false)}${input('E-mail','guardian_email',s.guardian_email,'email',false)}${input('CEP','guardian_cep',s.guardian_cep,'text',false)}<div class="wide">${input('Endereço','guardian_address',s.guardian_address,'text',false)}</div></div>`:'';}
 const BUILTIN_FIELDS=CONTRACT_RESERVED;
@@ -1995,6 +2005,9 @@ document.addEventListener('input',e=>{
   if(view){$('#pageContent').innerHTML=view;$('#search').focus();$('#search').setSelectionRange(pos,pos);}
  }
  if(['total_amount','installments','installment_amount'].includes(e.target.name)&&['interviewForm','renewForm','manualEnrollmentForm','externalInterviewForm'].includes(e.target.form?.id))updateInstallment(e.target.form,e.target.name);
+ if(e.target.name==='end_date'&&e.target.form?.id==='manualEnrollmentForm'&&e.target.form.elements.enrollment_mode?.value==='recurrence'){
+  if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value))calendar.autoPreview(e.target.form);
+ }
 });
 document.addEventListener('change',async e=>{
  if(e.target.matches('[data-onb-map], [data-onb-edit-line]')){onboarding.change(e);return;}
@@ -2007,21 +2020,36 @@ document.addEventListener('change',async e=>{
   const f=e.target.form,mode=e.target.value;
   const pkgField=$('#manualPackageField');
   const lessonsCount=f.elements.lessons_count;
+  const weeklyFreq=f.elements.weekly_frequency;
   const endDate=f.elements.end_date;
+  const calBtn=f.querySelector('[data-action="calPreview"]');
+  const calResult=f.querySelector('[data-cal-result]');
   if(mode==='recurrence'){
    if(pkgField)pkgField.style.display='none';
-   if(f.elements.package_id)f.elements.package_id.value='';
-   if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.placeholder='Calculado pelas datas';}
-   if(endDate){endDate.required=true;}
+   if(f.elements.package_id){f.elements.package_id.value='';f.elements.package_id.required=false;}
+   if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.value='';lessonsCount.placeholder='Calculado automaticamente pelas datas';lessonsCount.required=true;}
+   if(weeklyFreq){weeklyFreq.readOnly=true;const checked=f.querySelectorAll('input[name="cal_slot"]:checked').length;weeklyFreq.value=checked||'1';}
+   if(endDate){endDate.readOnly=false;endDate.required=true;endDate.placeholder='';}
+   if(calBtn)calBtn.textContent='Calcular total de aulas';
+   if(calResult)calResult.textContent='Informe a data de término e marque os horários para calcular.';
   }else if(mode==='custom'){
    if(pkgField)pkgField.style.display='none';
-   if(f.elements.package_id)f.elements.package_id.value='';
-   if(lessonsCount){lessonsCount.readOnly=false;lessonsCount.placeholder='Ex: 14 aulas';lessonsCount.required=true;}
-   if(endDate){endDate.required=false;}
+   if(f.elements.package_id){f.elements.package_id.value='';f.elements.package_id.required=false;}
+   if(lessonsCount){lessonsCount.readOnly=false;lessonsCount.value='';lessonsCount.placeholder='Ex: 14 aulas';lessonsCount.required=true;}
+   if(weeklyFreq){weeklyFreq.readOnly=false;weeklyFreq.value='2';}
+   if(endDate){endDate.readOnly=true;endDate.required=false;endDate.value='';endDate.placeholder='Calculado pelas aulas';}
+   if(calBtn)calBtn.textContent='Calcular última aula';
+   if(calResult)calResult.textContent='';
   }else{
    if(pkgField)pkgField.style.display='';
-   if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.placeholder='';lessonsCount.required=true;}
-   if(endDate){endDate.required=false;}
+   if(f.elements.package_id){f.elements.package_id.required=true;}
+   if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.placeholder='Selecione um pacote acima';lessonsCount.required=true;}
+   if(weeklyFreq){weeklyFreq.readOnly=true;}
+   if(endDate){endDate.readOnly=true;endDate.required=false;endDate.placeholder='Calculado pelas aulas';}
+   if(calBtn)calBtn.textContent='Calcular última aula';
+   if(calResult)calResult.textContent='';
+   const curPkg=lookup('packages',f.elements.package_id?.value);
+   if(curPkg)onPackageSelection(f,curPkg);
   }
   calendar.autoPreview(f);
   return;
@@ -2051,6 +2079,7 @@ document.addEventListener('change',async e=>{
  if(e.target.matches('input[name="days"]')){const el=e.target.closest('.schedule-row')?.querySelector('input[type="time"]');if(el){el.disabled=!e.target.checked;if(e.target.checked&&!el.value)el.value='18:00';}}
  if(['interviewPackage','renewPackage','manualPackage','externalPackage'].includes(e.target.id)){
   const p=(e.target.id==='externalPackage'?externalData?.packages.find(x=>x.id===e.target.value):lookup('packages',e.target.value));onPackageSelection(e.target.form,p);
+  if(e.target.id==='manualPackage')calendar.autoPreview(e.target.form);
   if(e.target.id==='externalPackage'){const el=e.target.form.elements.type_option;if(el)el.removeAttribute('required');externalPreview().catch(errors);}
  }
  if(e.target.id==='externalTeacher'&&e.target.form?.id==='externalInterviewForm'){
