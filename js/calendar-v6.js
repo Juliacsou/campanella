@@ -338,6 +338,15 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const start=form.elements.start_date?.value||form.elements.cal_start_date?.value||today();
   host.innerHTML=getFormPicker(id,start,false,[],form.id==='interviewForm');
  }
+ function studentSchedulePicker(teacherId,selectedIds=[]){
+  if(!teacherId)return '<div class="notice" style="margin-top:8px"><p class="muted">Professor não selecionado ("Definir depois"). Os horários semanais poderão ser definidos ao matricular o aluno ou diretamente na agenda do professor.</p></div>';
+  const slots=data().slots.filter(s=>s.teacher_id===teacherId&&s.active&&s.slot_date===null).sort((a,b)=>a.weekday-b.weekday||a.time.localeCompare(b.time));
+  if(!slots.length)return '<div class="notice" style="margin-top:8px"><p class="muted">Este professor ainda não possui horários cadastrados na grade semanal. Você pode salvar o aluno agora e definir os horários depois.</p></div>';
+  const chosen=(Array.isArray(selectedIds)?selectedIds:[]).filter(id=>slots.some(s=>s.id===id));
+  const roster=(data().roster||[]).filter(r=>r.teacher_id===teacherId);
+  const occupied=roster.map(r=>r.slot_id);
+  return weeklyPickerMarkup(slots,{name:'cal_slot',selected:chosen,occupied:occupied,limit:0});
+ }
  async function plan(form,terms){
   const part=form.querySelector('.cal-enrollment');const teacherId=part?.dataset.teacher||terms.teacher_id;
   if(!part||part.dataset.noSlots==='1')throw new Error('Antes de matricular, cadastre os horários semanais do professor e escolha os horários do aluno.');
@@ -348,12 +357,15 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const slots=checked.map(c=>data().slots.find(s=>s.id===c.value));
   if(slots.some(s=>!s||s.teacher_id!==teacherId))throw new Error('Horário fora da agenda do professor selecionado');
   const start=form.elements.cal_start_date?.value||terms.start_date;
-  const count=Number(terms.lessons_count);
-  const preview=await call('calendar_preview',{p_school:school(),p_teacher:teacherId,p_start:start,p_count:count,p_slots:checked.map(c=>c.value)});
+  const mode=form.elements.enrollment_mode?.value||terms.enrollment_mode||'package';
   const rawManual=form.elements.end_date||form.elements.cal_manual_end;
-  const adjusted=rawManual?.dataset.calManualEdited==='1'?rawManual.value:preview.end_date;
+  const endDate=rawManual?.value||terms.end_date||null;
+  if(mode==='recurrence'&&!endDate)throw new Error('Informe a data final do contrato para matrículas por recorrência.');
+  const count=mode==='recurrence'?null:Number(terms.lessons_count||form.elements.lessons_count?.value);
+  const preview=await call('calendar_preview',{p_school:school(),p_teacher:teacherId,p_start:start,p_count:count,p_slots:checked.map(c=>c.value),p_end_date:endDate,p_mode:mode});
+  const adjusted=mode==='recurrence'?preview.end_date:(rawManual?.dataset.calManualEdited==='1'?rawManual.value:preview.end_date);
   if(adjusted<preview.end_date)throw new Error('A data final escolhida é anterior à última aula. Ajuste-a ou altere os horários.');
-  const normalized={...terms,teacher_id:teacherId,teacher_name:teacherName(teacherId),start_date:start,end_date:adjusted,
+  const normalized={...terms,enrollment_mode:mode,lessons_count:preview.total,teacher_id:teacherId,teacher_name:teacherName(teacherId),start_date:start,end_date:adjusted,
    lesson_schedule:slots.map(s=>({day:s.weekday,time:s.time,duration_minutes:s.duration})),weekly_days:slots.map(s=>s.weekday),
    weekly_frequency:slots.length,lesson_time:slots[0].time,
    calendar_v6:{slot_ids:checked.map(c=>c.value),calculated_end:preview.end_date}};
@@ -371,13 +383,16 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  async function previewForm(btn,silent=false){
   const f=btn.closest('form');if(!f)return;
   const i=lookup('interviews',db.interviews.find(x=>x.lead_id===f.dataset.lead)?.id);
+  const mode=f.elements.enrollment_mode?.value||'package';
   const count=f.id==='calAdoptLegacyForm'?Number(f.dataset.total)-Number(f.elements.completed_before.value):+(f.elements.lessons_count?.value||i?.lessons_count||0);
   const teacherId=f.elements.teacher_id?.value||f.querySelector('.cal-enrollment')?.dataset.teacher;
   const start=f.elements.cal_start_date?.value||f.elements.start_date?.value||today();
-  const {preview}=await plan(f,{teacher_id:teacherId,start_date:start,lessons_count:count});
+  const endDate=f.elements.end_date?.value||f.elements.cal_manual_end?.value||null;
+  const {preview}=await plan(f,{teacher_id:teacherId,start_date:start,lessons_count:count,enrollment_mode:mode,end_date:endDate});
   if(!preview)return toast('Configure os horários fixos do professor para calcular a agenda.',true);
   const out=f.querySelector('[data-cal-result]');if(out)out.textContent=`${preview.total} aulas • última aula em ${dateBR(preview.end_date)}`;
-  const el=f.elements.end_date||f.elements.cal_manual_end;if(el&&el.dataset.calManualEdited!=='1'){el.value=preview.end_date;el.dataset.calManualEdited='0';}
+  if(mode==='recurrence'&&f.elements.lessons_count){f.elements.lessons_count.value=preview.total;}
+  const el=f.elements.end_date||f.elements.cal_manual_end;if(el&&el.dataset.calManualEdited!=='1'&&mode!=='recurrence'){el.value=preview.end_date;el.dataset.calManualEdited='0';}
   if(!silent)toast('Datas calculadas com recessos e indisponibilidades.');
  }
  function teacherOptions(includeAll=false){
@@ -678,7 +693,10 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(element.name==='teacher_id'&&element.form?.id==='manualEnrollmentForm'){updateFormPicker(element.form);return autoPreview(element.form);}
   if(element.name==='start_date'&&element.form?.elements.cal_start_date){element.form.elements.cal_start_date.value=element.value;return autoPreview(element.form);}
   if(['cal_slot','cal_start_date','lessons_count'].includes(element.name))return autoPreview(element.form);
-  if(element.name==='end_date'&&element.form?.querySelector('.cal-enrollment'))element.dataset.calManualEdited='1';
+  if(element.name==='end_date'&&element.form?.querySelector('.cal-enrollment')){
+   element.dataset.calManualEdited='1';
+   if(element.form.elements.enrollment_mode?.value==='recurrence')return autoPreview(element.form);
+  }
   if(element.name==='cal_manual_end')element.dataset.calManualEdited='1';
   if(element.name==='reason_preset'){const custom=element.form?.querySelector('[data-custom-reason]');if(custom)custom.style.display=element.value==='Outro'?'block':'none';}
  }
@@ -806,7 +824,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  }
  return {load,loadSafe,view,teacherShell,renderCalendar,getTeacherAccess,processPendingInvite,enterTeacherIfApplicable,
   inviteLanding,getFormPicker,updateFormPicker,slotIdForSchedule,autoPreview,applyTerms,hasAccess,action,change,submit,refresh:reload,adminNav,
-  getOnboardingSnapshot:()=>state.snapshot,
+  getOnboardingSnapshot:()=>state.snapshot,studentSchedulePicker,studentSlotChoices,
   studentSummaryFor,studentForContract,classSummaryFor,scheduleForContract,openStudent,studentProfileView,ensureEnrollmentDates,
   async updateTeacherProfile(name){const n=String(name||'').trim();if(n.length<2||n.length>120)throw new Error('Informe um nome válido.');await call('calendar_update_my_teacher_name',{p_school:school(),p_name:n});await load();}};
 }

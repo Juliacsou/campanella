@@ -7,7 +7,7 @@ const digits=v=>String(v||'').replace(/\D/g,'');
 const csvCell=v=>{let str=String(v??'');if(/^[\s]*[=+@\-\t\r]/.test(str))str="'"+str;return '"'+str.replace(/"/g,'""')+'"';};
 const csvExport=(cols,rows)=>'\uFEFF'+[cols, ...rows.map(r=>cols.map(k=>r[k]??''))].map(row=>row.map(csvCell).join(';')).join('\r\n')+'\r\n';
 const baseFields=['aluno_id','nome_completo','telefone','cpf','email','data_nascimento','cep','endereco','responsavel_nome','responsavel_data_nascimento','responsavel_cpf','responsavel_telefone','responsavel_email','responsavel_cep','responsavel_endereco'];
-const enrollmentFields=['aluno_id','nome_completo','professor','pacote','horarios','data_inicio','curso','valor_total','parcelas','primeiro_vencimento','forma_pagamento','modelo'];
+const enrollmentFields=['aluno_id','nome_completo','professor','pacote','horarios','data_inicio','data_termino','curso','valor_total','parcelas','primeiro_vencimento','forma_pagamento','modelo'];
 const aliases={
  aluno_id:['aluno_id','id_aluno','identificador_do_aluno'],
  nome_completo:['nome_completo','nome','aluno','nome_do_aluno','nome_aluno','estudante'],
@@ -249,9 +249,9 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
    <h3>Alunos prontos para matrícula</h3>
    <div class="onb-records" aria-label="Alunos prontos para matrícula">${ready.map(s=>`<div class="onb-record"><div class="onb-record-summary"><div class="onb-record-main"><b>${safe(s.full_name)}</b><small>${safe(s.phone||'—')}</small></div>${button('manualEnrollment','Matricular',`data-id="${safe(s.id)}"`)}</div></div>`).join('')||'<div class="onb-empty">Nenhum aluno pronto no momento.</div>'}</div>
    ${warning}
-   <div class="onb-section-title"><h3>Matrícula em massa</h3><p>Baixe o modelo, informe professor, pacote e horários cadastrados na grade do professor. Depois envie o CSV preenchido.</p></div><div class="onb-actions">${button('onbDownloadReady','Baixar planilha de matrículas')}${button('onbDownloadSlots','Consultar horários dos professores')}</div>
+   <div class="onb-section-title"><h3>Matrícula em massa</h3><p>Baixe a planilha modelo. Você pode matricular alunos com modelos DOCX ou com <strong>contratos preexistentes</strong> (sem exigir arquivo DOCX), além de definir matrículas por <strong>recorrência até o fim do contrato</strong> pela coluna <code>data_termino</code>.</p></div><div class="onb-actions">${button('onbDownloadReady','Baixar planilha de matrículas')}${button('onbDownloadSlots','Consultar horários dos professores')}</div>
    <form id="onbEnrollmentUpload" class="onb-upload"><label class="field"><span>CSV com as matrículas preenchidas</span><input type="file" name="file" accept=".csv,text/csv" required></label><button class="btn" type="submit">Conferir matrículas</button></form>
-   ${note('warning','Confira os horários antes de importar','Se um horário não existir na agenda do professor, estiver ocupado ou bloqueado, a matrícula será rejeitada. O sistema também verificará a disponibilidade ao salvar. Contratos não serão marcados como assinados.')}
+   ${note('warning','Regras da importação de matrículas','• <b>Contratos preexistentes em andamento:</b> preencha a coluna modelo com "preexistente". O contrato será ativado imediatamente e as aulas agendadas sem gerar PDF pendente.<br>• <b>Recorrência até o fim do contrato:</b> preencha a coluna data_termino. As aulas serão calculadas até a data final, pulando bloqueios e feriados sem gerar reposição.<br>• <b>Horários da agenda:</b> informe os horários ativos do professor (ex.: Seg 09:00 | Qua 14:00).')}
    ${enrollmentPreview()}${report}
    <div class="form-footer">${!standalone?button('onbStep','Voltar','data-step="review"'):''}${button('onbHome','Concluir / importar matrículas depois','','')}</div>`);
  }
@@ -273,7 +273,7 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
  function mapStudentRows(){return mappedStudentRows();}
  function download(content,filename){const blob=new Blob([content],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
  function studentCSVRow(s){return {aluno_id:s.id,nome_completo:s.full_name,telefone:s.phone||'',cpf:s.cpf||'',email:s.email||'',data_nascimento:s.birth_date||'',cep:s.cep||'',endereco:s.address||'',responsavel_nome:s.guardian_name||'',responsavel_data_nascimento:s.guardian_birth_date||'',responsavel_cpf:s.guardian_cpf||'',responsavel_telefone:s.guardian_phone||'',responsavel_email:s.guardian_email||'',responsavel_cep:s.guardian_cep||'',responsavel_endereco:s.guardian_address||''};}
- function readyCSVRow(s){return {aluno_id:s.id,nome_completo:s.full_name,professor:db.teachers.find(t=>t.id===s.calendar_teacher_id)?.name||'',pacote:'',horarios:'',data_inicio:today(),curso:'Inglês',valor_total:'',parcelas:'1',primeiro_vencimento:today(),forma_pagamento:'PIX',modelo:''};}
+ function readyCSVRow(s){return {aluno_id:s.id,nome_completo:s.full_name,professor:db.teachers.find(t=>t.id===s.calendar_teacher_id)?.name||'',pacote:'',horarios:'',data_inicio:today(),data_termino:'',curso:'Inglês',valor_total:'',parcelas:'1',primeiro_vencimento:today(),forma_pagamento:'PIX',modelo:'preexistente'};}
  function slotCSVRows(){return (slotData().slots||[]).filter(s=>s.active&&s.slot_date===null).map(s=>({professor:db.teachers.find(t=>t.id===s.teacher_id)?.name||'—',professor_id:s.teacher_id,dia:weekdayAbbr[s.weekday],hora:String(s.time).slice(0,5),duracao_minutos:s.duration,horario_id:s.id}));}
  function resolveByName(items,label,what){const id=String(label||'').trim(),normal=normalize(id);if(!id)throw Error(`${what} não informado`);const matches=items.filter(x=>x.id===id||normalize(x.name)===normal);if(!matches.length)throw Error(`${what} não encontrado: ${id}`);if(matches.length>1)throw Error(`${what} ambíguo: use o ID`);return matches[0];}
  function resolveSlots(teacher,raw){
@@ -282,7 +282,7 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   for(const value of items){
    let candidates=slots.filter(s=>s.id===value);
    if(!candidates.length){const m=normalize(value).match(/^(dom(?:ingo)?|seg(?:unda)?(?:-feira)?|ter(?:ca)?(?:-feira)?|qua(?:rta)?(?:-feira)?|qui(?:nta)?(?:-feira)?|sex(?:ta)?(?:-feira)?|sab(?:ado)?)\s*(?:as\s*)?(\d{1,2}):(\d{2})(?:\s*(\d+)\s*min)?$/);
-    if(!m)throw Error(`Horário "${value}" inválido. Use Seg 09:00 | Qua 14:00`);
+    if(!m)throw Error(`Horário "${value}" inválido. Use Seg 09:00 | Qui 14:00`);
     const day=weekdayNames.findIndex(x=>x.startsWith(m[1].slice(0,3))),time=`${m[2].padStart(2,'0')}:${m[3]}`;
     candidates=slots.filter(s=>Number(s.weekday)===day&&String(s.time).slice(0,5)===time&&(!m[4]||Number(s.duration)===Number(m[4])));
     if(!candidates.length)throw Error(`Horário ${value} não existe na grade de ${teacher.name}`);
@@ -304,17 +304,24 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
    row.teacher=t.name;
    const p=resolveByName(db.packages.filter(p=>p.active&&p.kind!=='dupla'),r.pacote,'Pacote');
    const slots=resolveSlots(t,r.horarios);if(slots.length!==Number(p.weekly_frequency))throw Error(`O pacote ${p.name} exige ${p.weekly_frequency} horário(s) por semana; foram selecionados ${slots.length}`);
-   const model=resolveByName(db.contract_types.filter(c=>c.active),r.modelo||p.contract_type_id,'Modelo de contrato');
-   const minor=!!s.is_minor;if(model.kind!==(minor?'menor':'individual'))throw Error('Modelo do contrato incompatível com a idade do aluno');
-   if(model.fields?.length)throw Error('Modelo com campos personalizados: conclua esta matrícula individualmente');
+   const isPreexisting=!r.modelo||['preexistente','sem contrato','sem_contrato','contrato preexistente','fisico','externo'].includes(normalize(r.modelo));
+   let model=null;
+   if(!isPreexisting){
+    model=resolveByName(db.contract_types.filter(c=>c.active),r.modelo||p.contract_type_id,'Modelo de contrato');
+    const minor=!!s.is_minor;if(model.kind!==(minor?'menor':'individual'))throw Error('Modelo do contrato incompatível com a idade do aluno');
+    if(model.fields?.length)throw Error('Modelo com campos personalizados: conclua esta matrícula individualmente');
+   }
    const start=isoDateFor(r.data_inicio);if(!/^\d{4}-\d\d-\d\d$/.test(start)||start<today()||Number.isNaN(new Date(start+'T12:00:00Z').valueOf()))throw Error('Data de início inválida ou passada');
+   const rawEnd=isoDateFor(r.data_termino||r.fim_contrato||'');
+   const isRecurrence=Boolean(rawEnd);
+   if(isRecurrence&&(!/^\d{4}-\d\d-\d\d$/.test(rawEnd)||rawEnd<start))throw Error('Data de término do contrato inválida ou anterior ao início');
    const amount=normalizeMoney(r.valor_total);if(r.valor_total&&amount===null)throw Error('Valor total inválido');
    const installments=Number(r.parcelas||1);if(!Number.isInteger(installments)||installments<1||installments>48)throw Error('Informe de 1 a 48 parcelas');
    const due=isoDateFor(r.primeiro_vencimento||start);if(!/^\d{4}-\d\d-\d\d$/.test(due))throw Error('Primeiro vencimento inválido');
    const roster=slotData().roster||[];
    const occupied=roster.find(a=>a.teacher_id===t.id&&slots.some(sl=>sl.id===a.slot_id)&&a.student_id!==s.id);
    if(occupied)throw Error('Horário ocupado por outro aluno na grade. Escolha outro horário');
-   row.payload={linha:r.line,aluno_id:s.id,professor_id:t.id,pacote_id:p.id,modelo_id:model.id,horarios_ids:slots.map(s=>s.id),data_inicio:start,curso:r.curso||'Inglês',valor_total:amount??p.default_total,valor_total_extenso:amountWords(amount??p.default_total),parcelas:installments,primeiro_vencimento:due,forma_pagamento:r.forma_pagamento||'A combinar'};
+   row.payload={linha:r.line,aluno_id:s.id,professor_id:t.id,pacote_id:p.id,modelo_id:model?.id||null,contrato_preexistente:isPreexisting,modo:isRecurrence?'recorrencia':'package',data_termino:isRecurrence?rawEnd:null,horarios_ids:slots.map(s=>s.id),data_inicio:start,curso:r.curso||'Inglês',valor_total:amount??p.default_total,valor_total_extenso:amountWords(amount??p.default_total),parcelas:installments,primeiro_vencimento:due,forma_pagamento:r.forma_pagamento||'A combinar'};
   }catch(error){row.error=error?.message||String(error);}
   return row;
  }
@@ -334,7 +341,8 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   const queue=result.filter(x=>!x.error);
   for(let i=0;i<queue.length;i+=4){await Promise.all(queue.slice(i,i+4).map(async x=>{
    try{const p=x.payload;const packageRow=db.packages.find(y=>y.id===p.pacote_id);
-    const {error}=await sb.rpc('calendar_preview',{p_school:ui.schoolId,p_teacher:p.professor_id,p_start:p.data_inicio,p_count:packageRow.lessons_count,p_slots:p.horarios_ids});if(error)throw error;
+    const previewCount=p.modo==='recorrencia'?null:packageRow.lessons_count;
+    const {error}=await sb.rpc('calendar_preview',{p_school:ui.schoolId,p_teacher:p.professor_id,p_start:p.data_inicio,p_count:previewCount,p_slots:p.horarios_ids,p_end_date:p.data_termino||null,p_mode:p.modo||'package'});if(error)throw error;
    }catch(e){x.error='Agenda indisponível: '+(e.message||String(e));}
   }));}
   state.enrollFile=rows;state.enrollPreview=result;
