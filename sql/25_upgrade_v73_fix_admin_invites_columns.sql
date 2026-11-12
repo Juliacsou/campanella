@@ -63,4 +63,13 @@ create policy "school_admin_invites_select"
   to authenticated
   using (public.is_school_admin(school_id) or public.is_platform_admin());
 
+-- 7. Garantir permissões de execução das funções de checagem para todos os papéis
+grant execute on function public.is_school_admin(uuid) to authenticated, anon, service_role;
+grant execute on function public.is_school_member(uuid) to authenticated, anon, service_role;
+grant execute on function public.is_school_super_admin(uuid) to authenticated, anon, service_role;
+grant execute on function public.is_admin() to authenticated, anon, service_role;
+grant execute on function public.is_staff() to authenticated, anon, service_role;
+grant execute on function public.has_active_school_license(uuid) to authenticated, anon, service_role;
+
 commit;
+
