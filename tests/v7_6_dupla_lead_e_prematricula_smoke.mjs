@@ -34,7 +34,12 @@ assert(appJs.includes('manualDuoSearchInput'), 'app.js deve ter campo de busca d
 assert(appJs.includes('duoStudentNewBox'), 'app.js deve ter formulário inline para cadastro do 2º aluno');
 assert(appJs.includes('student2_new_name'), 'app.js deve ter input student2_new_name');
 assert(appJs.includes('btnDuoModeSearch') && appJs.includes('btnDuoModeNew'), 'app.js deve ter alternador de modo busca/novo');
-console.log('✓ app.js possui formulários, busca e cadastro inline do 2º aluno.');
+assert(appJs.includes('adminPreEnrollmentModal'), 'app.js deve ter modal de pré-matrícula direta pelo admin');
+assert(appJs.includes('completeAdminPreEnrollment'), 'app.js deve ter função de conclusão de pré-matrícula pelo admin');
+assert(appJs.includes('fillPreEnrollment'), 'app.js deve ter ação fillPreEnrollment no menu e modal');
+assert(appJs.includes('preEnrollmentError'), 'app.js deve ter banner de erro inline no formulário público');
+assert(appJs.includes('<form id="preEnrollmentForm" novalidate>'), 'app.js deve usar novalidate para evitar bloqueio silencioso do Chrome');
+console.log('✓ app.js possui formulários, busca, cadastro inline, pré-matrícula interna e correções de envio.');
 
 // Verificação nas Edge Functions
 assert(entrevistaFn.includes('student2_name') && entrevistaFn.includes('kind'), 'Edge function entrevista deve persistir student2_name e kind');
@@ -58,7 +63,8 @@ if (token) {
         SELECT
           (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'leads' AND column_name IN ('student2_name', 'kind')) as lead_cols,
           (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'interviews' AND column_name IN ('student2_name', 'kind')) as interview_cols,
-          (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'contracts' AND column_name IN ('student2_id', 'signer_student_index')) as contract_cols;
+          (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'contracts' AND column_name IN ('student2_id', 'signer_student_index')) as contract_cols,
+          (SELECT COUNT(*) FROM pg_proc WHERE proname = 'admin_complete_pre_enrollment') as rpc_admin_pre_matricula;
       `
     })
   });
@@ -67,7 +73,8 @@ if (token) {
   assert.equal(Number(data[0].lead_cols), 2, 'Tabela leads deve possuir student2_name e kind');
   assert.equal(Number(data[0].interview_cols), 2, 'Tabela interviews deve possuir student2_name e kind');
   assert.equal(Number(data[0].contract_cols), 2, 'Tabela contracts deve possuir student2_id e signer_student_index');
-  console.log('✓ Colunas de dupla em leads, interviews e contracts confirmadas no banco.');
+  assert.equal(Number(data[0].rpc_admin_pre_matricula), 1, 'Função RPC admin_complete_pre_enrollment deve existir no Supabase');
+  console.log('✓ Colunas de dupla e função RPC admin_complete_pre_enrollment confirmadas no banco.');
 } else {
   console.log('\n2. Verificação ativa no banco pulada (SUPABASE_ACCESS_TOKEN não definido).');
 }

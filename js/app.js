@@ -2,7 +2,7 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
-import {createCRM} from './crm.js?v=7.6.3';
+import {createCRM} from './crm.js?v=7.6.4';
 import {createCalendar} from './calendar-v6.js?v=7.1.1';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
@@ -1179,7 +1179,7 @@ function contractActionsMenu(c){
   // Contratos externos permanecem gravados, mas as acoes da API ficam escondidas.
   // Os adapters continuam no repositorio para uma futura reativacao controlada.
  }else{
-  if(['draft','sent'].includes(c.status))opt('sendContract','Gerar link de pré-matrícula');
+  if(['draft','sent'].includes(c.status)){opt('fillPreEnrollment','Preencher pré-matrícula');opt('sendContract','Gerar link de pré-matrícula');}
   if(['pre_enrolled','ready_manual'].includes(c.status)||(c.status==='signed'&&c.audit?.method==='manual_registry'))opt('manualDownload','Baixar contrato sem assinaturas (PDF)');
   if(c.status==='ready_manual')opt('manualConfirm','Marcar como assinado manualmente');
   if(['draft','sent','pre_enrolled','ready_manual'].includes(c.status))opt('voidContract','Cancelar contrato','danger');
@@ -2309,7 +2309,240 @@ async function sendLink(id){if(externalSignatureFor(id))throw new Error('Este co
  await save('contracts',{token_hash,token_expires_at:exp,status:'sent',sent_at:new Date().toISOString()},id);
  const link=location.href.split('#')[0]+'#pre-matricula/'+token;
  const phone=contactWhatsAppNumber(c),publicLink=link.startsWith('https://');
- showModal(`<div class="eyebrow">Matr\u00edcula digital</div><h2>Link de pré-matrícula</h2><p class="modal-intro">O interessado preencherá apenas os dados pessoais. Nenhum contrato será exibido ou assinado nesta etapa. Após o envio, a escola gerará o documento para assinatura manual.</p><div class="link-field" id="generatedLink">${safe(link)}</div><p class="notice">V\u00e1lido por 7 dias. Criar outro link invalida o anterior.</p>${!publicLink?'<p class="form-note">Este link usa 127.0.0.1 e s\u00f3 abre neste computador. O envio pelo WhatsApp estar\u00e1 dispon\u00edvel depois da publica\u00e7\u00e3o em HTTPS.</p>':''}<div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button><button class="btn light" data-action="copyGenerated" data-id="${id}">Copiar link</button><button class="btn" data-action="shareWhatsApp" data-id="${id}" ${phone&&publicLink?'':'disabled title="Requer n\u00famero com DDD e link p\u00fablico HTTPS"'}>Enviar pelo WhatsApp</button></div>`);
+ showModal(`<div class="eyebrow">Matr\u00edcula digital</div><h2>Link de pré-matrícula</h2><p class="modal-intro">O interessado preencherá apenas os dados pessoais. Nenhum contrato será exibido ou assinado nesta etapa. Após o envio, a escola gerará o documento para assinatura manual.</p><div class="link-field" id="generatedLink">${safe(link)}</div><p class="notice">V\u00e1lido por 7 dias. Criar outro link invalida o anterior.</p>${!publicLink?'<p class="form-note">Este link usa 127.0.0.1 e s\u00f3 abre neste computador. O envio pelo WhatsApp estar\u00e1 dispon\u00edvel depois da publica\u00e7\u00e3o em HTTPS.</p>':''}<div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button><button class="btn light" data-action="copyGenerated" data-id="${id}">Copiar link</button><button class="btn" data-action="shareWhatsApp" data-id="${id}" ${phone&&publicLink?'':'disabled title="Requer n\u00famero com DDD e link p\u00fablico HTTPS"'}>Enviar pelo WhatsApp</button><button class="btn" style="background:var(--camp-primary,#ea580c);color:#fff;" type="button" data-action="fillPreEnrollment" data-id="${id}">Preencher pré-matrícula agora →</button></div>`);
+}
+
+function adminPreEnrollmentModal(contractId){
+ const c=lookup('contracts',contractId);
+ if(!c)throw new Error('Contrato não encontrado.');
+ const lead=lookup('leads',c.lead_id)||{};
+ const i=db.interviews.find(v=>v.id===c.interview_id)||{};
+ const p=lookup('packages',i.package_id||c.terms?.package_id);
+ const t=c.terms||{};
+ const isDuo=c.kind==='dupla';
+ const minor=c.kind==='menor';
+ const s1=c.student_snapshot?.student1||c.student_snapshot||{};
+ const s2=c.student_snapshot?.student2||{};
+ const readSingle=(k,fb='')=>s1[k]??fb;
+ const readDuo2=(k,fb='')=>s2[k]??fb;
+
+ const titleName=isDuo?`${safe(lead.name||'Aluno 1')} & ${safe(i.student2_name||lead.student2_name||'Aluno 2')}`:safe(lead.name||'Aluno');
+ 
+ let formBody='';
+ if(isDuo){
+  formBody=`
+   <div class="sign-step" style="margin-top:16px;">Dados do Aluno 1</div>
+   <div class="form-grid">
+    ${input('Nome completo do 1º aluno','s1_full_name',readSingle('full_name',lead.name))}
+    ${input('CPF do 1º aluno','s1_cpf',readSingle('cpf'),'text',false)}
+    ${input('E-mail do 1º aluno','s1_email',readSingle('email'),'email',false)}
+    ${input('Data de nascimento do 1º aluno','s1_birth_date',readSingle('birth_date'),'date',false)}
+    ${input('Telefone do 1º aluno','s1_phone',readSingle('phone',lead.phone),'tel',false)}
+    ${input('CEP do 1º aluno','s1_cep',readSingle('cep'),'text',false)}
+    <div class="wide">${input('Endereço completo do 1º aluno','s1_address',readSingle('address'),'text',false)}</div>
+   </div>
+   <div class="sign-step" style="margin-top:16px;">Dados do Aluno 2</div>
+   <div class="form-grid">
+    ${input('Nome completo do 2º aluno','s2_full_name',readDuo2('full_name',i.student2_name||lead.student2_name))}
+    ${input('CPF do 2º aluno','s2_cpf',readDuo2('cpf'),'text',false)}
+    ${input('E-mail do 2º aluno','s2_email',readDuo2('email'),'email',false)}
+    ${input('Data de nascimento do 2º aluno','s2_birth_date',readDuo2('birth_date'),'date',false)}
+    ${input('Telefone do 2º aluno','s2_phone',readDuo2('phone'),'tel',false)}
+    ${input('CEP do 2º aluno','s2_cep',readDuo2('cep'),'text',false)}
+    <div class="wide">${input('Endereço completo do 2º aluno','s2_address',readDuo2('address'),'text',false)}</div>
+   </div>
+   <h3 class="form-section" style="margin-top:18px;">Contratante e Assinatura</h3>
+   <p class="muted">Defina quem assina o contrato com a escola:</p>
+   <label class="field wide"><span>Quem assina o contrato</span>
+    <select name="signer_student_index" id="adminPreSignerSelect">
+     <option value="1">Aluno 1 assina como contratante</option>
+     <option value="2">Aluno 2 assina como contratante</option>
+     <option value="guardian">Responsável legal externo</option>
+    </select>
+   </label>
+   <div id="adminPreGuardianSection" style="display:none;margin-top:14px;">
+    <h3 class="form-section">Responsável Legal</h3>
+    <div class="form-grid">
+     ${input('Nome do responsável legal','guardian_name',readSingle('guardian_name',lead.guardian_name),'text',false)}
+     ${input('Nascimento do responsável','guardian_birth_date',readSingle('guardian_birth_date'),'date',false)}
+     ${input('CPF do responsável','guardian_cpf',readSingle('guardian_cpf'),'text',false)}
+     ${input('Telefone do responsável','guardian_phone',readSingle('guardian_phone'),'tel',false)}
+     ${input('E-mail do responsável','guardian_email',readSingle('guardian_email'),'email',false)}
+     ${input('CEP do responsável','guardian_cep',readSingle('guardian_cep'),'text',false)}
+     <div class="wide">${input('Endereço do responsável','guardian_address',readSingle('guardian_address'),'text',false)}</div>
+    </div>
+   </div>
+  `;
+ } else {
+  formBody=`
+   <div class="sign-step" style="margin-top:16px;">Dados do Aluno</div>
+   <div class="form-grid">
+    ${input('Nome completo do aluno','full_name',readSingle('full_name',lead.name))}
+    ${input('CPF do aluno','cpf',readSingle('cpf'),'text',false)}
+    ${input('E-mail do aluno','email',readSingle('email'),'email',false)}
+    ${input('Data de nascimento','birth_date',readSingle('birth_date'),'date',false)}
+    ${input('Telefone','phone',readSingle('phone',lead.phone),'tel',false)}
+    ${input('CEP','cep',readSingle('cep'),'text',false)}
+    <div class="wide">${input('Endereço completo','address',readSingle('address'),'text',false)}</div>
+   </div>
+   ${minor?`
+   <h3 class="form-section" style="margin-top:18px;">Responsável legal</h3>
+   <div class="form-grid">
+    ${input('Nome do responsável','guardian_name',readSingle('guardian_name',lead.guardian_name),'text',false)}
+    ${input('Nascimento do responsável','guardian_birth_date',readSingle('guardian_birth_date'),'date',false)}
+    ${input('CPF do responsável','guardian_cpf',readSingle('guardian_cpf'),'text',false)}
+    ${input('Telefone do responsável','guardian_phone',readSingle('guardian_phone'),'tel',false)}
+    ${input('E-mail do responsável','guardian_email',readSingle('guardian_email'),'email',false)}
+    ${input('CEP do responsável','guardian_cep',readSingle('guardian_cep'),'text',false)}
+    <div class="wide">${input('Endereço do responsável','guardian_address',readSingle('guardian_address'),'text',false)}</div>
+   </div>`:''}
+  `;
+ }
+
+ const customFields=(t.custom_field_schema||[]).length?`
+  <h3 class="form-section" style="margin-top:18px;">Informações adicionais</h3>
+  <div class="form-grid">
+   ${t.custom_field_schema.map(x=>input(safe(x.label),'extra_'+x.key,s1.custom_fields?.[x.key]||'','text',false)).join('')}
+  </div>
+ `:'' ;
+
+ showModal(`
+  <div class="eyebrow">Matrícula direta · Sem envio de link</div>
+  <h2>Pré-matrícula de ${titleName}</h2>
+  <p class="modal-intro">Preencha os dados do(s) aluno(s) diretamente no sistema. Os dados serão salvos e o contrato ficará pronto para elaboração e assinatura.</p>
+  
+  <div class="detail-grid" style="margin-top:14px;margin-bottom:18px;">
+   <div class="detail-item"><span>Pacote / Formato</span><strong>${safe(t.package_name||p?.name||'Personalizado')}</strong></div>
+   <div class="detail-item"><span>Aulas</span><strong>${safe(t.lessons_count)} · ${safe(t.weekly_frequency)}x/sem</strong></div>
+   <div class="detail-item"><span>Valor total</span><strong>${money(t.total_amount)}</strong></div>
+   <div class="detail-item"><span>Vigência</span><strong>${dateBR(t.start_date)} a ${dateBR(t.end_date)}</strong></div>
+   <div class="detail-item"><span>Pagamento</span><strong>${safe(t.installments)}x de ${money(t.installment_amount)}</strong></div>
+  </div>
+
+  <form id="adminPreEnrollmentForm" data-contract-id="${safe(c.id)}" novalidate>
+   ${formBody}
+   ${customFields}
+   <div id="adminPreEnrollmentError" class="notice error-notice" style="display:none;background:#fde8e8;color:#9b1c1c;border:1px solid #f87171;padding:12px 16px;border-radius:8px;margin-top:16px;font-weight:600;"></div>
+   <div class="form-footer" style="margin-top:20px;">
+    <button type="button" class="btn ghost" data-action="close">Cancelar</button>
+    <button class="btn" type="submit">Concluir pré-matrícula</button>
+   </div>
+  </form>
+ `);
+}
+
+async function completeAdminPreEnrollment(f){
+ const contractId=f.dataset.contractId;
+ const c=lookup('contracts',contractId);
+ if(!c)throw new Error('Contrato não encontrado.');
+ const errBox=$('#adminPreEnrollmentError');
+ if(errBox){errBox.style.display='none';errBox.textContent='';}
+ 
+ try{
+  const d=formData(f);
+  const isDuo=c.kind==='dupla';
+  const minor=c.kind==='menor';
+  let payload;
+  if(isDuo){
+   const s1Name=d.s1_full_name?.trim();
+   const s2Name=d.s2_full_name?.trim();
+   if(!s1Name)throw new Error('Informe o nome completo do 1º aluno.');
+   if(!s2Name)throw new Error('Informe o nome completo do 2º aluno.');
+   const s1Cpf=onlyDigits(d.s1_cpf)||null;
+   const s2Cpf=onlyDigits(d.s2_cpf)||null;
+   if(s1Cpf&&!cpfValid(s1Cpf))throw new Error('CPF do 1º aluno inválido.');
+   if(s2Cpf&&!cpfValid(s2Cpf))throw new Error('CPF do 2º aluno inválido.');
+
+   const isGuardian=d.signer_student_index==='guardian';
+   let signerIdx=isGuardian?1:Number(d.signer_student_index||1);
+   if(![1,2].includes(signerIdx))signerIdx=1;
+   if(isGuardian){
+    const gCpf=onlyDigits(d.guardian_cpf)||null;
+    if(gCpf&&!cpfValid(gCpf))throw new Error('CPF do responsável legal inválido.');
+   }
+   const s1={
+    full_name:s1Name,
+    cpf:s1Cpf,
+    email:d.s1_email?.trim()||null,
+    birth_date:d.s1_birth_date||null,
+    phone:onlyDigits(d.s1_phone)||null,
+    cep:onlyDigits(d.s1_cep)||null,
+    address:d.s1_address?.trim()||null,
+    custom_fields:formDataExtras(f)
+   };
+   const s2={
+    full_name:s2Name,
+    cpf:s2Cpf,
+    email:d.s2_email?.trim()||null,
+    birth_date:d.s2_birth_date||null,
+    phone:onlyDigits(d.s2_phone)||null,
+    cep:onlyDigits(d.s2_cep)||null,
+    address:d.s2_address?.trim()||null,
+    custom_fields:{}
+   };
+   payload={
+    student1:s1,
+    student2:s2,
+    signer_student_index:signerIdx,
+    guardian_name:isGuardian?(d.guardian_name?.trim()||null):null,
+    guardian_birth_date:isGuardian?(d.guardian_birth_date||null):null,
+    guardian_cpf:isGuardian?(onlyDigits(d.guardian_cpf)||null):null,
+    guardian_phone:isGuardian?(onlyDigits(d.guardian_phone)||null):null,
+    guardian_email:isGuardian?(d.guardian_email?.trim()||null):null,
+    guardian_address:isGuardian?(d.guardian_address?.trim()||null):null,
+    guardian_cep:isGuardian?(onlyDigits(d.guardian_cep)||null):null,
+    full_name:`${s1Name} & ${s2Name}`
+   };
+  } else {
+   const fullName=d.full_name?.trim();
+   if(!fullName)throw new Error('Informe o nome completo do aluno.');
+   const cpf=onlyDigits(d.cpf)||null;
+   if(cpf&&!cpfValid(cpf))throw new Error('CPF do aluno inválido.');
+   if(minor){
+    const gCpf=onlyDigits(d.guardian_cpf)||null;
+    if(gCpf&&!cpfValid(gCpf))throw new Error('CPF do responsável legal inválido.');
+   }
+   payload={
+    ...d,
+    full_name:fullName,
+    cpf,
+    email:d.email?.trim()||null,
+    birth_date:d.birth_date||null,
+    phone:onlyDigits(d.phone)||null,
+    cep:onlyDigits(d.cep)||null,
+    address:d.address?.trim()||null,
+    guardian_name:minor?(d.guardian_name?.trim()||null):null,
+    guardian_birth_date:minor?(d.guardian_birth_date||null):null,
+    guardian_cpf:minor?(onlyDigits(d.guardian_cpf)||null):null,
+    guardian_phone:minor?(onlyDigits(d.guardian_phone)||null):null,
+    guardian_email:minor?(d.guardian_email?.trim()||null):null,
+    guardian_address:minor?(d.guardian_address?.trim()||null):null,
+    guardian_cep:minor?(onlyDigits(d.guardian_cep)||null):null,
+    custom_fields:formDataExtras(f)
+   };
+  }
+
+  startBusy('Salvando pré-matrícula...');
+  const {error:rpcErr}=await sb.rpc('admin_complete_pre_enrollment',{p_contract_id:contractId,p_student:payload});
+  if(rpcErr){
+   console.warn('Fallback admin_complete_pre_enrollment:', rpcErr);
+   await save('contracts',{student_snapshot:payload,status:'pre_enrolled',token_hash:null,token_expires_at:null},contractId);
+   if(c.lead_id){
+    const leadUp={crm_stage:'pre_matricula_feita'};
+    if(isDuo){leadUp.name=payload.student1.full_name;leadUp.student2_name=payload.student2.full_name;leadUp.guardian_name=payload.guardian_name;}
+    else{leadUp.name=payload.full_name;leadUp.guardian_name=payload.guardian_name;}
+    await save('leads',leadUp,c.lead_id);
+   }
+  }
+
+  closeModal();
+  await refresh();
+  toast('Pré-matrícula concluída com sucesso!');
+ }catch(err){
+  const msg=err.message||String(err);
+  if(errBox){errBox.style.display='block';errBox.textContent=msg;errBox.scrollIntoView({behavior:'smooth',block:'center'});}
+  throw err;
+ }
 }
 
 function exportProof(id){if(externalSignatureFor(id)?.status==='completed')return externalDownload(id,'signed');const c=lookup('contracts',id);if(!c)throw new Error('Contrato não encontrado.');const signed=!!c.signed_document_html,student=c.student_snapshot||lookup('students',c.student_id)||{};
@@ -2449,6 +2682,7 @@ document.addEventListener('click',async e=>{
  if(action==='driveDisconnect'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração com Drive indisponível nesta versão.');if(!await window.campanellaConfirm('Desconectar o Drive desta escola? Os arquivos já enviados não serão apagados.'))return;await v5Request('google-drive-oauth',{action:'disconnect',schoolId:ui.schoolId});toast('Drive desconectado.');return refresh();}
  if(action==='manualDownload')return await downloadManualContract(id);
  if(action==='manualConfirm')return await confirmManualContract(id);
+ if(action==='fillPreEnrollment'){return adminPreEnrollmentModal(id);}
  if(action==='sendContract'){await sendLink(id);return;}
  if(action==='downloadDocx')return await downloadDocx(id);
  if(action==='proof')return exportProof(id);
@@ -2575,9 +2809,16 @@ document.addEventListener('change',async e=>{
   updateDuoEnrollmentView(e.target.form);
   return;
  }
- if(e.target.id==='preSignerSelect'){
-  const gSec=$('#preGuardianSection');
-  if(gSec)gSec.style.display=e.target.value==='guardian'?'':'none';
+ if(e.target.id==='preSignerSelect'||e.target.id==='adminPreSignerSelect'){
+  const form=e.target.form;
+  const isG=e.target.value==='guardian';
+  const gSec=form?.querySelector('#preGuardianSection, #adminPreGuardianSection');
+  if(gSec){
+   gSec.style.display=isG?'':'none';
+   gSec.querySelectorAll('input').forEach(inp=>{
+    inp.required=isG;
+   });
+  }
   return;
  }
  if(e.target.name==='has_custom_first_installment'){
@@ -3009,6 +3250,7 @@ document.addEventListener('submit',async event=>{
   for(const pkg of db.packages){const next=chosen.has(pkg.id)?saved.id:pkg.contract_type_id===saved.id?null:pkg.contract_type_id;if(next!==pkg.contract_type_id)await save('packages',{contract_type_id:next},pkg.id);}
   toast('Modelo e associações salvos.');
  }
+ else if(f.id==='adminPreEnrollmentForm'){await completeAdminPreEnrollment(f);return;}
  else if(f.id==='preEnrollmentForm'){await completePreEnrollment(f);return;}
  else return;
  closeModal();await refresh();
@@ -3138,64 +3380,82 @@ function renderPublic(){
   const s1=e.student1||e||{},s2=e.student2||{};
   $('.sign-main').innerHTML=`<div class="eyebrow">Pré-matrícula · Matrícula em Dupla (2 alunos)</div><h1>Vamos registrar os dados da dupla.</h1><p class="leadline">Este cadastro não é uma assinatura e não inclui contrato. Depois, a escola preparará o documento para assinatura presencial ou por outro meio combinado.</p>
   <section class="sign-panel"><div class="sign-step">Etapa 1 de 2</div><h2>Confira as informações do curso</h2><div class="detail-grid" style="margin-top:18px"><div class="detail-item"><span>Pacote</span><strong>${safe(t.package_name)}</strong></div><div class="detail-item"><span>Aulas</span><strong>${safe(t.lessons_count)} · ${safe(t.weekly_frequency)}x/semana</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(t.total_amount)}</strong></div><div class="detail-item"><span>Início previsto</span><strong>${dateBR(t.start_date)}</strong></div><div class="detail-item"><span>Término previsto</span><strong>${dateBR(t.end_date)}</strong></div><div class="detail-item"><span>Pagamento</span><strong>${safe(t.installments)}x de ${money(t.installment_amount)}</strong></div></div><div class="notice">Se algum dado estiver incorreto, avise à escola antes de enviar suas informações.</div></section>
-  <form id="preEnrollmentForm"><section class="sign-panel"><div class="sign-step">Etapa 2 de 2</div><h2>Dados do Aluno 1</h2><p class="muted">Informe os dados pessoais do primeiro aluno.</p>
-  <div class="form-grid">${input('Nome completo do 1º aluno','s1_full_name',read(s1,'full_name',d.lead?.name))}${input('CPF do 1º aluno','s1_cpf',read(s1,'cpf'))}${input('E-mail do 1º aluno','s1_email',read(s1,'email'),'email')}${input('Data de nascimento do 1º aluno','s1_birth_date',read(s1,'birth_date'),'date')}${input('Telefone do 1º aluno','s1_phone',read(s1,'phone'),'tel')}${input('CEP do 1º aluno','s1_cep',read(s1,'cep'))}<div class="wide">${input('Endereço completo do 1º aluno','s1_address',read(s1,'address'))}</div></div>
+  <form id="preEnrollmentForm" novalidate><section class="sign-panel"><div class="sign-step">Etapa 2 de 2</div><h2>Dados do Aluno 1</h2><p class="muted">Informe os dados pessoais do primeiro aluno.</p>
+  <div class="form-grid">${input('Nome completo do 1º aluno','s1_full_name',read(s1,'full_name',d.lead?.name))}${input('CPF do 1º aluno','s1_cpf',read(s1,'cpf'),'text',false)}${input('E-mail do 1º aluno','s1_email',read(s1,'email'),'email',false)}${input('Data de nascimento do 1º aluno','s1_birth_date',read(s1,'birth_date'),'date',false)}${input('Telefone do 1º aluno','s1_phone',read(s1,'phone'),'tel',false)}${input('CEP do 1º aluno','s1_cep',read(s1,'cep'),'text',false)}<div class="wide">${input('Endereço completo do 1º aluno','s1_address',read(s1,'address'),'text',false)}</div></div>
   <h3 class="form-section">Dados do Aluno 2</h3><p class="muted">Informe os dados pessoais do segundo aluno da dupla.</p>
-  <div class="form-grid">${input('Nome completo do 2º aluno','s2_full_name',read(s2,'full_name',d.lead?.student2_name||d.terms?.student2_name))}${input('CPF do 2º aluno','s2_cpf',read(s2,'cpf'))}${input('E-mail do 2º aluno','s2_email',read(s2,'email'),'email')}${input('Data de nascimento do 2º aluno','s2_birth_date',read(s2,'birth_date'),'date')}${input('Telefone do 2º aluno','s2_phone',read(s2,'phone'),'tel')}${input('CEP do 2º aluno','s2_cep',read(s2,'cep'))}<div class="wide">${input('Endereço completo do 2º aluno','s2_address',read(s2,'address'))}</div></div>
+  <div class="form-grid">${input('Nome completo do 2º aluno','s2_full_name',read(s2,'full_name',d.lead?.student2_name||d.terms?.student2_name))}${input('CPF do 2º aluno','s2_cpf',read(s2,'cpf'),'text',false)}${input('E-mail do 2º aluno','s2_email',read(s2,'email'),'email',false)}${input('Data de nascimento do 2º aluno','s2_birth_date',read(s2,'birth_date'),'date',false)}${input('Telefone do 2º aluno','s2_phone',read(s2,'phone'),'tel',false)}${input('CEP do 2º aluno','s2_cep',read(s2,'cep'),'text',false)}<div class="wide">${input('Endereço completo do 2º aluno','s2_address',read(s2,'address'),'text',false)}</div></div>
   <h3 class="form-section">Contratante e Assinatura</h3><p class="muted">Defina quem assina o contrato com a escola:</p>
   <label class="field wide"><span>Quem assina o contrato</span><select name="signer_student_index" id="preSignerSelect"><option value="1">Aluno 1 assina como contratante</option><option value="2">Aluno 2 assina como contratante</option><option value="guardian">Responsável legal externo (obrigatório se ambos forem menores de idade)</option></select></label>
-  <div id="preGuardianSection" style="display:none"><h3 class="form-section">Responsável Legal</h3><p class="muted">Preencha os dados do responsável legal caso ambos os alunos sejam menores de idade.</p><div class="form-grid">${input('Nome do responsável legal','guardian_name',read(s1,'guardian_name',d.lead?.guardian_name))}${input('Nascimento do responsável','guardian_birth_date',read(s1,'guardian_birth_date'),'date')}${input('CPF do responsável','guardian_cpf',read(s1,'guardian_cpf'))}${input('Telefone do responsável','guardian_phone',read(s1,'guardian_phone'),'tel')}${input('E-mail do responsável','guardian_email',read(s1,'guardian_email'),'email')}${input('CEP do responsável','guardian_cep',read(s1,'guardian_cep'))}<div class="wide">${input('Endereço do responsável','guardian_address',read(s1,'guardian_address'))}</div></div></div>
-  ${(t.custom_field_schema||[]).length?`<h3 class="form-section">Informações adicionais</h3><div class="form-grid">${t.custom_field_schema.map(x=>input(safe(x.label),'extra_'+x.key,s1.custom_fields?.[x.key]||'')).join('')}</div>`:''}
+  <div id="preGuardianSection" style="display:none"><h3 class="form-section">Responsável Legal</h3><p class="muted">Preencha os dados do responsável legal caso ambos os alunos sejam menores de idade.</p><div class="form-grid">${input('Nome do responsável legal','guardian_name',read(s1,'guardian_name',d.lead?.guardian_name),'text',false)}${input('Nascimento do responsável','guardian_birth_date',read(s1,'guardian_birth_date'),'date',false)}${input('CPF do responsável','guardian_cpf',read(s1,'guardian_cpf'),'text',false)}${input('Telefone do responsável','guardian_phone',read(s1,'guardian_phone'),'tel',false)}${input('E-mail do responsável','guardian_email',read(s1,'guardian_email'),'email',false)}${input('CEP do responsável','guardian_cep',read(s1,'guardian_cep'),'text',false)}<div class="wide">${input('Endereço do responsável','guardian_address',read(s1,'guardian_address'),'text',false)}</div></div></div>
+  ${(t.custom_field_schema||[]).length?`<h3 class="form-section">Informações adicionais</h3><div class="form-grid">${t.custom_field_schema.map(x=>input(safe(x.label),'extra_'+x.key,s1.custom_fields?.[x.key]||'','text',false)).join('')}</div>`:''}
+  <div id="preEnrollmentError" class="notice error-notice" style="display:none;background:#fde8e8;color:#9b1c1c;border:1px solid #f87171;padding:12px 16px;border-radius:8px;margin-top:14px;font-weight:600;"></div>
   <p class="form-note">Seus dados serão enviados à administração da escola para elaboração do contrato. Nenhuma assinatura é realizada aqui.</p><button class="btn sign-button" type="submit">Concluir pré-matrícula →</button></section></form>`;
   return;
  }
  const readSingle=(key,fallback='')=>e[key]??fallback;
  $('.sign-main').innerHTML=`<div class="eyebrow">Pré-matrícula · ${minor?'Aluno menor de idade':'Aluno maior de idade'}</div><h1>Vamos registrar seus dados.</h1><p class="leadline">Este cadastro não é uma assinatura e não inclui contrato. Depois, a escola preparará o documento para assinatura presencial ou por outro meio combinado.</p>
  <section class="sign-panel"><div class="sign-step">Etapa 1 de 2</div><h2>Confira as informações do curso</h2><div class="detail-grid" style="margin-top:18px"><div class="detail-item"><span>Pacote</span><strong>${safe(t.package_name)}</strong></div><div class="detail-item"><span>Aulas</span><strong>${safe(t.lessons_count)} · ${safe(t.weekly_frequency)}x/semana</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(t.total_amount)}</strong></div><div class="detail-item"><span>Início previsto</span><strong>${dateBR(t.start_date)}</strong></div><div class="detail-item"><span>Término previsto</span><strong>${dateBR(t.end_date)}</strong></div><div class="detail-item"><span>Pagamento</span><strong>${safe(t.installments)}x de ${money(t.installment_amount)}</strong></div></div><div class="notice">Se algum dado estiver incorreto, avise à escola antes de enviar suas informações.</div></section>
- <form id="preEnrollmentForm"><section class="sign-panel"><div class="sign-step">Etapa 2 de 2</div><h2>Seus dados pessoais</h2><p class="muted">Informe os dados necessários para que a escola prepare o documento.</p><div class="form-grid">${input('Nome completo do aluno','full_name',readSingle('full_name',d.lead.name))}${input('CPF do aluno','cpf',readSingle('cpf'))}${input('E-mail do aluno','email',readSingle('email'),'email')}${input('Data de nascimento','birth_date',readSingle('birth_date'),'date')}${minor?'':`${input('Telefone','phone',readSingle('phone'),'tel')}${input('CEP','cep',readSingle('cep'))}<div class="wide">${input('Endereço completo','address',readSingle('address'))}</div>`}</div>
- ${minor?`<h3 class="form-section">Responsável legal</h3><p class="muted">Os dados do responsável são necessários porque o aluno é menor de idade.</p><div class="form-grid">${input('Nome completo do responsável','guardian_name',readSingle('guardian_name',d.lead.guardian_name))}${input('Nascimento do responsável','guardian_birth_date',readSingle('guardian_birth_date'),'date')}${input('CPF do responsável','guardian_cpf',readSingle('guardian_cpf'))}${input('Telefone do responsável','guardian_phone',readSingle('guardian_phone'),'tel')}${input('E-mail do responsável','guardian_email',readSingle('guardian_email'),'email')}${input('CEP do responsável','guardian_cep',readSingle('guardian_cep'))}<div class="wide">${input('Endereço completo do responsável','guardian_address',readSingle('guardian_address'))}</div></div>`:''}
- ${(t.custom_field_schema||[]).length?`<h3 class="form-section">Informações adicionais</h3><div class="form-grid">${t.custom_field_schema.map(x=>input(safe(x.label),'extra_'+x.key,e.custom_fields?.[x.key]||'')).join('')}</div>`:''}
+ <form id="preEnrollmentForm" novalidate><section class="sign-panel"><div class="sign-step">Etapa 2 de 2</div><h2>Seus dados pessoais</h2><p class="muted">Informe os dados necessários para que a escola prepare o documento.</p><div class="form-grid">${input('Nome completo do aluno','full_name',readSingle('full_name',d.lead.name))}${input('CPF do aluno','cpf',readSingle('cpf'),'text',false)}${input('E-mail do aluno','email',readSingle('email'),'email',false)}${input('Data de nascimento','birth_date',readSingle('birth_date'),'date',false)}${minor?'':`${input('Telefone','phone',readSingle('phone'),'tel',false)}${input('CEP','cep',readSingle('cep'),'text',false)}<div class="wide">${input('Endereço completo','address',readSingle('address'),'text',false)}</div>`}</div>
+ ${minor?`<h3 class="form-section">Responsável legal</h3><p class="muted">Os dados do responsável são necessários porque o aluno é menor de idade.</p><div class="form-grid">${input('Nome completo do responsável','guardian_name',readSingle('guardian_name',d.lead.guardian_name))}${input('Nascimento do responsável','guardian_birth_date',readSingle('guardian_birth_date'),'date',false)}${input('CPF do responsável','guardian_cpf',readSingle('guardian_cpf'),'text',false)}${input('Telefone do responsável','guardian_phone',readSingle('guardian_phone'),'tel',false)}${input('E-mail do responsável','guardian_email',readSingle('guardian_email'),'email',false)}${input('CEP do responsável','guardian_cep',readSingle('guardian_cep'),'text',false)}<div class="wide">${input('Endereço completo do responsável','guardian_address',readSingle('guardian_address'),'text',false)}</div></div>`:''}
+ ${(t.custom_field_schema||[]).length?`<h3 class="form-section">Informações adicionais</h3><div class="form-grid">${t.custom_field_schema.map(x=>input(safe(x.label),'extra_'+x.key,e.custom_fields?.[x.key]||'','text',false)).join('')}</div>`:''}
+ <div id="preEnrollmentError" class="notice error-notice" style="display:none;background:#fde8e8;color:#9b1c1c;border:1px solid #f87171;padding:12px 16px;border-radius:8px;margin-top:14px;font-weight:600;"></div>
  <p class="form-note">Seus dados serão enviados à administração da escola para elaboração do contrato. Nenhuma assinatura é realizada aqui.</p><button class="btn sign-button" type="submit">Concluir pré-matrícula →</button></section></form>`;
 }
 async function completePreEnrollment(f){
- const d=formData(f);
- if(publicData.kind==='dupla'){
-  if(!cpfValid(d.s1_cpf))throw new Error('CPF do Aluno 1 inválido.');
-  if(!cpfValid(d.s2_cpf))throw new Error('CPF do Aluno 2 inválido.');
-  const s1={full_name:d.s1_full_name,cpf:d.s1_cpf,email:d.s1_email,birth_date:d.s1_birth_date,phone:d.s1_phone,cep:d.s1_cep,address:d.s1_address,custom_fields:formDataExtras(f)};
-  const s2={full_name:d.s2_full_name,cpf:d.s2_cpf,email:d.s2_email,birth_date:d.s2_birth_date,phone:d.s2_phone,cep:d.s2_cep,address:d.s2_address,custom_fields:{}};
-  const isGuardian=d.signer_student_index==='guardian';
-  let signerIdx=isGuardian?1:Number(d.signer_student_index||1);
-  if(isGuardian){
-   if(!cpfValid(d.guardian_cpf))throw new Error('CPF do responsável legal inválido.');
+ const errBox=$('#preEnrollmentError');
+ if(errBox){errBox.style.display='none';errBox.textContent='';}
+ try{
+  const d=formData(f);
+  if(publicData.kind==='dupla'){
+   if(!d.s1_full_name?.trim())throw new Error('Informe o nome do 1º aluno.');
+   if(!d.s2_full_name?.trim())throw new Error('Informe o nome do 2º aluno.');
+   if(!cpfValid(d.s1_cpf))throw new Error('CPF do Aluno 1 inválido.');
+   if(!cpfValid(d.s2_cpf))throw new Error('CPF do Aluno 2 inválido.');
+   const s1={full_name:d.s1_full_name.trim(),cpf:onlyDigits(d.s1_cpf),email:d.s1_email?.trim()||'',birth_date:d.s1_birth_date,phone:onlyDigits(d.s1_phone),cep:onlyDigits(d.s1_cep),address:d.s1_address?.trim()||'',custom_fields:formDataExtras(f)};
+   const s2={full_name:d.s2_full_name.trim(),cpf:onlyDigits(d.s2_cpf),email:d.s2_email?.trim()||'',birth_date:d.s2_birth_date,phone:onlyDigits(d.s2_phone),cep:onlyDigits(d.s2_cep),address:d.s2_address?.trim()||'',custom_fields:{}};
+   const isGuardian=d.signer_student_index==='guardian';
+   let signerIdx=isGuardian?1:Number(d.signer_student_index||1);
+   if(![1,2].includes(signerIdx))signerIdx=1;
+   if(isGuardian){
+    if(!d.guardian_name?.trim())throw new Error('Informe o nome do responsável legal.');
+    if(!cpfValid(d.guardian_cpf))throw new Error('CPF do responsável legal inválido.');
+   }
+   startBusy('Enviando pré-matrícula...');
+   const payload={
+    student1:s1,
+    student2:s2,
+    signer_student_index:signerIdx,
+    guardian_name:isGuardian?(d.guardian_name?.trim()||null):null,
+    guardian_birth_date:isGuardian?d.guardian_birth_date:null,
+    guardian_cpf:isGuardian?onlyDigits(d.guardian_cpf):null,
+    guardian_phone:isGuardian?onlyDigits(d.guardian_phone):null,
+    guardian_email:isGuardian?d.guardian_email?.trim():null,
+    guardian_address:isGuardian?d.guardian_address?.trim():null,
+    guardian_cep:isGuardian?onlyDigits(d.guardian_cep):null
+   };
+   const result=await publicAPI({action:'submit',student:payload});
+   if(!result.pre_enrolled)throw new Error('Não foi possível confirmar o cadastro.');
+   history.replaceState({},'',location.pathname+'#pre-matricula-concluida');
+   $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div>${themeToggleMarkup()}</header><main class="sign-main"><section class="sign-panel"><div class="eyebrow">Cadastro recebido</div><h1>Pré-matrícula concluída!</h1><p class="leadline">Os dados da dupla foram enviados à escola. A administração preparará o contrato e combinará com vocês a assinatura por outro meio.</p><div class="notice">Nenhum contrato foi assinado nesta etapa. Aguarde as orientações da escola.</div></section></main></div>`;
+   return;
   }
-  startBusy('Enviando pré-matrícula...');
-  const payload={
-   student1:s1,
-   student2:s2,
-   signer_student_index:signerIdx,
-   guardian_name:isGuardian?d.guardian_name:null,
-   guardian_birth_date:isGuardian?d.guardian_birth_date:null,
-   guardian_cpf:isGuardian?d.guardian_cpf:null,
-   guardian_phone:isGuardian?d.guardian_phone:null,
-   guardian_email:isGuardian?d.guardian_email:null,
-   guardian_address:isGuardian?d.guardian_address:null,
-   guardian_cep:isGuardian?d.guardian_cep:null
-  };
-  const result=await publicAPI({action:'submit',student:payload});
+  if(!d.full_name?.trim())throw new Error('Informe o nome completo do aluno.');
+  if(!cpfValid(d.cpf))throw new Error('CPF do aluno inválido.');
+  if(publicData.kind==='menor'){
+   if(!d.guardian_name?.trim())throw new Error('Informe o nome do responsável legal.');
+   if(!cpfValid(d.guardian_cpf))throw new Error('CPF do responsável inválido.');
+  }
+  startBusy('Enviando sua pré-matrícula...');
+  const student={...d,custom_fields:formDataExtras(f)};
+  const result=await publicAPI({action:'submit',student});
   if(!result.pre_enrolled)throw new Error('Não foi possível confirmar o cadastro.');
   history.replaceState({},'',location.pathname+'#pre-matricula-concluida');
-  $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div>${themeToggleMarkup()}</header><main class="sign-main"><section class="sign-panel"><div class="eyebrow">Cadastro recebido</div><h1>Pré-matrícula concluída!</h1><p class="leadline">Os dados da dupla foram enviados à escola. A administração preparará o contrato e combinará com vocês a assinatura por outro meio.</p><div class="notice">Nenhum contrato foi assinado nesta etapa. Aguarde as orientações da escola.</div></section></main></div>`;
-  return;
+  $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div>${themeToggleMarkup()}</header><main class="sign-main"><section class="sign-panel"><div class="eyebrow">Cadastro recebido</div><h1>Pré-matrícula concluída!</h1><p class="leadline">Seus dados foram enviados à escola. A administração preparará o contrato e combinará com você a assinatura por outro meio.</p><div class="notice">Nenhum contrato foi assinado nesta etapa. Aguarde as orientações da escola.</div></section></main></div>`;
+ }catch(err){
+  const msg=err.message||String(err);
+  if(errBox){errBox.style.display='block';errBox.textContent=msg;errBox.scrollIntoView({behavior:'smooth',block:'center'});}
+  throw err;
  }
- if(!cpfValid(d.cpf))throw new Error('CPF do aluno inválido.');
- if(publicData.kind==='menor'&&!cpfValid(d.guardian_cpf))throw new Error('CPF do responsável inválido.');
- startBusy('Enviando sua pré-matrícula...');
- const student={...d,custom_fields:formDataExtras(f)};
- const result=await publicAPI({action:'submit',student});
- if(!result.pre_enrolled)throw new Error('Não foi possível confirmar o cadastro.');
- history.replaceState({},'',location.pathname+'#pre-matricula-concluida');
- $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div>${themeToggleMarkup()}</header><main class="sign-main"><section class="sign-panel"><div class="eyebrow">Cadastro recebido</div><h1>Pré-matrícula concluída!</h1><p class="leadline">Seus dados foram enviados à escola. A administração preparará o contrato e combinará com você a assinatura por outro meio.</p><div class="notice">Nenhum contrato foi assinado nesta etapa. Aguarde as orientações da escola.</div></section></main></div>`;
 }
 window.addEventListener('hashchange',()=>{if(location.hash.includes('access_token=')||location.hash.includes('error='))return;if(location.hash.startsWith('#assinar/')||location.hash.startsWith('#pre-matricula/')||location.hash.startsWith('#entrevista/')||location.hash.startsWith('#professor/')||location.hash.startsWith('#admin/'))location.reload()});
 sb.auth.onAuthStateChange((event)=>{
