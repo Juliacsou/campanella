@@ -308,8 +308,10 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   const lastAppt=appts(l.id)[0];
   const fiche=hasFiche(l);
   const tags=leadTags(l);
+  const isDuo=l.kind==='dupla'||!!l.student2_name;
+  const displayName=isDuo?`${l.name} & ${l.student2_name||'2º Aluno'}`:l.name;
   return `<article class="crm-lead-card" draggable="true" data-action="crmDetail" data-id="${l.id}" role="button" tabindex="0">
-   <div class="crm-lead-top"><strong>${safe(l.name)}</strong>${fiche?pill('Ficha inicial','green'):''}</div>
+   <div class="crm-lead-top"><strong>${safe(displayName)}</strong>${isDuo?pill('Dupla','signed'):''}${fiche?pill('Ficha inicial','green'):''}</div>
    ${tags.length?`<div class="crm-card-tags">${tags.map(renderTagBadge).join('')}</div>`:''}
    ${l.crm_service?`<div class="crm-muted">${safe(l.crm_service)}</div>`:''}
    ${l.crm_last_contact_on?`<div class="crm-card-foot"><span class="crm-mini-date">Último contato: ${shortDate(l.crm_last_contact_on)}</span></div>`:''}
@@ -347,7 +349,9 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    const col=resolveColumnForLead(l);
    const tags=leadTags(l);
    const statusLabel=l.crm_outcome==='lost'?(l.crm_loss_reason||'Não convertido'):l.crm_outcome==='won'?'Fechado':(col?.name||'Sem coluna');
-   return `<tr><td><strong>${safe(l.name)}</strong><small>${safe(l.phone||'Sem telefone')}</small></td><td>${pill(statusLabel,'soft')}</td><td>${tags.length?`<div class="crm-card-tags">${tags.map(renderTagBadge).join('')}</div>`:'<span class="crm-muted">—</span>'}</td><td>${safe(l.crm_source||'—')}<small>${safe(l.crm_service||'')}</small></td><td>${interviewText(l)}</td><td>${ficheText(l)}</td><td>${btn('crmDetail',`${crmIcon('eye',14)} <span>ABRIR</span>`,l.id,'table-action-btn subtle')}</td></tr>`;
+   const isDuo=l.kind==='dupla'||!!l.student2_name;
+   const displayName=isDuo?`${l.name} & ${l.student2_name||'2º Aluno'}`:l.name;
+   return `<tr><td><strong>${safe(displayName)}</strong>${isDuo?' <span class="pill pill-signed" style="margin-left:4px">Dupla</span>':''}<small>${safe(l.phone||'Sem telefone')}</small></td><td>${pill(statusLabel,'soft')}</td><td>${tags.length?`<div class="crm-card-tags">${tags.map(renderTagBadge).join('')}</div>`:'<span class="crm-muted">—</span>'}</td><td>${safe(l.crm_source||'—')}<small>${safe(l.crm_service||'')}</small></td><td>${interviewText(l)}</td><td>${ficheText(l)}</td><td>${btn('crmDetail',`${crmIcon('eye',14)} <span>ABRIR</span>`,l.id,'table-action-btn subtle')}</td></tr>`;
   }).join('')||'<tr><td colspan="7" class="crm-no-data">Nenhum lead corresponde a estes filtros.</td></tr>'}</tbody></table></div>`;
  }
 
@@ -371,14 +375,17 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   const wa=formatWhats(l.phone);
   const cols=pipelineColumns(),currentCol=resolveColumnForLead(l);
   const tags=allTags(),assignedTagIds=new Set(Array.isArray(l.crm_tag_ids)?l.crm_tag_ids:[]);
+  const isDuo=l.kind==='dupla'||!!l.student2_name;
+  const displayName=isDuo?`${l.name} & ${l.student2_name||'2º Aluno'}`:l.name;
 
   showModal(`<div class="crm-detail">
    <div class="crm-detail-top">
     <div class="crm-detail-top-head">
      <div>
-      <div class="eyebrow">Ficha do Lead</div>
-      <h2>${safe(l.name)}</h2>
+      <div class="eyebrow">Ficha do Lead ${isDuo?'· Dupla':''}</div>
+      <h2>${safe(displayName)}</h2>
       <div class="crm-detail-meta">
+       ${isDuo?pill('Dupla (2 alunos)','signed'):''}
        ${currentCol?pill('Coluna: '+currentCol.name,'soft'):''}
        ${pill(l.crm_outcome==='won'?'Negócio fechado':l.crm_outcome==='lost'?'Não convertido':'Em andamento',l.crm_outcome==='open'?'green':'neutral')}
        ${ficheStarted?pill(fiche?'Ficha preenchida':'Ficha inicial criada','green'):''}
@@ -399,6 +406,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
      </div>
      <div class="crm-lead-data-grid">
       <div class="crm-data-item"><span>WhatsApp / Telefone</span><strong>${safe(l.phone||'Não informado')}</strong></div>
+      ${isDuo?`<div class="crm-data-item"><span>1º Interessado</span><strong>${safe(l.name)}</strong></div><div class="crm-data-item"><span>2º Interessado</span><strong>${safe(l.student2_name||'—')}</strong></div>`:''}
       <div class="crm-data-item"><span>Responsável</span><strong>${safe(l.guardian_name||'—')}</strong></div>
       <div class="crm-data-item"><span>Serviço de interesse</span><strong>${safe(l.crm_service||'—')}</strong></div>
       <div class="crm-data-item"><span>Origem / Indicação</span><strong>${safe(l.crm_source||'—')}</strong></div>
@@ -588,9 +596,20 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   const l=id?lookup('leads',id):{}, edit=!!id;
   const cols=pipelineColumns();
   const defaultCol=edit?(resolveColumnForLead(l)?.id||''):(cols.find(c=>c.auto_trigger==='lead_created')?.id||cols[0]?.id||'');
+  const isDuo=l?.kind==='dupla'||!!l?.student2_name;
   showModal(`<div class="crm-form-head"><div class="eyebrow">${edit?'Atualização de cadastro':'Novo contato'}</div><h2>${edit?'Editar lead':'Adicionar lead'}</h2><p class="muted">Dados do contato e origem. Ações e anotações ficam no histórico.</p></div><form id="crmLeadForm" data-id="${id||''}"><div class="form-grid">
-   ${fi('name','Nome completo',l?.name,'text',true)}${fi('phone','WhatsApp',l?.phone,'tel')}${fi('guardian_name','Responsável (opcional)',l?.guardian_name)}${fi('crm_source','Origem / indicação',l?.crm_source)}${fi('crm_service','Serviço de interesse',l?.crm_service||'Aulas de inglês')}${fi('crm_region','Estado / região',l?.crm_region)}${fi('crm_first_contact_on','Data do primeiro contato',l?.crm_first_contact_on||(!edit?todayISO():''),'date')}
+   <label class="field wide"><span>Modalidade de atendimento</span><select name="kind" id="crmLeadKind"><option value="individual" ${!isDuo?'selected':''}>Individual (1 aluno)</option><option value="dupla" ${isDuo?'selected':''}>Dupla (2 alunos / mesmo horário)</option></select></label>
+   <div id="crmLeadName1Box">${fi('name',isDuo?'Nome do 1º aluno':'Nome completo',l?.name,'text',true)}</div>
+   <div id="crmLeadName2Box" style="${isDuo?'':'display:none'}">${fi('student2_name','Nome do 2º aluno (dupla)',l?.student2_name,'text',false)}</div>
+   ${fi('phone','WhatsApp',l?.phone,'tel')}${fi('guardian_name','Responsável (se houver menor)',l?.guardian_name)}${fi('crm_source','Origem / indicação',l?.crm_source)}${fi('crm_service','Serviço de interesse',l?.crm_service||'Aulas de inglês')}${fi('crm_region','Estado / região',l?.crm_region)}${fi('crm_first_contact_on','Data do primeiro contato',l?.crm_first_contact_on||(!edit?todayISO():''),'date')}
    ${cols.length?sel('crm_column_id','Coluna na pipeline',cols.map(c=>[c.id,c.name]),defaultCol):''}</div>${formFooter(edit?'Salvar alterações':'Cadastrar lead')}</form>`);
+  $('#crmLeadKind')?.addEventListener('change',e=>{
+   const duo=e.target.value==='dupla';
+   const box2=$('#crmLeadName2Box');
+   if(box2)box2.style.display=duo?'':'none';
+   const lbl1=$('#crmLeadName1Box span');
+   if(lbl1)lbl1.textContent=duo?'Nome do 1º aluno *':'Nome completo *';
+  });
  }
 
  function noteForm(id,contact=false){
@@ -959,8 +978,21 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    }
    if(f.id==='crmLeadForm'){
     const d=formData(f);if(!d.name?.trim())throw new Error('Informe o nome');const id=f.dataset.id;
+    const isDuo=d.kind==='dupla';
+    if(isDuo&&!d.student2_name?.trim())throw new Error('Informe o nome do 2º aluno da dupla.');
     const initCol=d.crm_column_id||(columnForTrigger('lead_created')||pipelineColumns()[0])?.id||null;
-    const fields={name:d.name.trim(),phone:d.phone.trim()||null,guardian_name:d.guardian_name.trim()||null,crm_source:d.crm_source.trim()||null,crm_service:d.crm_service.trim()||'Aulas de inglês',crm_region:d.crm_region.trim()||null,crm_first_contact_on:d.crm_first_contact_on||null,...(initCol?{crm_column_id:initCol}:{})};
+    const fields={
+      name:d.name.trim(),
+      student2_name:isDuo?(d.student2_name?.trim()||null):null,
+      kind:isDuo?'dupla':'individual',
+      phone:d.phone.trim()||null,
+      guardian_name:d.guardian_name.trim()||null,
+      crm_source:d.crm_source.trim()||null,
+      crm_service:d.crm_service.trim()||'Aulas de inglês',
+      crm_region:d.crm_region.trim()||null,
+      crm_first_contact_on:d.crm_first_contact_on||null,
+      ...(initCol?{crm_column_id:initCol}:{})
+    };
     const old=id?lookup('leads',id):null,record=await save('leads',{...fields,...(!id?{status:'novo',crm_outcome:'open'}:{})},id||undefined);
     await log(record.id,'stage',id?'Dados do lead atualizados':'Lead cadastrado',!id?'Início do acompanhamento comercial':'');
     if(old&&initCol&&old.crm_column_id!==initCol){

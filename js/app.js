@@ -919,17 +919,33 @@ function dashboard(){
  return `${heading('','Visão geral','')}<div class="metric-grid">${metrics.map(([type,label,value,target])=>`<button type="button" class="metric metric-action" data-action="navigate" data-page="${target}"><span class="metric-icon">${ico(type,23)}</span><span class="metric-value">${value}</span><span class="metric-label">${label}</span><span class="metric-go">${ico('arrow',16)}</span></button>`).join('')}</div><section class="home-actions"><div class="home-actions-title"><h2>Acesso rápido</h2><p class="muted">Continue de onde parou</p></div><div class="home-shortcuts">${shortcuts.map(([type,title,subtitle])=>`<button class="home-shortcut" data-action="navigate" data-page="${type}"><span class="shortcut-ico">${ico(type,23)}</span><span><b>${title}</b><small>${subtitle}</small></span>${ico('arrow',16)}</button>`).join('')}</div></section>${bottomSection}`;
 }
 function leadsView(){
- const list=db.leads.filter(l=>l.status!=='convertido'&&(!ui.search||[l.name,l.phone,l.guardian_name].join(' ').toLowerCase().includes(ui.search))&&(ui.leadStatus==='all'||ui.leadStatus==='com_ficha'&&!!l.ficha_iniciada_at||ui.leadStatus==='sem_ficha'&&!l.ficha_iniciada_at||ui.leadStatus===l.status));
+ const list=db.leads.filter(l=>l.status!=='convertido'&&(!ui.search||[l.name,l.student2_name,l.phone,l.guardian_name].filter(Boolean).join(' ').toLowerCase().includes(ui.search))&&(ui.leadStatus==='all'||ui.leadStatus==='com_ficha'&&!!l.ficha_iniciada_at||ui.leadStatus==='sem_ficha'&&!l.ficha_iniciada_at||ui.leadStatus===l.status));
  const markup=list.map(l=>{
   const initialized=!!l.ficha_iniciada_at||db.interviews.some(i=>i.lead_id===l.id);
-  return row([`<b>${safe(l.name)}</b><div class="muted">${safe(l.guardian_name||'')}</div>`,safe(l.phone),initialized?'<span class="pill pill-signed">Ficha iniciada</span>':tag(l.status),`<div class="actions actions-right">${!initialized?`<button class="table-action-btn primary" data-action="startFiche" data-id="${l.id}">${ico('plus',14)} <span>CRIAR FICHA</span></button>`:`<button class="table-action-btn" data-action="navigateFiche" data-id="${l.id}">${ico('arrow',14)} <span>IR À FICHA</span></button>`}<details class="contract-actions-dropdown"><summary class="table-action-btn" aria-label="Ações do lead"><span>AÇÕES</span> ${ico('chevron',12)}</summary><div class="contract-actions-popover" role="menu"><button class="contract-menu-item" type="button" role="menuitem" data-action="editLead" data-id="${l.id}">${ico('edit',14)} Editar lead</button><button class="contract-menu-item danger" type="button" role="menuitem" data-action="removeLead" data-id="${l.id}">${ico('trash',14)} Excluir lead</button></div></details></div>`]);
+  const isDuo=l.kind==='dupla'||!!l.student2_name;
+  const leadTitle=isDuo?`<b>${safe(l.name)} & ${safe(l.student2_name||'2º Aluno')}</b> <span class="pill pill-signed" style="margin-left:4px">Dupla</span>`:`<b>${safe(l.name)}</b>`;
+  return row([`${leadTitle}<div class="muted">${safe(l.guardian_name||'')}</div>`,safe(l.phone),initialized?'<span class="pill pill-signed">Ficha iniciada</span>':tag(l.status),`<div class="actions actions-right">${!initialized?`<button class="table-action-btn primary" data-action="startFiche" data-id="${l.id}">${ico('plus',14)} <span>CRIAR FICHA</span></button>`:`<button class="table-action-btn" data-action="navigateFiche" data-id="${l.id}">${ico('arrow',14)} <span>IR À FICHA</span></button>`}<details class="contract-actions-dropdown"><summary class="table-action-btn" aria-label="Ações do lead"><span>AÇÕES</span> ${ico('chevron',12)}</summary><div class="contract-actions-popover" role="menu"><button class="contract-menu-item" type="button" role="menuitem" data-action="editLead" data-id="${l.id}">${ico('edit',14)} Editar lead</button><button class="contract-menu-item danger" type="button" role="menuitem" data-action="removeLead" data-id="${l.id}">${ico('trash',14)} Excluir lead</button></div></details></div>`]);
  });
  return `${heading('Relacionamento','Leads','O lead entra em Fichas iniciais somente quando você escolher Criar ficha.','<button class="btn" data-action="editLead">＋ Novo lead</button>')}
  <div class="toolbar"><input class="search" id="search" placeholder="Buscar nome ou telefone…" value="${safe(ui.search)}"><label class="small">Etapa <select id="leadFilter">${[['all','Todos'],['sem_ficha','Sem ficha'],['com_ficha','Ficha iniciada'],['novo','Novo'],['entrevistado','Entrevistado'],['perdido','Desistiu']].map(([k,v])=>`<option value="${k}" ${ui.leadStatus===k?'selected':''}>${v}</option>`).join('')}</select></label></div>
  ${card('Leads cadastrados',table(['Nome','Telefone','Etapa','Ações'],markup,'Nenhum lead neste filtro.'))}`;
 }
 
-function leadForm(id){const l=lookup('leads',id)||{};showModal(`<h2>${id?'Editar lead':'Novo lead'}</h2><p class="modal-intro">Dados mínimos para começar o atendimento.</p><form id="leadForm" data-id="${id||''}"><div class="form-grid">${input('Nome do interessado','name',l.name)}${input('Nome do responsável (se houver)','guardian_name',l.guardian_name,'text',false)}<div class="wide">${input('Telefone / WhatsApp','phone',l.phone,'tel')}</div></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar lead</button></div></form>`);}
+function leadForm(id){
+ const l=lookup('leads',id)||{};
+ const isDuo=l.kind==='dupla'||!!l.student2_name;
+ showModal(`<h2>${id?'Editar lead':'Novo lead'}</h2><p class="modal-intro">Dados mínimos para começar o atendimento.</p><form id="leadForm" data-id="${id||''}"><div class="form-grid">
+ <label class="field wide"><span>Modalidade</span><select name="kind" id="leadKindSelect"><option value="individual" ${!isDuo?'selected':''}>Individual (1 interessado)</option><option value="dupla" ${isDuo?'selected':''}>Dupla (2 interessados no mesmo horário)</option></select></label>
+ ${input('Nome do 1º interessado','name',l.name)}
+ <div id="leadStudent2Field" class="wide" style="${isDuo?'':'display:none'}">${input('Nome do 2º interessado','student2_name',l.student2_name||'', 'text', false)}</div>
+ ${input('Nome do responsável (se houver menor)','guardian_name',l.guardian_name,'text',false)}
+ <div class="wide">${input('Telefone / WhatsApp','phone',l.phone,'tel')}</div></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar lead</button></div></form>`);
+ $('#leadKindSelect')?.addEventListener('change',e=>{
+  const duo=e.target.value==='dupla';
+  const f2=$('#leadStudent2Field');
+  if(f2)f2.style.display=duo?'':'none';
+ });
+}
 function packagesView(){return `${heading('Serviços e contratos','Pacotes de aulas','Pacotes reutilizáveis ou matrículas personalizadas sem pacote.','<button class="btn" data-action="editPackage">＋ Novo pacote</button>')}${card('Pacotes cadastrados',table(['Pacote','Aulas','Frequência','Modelo vinculado','Valor','Ações'],db.packages.map(p=>row([`<b>${safe(p.name)}</b>`,`${p.lessons_count} aulas`,`${p.weekly_frequency}x/semana`,safe(lookup('contract_types',p.contract_type_id)?.name||'Escolher ao matricular'),money(p.default_total),`<div class="actions"><button class="table-action-btn edit" data-action="editPackage" data-id="${p.id}">${ico('edit',14)} <span>EDITAR</span></button><button class="table-action-btn danger" data-action="removePackage" data-id="${p.id}">${ico('trash',14)} <span>EXCLUIR</span></button></div>`])),'Nenhum pacote cadastrado.'))}<div class="notice">Para um plano especial, selecione <b>Personalizado · sem pacote</b> ao preencher a ficha inicial. Você poderá definir quantidades, valores e horários manualmente.</div>`;}
 function packageForm(id){const p=lookup('packages',id)||{};showModal(`<h2>${id?'Editar pacote':'Novo pacote'}</h2><form id="packageForm" data-id="${id||''}"><div class="form-grid"><div class="wide">${input('Nome do pacote','name',p.name||'')}</div><label class="field"><span>Modalidade</span><select name="kind"><option value="individual" ${p.kind==='individual'?'selected':''}>Individual</option><option value="dupla" ${p.kind==='dupla'?'selected':''}>Dupla</option></select></label>${input('Quantidade de aulas','lessons_count',p.lessons_count||24,'number')}${input('Aulas por semana','weekly_frequency',p.weekly_frequency||2,'number')}${input('Valor padrão (R$)','default_total',p.default_total??1200,'number')}<label class="field wide"><span>Modelo de contrato associado (opcional)</span><select name="contract_type_id"><option value="">Nenhum · escolha na matrícula</option>${options(db.contract_types.filter(t=>t.active&&(p.kind==='dupla'?t.kind==='dupla':t.kind!=='dupla')),p.contract_type_id)}</select></label><label class="field"><span>Situação</span><select name="active"><option value="true" ${p.active!==false?'selected':''}>Ativo</option><option value="false" ${p.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar pacote</button></div></form>`);}
 function ficheStage(l,i){return i?.pipeline_status||l.ficha_status||'open';}
@@ -943,7 +959,7 @@ function interviewsView(){
   if(ui.interviewTab==='current'&&(stage==='lost'||stage==='archived'))return false;
   if(ui.interviewStatus==='unfilled'&&i)return false;
   if(ui.interviewStatus==='ready'&&!i)return false;
-  return !ui.search||[l.name,l.phone,i?.course,lookup('teachers',i?.teacher_id)?.name].join(' ').toLowerCase().includes(ui.search);
+  return !ui.search||[l.name,l.student2_name,i?.student2_name,l.phone,i?.course,lookup('teachers',i?.teacher_id)?.name].filter(Boolean).join(' ').toLowerCase().includes(ui.search);
  });
  const titles={current:'Fichas em andamento',lost:'Leads que desistiram',archived:'Fichas arquivadas'};
  return `${heading('Entrevistas','Fichas iniciais','')}
@@ -953,14 +969,19 @@ function interviewsView(){
   const ct=db.contracts.filter(c=>c.interview_id===i?.id&&c.status!=='void').sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];
   const invite=db.interview_invites?.find(x=>x.lead_id===l.id&&!x.revoked_at&&!x.used_at&&new Date(x.expires_at)>new Date());
   const st=ficheStage(l,i);
-  return row([`<b>${safe(l.name)}</b><div class="muted">${safe(l.phone)}</div>`,safe(lookup('teachers',i?.teacher_id)?.name||lookup('teachers',invite?.teacher_id)?.name||'—')+(i?.interviewer_teacher_id&&i.interviewer_teacher_id!==i.teacher_id?`<div class="small muted">Entrevistador: ${safe(lookup('teachers',i.interviewer_teacher_id)?.name||'—')}</div>`:''),i?`${safe(i.course||'Inglês')}<div class="small muted">${safe(lookup('packages',i.package_id)?.name||'')}</div>`:'<span class="muted">—</span>',i?'<span class="pill pill-signed">Preenchida</span>':'<span class="pill pill-sent">A preencher</span>',ct?contractTag(ct):'<span class="pill">Não gerado</span>',`<details class="contract-actions-dropdown interview-actions-menu"><summary class="table-action-btn"><span>AÇÕES</span> ${ico('chevron',12)}</summary><div class="contract-actions-popover" role="menu">${st==='open'&&i&&!ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="newContract" data-id="${safe(l.id)}">Matricular</button>`:''}${st==='open'&&(!i||!ct)?`<button class="contract-menu-item" type="button" role="menuitem" data-action="inviteInterview" data-id="${safe(l.id)}">Link do entrevistador</button>`:''}<button class="contract-menu-item" type="button" role="menuitem" data-action="editInterview" data-id="${safe(l.id)}">${i?'Editar ficha':'Preencher ficha'}</button>${ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="openInterviewContract" data-id="${safe(ct.id)}">Abrir contrato</button>`:''}${st==='lost'||st==='archived'?`<button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="open">Retomar ficha</button>`:`<button class="contract-menu-item danger" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="lost">Registrar desistência</button><button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="archived">Arquivar ficha</button>`}</div></details>`]);
+  const isDuo=(i?.kind==='dupla'||(!i?.kind&&(l.kind==='dupla'||!!l.student2_name)));
+  const s2Name=i?.student2_name||l.student2_name;
+  const nameLabel=isDuo&&s2Name?`<b>${safe(l.name)} & ${safe(s2Name)}</b> <span class="pill pill-signed" style="font-size:10px;margin-left:4px">Dupla</span>`:`<b>${safe(l.name)}</b>`;
+  return row([`${nameLabel}<div class="muted">${safe(l.phone)}</div>`,safe(lookup('teachers',i?.teacher_id)?.name||lookup('teachers',invite?.teacher_id)?.name||'—')+(i?.interviewer_teacher_id&&i.interviewer_teacher_id!==i.teacher_id?`<div class="small muted">Entrevistador: ${safe(lookup('teachers',i.interviewer_teacher_id)?.name||'—')}</div>`:''),i?`${safe(i.course||'Inglês')}<div class="small muted">${safe(lookup('packages',i.package_id)?.name||'')}</div>`:'<span class="muted">—</span>',i?'<span class="pill pill-signed">Preenchida</span>':'<span class="pill pill-sent">A preencher</span>',ct?contractTag(ct):'<span class="pill">Não gerado</span>',`<details class="contract-actions-dropdown interview-actions-menu"><summary class="table-action-btn"><span>AÇÕES</span> ${ico('chevron',12)}</summary><div class="contract-actions-popover" role="menu">${st==='open'&&i&&!ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="newContract" data-id="${safe(l.id)}">Matricular</button>`:''}${st==='open'&&(!i||!ct)?`<button class="contract-menu-item" type="button" role="menuitem" data-action="inviteInterview" data-id="${safe(l.id)}">Link do entrevistador</button>`:''}<button class="contract-menu-item" type="button" role="menuitem" data-action="editInterview" data-id="${safe(l.id)}">${i?'Editar ficha':'Preencher ficha'}</button>${ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="openInterviewContract" data-id="${safe(ct.id)}">Abrir contrato</button>`:''}${st==='lost'||st==='archived'?`<button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="open">Retomar ficha</button>`:`<button class="contract-menu-item danger" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="lost">Registrar desistência</button><button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="archived">Arquivar ficha</button>`}</div></details>`]);
  }),'Nenhuma ficha nesta aba.'))}`;
 }
 
 function ficheCreatedPopup(leadId){
  const l=lookup('leads',leadId);if(!l)return;
+ const isDuo=l.kind==='dupla'||!!l.student2_name;
+ const displayName=isDuo&&l.student2_name?`${safe(l.name)} & ${safe(l.student2_name)}`:safe(l.name);
  const teachers=db.teachers.filter(t=>t.active!==false);const scheduledTeacher=(db.crm_appointments||[]).find(a=>a.lead_id===leadId&&a.state==='scheduled')?.teacher_id||'';
- showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">✓</div><div class="eyebrow">Etapa criada</div><h2>Ficha inicial preparada</h2><p class="modal-intro"><strong>${safe(l.name)}</strong> agora aparece em Fichas iniciais com o status <strong>A preencher</strong>. Você pode preencher ou enviar o link para o entrevistador.</p><div class="fiche-choice-grid"><div class="fiche-choice"><span class="fiche-choice-icon">▤</span><h3>Preencher agora</h3><p>Abra a ficha neste sistema e informe o curso e as condições da matrícula.</p><button type="button" class="btn" data-action="editInterview" data-id="${leadId}">Abrir ficha →</button></div><form id="quickInterviewInviteForm" class="fiche-choice" data-lead="${leadId}"><span class="fiche-choice-icon">↗</span><h3>Enviar ao entrevistador</h3><p>Escolha quem vai preencher. O link é individual e pode ser usado direto pelo professor.</p><label class="field"><span>Professor entrevistador</span><select name="teacher_id" required><option value="">Selecione o professor</option>${options(teachers,scheduledTeacher)}</select></label><button class="btn light" type="submit" ${teachers.length?'':'disabled'}>Gerar link →</button>${teachers.length?'':'<p class="small muted">Cadastre um professor antes de gerar o link.</p>'}</form></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Concluir depois</button></div></div>`);
+ showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">✓</div><div class="eyebrow">Etapa criada</div><h2>Ficha inicial preparada</h2><p class="modal-intro"><strong>${displayName}</strong> agora aparece em Fichas iniciais com o status <strong>A preencher</strong>. Você pode preencher ou enviar o link para o entrevistador.</p><div class="fiche-choice-grid"><div class="fiche-choice"><span class="fiche-choice-icon">▤</span><h3>Preencher agora</h3><p>Abra a ficha neste sistema e informe o curso e as condições da matrícula.</p><button type="button" class="btn" data-action="editInterview" data-id="${leadId}">Abrir ficha →</button></div><form id="quickInterviewInviteForm" class="fiche-choice" data-lead="${leadId}"><span class="fiche-choice-icon">↗</span><h3>Enviar ao entrevistador</h3><p>Escolha quem vai preencher. O link é individual e pode ser usado direto pelo professor.</p><label class="field"><span>Professor entrevistador</span><select name="teacher_id" required><option value="">Selecione o professor</option>${options(teachers,scheduledTeacher)}</select></label><button class="btn light" type="submit" ${teachers.length?'':'disabled'}>Gerar link →</button>${teachers.length?'':'<p class="small muted">Cadastre um professor antes de gerar o link.</p>'}</form></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Concluir depois</button></div></div>`);
 }
 function normalSchedule(schedule,weeklyDays=[],lessonTime='18:00'){
  const src=Array.isArray(schedule)&&schedule.length?schedule:(weeklyDays||[]).map(day=>({day:Number(day),time:String(lessonTime||'18:00').slice(0,5)}));
@@ -1052,11 +1073,23 @@ function interviewForm(leadId){
  const scheduledTeacher=(db.crm_appointments||[]).find(a=>a.lead_id===leadId&&a.state==='scheduled')?.teacher_id||'';
  const responsible=i.teacher_id||scheduledTeacher||'';
  const interviewer=i.interviewer_teacher_id||scheduledTeacher||i.teacher_id||'';
- showModal(`<h2>Ficha inicial</h2><p class="modal-intro"><b>${safe(l.name)}</b> · condições da matrícula.</p><form id="interviewForm" data-id="${i.id||''}" data-lead="${leadId}"><div class="form-grid">
+ const isDuo=i.kind==='dupla'||(!i.kind&&(p?.kind==='dupla'||l.kind==='dupla'||!!l.student2_name));
+ const student2Name=i.student2_name||l.student2_name||'';
+ const titleName=isDuo&&student2Name?`${safe(l.name)} & ${safe(student2Name)}`:safe(l.name);
+ const packageOptions=(duo)=>{
+  const pool=db.packages.filter(x=>x.active&&(duo?x.kind==='dupla':x.kind!=='dupla'));
+  return weeksOrCustom()+options(pool,i.package_id);
+ };
+ showModal(`<h2>Ficha inicial</h2><p class="modal-intro"><b>${titleName}</b> · condições da matrícula.</p><form id="interviewForm" data-id="${i.id||''}" data-lead="${leadId}"><div class="form-grid">
+ <label class="field wide"><span>Modalidade da aula</span><select name="kind" id="interviewKind"><option value="individual" ${!isDuo?'selected':''}>Individual (1 aluno)</option><option value="dupla" ${isDuo?'selected':''}>Dupla (2 alunos no mesmo horário)</option></select></label>
+ ${input('Nome do 1º aluno / lead','lead_name',l.name||'')}
+ <div class="wide" id="interviewStudent2Field" style="${isDuo?'':'display:none'}">
+  ${input('Nome do 2º aluno da dupla','student2_name',student2Name,'text',false)}
+ </div>
  <label class="field"><span>Professor entrevistador</span><select name="interviewer_teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active!==false||t.id===interviewer),interviewer)}</select></label>
  <label class="field"><span>Professor responsável pelas aulas</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active!==false||t.id===responsible),responsible)}</select></label>
  ${input('Curso','course',i.course||'Inglês')}
- <label class="field wide"><span>Pacote escolhido</span><select name="package_id" id="interviewPackage">${weeksOrCustom()}${options(db.packages.filter(x=>x.active||x.id===i.package_id),i.package_id)}</select></label>
+ <label class="field wide"><span>Pacote escolhido</span><select name="package_id" id="interviewPackage">${packageOptions(isDuo)}</select></label>
  ${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}
  ${input('Data de início','start_date',i.start_date||today(),'date')}${input('Data de término do contrato','end_date',i.end_date||'','date')}
  <div class="wide" id="calPickerHost">${calendar.getFormPicker(responsible,i.start_date||today(),false,i.calendar_slot_ids||[],true)}</div>
@@ -1065,7 +1098,19 @@ function interviewForm(leadId){
  <div class="wide"><label class="field"><span>Observações internas</span><textarea name="notes">${safe(i.notes||'')}</textarea></label></div></div>
  
  <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar ficha inicial</button></div></form>`);
- updateInstallment($('#interviewForm'));calendar.autoPreview($('#interviewForm'));
+
+ const f=$('#interviewForm');
+ $('#interviewKind')?.addEventListener('change',e=>{
+  const duo=e.target.value==='dupla';
+  const f2=$('#interviewStudent2Field');
+  if(f2)f2.style.display=duo?'':'none';
+  const pkgSelect=$('#interviewPackage');
+  if(pkgSelect){
+   pkgSelect.innerHTML=packageOptions(duo);
+   onPackageSelection(f,lookup('packages',pkgSelect.value));
+  }
+ });
+ updateInstallment(f);calendar.autoPreview(f);
 }
 
 // V5 - O provider pode mudar, mas o contrato segue pertencendo à escola.
@@ -1220,8 +1265,10 @@ function contractForm(leadId){
  const l=lookup('leads',leadId),i=db.interviews.find(x=>x.lead_id===leadId),p=lookup('packages',i?.package_id);
  if(!i){toast('Preencha a ficha inicial antes de matricular.',true);return;}
  if(db.contracts.some(c=>c.interview_id===i.id&&c.status!=='void')){toast('Já existe um contrato para esta ficha.',true);return;}
- const kind=p?.kind==='dupla'?'dupla':l.guardian_name?'menor':'individual';
- showModal(`<h2>Iniciar pré-matrícula</h2><p class="modal-intro">${safe(l.name)} · ${safe(i.course||'Inglês')} · ${safe(p?.name||'Personalizado')}</p><form id="contractForm" data-lead="${leadId}" data-kind="${kind}" data-weekly-frequency="${Number(i.weekly_frequency||p?.weekly_frequency||1)}" data-original-slots="${safe((i.calendar_slot_ids||[]).join(','))}"><div class="detail-grid"><div class="detail-item"><span>Vigência</span><strong>${dateBR(i.start_date)} a ${dateBR(i.end_date)}</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(i.total_amount)}</strong></div></div><div class="schedule-highlight"><b>Professor responsável</b><p>${safe(lookup('teachers',i.teacher_id)?.name||'—')}</p></div><div class="form-grid" style="margin-top:18px"><label class="field wide"><span>Modelo do contrato</span><select name="type_option" id="contractType" required>${contractOptions(kind,p?.id)}</select></label></div><div id="calPickerHost">${calendar.getFormPicker(i.teacher_id,i.start_date,true,i.calendar_slot_ids||[])}</div><div id="contractExtraFields"></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Criar contrato</button></div></form>`);renderContractExtra();calendar.autoPreview($('#contractForm'));
+ const isDuo=p?.kind==='dupla'||i?.kind==='dupla'||l.kind==='dupla'||!!l.student2_name;
+ const kind=isDuo?'dupla':(l.guardian_name?'menor':'individual');
+ const titleName=isDuo&&(i.student2_name||l.student2_name)?`${safe(l.name)} & ${safe(i.student2_name||l.student2_name)}`:safe(l.name);
+ showModal(`<h2>Iniciar pré-matrícula</h2><p class="modal-intro">${titleName} · ${safe(i.course||'Inglês')} · ${safe(p?.name||'Personalizado')}</p><form id="contractForm" data-lead="${leadId}" data-kind="${kind}" data-weekly-frequency="${Number(i.weekly_frequency||p?.weekly_frequency||1)}" data-original-slots="${safe((i.calendar_slot_ids||[]).join(','))}"><div class="detail-grid"><div class="detail-item"><span>Vigência</span><strong>${dateBR(i.start_date)} a ${dateBR(i.end_date)}</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(i.total_amount)}</strong></div></div><div class="schedule-highlight"><b>Professor responsável</b><p>${safe(lookup('teachers',i.teacher_id)?.name||'—')}</p></div><div class="form-grid" style="margin-top:18px"><label class="field wide"><span>Modelo do contrato</span><select name="type_option" id="contractType" required>${contractOptions(kind,p?.id)}</select></label></div><div id="calPickerHost">${calendar.getFormPicker(i.teacher_id,i.start_date,true,i.calendar_slot_ids||[])}</div><div id="contractExtraFields"></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Criar contrato</button></div></form>`);renderContractExtra();calendar.autoPreview($('#contractForm'));
 }
 function previewContract(id){const c=lookup('contracts',id),s=c.student_snapshot||lookup('students',c.student_id)||{};
  const preexisting=isPreexistingContract(c);
@@ -1712,6 +1759,7 @@ function updateDuoEnrollmentView(form){
  const duoSec=form.querySelector('#manualDuoSection');
  if(duoSec)duoSec.style.display=isDuo?'':'none';
  const s1=lookup('students',form.dataset.student);
+ const duoMode=form.elements.student2_mode?.value||'search';
  const s2Id=form.elements.student2_id?.value;
  const s2=s2Id?lookup('students',s2Id):null;
  form.dataset.kind=isDuo?'dupla':(s1?.is_minor?'menor':'individual');
@@ -1729,32 +1777,39 @@ function updateDuoEnrollmentView(form){
  if(isDuo){
   const signerSelect=form.elements.signer_student_index;
   const warningBox=form.querySelector('#manualDuoWarning');
+  const s1Minor=Boolean(s1?.is_minor);
+  let s2Name='Aluno 2',s2Minor=false;
+  if(duoMode==='new'){
+   s2Name=form.elements.student2_new_name?.value?.trim()||'Aluno 2';
+   s2Minor=Boolean(form.elements.student2_new_is_minor?.checked);
+  }else if(s2){
+   s2Name=s2.full_name;
+   s2Minor=Boolean(s2.is_minor);
+  }
   if(signerSelect){
-   const s1Minor=Boolean(s1?.is_minor);
-   const s2Minor=Boolean(s2?.is_minor);
-   if(s1&&s2){
-    if(s1Minor&&s2Minor){
-     signerSelect.innerHTML='<option value="1">Responsável legal (ambos são menores de idade)</option>';
-    }else if(s1Minor&&!s2Minor){
-     signerSelect.innerHTML=`<option value="2">${safe(s2.full_name)} (maior de idade)</option>`;
-    }else if(!s1Minor&&s2Minor){
-     signerSelect.innerHTML=`<option value="1">${safe(s1.full_name)} (maior de idade)</option>`;
-    }else{
-     signerSelect.innerHTML=`<option value="1">${safe(s1.full_name)} (Aluno 1)</option><option value="2">${safe(s2.full_name)} (Aluno 2)</option>`;
-    }
+   if(s1Minor&&s2Minor){
+    signerSelect.innerHTML='<option value="1">Responsável legal (ambos são menores de idade)</option>';
+   }else if(s1Minor&&!s2Minor){
+    signerSelect.innerHTML=`<option value="2">${safe(s2Name)} (maior de idade)</option>`;
+   }else if(!s1Minor&&s2Minor){
+    signerSelect.innerHTML=`<option value="1">${safe(s1?.full_name||'Aluno 1')} (maior de idade)</option>`;
    }else{
-    signerSelect.innerHTML=`<option value="1">Aluno 1 (${safe(s1?.full_name||'')})</option><option value="2">Aluno 2</option>`;
+    signerSelect.innerHTML=`<option value="1">${safe(s1?.full_name||'Aluno 1')} (Aluno 1)</option><option value="2">${safe(s2Name)} (Aluno 2)</option>`;
    }
   }
   if(warningBox){
-   const activeStatus=['signed','pre_enrolled','ready_manual','draft','sent'];
-   const s1Contracts=db.contracts.filter(c=>c.student_id===s1?.id&&activeStatus.includes(c.status));
-   const s2Contracts=s2?db.contracts.filter(c=>c.student_id===s2.id&&activeStatus.includes(c.status)):[];
-   const warnings=[];
-   if(s1Contracts.length)warnings.push(`${safe(s1.full_name)} possui ${s1Contracts.length} contrato(s) ativo(s) ou em andamento.`);
-   if(s2Contracts.length)warnings.push(`${safe(s2.full_name)} possui ${s2Contracts.length} contrato(s) ativo(s) ou em andamento.`);
-   if(warnings.length){
-    warningBox.innerHTML=`<div class="notice" style="margin-top:10px"><p><strong>Atenção à migração:</strong> ${warnings.join(' ')}<br>Ao confirmar esta matrícula em dupla, os contratos individuais anteriores ativos serão automaticamente encerrados.</p></div>`;
+   if(duoMode==='search'&&s2){
+    const activeStatus=['signed','pre_enrolled','ready_manual','draft','sent'];
+    const s1Contracts=db.contracts.filter(c=>c.student_id===s1?.id&&activeStatus.includes(c.status));
+    const s2Contracts=db.contracts.filter(c=>c.student_id===s2.id&&activeStatus.includes(c.status));
+    const warnings=[];
+    if(s1Contracts.length)warnings.push(`${safe(s1.full_name)} possui ${s1Contracts.length} contrato(s) ativo(s) ou em andamento.`);
+    if(s2Contracts.length)warnings.push(`${safe(s2.full_name)} possui ${s2Contracts.length} contrato(s) ativo(s) ou em andamento.`);
+    if(warnings.length){
+     warningBox.innerHTML=`<div class="notice" style="margin-top:10px"><p><strong>Atenção à migração:</strong> ${warnings.join(' ')}<br>Ao confirmar esta matrícula em dupla, os contratos individuais anteriores ativos serão automaticamente encerrados.</p></div>`;
+    }else{
+     warningBox.innerHTML='';
+    }
    }else{
     warningBox.innerHTML='';
    }
@@ -1762,17 +1817,182 @@ function updateDuoEnrollmentView(form){
  }
 }
 
+function setupManualDuoHandlers(f, s1){
+ const modeInput = f.querySelector('#manualDuoMode');
+ const s2IdInput = f.querySelector('#manualDuoStudent2Id');
+ const btnSearch = f.querySelector('#btnDuoModeSearch');
+ const btnNew = f.querySelector('#btnDuoModeNew');
+ const boxSearch = f.querySelector('#duoStudentSearchBox');
+ const boxNew = f.querySelector('#duoStudentNewBox');
+ const searchInput = f.querySelector('#manualDuoSearchInput');
+ const searchResults = f.querySelector('#manualDuoSearchResults');
+ const selectedCard = f.querySelector('#manualDuoSelectedCard');
+ const searchFieldWrapper = f.querySelector('#duoSearchFieldWrapper');
+ const minorCheckbox = f.querySelector('#s2NewIsMinor');
+ const guardianFields = f.querySelector('#s2NewGuardianFields');
+ const newNameInput = f.querySelector('#s2NewName');
+
+ function setMode(mode){
+  if(modeInput) modeInput.value = mode;
+  if(mode === 'new'){
+   if(btnNew) btnNew.className = 'btn mini';
+   if(btnSearch) btnSearch.className = 'btn mini light';
+   if(boxSearch) boxSearch.style.display = 'none';
+   if(boxNew) boxNew.style.display = '';
+   if(s2IdInput) s2IdInput.value = '';
+   newNameInput?.focus();
+  } else {
+   if(btnSearch) btnSearch.className = 'btn mini';
+   if(btnNew) btnNew.className = 'btn mini light';
+   if(boxNew) boxNew.style.display = 'none';
+   if(boxSearch) boxSearch.style.display = '';
+   searchInput?.focus();
+  }
+  updateDuoEnrollmentView(f);
+ }
+
+ btnSearch?.addEventListener('click', () => setMode('search'));
+ btnNew?.addEventListener('click', () => setMode('new'));
+
+ minorCheckbox?.addEventListener('change', e => {
+  if(guardianFields) guardianFields.style.display = e.target.checked ? '' : 'none';
+  updateDuoEnrollmentView(f);
+ });
+
+ newNameInput?.addEventListener('input', () => updateDuoEnrollmentView(f));
+
+ function selectStudent(student){
+  if(s2IdInput) s2IdInput.value = student.id;
+  if(searchResults) searchResults.style.display = 'none';
+  if(searchFieldWrapper) searchFieldWrapper.style.display = 'none';
+  if(selectedCard){
+   selectedCard.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px 14px">
+     <div>
+      <strong style="color:#166534">${safe(student.full_name)}</strong>
+      <span class="pill pill-signed" style="margin-left:6px">${student.is_minor ? 'Menor de idade' : 'Maior de idade'}</span>
+      <div class="muted" style="font-size:12px">${safe(student.phone || 'Sem telefone')}${student.cpf ? ' · CPF: ' + safe(student.cpf) : ''}</div>
+     </div>
+     <button type="button" class="btn mini ghost" id="btnDuoChange">Trocar aluno</button>
+    </div>`;
+   selectedCard.style.display = '';
+   f.querySelector('#btnDuoChange')?.addEventListener('click', () => {
+    if(s2IdInput) s2IdInput.value = '';
+    selectedCard.style.display = 'none';
+    if(searchFieldWrapper) searchFieldWrapper.style.display = '';
+    if(searchInput){ searchInput.value = ''; searchInput.focus(); }
+    updateDuoEnrollmentView(f);
+   });
+  }
+  updateDuoEnrollmentView(f);
+ }
+
+ searchInput?.addEventListener('input', () => {
+  const query = searchInput.value.trim().toLowerCase();
+  if(!query){
+   if(searchResults){ searchResults.style.display = 'none'; searchResults.innerHTML = ''; }
+   return;
+  }
+  const pool = db.students.filter(x => x.id !== s1.id && x.active !== false);
+  const matches = pool.filter(x => [x.full_name, x.cpf, x.phone, x.email].filter(Boolean).some(v => v.toLowerCase().includes(query))).slice(0, 8);
+  if(!matches.length){
+   if(searchResults){
+    searchResults.innerHTML = `
+     <div style="padding:10px 14px;color:var(--text-muted,#64748b);font-size:13px;display:flex;align-items:center;justify-content:space-between">
+      <span>Nenhum aluno encontrado</span>
+      <button type="button" class="btn mini light" id="btnSearchGoNew">＋ Cadastrar novo</button>
+     </div>`;
+    searchResults.style.display = '';
+    searchResults.querySelector('#btnSearchGoNew')?.addEventListener('click', () => {
+     searchResults.style.display = 'none';
+     setMode('new');
+     if(newNameInput) newNameInput.value = searchInput.value;
+     updateDuoEnrollmentView(f);
+    });
+   }
+   return;
+  }
+  if(searchResults){
+   searchResults.innerHTML = matches.map(m => `
+    <div class="search-duo-item" data-id="${m.id}" style="padding:8px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center">
+     <div>
+      <b>${safe(m.full_name)}</b>
+      <span class="muted" style="font-size:12px;margin-left:6px">${m.is_minor ? 'Menor' : 'Maior'}</span>
+      <div class="muted" style="font-size:11px">${safe(m.phone || 'Sem telefone')}${m.cpf ? ' · ' + safe(m.cpf) : ''}</div>
+     </div>
+     <span class="btn mini light">Selecionar</span>
+    </div>
+   `).join('');
+   searchResults.style.display = '';
+   searchResults.querySelectorAll('.search-duo-item').forEach(el => {
+    el.addEventListener('click', () => {
+     const st = lookup('students', el.dataset.id);
+     if(st) selectStudent(st);
+    });
+   });
+  }
+ });
+}
+
 function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;
  const teacherId=s.calendar_teacher_id||'';
  const selectedSlots=s.calendar_slot_ids||[];
- const otherStudents=db.students.filter(x=>x.id!==id&&x.active!==false).sort((a,b)=>a.full_name.localeCompare(b.full_name));
  const pkgs=db.packages.filter(p=>p.active&&p.kind!=='dupla');
  showModal(`<h2>Criar matrícula de ${safe(s.full_name)}</h2><p class="modal-intro">O aluno já está cadastrado. Gere um contrato agora ou feche para deixar sem matrícula.</p><form id="manualEnrollmentForm" data-student="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid">
  <label class="field wide"><span>Modalidade da aula</span><select name="class_type" id="manualClassType"><option value="individual">Individual (1 aluno)</option><option value="dupla">Dupla (2 alunos no mesmo horário)</option></select></label>
  <div class="wide" id="manualDuoSection" style="display:none">
   <div class="form-grid" style="background:var(--bg-card,#f8fafc);border:1px solid var(--border,#e2e8f0);border-radius:8px;padding:14px;margin-bottom:12px">
-   <label class="field wide"><span>2º Aluno da dupla</span><select name="student2_id" id="manualDuoStudent2"><option value="">Selecione o 2º aluno cadastrado</option>${otherStudents.map(o=>`<option value="${o.id}">${safe(o.full_name)} (${o.is_minor?'Menor de idade':'Maior de idade'})</option>`).join('')}</select></label>
-   <label class="field wide" id="manualSignerField"><span>Quem assina o contrato</span><select name="signer_student_index" id="manualSignerSelect"><option value="1">${safe(s.full_name)} (Aluno 1)</option><option value="2">Aluno 2</option></select></label>
+   <div class="wide" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+    <div>
+     <b style="font-size:14px;display:block">2º Integrante da Dupla</b>
+     <span class="muted" style="font-size:12px">Localize um aluno já cadastrado ou registre um novo aluno.</span>
+    </div>
+    <div style="display:flex;gap:4px">
+     <button type="button" class="btn mini" id="btnDuoModeSearch">Buscar cadastrado</button>
+     <button type="button" class="btn mini light" id="btnDuoModeNew">＋ Cadastrar novo</button>
+    </div>
+   </div>
+   <input type="hidden" name="student2_mode" id="manualDuoMode" value="search">
+   <input type="hidden" name="student2_id" id="manualDuoStudent2Id" value="">
+
+   <!-- Modo 1: Pesquisa de aluno existente -->
+   <div class="wide" id="duoStudentSearchBox">
+    <div id="duoSearchFieldWrapper">
+     <label class="field wide">
+      <span>Pesquisar por nome, CPF ou telefone</span>
+      <input type="text" id="manualDuoSearchInput" placeholder="Comece a digitar para pesquisar..." autocomplete="off">
+     </label>
+     <div id="manualDuoSearchResults" style="display:none;background:#fff;border:1px solid var(--border,#cbd5e1);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.1);max-height:180px;overflow-y:auto;margin-top:4px"></div>
+    </div>
+    <div id="manualDuoSelectedCard" style="display:none;margin-top:4px"></div>
+   </div>
+
+   <!-- Modo 2: Cadastro de novo aluno -->
+   <div class="wide" id="duoStudentNewBox" style="display:none">
+    <div class="form-grid" style="background:#fff;border:1px solid var(--border,#e2e8f0);border-radius:6px;padding:12px">
+     <div class="wide">
+      <label class="field"><span>Nome completo do 2º aluno *</span><input type="text" name="student2_new_name" id="s2NewName" placeholder="Ex: Mariana Silva"></label>
+     </div>
+     <label class="field"><span>Telefone</span><input type="tel" name="student2_new_phone" id="s2NewPhone" placeholder="(00) 00000-0000"></label>
+     <label class="field"><span>CPF</span><input type="text" name="student2_new_cpf" id="s2NewCpf" placeholder="000.000.000-00"></label>
+     <label class="field"><span>E-mail</span><input type="email" name="student2_new_email" id="s2NewEmail" placeholder="aluno2@exemplo.com"></label>
+     <label class="field"><span>Data de nascimento</span><input type="date" name="student2_new_birth_date" id="s2NewBirthDate"></label>
+     <label class="field wide checkrow">
+      <input type="checkbox" name="student2_new_is_minor" id="s2NewIsMinor">
+      Menor de idade (com responsável legal)
+     </label>
+     <div class="wide" id="s2NewGuardianFields" style="display:none">
+      <div class="form-grid" style="background:var(--bg-card,#f8fafc);border:1px dashed var(--border,#cbd5e1);border-radius:6px;padding:10px">
+       <label class="field wide"><span>Nome do responsável</span><input type="text" name="student2_new_guardian_name" placeholder="Nome do pai/mãe/responsável"></label>
+       <label class="field"><span>CPF do responsável</span><input type="text" name="student2_new_guardian_cpf" placeholder="000.000.000-00"></label>
+       <label class="field"><span>Telefone do responsável</span><input type="tel" name="student2_new_guardian_phone" placeholder="Telefone"></label>
+       <label class="field"><span>E-mail do responsável</span><input type="email" name="student2_new_guardian_email" placeholder="E-mail"></label>
+      </div>
+     </div>
+    </div>
+   </div>
+
+   <label class="field wide" id="manualSignerField" style="margin-top:10px"><span>Quem assina o contrato</span><select name="signer_student_index" id="manualSignerSelect"><option value="1">${safe(s.full_name)} (Aluno 1)</option><option value="2">Aluno 2</option></select></label>
    <div class="wide" id="manualDuoWarning"></div>
   </div>
  </div>
@@ -1791,6 +2011,7 @@ function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;
   if(f.elements.lessons_count){f.elements.lessons_count.readOnly=true;f.elements.lessons_count.placeholder='Selecione um pacote acima';}
   if(f.elements.weekly_frequency){f.elements.weekly_frequency.readOnly=true;}
   if(f.elements.end_date){f.elements.end_date.readOnly=true;f.elements.end_date.placeholder='Calculado pelas aulas';}
+  setupManualDuoHandlers(f,s);
  }
  renderContractExtra();
  calendar.autoPreview(f);
@@ -2487,7 +2708,14 @@ document.addEventListener('submit',async event=>{
   const {error}=await sb.from('schools').update({name:f.elements.name.value.trim()}).eq('id',ui.schoolId);if(error)throw error;
   closeModal();await loadSchools(ui.schoolId);toast('Nome da escola atualizado.');return refresh();
  }
- if(f.id==='leadForm'){const d=formData(f);await save('leads',{name:d.name.trim(),guardian_name:d.guardian_name?.trim()||null,phone:d.phone.trim()},f.dataset.id||undefined);toast('Lead salvo.');}
+ if(f.id==='leadForm'){
+  const d=formData(f);
+  const isDuo=d.kind==='dupla';
+  const student2Name=isDuo?(d.student2_name?.trim()||null):null;
+  if(isDuo&&!student2Name)throw new Error('Informe o nome do 2º interessado.');
+  await save('leads',{name:d.name.trim(),student2_name:student2Name,kind:isDuo?'dupla':'individual',guardian_name:d.guardian_name?.trim()||null,phone:d.phone.trim()},f.dataset.id||undefined);
+  toast('Lead salvo.');
+ }
  else if(f.id==='packageForm'){const d=formData(f);if(+d.lessons_count<1||+d.weekly_frequency<1||+d.weekly_frequency>7)throw new Error('Confira aulas e frequência.');await save('packages',{name:d.name.trim(),kind:d.kind,lessons_count:+d.lessons_count,weekly_frequency:+d.weekly_frequency,default_total:+d.default_total,active:d.active==='true',contract_type_id:d.contract_type_id||null},f.dataset.id||undefined);toast('Pacote salvo.');}
  else if(f.id==='interviewForm'){
   const p=lookup('packages',f.elements.package_id.value),count=Number(f.elements.lessons_count.value),freq=Number(f.elements.weekly_frequency.value);
@@ -2502,19 +2730,35 @@ document.addEventListener('submit',async event=>{
   const values=financialFields(f,count,freq);
   const schedules=planned.lesson_schedule.map(x=>({...x,slot_id:dbCalendarSlotId(x,selected)}));
   if(schedules.some(x=>!x.slot_id))throw new Error('Os horários selecionados não coincidem com a grade do professor. Atualize a ficha.');
-  await saveInterview({lead_id:f.dataset.lead,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,interviewer_id:ui.user.id,interviewer_teacher_id:interviewer,calendar_slot_ids:selected,teacher_id:teacher,course:f.elements.course.value.trim(),pipeline_status:'open',archived_at:null,...values,lesson_schedule:schedules,weekly_days:planned.weekly_days,lesson_time:planned.lesson_time,notes:f.elements.notes.value},f.dataset.id||undefined);toast('Ficha inicial salva com os horários do professor.');
+  const isDuo=f.elements.kind?.value==='dupla';
+  const student2Name=isDuo?(f.elements.student2_name?.value?.trim()||null):null;
+  if(isDuo&&!student2Name)throw new Error('Informe o nome do 2º aluno para a ficha em dupla.');
+  const leadName=f.elements.lead_name?.value?.trim();
+  if(leadName||isDuo){
+   const leadUpdate={};
+   if(leadName)leadUpdate.name=leadName;
+   leadUpdate.kind=isDuo?'dupla':'individual';
+   leadUpdate.student2_name=student2Name;
+   await save('leads',leadUpdate,f.dataset.lead);
+  }
+  await saveInterview({lead_id:f.dataset.lead,package_id:p?.id||null,kind:isDuo?'dupla':'individual',student2_name:student2Name,lessons_count:count,weekly_frequency:freq,interviewer_id:ui.user.id,interviewer_teacher_id:interviewer,calendar_slot_ids:selected,teacher_id:teacher,course:f.elements.course.value.trim(),pipeline_status:'open',archived_at:null,...values,lesson_schedule:schedules,weekly_days:planned.weekly_days,lesson_time:planned.lesson_time,notes:f.elements.notes.value},f.dataset.id||undefined);toast('Ficha inicial salva com os horários do professor.');
  }
  else if(f.id==='contractForm'){
-  const lead=f.dataset.lead,i=db.interviews.find(v=>v.lead_id===lead),p=lookup('packages',i.package_id);
+  const lead=f.dataset.lead,l=lookup('leads',lead),i=db.interviews.find(v=>v.lead_id===lead),p=lookup('packages',i.package_id);
   const chosen=[...f.querySelectorAll('input[name="cal_slot"]:checked')].map(x=>x.value).sort();
   const initial=(i.calendar_slot_ids||[]).slice().sort();
   if(chosen.join(',')!==initial.join(',')){
    if(!await window.campanellaConfirm('Os novos horários substituirão os registrados na Ficha Inicial e passarão a ser os horários oficiais da matrícula. Confirmar?','Confirmar horários oficiais'))return;
   }
-  const plannedTerms=await calendar.applyTerms(f,buildTerms(i,p));
-  const snapshot=snapshotFromForm(f,null,plannedTerms);
+  const baseTerms=buildTerms(i,p);
+  const isDuo=f.dataset.kind==='dupla'||i?.kind==='dupla'||p?.kind==='dupla'||l?.kind==='dupla';
+  if(isDuo){
+   baseTerms.student2_name=i.student2_name||l?.student2_name||'';
+  }
+  const plannedTerms=await calendar.applyTerms(f,baseTerms);
+  const snapshot=snapshotFromForm(f,isDuo?'dupla':null,plannedTerms);
   if(((p?.kind||'individual')==='dupla')!==(snapshot.kind==='dupla'))throw new Error('Modalidade incompatível com o pacote.');
-  const created=await save('contracts',{lead_id:lead,interview_id:i.id,...snapshot,created_by:ui.user.id});toast('Pré-matrícula iniciada. Compartilhe o link de cadastro.');await refresh();await sendLink(created.id);return;
+  const created=await save('contracts',{lead_id:lead,interview_id:i.id,...snapshot,kind:isDuo?'dupla':snapshot.kind,created_by:ui.user.id});toast('Pré-matrícula iniciada. Compartilhe o link de cadastro.');await refresh();await sendLink(created.id);return;
  }
  else if(f.id==='renewForm'){
   if(isCurrentSchoolCrmOnly())throw new Error('O plano CRM inclui apenas a gestão de leads e pipeline. Faça upgrade para o plano Essencial ou superior para realizar rematrículas.');
@@ -2535,11 +2779,45 @@ document.addEventListener('submit',async event=>{
   const isDuo=f.elements.class_type?.value==='dupla';
   let student2=null,signerIdx=1;
   if(isDuo){
-   const s2Id=f.elements.student2_id?.value;
-   if(!s2Id)throw new Error('Selecione o 2º aluno para a matrícula em dupla.');
-   if(s2Id===student.id)throw new Error('O 2º aluno precisa ser diferente do 1º aluno.');
-   student2=lookup('students',s2Id);
-   if(!student2)throw new Error('2º aluno não encontrado.');
+   const s2Mode=f.elements.student2_mode?.value||'search';
+   if(s2Mode==='new'){
+    const s2Name=f.elements.student2_new_name?.value?.trim();
+    if(!s2Name||s2Name.length<2)throw new Error('Informe o nome completo do 2º aluno.');
+    const s2Minor=!!f.elements.student2_new_is_minor?.checked;
+    let s2Phone=onlyDigits(f.elements.student2_new_phone?.value||'');
+    if(s2Phone.startsWith('55')&&[12,13].includes(s2Phone.length))s2Phone=s2Phone.slice(2);
+    const s2Cpf=onlyDigits(f.elements.student2_new_cpf?.value||'')||null;
+    if(s2Cpf&&!cpfValid(s2Cpf))throw new Error('CPF do 2º aluno inválido.');
+    const s2Email=f.elements.student2_new_email?.value?.trim()||null;
+    const s2Birth=f.elements.student2_new_birth_date?.value||null;
+    const s2GName=s2Minor?(f.elements.student2_new_guardian_name?.value?.trim()||null):null;
+    const s2GCpf=s2Minor?(onlyDigits(f.elements.student2_new_guardian_cpf?.value||'')||null):null;
+    if(s2GCpf&&!cpfValid(s2GCpf))throw new Error('CPF do responsável do 2º aluno inválido.');
+    const s2GPhone=s2Minor?(f.elements.student2_new_guardian_phone?.value?.trim()||null):null;
+    const s2GEmail=s2Minor?(f.elements.student2_new_guardian_email?.value?.trim()||null):null;
+
+    const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();
+    if(!lim.isUnlimited&&cur>=lim.maxStudents)throw new Error(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Faça upgrade de plano ou adquira pacotes de +10 alunos.`);
+
+    student2=await save('students',{
+     full_name:s2Name,
+     phone:s2Phone||null,
+     cpf:s2Cpf,
+     email:s2Email,
+     birth_date:s2Birth,
+     is_minor:s2Birth?s2Minor:(s2Minor?true:null),
+     guardian_name:s2GName,
+     guardian_cpf:s2GCpf,
+     guardian_phone:s2GPhone,
+     guardian_email:s2GEmail
+    });
+   }else{
+    const s2Id=f.elements.student2_id?.value;
+    if(!s2Id)throw new Error('Selecione o 2º aluno para a matrícula em dupla.');
+    if(s2Id===student.id)throw new Error('O 2º aluno precisa ser diferente do 1º aluno.');
+    student2=lookup('students',s2Id);
+    if(!student2)throw new Error('2º aluno não encontrado.');
+   }
    signerIdx=Number(f.elements.signer_student_index?.value||1);
    if(![1,2].includes(signerIdx))signerIdx=1;
    await sb.rpc('close_prior_student_contracts',{p_school:ui.schoolId,p_student_ids:[student.id,student2.id],p_reason:'Migrado para turma em dupla'});
@@ -2742,7 +3020,7 @@ function renderPublic(){
   <form id="preEnrollmentForm"><section class="sign-panel"><div class="sign-step">Etapa 2 de 2</div><h2>Dados do Aluno 1</h2><p class="muted">Informe os dados pessoais do primeiro aluno.</p>
   <div class="form-grid">${input('Nome completo do 1º aluno','s1_full_name',read(s1,'full_name',d.lead?.name))}${input('CPF do 1º aluno','s1_cpf',read(s1,'cpf'))}${input('E-mail do 1º aluno','s1_email',read(s1,'email'),'email')}${input('Data de nascimento do 1º aluno','s1_birth_date',read(s1,'birth_date'),'date')}${input('Telefone do 1º aluno','s1_phone',read(s1,'phone'),'tel')}${input('CEP do 1º aluno','s1_cep',read(s1,'cep'))}<div class="wide">${input('Endereço completo do 1º aluno','s1_address',read(s1,'address'))}</div></div>
   <h3 class="form-section">Dados do Aluno 2</h3><p class="muted">Informe os dados pessoais do segundo aluno da dupla.</p>
-  <div class="form-grid">${input('Nome completo do 2º aluno','s2_full_name',read(s2,'full_name'))}${input('CPF do 2º aluno','s2_cpf',read(s2,'cpf'))}${input('E-mail do 2º aluno','s2_email',read(s2,'email'),'email')}${input('Data de nascimento do 2º aluno','s2_birth_date',read(s2,'birth_date'),'date')}${input('Telefone do 2º aluno','s2_phone',read(s2,'phone'),'tel')}${input('CEP do 2º aluno','s2_cep',read(s2,'cep'))}<div class="wide">${input('Endereço completo do 2º aluno','s2_address',read(s2,'address'))}</div></div>
+  <div class="form-grid">${input('Nome completo do 2º aluno','s2_full_name',read(s2,'full_name',d.lead?.student2_name||d.terms?.student2_name))}${input('CPF do 2º aluno','s2_cpf',read(s2,'cpf'))}${input('E-mail do 2º aluno','s2_email',read(s2,'email'),'email')}${input('Data de nascimento do 2º aluno','s2_birth_date',read(s2,'birth_date'),'date')}${input('Telefone do 2º aluno','s2_phone',read(s2,'phone'),'tel')}${input('CEP do 2º aluno','s2_cep',read(s2,'cep'))}<div class="wide">${input('Endereço completo do 2º aluno','s2_address',read(s2,'address'))}</div></div>
   <h3 class="form-section">Contratante e Assinatura</h3><p class="muted">Defina quem assina o contrato com a escola:</p>
   <label class="field wide"><span>Quem assina o contrato</span><select name="signer_student_index" id="preSignerSelect"><option value="1">Aluno 1 assina como contratante</option><option value="2">Aluno 2 assina como contratante</option><option value="guardian">Responsável legal externo (obrigatório se ambos forem menores de idade)</option></select></label>
   <div id="preGuardianSection" style="display:none"><h3 class="form-section">Responsável Legal</h3><p class="muted">Preencha os dados do responsável legal caso ambos os alunos sejam menores de idade.</p><div class="form-grid">${input('Nome do responsável legal','guardian_name',read(s1,'guardian_name',d.lead?.guardian_name))}${input('Nascimento do responsável','guardian_birth_date',read(s1,'guardian_birth_date'),'date')}${input('CPF do responsável','guardian_cpf',read(s1,'guardian_cpf'))}${input('Telefone do responsável','guardian_phone',read(s1,'guardian_phone'),'tel')}${input('E-mail do responsável','guardian_email',read(s1,'guardian_email'),'email')}${input('CEP do responsável','guardian_cep',read(s1,'guardian_cep'))}<div class="wide">${input('Endereço do responsável','guardian_address',read(s1,'guardian_address'))}</div></div></div>

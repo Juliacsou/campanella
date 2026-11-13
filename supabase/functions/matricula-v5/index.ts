@@ -99,12 +99,21 @@ Deno.serve(async(req)=>{
   if(external)return json(req,{error:'Este link foi criado para uma assinatura externa antiga. Solicite um novo cadastro a escola.'},409);
   if(action==='lookup'){
    const [{data:lead},{data:school},{data:student1},{data:student2}]=await Promise.all([
-    service.from('leads').select('name,guardian_name').eq('school_id',c.school_id).eq('id',c.lead_id).maybeSingle(),
+    service.from('leads').select('name,guardian_name,student2_name,kind').eq('school_id',c.school_id).eq('id',c.lead_id).maybeSingle(),
     service.from('schools').select('name').eq('id',c.school_id).maybeSingle(),
     c.student_id?service.from('students').select('full_name,cpf,email,birth_date,phone,address,cep,guardian_name,guardian_birth_date,guardian_cpf,guardian_phone,guardian_email,guardian_address,guardian_cep').eq('school_id',c.school_id).eq('id',c.student_id).maybeSingle():Promise.resolve({data:null}),
     c.student2_id?service.from('students').select('full_name,cpf,email,birth_date,phone,address,cep,guardian_name,guardian_birth_date,guardian_cpf,guardian_phone,guardian_email,guardian_address,guardian_cep').eq('school_id',c.school_id).eq('id',c.student2_id).maybeSingle():Promise.resolve({data:null})
    ]);
-   const existingDuo=c.kind==='dupla'?(c.student_snapshot||{student1,student2}):(c.student_snapshot||student1);
+   const leadStudent1Name = lead?.name || '';
+   const leadStudent2Name = lead?.student2_name || c.terms?.student2_name || '';
+   let existingDuo;
+   if(c.kind==='dupla'){
+     const s1 = c.student_snapshot?.student1 || student1 || (leadStudent1Name ? {full_name: leadStudent1Name} : null);
+     const s2 = c.student_snapshot?.student2 || student2 || (leadStudent2Name ? {full_name: leadStudent2Name} : null);
+     existingDuo = { student1: s1, student2: s2, signer_student_index: c.signer_student_index || c.terms?.signer_student_index || 1 };
+   } else {
+     existingDuo = c.student_snapshot || student1 || (leadStudent1Name ? {full_name: leadStudent1Name} : null);
+   }
    return json(req,{kind:c.kind,school_name:school?.name||'Escola',
     terms:{package_name:c.terms?.package_name,course:c.terms?.course,lessons_count:c.terms?.lessons_count,
       weekly_frequency:c.terms?.weekly_frequency,start_date:c.terms?.start_date,end_date:c.terms?.end_date,
@@ -112,7 +121,7 @@ Deno.serve(async(req)=>{
       total_amount:c.terms?.total_amount,lesson_schedule:c.terms?.lesson_schedule,
       signer_student_index:c.signer_student_index||c.terms?.signer_student_index||1,
       custom_field_schema:(c.terms?.custom_field_schema||[]).filter((f:any)=>f.who==='aluno')},
-    lead:{name:lead?.name||'',guardian_name:lead?.guardian_name||''},existing:existingDuo});
+    lead:{name:lead?.name||'',guardian_name:lead?.guardian_name||'',student2_name:lead?.student2_name||'',kind:lead?.kind||c.kind},existing:existingDuo});
   }
   if(c.terms?.template_rules_version==='v5.2')assertCanonicalContract(c.template_html,c.kind);
   const student=normalizeStudent(body.student,c.kind,c.terms);

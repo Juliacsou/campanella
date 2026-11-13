@@ -78,7 +78,7 @@ serve(async req => {
       db.from('teachers').select('id,name,active').eq('id',invite.teacher_id).eq('school_id',invite.school_id).single(),
       db.from('schools').select('id,name').eq('id',invite.school_id).single(),
       db.from('interviews').select('*').eq('lead_id',invite.lead_id).eq('school_id',invite.school_id).maybeSingle(),
-      db.from('packages').select('id,name,lessons_count,weekly_frequency,default_total').eq('school_id',invite.school_id).eq('active',true).order('created_at'),
+      db.from('packages').select('id,name,kind,lessons_count,weekly_frequency,default_total').eq('school_id',invite.school_id).eq('active',true).order('created_at'),
       db.from('teachers').select('id,name,active').eq('school_id',invite.school_id).eq('active',true).order('name'),
       db.from('calendar_slots').select('id,teacher_id,weekday,start_time,duration_minutes').eq('school_id',invite.school_id).eq('active',true).is('slot_date',null).order('weekday').order('start_time'),
     ]);
@@ -129,6 +129,8 @@ serve(async req => {
     if (payload.package_id && !pkg) return reject('Pacote indisponivel.');
     const selectedSchedule = selected.map(s=>({day:s!.weekday,time:String(s!.start_time).slice(0,5),duration_minutes:s!.duration_minutes,slot_id:s!.id}));
     const now = new Date().toISOString();
+    const student2Name = payload.student2_name ? String(payload.student2_name).trim().slice(0,180) : (leadRes.data?.student2_name || null);
+    const interviewKind = (payload.kind === 'dupla' || pkg?.kind === 'dupla' || student2Name) ? 'dupla' : (leadRes.data?.kind || 'individual');
     const update = {
       school_id:invite.school_id,lead_id:invite.lead_id,
       interviewer_teacher_id:invite.teacher_id,
@@ -143,6 +145,8 @@ serve(async req => {
       first_due_date:dateValue(payload.first_due_date),
       payment_method:String(payload.payment_method || '').slice(0,60) || null,
       notes:String(payload.notes || '').slice(0,2000) || null,
+      student2_name:student2Name,
+      kind:interviewKind,
       updated_at:now,
     };
     if (currentInterview?.id) {
@@ -156,7 +160,9 @@ serve(async req => {
       .eq('id',invite.id).is('used_at',null).select('id').maybeSingle();
     raise(markError);
     if (!marked) return reject('O link ja foi utilizado.',409);
-    const { error:leadError } = await db.from('leads').update({ficha_iniciada_at:now,updated_at:now})
+    const leadPatch: any = { ficha_iniciada_at: now, updated_at: now };
+    if (student2Name) { leadPatch.student2_name = student2Name; leadPatch.kind = 'dupla'; }
+    const { error:leadError } = await db.from('leads').update(leadPatch)
       .eq('id',invite.lead_id).eq('school_id',invite.school_id);
     raise(leadError);
     return respond({ok:true});
