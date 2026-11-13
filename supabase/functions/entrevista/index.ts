@@ -74,7 +74,7 @@ serve(async req => {
       return reject('Este link expirou.', 401);
 
     const [leadRes, interviewerRes, schoolRes, interviewRes, packagesRes, teachersRes, slotsRes] = await Promise.all([
-      db.from('leads').select('id,name,phone').eq('id',invite.lead_id).eq('school_id',invite.school_id).single(),
+      db.from('leads').select('id,name,phone,guardian_name,kind,student2_name').eq('id',invite.lead_id).eq('school_id',invite.school_id).single(),
       db.from('teachers').select('id,name,active').eq('id',invite.teacher_id).eq('school_id',invite.school_id).single(),
       db.from('schools').select('id,name').eq('id',invite.school_id).single(),
       db.from('interviews').select('*').eq('lead_id',invite.lead_id).eq('school_id',invite.school_id).maybeSingle(),
@@ -101,21 +101,34 @@ serve(async req => {
     const teacherId = payload.teacher_id;
     if (!validId(teacherId) || !teachers.some(t=>t.id===teacherId))
       return reject('Escolha um professor responsavel ativo nesta escola.');
+    const isRecurrence = payload.enrollment_mode === 'recurrence';
     const slotIds: unknown[] = payload.slot_ids || payload.calendar_slot_ids;
-    const count = Number(payload.lessons_count);
+    let count = Number(payload.lessons_count);
     const frequency = Number(payload.weekly_frequency);
     const start = dateValue(payload.start_date);
     if (!Array.isArray(slotIds) || slotIds.length < 1 || slotIds.length > 7 ||
         !slotIds.every(validId) || new Set(slotIds).size !== slotIds.length ||
-        !Number.isInteger(frequency) || frequency < 1 || frequency > 7 || slotIds.length !== frequency ||
-        !Number.isInteger(count) || count < 1 || count > 500 || !start)
+        !Number.isInteger(frequency) || frequency < 1 || frequency > 7 ||
+        (!isRecurrence && slotIds.length !== frequency) ||
+        (!isRecurrence && (!Number.isInteger(count) || count < 1 || count > 500)) || !start)
       return reject('Escolha os horarios do professor e confira quantidade de aulas, frequencia e inicio.');
     const selected = slotIds.map(id => slots.find(s => s.id === id && s.teacher_id === teacherId));
     if (selected.some(s => !s)) return reject('Um ou mais horarios nao pertencem a este professor. Atualize a ficha.');
-    const { data: preview, error: previewError } = await db.rpc('calendar_interview_preview_v65', {
-      p_token_hash:tokenHash, p_teacher:teacherId, p_start:start, p_count:count, p_slots:slotIds,
-    });
-    raise(previewError);
+    let preview: any = null;
+    if (isRecurrence && dateValue(payload.end_date)) {
+      const { data: recPreview, error: recError } = await db.rpc('calendar_preview', {
+        p_school: invite.school_id, p_teacher: teacherId, p_start: start, p_slots: slotIds, p_end_date: dateValue(payload.end_date), p_mode: 'recurrence'
+      });
+      raise(recError);
+      preview = recPreview;
+      if (preview?.total) count = preview.total;
+    } else {
+      const { data: defPreview, error: defError } = await db.rpc('calendar_interview_preview_v65', {
+        p_token_hash:tokenHash, p_teacher:teacherId, p_start:start, p_count:count||1, p_slots:slotIds,
+      });
+      raise(defError);
+      preview = defPreview;
+    }
     if (action === 'preview') return respond({ ok:true, ...preview });
 
     const end = dateValue(payload.end_date) || preview.end_date;
@@ -125,13 +138,17 @@ serve(async req => {
     const total = moneyValue(payload.total_amount,'o valor total');
     const installmentAmount = moneyValue(payload.installment_amount,'o valor da parcela');
     if (!dateValue(payload.first_due_date)) return reject('Informe uma data valida para o primeiro vencimento.');
-    const pkg = payload.package_id ? (packagesRes.data || []).find(p=>p.id===payload.package_id) : null;
-    if (payload.package_id && !pkg) return reject('Pacote indisponivel.');
+    const enrollmentMode = String(payload.enrollment_mode || 'package');
+    const pkg = (enrollmentMode === 'package' && payload.package_id) ? (packagesRes.data || []).find(p=>p.id===payload.package_id) : null;
+    if (enrollmentMode === 'package' && payload.package_id && !pkg) return reject('Pacote indisponivel.');
     const selectedSchedule = selected.map(s=>({day:s!.weekday,time:String(s!.start_time).slice(0,5),duration_minutes:s!.duration_minutes,slot_id:s!.id}));
     const now = new Date().toISOString();
-    const student2Name = payload.student2_name ? String(payload.student2_name).trim().slice(0,180) : (leadRes.data?.student2_name || null);
-    const interviewKind = (payload.kind === 'dupla' || pkg?.kind === 'dupla' || student2Name) ? 'dupla' : (leadRes.data?.kind || 'individual');
-    const update = {
+    const isDuo = payload.kind === 'dupla' || pkg?.kind === 'dupla' || (payload.kind !== 'individual' && !!payload.student2_name);
+    const student2Name = isDuo ? (payload.student2_name ? String(payload.student2_name).trim().slice(0,180) : (leadRes.data?.student2_name || null)) : null;
+    const interviewKind = isDuo ? 'dupla' : 'individual';
+    const leadName = payload.lead_name ? String(payload.lead_name).trim().slice(0,180) : null;
+    const guardianName = payload.guardian_name !== undefined ? (payload.guardian_name ? String(payload.guardian_name).trim().slice(0,180) : null) : (leadRes.data?.guardian_name || null);
+    const update: any = {
       school_id:invite.school_id,lead_id:invite.lead_id,
       interviewer_teacher_id:invite.teacher_id,
       teacher_id:teacherId, calendar_slot_ids:slotIds,
@@ -147,13 +164,24 @@ serve(async req => {
       notes:String(payload.notes || '').slice(0,2000) || null,
       student2_name:student2Name,
       kind:interviewKind,
+      enrollment_mode:enrollmentMode,
       updated_at:now,
     };
     if (currentInterview?.id) {
-      const { error } = await db.from('interviews').update(update).eq('id',currentInterview.id).eq('school_id',invite.school_id);
+      let { error } = await db.from('interviews').update(update).eq('id',currentInterview.id).eq('school_id',invite.school_id);
+      if (error && (error.message?.includes('enrollment_mode') || (error as any).code === 'PGRST204')) {
+        delete update.enrollment_mode;
+        const res = await db.from('interviews').update(update).eq('id',currentInterview.id).eq('school_id',invite.school_id);
+        error = res.error;
+      }
       raise(error);
     } else {
-      const { error } = await db.from('interviews').insert({ ...update,created_at:now });
+      let { error } = await db.from('interviews').insert({ ...update,created_at:now });
+      if (error && (error.message?.includes('enrollment_mode') || (error as any).code === 'PGRST204')) {
+        delete update.enrollment_mode;
+        const res = await db.from('interviews').insert({ ...update,created_at:now });
+        error = res.error;
+      }
       raise(error);
     }
     const {data:marked,error:markError} = await db.from('interview_invites').update({used_at:now})
@@ -161,7 +189,10 @@ serve(async req => {
     raise(markError);
     if (!marked) return reject('O link ja foi utilizado.',409);
     const leadPatch: any = { ficha_iniciada_at: now, updated_at: now };
-    if (student2Name) { leadPatch.student2_name = student2Name; leadPatch.kind = 'dupla'; }
+    if (leadName) leadPatch.name = leadName;
+    leadPatch.guardian_name = guardianName;
+    leadPatch.kind = interviewKind;
+    leadPatch.student2_name = student2Name;
     const { error:leadError } = await db.from('leads').update(leadPatch)
       .eq('id',invite.lead_id).eq('school_id',invite.school_id);
     raise(leadError);

@@ -26,6 +26,10 @@ assert(appJs.includes('leadKindSelect'), 'app.js deve ter seletor de modalidade 
 assert(appJs.includes('leadStudent2Field'), 'app.js deve ter campo de 2º aluno no leadForm');
 assert(appJs.includes('interviewKind'), 'app.js deve ter seletor de modalidade na ficha inicial (interviewForm)');
 assert(appJs.includes('interviewStudent2Field'), 'app.js deve ter campo de 2º aluno na ficha inicial');
+assert(appJs.includes('interviewEnrollmentMode'), 'app.js deve ter seletor de formato de plano na ficha inicial');
+assert(appJs.includes('externalKind'), 'app.js deve ter seletor de modalidade na ficha inicial externa');
+assert(appJs.includes('externalEnrollmentMode'), 'app.js deve ter seletor de formato na ficha inicial externa');
+assert(appJs.includes('applyEnrollmentModeUI'), 'app.js deve ter função unificada applyEnrollmentModeUI');
 assert(appJs.includes('manualDuoSearchInput'), 'app.js deve ter campo de busca do 2º aluno na matrícula manual');
 assert(appJs.includes('duoStudentNewBox'), 'app.js deve ter formulário inline para cadastro do 2º aluno');
 assert(appJs.includes('student2_new_name'), 'app.js deve ter input student2_new_name');
@@ -34,8 +38,10 @@ console.log('✓ app.js possui formulários, busca e cadastro inline do 2º alun
 
 // Verificação nas Edge Functions
 assert(entrevistaFn.includes('student2_name') && entrevistaFn.includes('kind'), 'Edge function entrevista deve persistir student2_name e kind');
+assert(entrevistaFn.includes('enrollment_mode'), 'Edge function entrevista deve persistir enrollment_mode');
+assert(entrevistaFn.includes('guardian_name'), 'Edge function entrevista deve suportar guardian_name');
 assert(matriculaFn.includes('student2_name'), 'Edge function matricula-v5 deve retornar student2_name no lookup');
-console.log('✓ Edge functions (entrevista e matricula-v5) preparadas para Dupla.');
+console.log('✓ Edge functions (entrevista e matricula-v5) preparadas para Dupla e Formato.');
 
 // 2. Verificação de consultas SQL e banco Supabase (se token disponível)
 const token = process.env.SUPABASE_ACCESS_TOKEN || process.env.SUPABASE_TOKEN;

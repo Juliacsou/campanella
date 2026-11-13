@@ -2,7 +2,7 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
-import {createCRM} from './crm.js?v=7.6.2';
+import {createCRM} from './crm.js?v=7.6.3';
 import {createCalendar} from './calendar-v6.js?v=7.1.1';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
@@ -1077,6 +1077,52 @@ function toggleCustomFirstInstallment(f){
  }
  updateInstallment(f);
 }
+function applyEnrollmentModeUI(f,mode){
+ if(!f)return;
+ const isInterview=['interviewForm','externalInterviewForm'].includes(f.id);
+ const isManual=f.id==='manualEnrollmentForm';
+ const pkgField=f.querySelector(isManual?'#manualPackageField':(f.id==='interviewForm'?'#interviewPackageField':'#externalPackageField'));
+ const lessonsCount=f.elements.lessons_count;
+ const weeklyFreq=f.elements.weekly_frequency;
+ const endDate=f.elements.end_date;
+ const calBtn=f.querySelector('[data-action="calPreview"], #externalPreviewBtn');
+ const calResult=f.querySelector('[data-cal-result], #externalForecast');
+ if(mode==='recurrence'){
+  if(pkgField)pkgField.style.display='none';
+  if(f.elements.package_id){f.elements.package_id.value='';f.elements.package_id.required=false;}
+  if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.value='';lessonsCount.placeholder='Calculado automaticamente pelas datas';lessonsCount.required=true;}
+  if(weeklyFreq){
+   weeklyFreq.readOnly=true;
+   const slotName=f.id==='externalInterviewForm'?'interview_slot':'cal_slot';
+   const checked=f.querySelectorAll(`input[name="${slotName}"]:checked`).length;
+   weeklyFreq.value=checked||'1';
+  }
+  if(endDate){endDate.readOnly=false;endDate.required=true;endDate.placeholder='';}
+  if(calBtn)calBtn.textContent='Calcular total de aulas';
+  if(calResult)calResult.textContent='Informe a data de término e marque os horários para calcular.';
+ }else if(mode==='custom'){
+  if(pkgField)pkgField.style.display='none';
+  if(f.elements.package_id){f.elements.package_id.value='';f.elements.package_id.required=false;}
+  if(lessonsCount){lessonsCount.readOnly=false;lessonsCount.placeholder='Ex: 14 aulas';lessonsCount.required=true;}
+  if(weeklyFreq){weeklyFreq.readOnly=false;if(!weeklyFreq.value)weeklyFreq.value='2';}
+  if(endDate){endDate.readOnly=true;endDate.required=false;endDate.placeholder='Calculado pelas aulas';}
+  if(calBtn)calBtn.textContent='Calcular última aula';
+  if(calResult)calResult.textContent='';
+ }else{
+  if(pkgField)pkgField.style.display='';
+  if(f.elements.package_id){f.elements.package_id.required=true;}
+  if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.placeholder='Selecione um pacote acima';lessonsCount.required=true;}
+  if(weeklyFreq){weeklyFreq.readOnly=true;}
+  if(endDate){endDate.readOnly=true;endDate.required=false;endDate.placeholder='Calculado pelas aulas';}
+  if(calBtn)calBtn.textContent='Calcular última aula';
+  if(calResult)calResult.textContent='';
+  const pkgSelect=f.querySelector('#manualPackage, #interviewPackage, #externalPackage');
+  if(pkgSelect?.value){
+   const curPkg=f.id==='externalInterviewForm'?(externalData?.packages||[]).find(x=>x.id===pkgSelect.value):lookup('packages',pkgSelect.value);
+   if(curPkg)onPackageSelection(f,curPkg);
+  }
+ }
+}
 function interviewForm(leadId){
  const l=lookup('leads',leadId),i=db.interviews.find(x=>x.lead_id===leadId)||{},p=lookup('packages',i.package_id);
  if(!l)throw new Error('Interessado não encontrado.');
@@ -1085,6 +1131,7 @@ function interviewForm(leadId){
  const interviewer=i.interviewer_teacher_id||scheduledTeacher||i.teacher_id||'';
  const isDuo=i.kind==='dupla'||(!i.kind&&(p?.kind==='dupla'||l.kind==='dupla'||!!l.student2_name));
  const student2Name=i.student2_name||l.student2_name||'';
+ const currentMode=i.enrollment_mode||(i.package_id?'package':(i.lessons_count?'custom':'package'));
  const titleName=isDuo&&student2Name?`${safe(l.name)} & ${safe(student2Name)}`:safe(l.name);
  const packageOptions=(duo)=>{
   const pool=db.packages.filter(x=>x.active&&(duo?x.kind==='dupla':x.kind!=='dupla'));
@@ -1096,10 +1143,14 @@ function interviewForm(leadId){
  <div class="wide" id="interviewStudent2Field" style="${isDuo?'':'display:none'}">
   ${input('Nome do 2º aluno da dupla','student2_name',student2Name,'text',false)}
  </div>
+ <div class="wide">
+  ${input('Nome do responsável legal (se houver menor)','guardian_name',l.guardian_name||'','text',false)}
+ </div>
+ <label class="field wide"><span>Formato do plano</span><select name="enrollment_mode" id="interviewEnrollmentMode"><option value="package" ${currentMode==='package'?'selected':''}>Pacote cadastrado</option><option value="custom" ${currentMode==='custom'?'selected':''}>Pacote personalizado (saldo de aulas restantes)</option><option value="recurrence" ${currentMode==='recurrence'?'selected':''}>Recorrência até o fim do contrato</option></select></label>
  <label class="field"><span>Professor entrevistador</span><select name="interviewer_teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active!==false||t.id===interviewer),interviewer)}</select></label>
  <label class="field"><span>Professor responsável pelas aulas</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active!==false||t.id===responsible),responsible)}</select></label>
  ${input('Curso','course',i.course||'Inglês')}
- <label class="field wide"><span>Pacote escolhido</span><select name="package_id" id="interviewPackage">${packageOptions(isDuo)}</select></label>
+ <label class="field wide" id="interviewPackageField" style="${currentMode==='package'?'':'display:none'}"><span>Pacote escolhido</span><select name="package_id" id="interviewPackage">${packageOptions(isDuo)}</select></label>
  ${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}
  ${input('Data de início','start_date',i.start_date||today(),'date')}${input('Data de término do contrato','end_date',i.end_date||'','date')}
  <div class="wide" id="calPickerHost">${calendar.getFormPicker(responsible,i.start_date||today(),false,i.calendar_slot_ids||[],true)}</div>
@@ -1110,16 +1161,7 @@ function interviewForm(leadId){
  <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar ficha inicial</button></div></form>`);
 
  const f=$('#interviewForm');
- $('#interviewKind')?.addEventListener('change',e=>{
-  const duo=e.target.value==='dupla';
-  const f2=$('#interviewStudent2Field');
-  if(f2)f2.style.display=duo?'':'none';
-  const pkgSelect=$('#interviewPackage');
-  if(pkgSelect){
-   pkgSelect.innerHTML=packageOptions(duo);
-   onPackageSelection(f,lookup('packages',pkgSelect.value));
-  }
- });
+ applyEnrollmentModeUI(f,currentMode);
  updateInstallment(f);calendar.autoPreview(f);
 }
 
@@ -2143,6 +2185,7 @@ async function saveInterview(payload,id){
    delete copy.second_due_date;
    delete copy.has_custom_first_installment;
    delete copy.demais_parcelas;
+   delete copy.enrollment_mode;
    return await save('interviews',copy,id);
   }
   throw err;
@@ -2189,14 +2232,16 @@ function financialFields(f,lessonCount,expectedFrequency){
  };
 }
 function buildTerms(i,p){
+ const mode=i.enrollment_mode||(p?'package':'custom');
  const count=i.lessons_count??p?.lessons_count,freq=i.weekly_frequency??p?.weekly_frequency;
  const n=Number(i.installments||1);
  const firstDue=i.first_due_date||today();
  const secondDue=i.second_due_date||(firstDue?plusMonth(firstDue):'');
  const firstAmt=i.first_installment_amount!=null?Number(i.first_installment_amount):Number(i.installment_amount||0);
  return {
-  package_id:p?.id||null,
-  package_name:p?.name||'Personalizado',
+  enrollment_mode:mode,
+  package_id:mode==='package'?(p?.id||null):null,
+  package_name:mode==='recurrence'?'Recorrência até o fim':(p?.name||'Personalizado'),
   course:i.course||'Inglês',
   teacher_id:i.teacher_id,
   teacher_name:lookup('teachers',i.teacher_id)?.name||'',
@@ -2474,8 +2519,11 @@ document.addEventListener('input',e=>{
   if(view){$('#pageContent').innerHTML=view;$('#search').focus();$('#search').setSelectionRange(pos,pos);}
  }
  if(['total_amount','installments','installment_amount','first_installment_amount'].includes(e.target.name)&&['interviewForm','renewForm','manualEnrollmentForm','externalInterviewForm'].includes(e.target.form?.id))updateInstallment(e.target.form,e.target.name);
- if(e.target.name==='end_date'&&e.target.form?.id==='manualEnrollmentForm'&&e.target.form.elements.enrollment_mode?.value==='recurrence'){
+ if(e.target.name==='end_date'&&['manualEnrollmentForm','interviewForm'].includes(e.target.form?.id)&&e.target.form.elements.enrollment_mode?.value==='recurrence'){
   if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value))calendar.autoPreview(e.target.form);
+ }
+ if(e.target.name==='end_date'&&e.target.form?.id==='externalInterviewForm'&&e.target.form.elements.enrollment_mode?.value==='recurrence'){
+  if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value))externalPreview().catch(errors);
  }
 });
 document.addEventListener('change',async e=>{
@@ -2500,8 +2548,26 @@ document.addEventListener('change',async e=>{
   if(pkgSelect){
    const pool=db.packages.filter(x=>x.active&&(duo?x.kind==='dupla':x.kind!=='dupla'));
    pkgSelect.innerHTML=weeksOrCustom()+options(pool,pkgSelect.value);
-   onPackageSelection(f,lookup('packages',pkgSelect.value));
+   if(f?.elements.enrollment_mode?.value==='package'){
+    onPackageSelection(f,lookup('packages',pkgSelect.value));
+   }
   }
+  return;
+ }
+ if(e.target.id==='externalKind'){
+  const duo=e.target.value==='dupla';
+  const f=e.target.form;
+  const f2=$('#externalStudent2Field');
+  if(f2)f2.style.display=duo?'':'none';
+  const pkgSelect=$('#externalPackage');
+  if(pkgSelect){
+   const pool=(externalData?.packages||[]).filter(x=>duo?x.kind==='dupla':x.kind!=='dupla');
+   pkgSelect.innerHTML=weeksOrCustom()+options(pool,pkgSelect.value);
+   if(f?.elements.enrollment_mode?.value==='package'){
+    onPackageSelection(f,pool.find(x=>x.id===pkgSelect.value));
+   }
+  }
+  externalPreview().catch(errors);
   return;
  }
  if(e.target.matches('[data-onb-map], [data-onb-edit-line]')){onboarding.change(e);return;}
@@ -2530,42 +2596,10 @@ document.addEventListener('change',async e=>{
   if(host)host.innerHTML=renderStudentScheduleHost(e.target.value,[]);
   return;
  }
- if(e.target.id==='manualEnrollmentMode'){
-  const f=e.target.form,mode=e.target.value;
-  const pkgField=$('#manualPackageField');
-  const lessonsCount=f.elements.lessons_count;
-  const weeklyFreq=f.elements.weekly_frequency;
-  const endDate=f.elements.end_date;
-  const calBtn=f.querySelector('[data-action="calPreview"]');
-  const calResult=f.querySelector('[data-cal-result]');
-  if(mode==='recurrence'){
-   if(pkgField)pkgField.style.display='none';
-   if(f.elements.package_id){f.elements.package_id.value='';f.elements.package_id.required=false;}
-   if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.value='';lessonsCount.placeholder='Calculado automaticamente pelas datas';lessonsCount.required=true;}
-   if(weeklyFreq){weeklyFreq.readOnly=true;const checked=f.querySelectorAll('input[name="cal_slot"]:checked').length;weeklyFreq.value=checked||'1';}
-   if(endDate){endDate.readOnly=false;endDate.required=true;endDate.placeholder='';}
-   if(calBtn)calBtn.textContent='Calcular total de aulas';
-   if(calResult)calResult.textContent='Informe a data de término e marque os horários para calcular.';
-  }else if(mode==='custom'){
-   if(pkgField)pkgField.style.display='none';
-   if(f.elements.package_id){f.elements.package_id.value='';f.elements.package_id.required=false;}
-   if(lessonsCount){lessonsCount.readOnly=false;lessonsCount.value='';lessonsCount.placeholder='Ex: 14 aulas';lessonsCount.required=true;}
-   if(weeklyFreq){weeklyFreq.readOnly=false;weeklyFreq.value='2';}
-   if(endDate){endDate.readOnly=true;endDate.required=false;endDate.value='';endDate.placeholder='Calculado pelas aulas';}
-   if(calBtn)calBtn.textContent='Calcular última aula';
-   if(calResult)calResult.textContent='';
-  }else{
-   if(pkgField)pkgField.style.display='';
-   if(f.elements.package_id){f.elements.package_id.required=true;}
-   if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.placeholder='Selecione um pacote acima';lessonsCount.required=true;}
-   if(weeklyFreq){weeklyFreq.readOnly=true;}
-   if(endDate){endDate.readOnly=true;endDate.required=false;endDate.placeholder='Calculado pelas aulas';}
-   if(calBtn)calBtn.textContent='Calcular última aula';
-   if(calResult)calResult.textContent='';
-   const curPkg=lookup('packages',f.elements.package_id?.value);
-   if(curPkg)onPackageSelection(f,curPkg);
-  }
-  calendar.autoPreview(f);
+ if(['manualEnrollmentMode','interviewEnrollmentMode','externalEnrollmentMode'].includes(e.target.id)){
+  applyEnrollmentModeUI(e.target.form,e.target.value);
+  if(e.target.form?.id==='externalInterviewForm')externalPreview().catch(errors);
+  else calendar.autoPreview(e.target.form);
   return;
  }
  if(['manualContractType','contractType','renewContractType'].includes(e.target.id)){
@@ -2753,30 +2787,35 @@ document.addEventListener('submit',async event=>{
  }
  else if(f.id==='packageForm'){const d=formData(f);if(+d.lessons_count<1||+d.weekly_frequency<1||+d.weekly_frequency>7)throw new Error('Confira aulas e frequência.');await save('packages',{name:d.name.trim(),kind:d.kind,lessons_count:+d.lessons_count,weekly_frequency:+d.weekly_frequency,default_total:+d.default_total,active:d.active==='true',contract_type_id:d.contract_type_id||null},f.dataset.id||undefined);toast('Pacote salvo.');}
  else if(f.id==='interviewForm'){
+  const mode=f.elements.enrollment_mode?.value||'package';
   const p=lookup('packages',f.elements.package_id.value),count=Number(f.elements.lessons_count.value),freq=Number(f.elements.weekly_frequency.value);
-  if(!Number.isInteger(count)||count<1||count>500||!Number.isInteger(freq)||freq<1||freq>7)throw new Error('Quantidade e frequência inválidas.');
+  if(mode!=='recurrence'&&(!Number.isInteger(count)||count<1||count>500))throw new Error('Quantidade e frequência inválidas.');
+  if(!Number.isInteger(freq)||freq<1||freq>7)throw new Error('Quantidade e frequência inválidas.');
   const teacher=f.elements.teacher_id.value;
   const interviewer=f.elements.interviewer_teacher_id.value;
   if(!teacher||!interviewer)throw new Error('Escolha o entrevistador e o professor responsável pelas aulas.');
   const selected=[...f.querySelectorAll('input[name="cal_slot"]:checked')].map(x=>x.value);
-  if(selected.length!==freq)throw new Error(`Selecione exatamente ${freq} horário(s) da agenda do professor.`);
-  const planned=await calendar.applyTerms(f,{teacher_id:teacher,lessons_count:count,start_date:f.elements.start_date.value});
+  if(mode!=='recurrence'&&selected.length!==freq)throw new Error(`Selecione exatamente ${freq} horário(s) da agenda do professor.`);
+  if(mode==='recurrence'&&!selected.length)throw new Error('Selecione pelo menos um horário da agenda do professor.');
+  const planned=await calendar.applyTerms(f,{teacher_id:teacher,lessons_count:count,start_date:f.elements.start_date.value,enrollment_mode:mode,end_date:f.elements.end_date.value});
   f.elements.end_date.value=planned.end_date;
-  const values=financialFields(f,count,freq);
+  const finalCount=planned.lessons_count||count;
+  const values=financialFields(f,finalCount,freq);
   const schedules=planned.lesson_schedule.map(x=>({...x,slot_id:dbCalendarSlotId(x,selected)}));
   if(schedules.some(x=>!x.slot_id))throw new Error('Os horários selecionados não coincidem com a grade do professor. Atualize a ficha.');
   const isDuo=f.elements.kind?.value==='dupla';
   const student2Name=isDuo?(f.elements.student2_name?.value?.trim()||null):null;
   if(isDuo&&!student2Name)throw new Error('Informe o nome do 2º aluno para a ficha em dupla.');
   const leadName=f.elements.lead_name?.value?.trim();
-  if(leadName||isDuo){
-   const leadUpdate={};
-   if(leadName)leadUpdate.name=leadName;
-   leadUpdate.kind=isDuo?'dupla':'individual';
-   leadUpdate.student2_name=student2Name;
-   await save('leads',leadUpdate,f.dataset.lead);
-  }
-  await saveInterview({lead_id:f.dataset.lead,package_id:p?.id||null,kind:isDuo?'dupla':'individual',student2_name:student2Name,lessons_count:count,weekly_frequency:freq,interviewer_id:ui.user.id,interviewer_teacher_id:interviewer,calendar_slot_ids:selected,teacher_id:teacher,course:f.elements.course.value.trim(),pipeline_status:'open',archived_at:null,...values,lesson_schedule:schedules,weekly_days:planned.weekly_days,lesson_time:planned.lesson_time,notes:f.elements.notes.value},f.dataset.id||undefined);toast('Ficha inicial salva com os horários do professor.');
+  const guardianName=f.elements.guardian_name?.value?.trim()||null;
+  const leadUpdate={};
+  if(leadName)leadUpdate.name=leadName;
+  leadUpdate.kind=isDuo?'dupla':'individual';
+  leadUpdate.student2_name=student2Name;
+  leadUpdate.guardian_name=guardianName;
+  await save('leads',leadUpdate,f.dataset.lead);
+
+  await saveInterview({lead_id:f.dataset.lead,package_id:(mode==='package'&&p)?p.id:null,enrollment_mode:mode,kind:isDuo?'dupla':'individual',student2_name:student2Name,lessons_count:finalCount,weekly_frequency:freq,interviewer_id:ui.user.id,interviewer_teacher_id:interviewer,calendar_slot_ids:selected,teacher_id:teacher,course:f.elements.course.value.trim(),pipeline_status:'open',archived_at:null,...values,lesson_schedule:schedules,weekly_days:planned.weekly_days,lesson_time:planned.lesson_time,notes:f.elements.notes.value},f.dataset.id||undefined);toast('Ficha inicial salva com os horários do professor.');
  }
  else if(f.id==='contractForm'){
   const lead=f.dataset.lead,l=lookup('leads',lead),i=db.interviews.find(v=>v.lead_id===lead),p=lookup('packages',i.package_id);
@@ -2792,7 +2831,7 @@ document.addEventListener('submit',async event=>{
   }
   const plannedTerms=await calendar.applyTerms(f,baseTerms);
   const snapshot=snapshotFromForm(f,isDuo?'dupla':null,plannedTerms);
-  if(((p?.kind||'individual')==='dupla')!==(snapshot.kind==='dupla'))throw new Error('Modalidade incompatível com o pacote.');
+  if(p && ((p.kind||'individual')==='dupla')!==(snapshot.kind==='dupla'))throw new Error('Modalidade incompatível com o pacote.');
   const created=await save('contracts',{lead_id:lead,interview_id:i.id,...snapshot,kind:isDuo?'dupla':snapshot.kind,created_by:ui.user.id});toast('Pré-matrícula iniciada. Compartilhe o link de cadastro.');await refresh();await sendLink(created.id);return;
  }
  else if(f.id==='renewForm'){
@@ -2987,13 +3026,31 @@ function externalSlotPicker(teacherId,previous=[],limit=0){
  return weeklyPickerMarkup(slots,{name:'interview_slot',selected:previous,limit});
 }
 function externalRender(){
- const d=externalData,i=d.interview||{},p=d.packages.find(x=>x.id===i.package_id)||d.packages[0],teacher=i.teacher_id||d.interviewer.id;
+ const d=externalData,i=d.interview||{},teacher=i.teacher_id||d.interviewer?.id;
  const brand=$('.sign-top .brand-sub');if(brand)brand.textContent=d.school_name||'Ficha inicial';
+ const isDuo=i.kind==='dupla'||(!i.kind&&(d.lead?.kind==='dupla'||!!d.lead?.student2_name));
+ const student2Name=i.student2_name||d.lead?.student2_name||'';
+ const guardianName=d.lead?.guardian_name||'';
+ const currentMode=i.enrollment_mode||(i.package_id?'package':(i.lessons_count?'custom':'package'));
+ const duoPackages=(d.packages||[]).filter(p=>p.kind==='dupla');
+ const singlePackages=(d.packages||[]).filter(p=>p.kind!=='dupla');
+ const poolPackages=isDuo?duoPackages:singlePackages;
+ const p=poolPackages.find(x=>x.id===i.package_id)||poolPackages[0];
+
  $('.sign-main').innerHTML=`<h1>Ficha inicial</h1><p class="leadline">Lead: <b>${safe(d.lead.name)}</b> · ${safe(d.lead.phone)}<br>Entrevistador: <b>${safe(d.interviewer.name)}</b></p>
  <section class="sign-panel"><form id="externalInterviewForm"><div class="form-grid">
+ <label class="field wide"><span>Modalidade da aula</span><select name="kind" id="externalKind"><option value="individual" ${!isDuo?'selected':''}>Individual (1 aluno)</option><option value="dupla" ${isDuo?'selected':''}>Dupla (2 alunos no mesmo horário)</option></select></label>
+ ${input('Nome do 1º aluno / lead','lead_name',d.lead?.name||'')}
+ <div class="wide" id="externalStudent2Field" style="${isDuo?'':'display:none'}">
+  ${input('Nome do 2º aluno da dupla','student2_name',student2Name,'text',false)}
+ </div>
+ <div class="wide">
+  ${input('Nome do responsável legal (se houver menor)','guardian_name',guardianName,'text',false)}
+ </div>
+ <label class="field wide"><span>Formato do plano</span><select name="enrollment_mode" id="externalEnrollmentMode"><option value="package" ${currentMode==='package'?'selected':''}>Pacote cadastrado</option><option value="custom" ${currentMode==='custom'?'selected':''}>Pacote personalizado (saldo de aulas restantes)</option><option value="recurrence" ${currentMode==='recurrence'?'selected':''}>Recorrência até o fim do contrato</option></select></label>
  ${input('Curso','course',i.course||'Inglês')}
  <label class="field wide"><span>Professor responsável pelas aulas</span><select name="teacher_id" id="externalTeacher" required><option value="">Selecione</option>${options(d.teachers,teacher)}</select></label>
- <label class="field wide"><span>Pacote escolhido</span><select id="externalPackage" name="package_id">${weeksOrCustom()}${options(d.packages,i.package_id||p?.id)}</select></label>
+ <label class="field wide" id="externalPackageField" style="${currentMode==='package'?'':'display:none'}"><span>Pacote escolhido</span><select id="externalPackage" name="package_id">${weeksOrCustom()}${options(poolPackages,i.package_id||p?.id)}</select></label>
  ${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}
  ${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}
  ${input('Data início','start_date',i.start_date||today(),'date')}
@@ -3005,7 +3062,9 @@ function externalRender(){
  ${input('Primeiro vencimento','first_due_date',i.first_due_date||today(),'date')}
  <label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${x===i.payment_method?'selected':''}>${x}</option>`).join('')}</select></label>
  <label class="field wide"><span>Observações</span><textarea name="notes">${safe(i.notes||'')}</textarea></label></div><div class="form-footer"><button class="btn">Salvar ficha</button></div></form></section>`;
- updateInstallment($('#externalInterviewForm'));
+ const f=$('#externalInterviewForm');
+ applyEnrollmentModeUI(f,currentMode);
+ updateInstallment(f);
  externalPreview().catch(()=>{});
 }
 let externalPreviewSerial=0;
@@ -3013,27 +3072,54 @@ async function externalPreview(){
  const f=$('#externalInterviewForm');if(!f)return;
  const serial=++externalPreviewSerial;
  const selected=[...f.querySelectorAll('input[name="interview_slot"]:checked')].map(x=>x.value);
- const freq=Number(f.elements.weekly_frequency.value),count=Number(f.elements.lessons_count.value),teacher=f.elements.teacher_id.value;
+ const mode=f.elements.enrollment_mode?.value||'package';
+ const freq=Number(f.elements.weekly_frequency?.value||1),teacher=f.elements.teacher_id?.value;
  const output=$('#externalForecast');
- if(!teacher||!count||selected.length!==freq){if(output)output.textContent=`Selecione ${freq||'?'} horário(s) da grade para calcular as datas.`;return;}
+ if(mode==='recurrence'){
+  const endDateVal=f.elements.end_date?.value;
+  if(!teacher||!selected.length||!endDateVal){
+   if(output)output.textContent='Selecione o professor, os horários e informe a data de término.';
+   return;
+  }
+  if(f.elements.weekly_frequency)f.elements.weekly_frequency.value=selected.length;
+ }else{
+  const count=Number(f.elements.lessons_count?.value);
+  if(!teacher||!count||selected.length!==freq){
+   if(output)output.textContent=`Selecione ${freq||'?'} horário(s) da grade para calcular as datas.`;
+   return;
+  }
+ }
  if(output)output.textContent='Verificando recessos, feriados e disponibilidade...';
  try {
-  const result=await externalAPI({action:'preview',teacher_id:teacher,slot_ids:selected,lessons_count:count,weekly_frequency:freq,start_date:f.elements.start_date.value});
+  const result=await externalAPI({action:'preview',teacher_id:teacher,slot_ids:selected,lessons_count:Number(f.elements.lessons_count?.value||0),weekly_frequency:mode==='recurrence'?selected.length:freq,start_date:f.elements.start_date.value,end_date:f.elements.end_date.value,enrollment_mode:mode});
   if(serial!==externalPreviewSerial)return;
-  if(!f.elements.end_date.dataset.manuallyEdited){f.elements.end_date.value=result.end_date;}
+  if(mode==='recurrence'&&result.total&&f.elements.lessons_count){
+   f.elements.lessons_count.value=result.total;
+  }
+  if(mode!=='recurrence'&&!f.elements.end_date.dataset.manuallyEdited){
+   f.elements.end_date.value=result.end_date;
+  }
   if(output)output.textContent=`${result.total} aulas previstas · última aula em ${dateBR(result.end_date)}. Disponibilidade sujeita a confirmação na matrícula.`;
  } catch(error){if(serial===externalPreviewSerial&&output)output.textContent=error.message||String(error);}
 }
 async function externalSave(f){
- const d=formData(f),p=externalData.packages.find(x=>x.id===d.package_id),count=Number(d.lessons_count),freq=Number(d.weekly_frequency);
- if(!Number.isInteger(count)||count<1||count>500||!Number.isInteger(freq)||freq<1||freq>7)throw new Error('Quantidade e frequência inválidas.');
+ const d=formData(f);
+ const isDuo=d.kind==='dupla';
+ const student2Name=isDuo?(d.student2_name?.trim()||''):'';
+ if(isDuo&&!student2Name)throw new Error('Informe o nome do 2º aluno para a ficha em dupla.');
+ const mode=d.enrollment_mode||'package';
+ const p=(externalData?.packages||[]).find(x=>x.id===d.package_id);
+ const count=Number(d.lessons_count),freq=Number(d.weekly_frequency);
+ if(mode!=='recurrence'&&(!Number.isInteger(count)||count<1||count>500))throw new Error('Quantidade e frequência inválidas.');
+ if(!Number.isInteger(freq)||freq<1||freq>7)throw new Error('Quantidade e frequência inválidas.');
  const selected=[...f.querySelectorAll('input[name="interview_slot"]:checked')].map(x=>x.value);
- if(selected.length!==freq)throw new Error(`Selecione exatamente ${freq} horário(s) do professor responsável.`);
+ if(mode!=='recurrence'&&selected.length!==freq)throw new Error(`Selecione exatamente ${freq} horário(s) do professor responsável.`);
+ if(mode==='recurrence'&&!selected.length)throw new Error('Selecione pelo menos um horário do professor responsável.');
  const total=Number(d.total_amount),part=Number(d.installment_amount),n=Number(d.installments);
  if(!Number.isFinite(total)||total<0||!Number.isFinite(part)||part<0||!Number.isInteger(n)||n<1||n>48)throw new Error('Confira o valor total e as parcelas.');
- const data={...d,package_id:p?.id||null,teacher_id:d.teacher_id,slot_ids:selected,lessons_count:count,weekly_frequency:freq,total_amount:total,installments:n,installment_amount:part};
+ const data={...d,kind:isDuo?'dupla':'individual',lead_name:d.lead_name?.trim()||externalData?.lead?.name,student2_name:isDuo?student2Name:null,guardian_name:d.guardian_name?.trim()||null,enrollment_mode:mode,package_id:(mode==='package'&&p)?p.id:null,teacher_id:d.teacher_id,slot_ids:selected,lessons_count:count,weekly_frequency:freq,total_amount:total,installments:n,installment_amount:part};
  await externalAPI({action:'save',payload:data});
- $('.sign-main').innerHTML='<section class="sign-panel"><h1>Ficha salva!</h1><p class="muted">Este link já foi utilizado.</p></section>';
+ $('.sign-main').innerHTML='<section class="sign-panel"><h1>Ficha salva!</h1><p class="muted">As informações da entrevista foram registradas com sucesso.</p></section>';
 }
 
 let publicToken='',publicData=null;
