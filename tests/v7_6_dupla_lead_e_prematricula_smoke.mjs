@@ -18,7 +18,7 @@ const matriculaFn = fs.readFileSync(path.resolve('supabase/functions/matricula-v
 // Verificação no crm.js
 assert(crmJs.includes('student2_name'), 'crm.js deve suportar student2_name');
 assert(crmJs.includes('crmLeadKind'), 'crm.js deve ter seletor de modalidade no formulário de lead');
-assert(crmJs.includes('crmLeadName2Box'), 'crm.js deve ter campo para 2º aluno no formulário de lead');
+assert(crmJs.includes('crmLeadName2Field'), 'crm.js deve ter campo para 2º aluno no formulário de lead');
 console.log('✓ crm.js possui suporte completo para leads em dupla.');
 
 // Verificação no app.js

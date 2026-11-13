@@ -1,5 +1,5 @@
 // CAMPANELLA V2 | CRM & Pipeline Personalizável + Tags Coloridas + Agenda Docente.
-import {safe,today,dateBR,onlyDigits,formData} from './utils.js';
+import {$,$$,safe,today,dateBR,onlyDigits,formData} from './utils.js';
 
 // Mantido apenas para compatibilidade caso algum script externo importe CRM_STAGES
 export const CRM_STAGES={
@@ -599,16 +599,24 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   const isDuo=l?.kind==='dupla'||!!l?.student2_name;
   showModal(`<div class="crm-form-head"><div class="eyebrow">${edit?'Atualização de cadastro':'Novo contato'}</div><h2>${edit?'Editar lead':'Adicionar lead'}</h2><p class="muted">Dados do contato e origem. Ações e anotações ficam no histórico.</p></div><form id="crmLeadForm" data-id="${id||''}"><div class="form-grid">
    <label class="field wide"><span>Modalidade de atendimento</span><select name="kind" id="crmLeadKind"><option value="individual" ${!isDuo?'selected':''}>Individual (1 aluno)</option><option value="dupla" ${isDuo?'selected':''}>Dupla (2 alunos / mesmo horário)</option></select></label>
-   <div id="crmLeadName1Box">${fi('name',isDuo?'Nome do 1º aluno':'Nome completo',l?.name,'text',true)}</div>
-   <div id="crmLeadName2Box" style="${isDuo?'':'display:none'}">${fi('student2_name','Nome do 2º aluno (dupla)',l?.student2_name,'text',false)}</div>
+   <label class="field" id="crmLeadName1Field"><span>${isDuo?'Nome do 1º aluno *':'Nome completo *'}</span><input type="text" name="name" value="${safe(l?.name??'')}" required></label>
+   <label class="field" id="crmLeadName2Field" style="${isDuo?'':'display:none'}"><span>Nome do 2º aluno (dupla) *</span><input type="text" name="student2_name" value="${safe(l?.student2_name??'')}" ${isDuo?'required':''}></label>
    ${fi('phone','WhatsApp',l?.phone,'tel')}${fi('guardian_name','Responsável (se houver menor)',l?.guardian_name)}${fi('crm_source','Origem / indicação',l?.crm_source)}${fi('crm_service','Serviço de interesse',l?.crm_service||'Aulas de inglês')}${fi('crm_region','Estado / região',l?.crm_region)}${fi('crm_first_contact_on','Data do primeiro contato',l?.crm_first_contact_on||(!edit?todayISO():''),'date')}
    ${cols.length?sel('crm_column_id','Coluna na pipeline',cols.map(c=>[c.id,c.name]),defaultCol):''}</div>${formFooter(edit?'Salvar alterações':'Cadastrar lead')}</form>`);
-  $('#crmLeadKind')?.addEventListener('change',e=>{
-   const duo=e.target.value==='dupla';
-   const box2=$('#crmLeadName2Box');
-   if(box2)box2.style.display=duo?'':'none';
-   const lbl1=$('#crmLeadName1Box span');
-   if(lbl1)lbl1.textContent=duo?'Nome do 1º aluno *':'Nome completo *';
+
+  const updateCrmDuoState = (duo) => {
+   const f2=document.getElementById('crmLeadName2Field');
+   if(f2){
+    f2.style.display=duo?'':'none';
+    const inp2=f2.querySelector('input');
+    if(inp2) inp2.required=duo;
+   }
+   const lbl1=document.querySelector('#crmLeadName1Field span');
+   if(lbl1) lbl1.textContent=duo?'Nome do 1º aluno *':'Nome completo *';
+  };
+
+  document.getElementById('crmLeadKind')?.addEventListener('change',e=>{
+   updateCrmDuoState(e.target.value==='dupla');
   });
  }
 
@@ -1077,6 +1085,19 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
  document.addEventListener('submit',handleSubmit);
  document.addEventListener('change',e=>{
   const t=e.target;
+  if(t.id==='crmLeadKind'||(t.name==='kind'&&t.form?.id==='crmLeadForm')){
+   const duo=t.value==='dupla';
+   const f=t.form||document.getElementById('crmLeadForm');
+   const f2=f?.querySelector('#crmLeadName2Field')||document.getElementById('crmLeadName2Field');
+   if(f2){
+    f2.style.display=duo?'':'none';
+    const inp2=f2.querySelector('input');
+    if(inp2) inp2.required=duo;
+   }
+   const lbl1=f?.querySelector('#crmLeadName1Field span')||document.querySelector('#crmLeadName1Field span');
+   if(lbl1) lbl1.textContent=duo?'Nome do 1º aluno *':'Nome completo *';
+   return;
+  }
   if(t.form?.id==='crmAppointmentForm'&&['teacher_id','interview_date','interview_time','duration_minutes'].includes(t.name)){
    updateTeacherDayAvailability(t.form);return;
   }

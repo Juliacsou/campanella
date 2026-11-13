@@ -2,7 +2,7 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
-import {createCRM} from './crm.js?v=6.18.1';
+import {createCRM} from './crm.js?v=7.6.2';
 import {createCalendar} from './calendar-v6.js?v=7.1.1';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
@@ -936,14 +936,24 @@ function leadForm(id){
  const isDuo=l.kind==='dupla'||!!l.student2_name;
  showModal(`<h2>${id?'Editar lead':'Novo lead'}</h2><p class="modal-intro">Dados mínimos para começar o atendimento.</p><form id="leadForm" data-id="${id||''}"><div class="form-grid">
  <label class="field wide"><span>Modalidade</span><select name="kind" id="leadKindSelect"><option value="individual" ${!isDuo?'selected':''}>Individual (1 interessado)</option><option value="dupla" ${isDuo?'selected':''}>Dupla (2 interessados no mesmo horário)</option></select></label>
- ${input('Nome do 1º interessado','name',l.name)}
- <div id="leadStudent2Field" class="wide" style="${isDuo?'':'display:none'}">${input('Nome do 2º interessado','student2_name',l.student2_name||'', 'text', false)}</div>
+ <label class="field" id="leadName1Field"><span>${isDuo?'Nome do 1º interessado *':'Nome completo *'}</span><input name="name" type="text" value="${safe(l.name||'')}" required></label>
+ <label class="field" id="leadStudent2Field" style="${isDuo?'':'display:none'}"><span>Nome do 2º interessado (dupla) *</span><input name="student2_name" type="text" value="${safe(l.student2_name||'')}"></label>
  ${input('Nome do responsável (se houver menor)','guardian_name',l.guardian_name,'text',false)}
  <div class="wide">${input('Telefone / WhatsApp','phone',l.phone,'tel')}</div></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar lead</button></div></form>`);
- $('#leadKindSelect')?.addEventListener('change',e=>{
-  const duo=e.target.value==='dupla';
-  const f2=$('#leadStudent2Field');
-  if(f2)f2.style.display=duo?'':'none';
+
+ const updateLeadDuo=(duo)=>{
+  const f2=document.getElementById('leadStudent2Field');
+  if(f2){
+   f2.style.display=duo?'':'none';
+   const inp=f2.querySelector('input');
+   if(inp)inp.required=duo;
+  }
+  const f1=document.querySelector('#leadName1Field span');
+  if(f1)f1.textContent=duo?'Nome do 1º interessado *':'Nome completo *';
+ };
+
+ document.getElementById('leadKindSelect')?.addEventListener('change',e=>{
+  updateLeadDuo(e.target.value==='dupla');
  });
 }
 function packagesView(){return `${heading('Serviços e contratos','Pacotes de aulas','Pacotes reutilizáveis ou matrículas personalizadas sem pacote.','<button class="btn" data-action="editPackage">＋ Novo pacote</button>')}${card('Pacotes cadastrados',table(['Pacote','Aulas','Frequência','Modelo vinculado','Valor','Ações'],db.packages.map(p=>row([`<b>${safe(p.name)}</b>`,`${p.lessons_count} aulas`,`${p.weekly_frequency}x/semana`,safe(lookup('contract_types',p.contract_type_id)?.name||'Escolher ao matricular'),money(p.default_total),`<div class="actions"><button class="table-action-btn edit" data-action="editPackage" data-id="${p.id}">${ico('edit',14)} <span>EDITAR</span></button><button class="table-action-btn danger" data-action="removePackage" data-id="${p.id}">${ico('trash',14)} <span>EXCLUIR</span></button></div>`])),'Nenhum pacote cadastrado.'))}<div class="notice">Para um plano especial, selecione <b>Personalizado · sem pacote</b> ao preencher a ficha inicial. Você poderá definir quantidades, valores e horários manualmente.</div>`;}
@@ -2469,6 +2479,31 @@ document.addEventListener('input',e=>{
  }
 });
 document.addEventListener('change',async e=>{
+ if(e.target.id==='leadKindSelect'||(e.target.name==='kind'&&e.target.form?.id==='leadForm')){
+  const duo=e.target.value==='dupla';
+  const f2=document.getElementById('leadStudent2Field');
+  if(f2){
+   f2.style.display=duo?'':'none';
+   const inp=f2.querySelector('input');
+   if(inp)inp.required=duo;
+  }
+  const f1=document.querySelector('#leadName1Field span');
+  if(f1)f1.textContent=duo?'Nome do 1º interessado *':'Nome completo *';
+  return;
+ }
+ if(e.target.id==='interviewKind'||(e.target.name==='kind'&&e.target.form?.id==='interviewForm')){
+  const duo=e.target.value==='dupla';
+  const f=e.target.form||document.getElementById('interviewForm');
+  const f2=f?.querySelector('#interviewStudent2Field')||document.getElementById('interviewStudent2Field');
+  if(f2)f2.style.display=duo?'':'none';
+  const pkgSelect=f?.querySelector('#interviewPackage')||document.getElementById('interviewPackage');
+  if(pkgSelect){
+   const pool=db.packages.filter(x=>x.active&&(duo?x.kind==='dupla':x.kind!=='dupla'));
+   pkgSelect.innerHTML=weeksOrCustom()+options(pool,pkgSelect.value);
+   onPackageSelection(f,lookup('packages',pkgSelect.value));
+  }
+  return;
+ }
  if(e.target.matches('[data-onb-map], [data-onb-edit-line]')){onboarding.change(e);return;}
  if(e.target.id==='manualClassType'||e.target.id==='manualDuoStudent2'){
   updateDuoEnrollmentView(e.target.form);
