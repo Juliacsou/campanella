@@ -249,9 +249,9 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
    <h3>Alunos prontos para matrícula</h3>
    <div class="onb-records" aria-label="Alunos prontos para matrícula">${ready.map(s=>`<div class="onb-record"><div class="onb-record-summary"><div class="onb-record-main"><b>${safe(s.full_name)}</b><small>${safe(s.phone||'—')}</small></div>${button('manualEnrollment','Matricular',`data-id="${safe(s.id)}"`)}</div></div>`).join('')||'<div class="onb-empty">Nenhum aluno pronto no momento.</div>'}</div>
    ${warning}
-   <div class="onb-section-title"><h3>Matrícula em massa</h3><p>Baixe a planilha modelo. Você pode matricular alunos com modelos DOCX ou com <strong>contratos preexistentes</strong> (sem exigir arquivo DOCX), além de definir matrículas por <strong>recorrência até o fim do contrato</strong> pela coluna <code>data_termino</code>.</p></div><div class="onb-actions">${button('onbDownloadReady','Baixar planilha de matrículas')}${button('onbDownloadSlots','Consultar horários dos professores')}</div>
+   <div class="onb-section-title"><h3>Matrícula em massa</h3><p>Baixe a planilha modelo. Você pode matricular alunos individuais ou <strong>duplas (2 alunos juntos)</strong>, com modelos DOCX ou com <strong>contratos preexistentes</strong> (sem exigir arquivo DOCX), além de definir matrículas por <strong>recorrência até o fim do contrato</strong> pela coluna <code>data_termino</code>.</p></div><div class="onb-actions">${button('onbDownloadReady','Baixar planilha de matrículas')}${button('onbDownloadDuoTemplate','Baixar modelo de Duplas (CSV)')}${button('onbDownloadSlots','Consultar horários dos professores')}</div>
    <form id="onbEnrollmentUpload" class="onb-upload"><label class="field"><span>CSV com as matrículas preenchidas</span><input type="file" name="file" accept=".csv,text/csv" required></label><button class="btn" type="submit">Conferir matrículas</button></form>
-   ${note('warning','Regras da importação de matrículas','• <b>Contratos preexistentes em andamento:</b> preencha a coluna modelo com "preexistente". O contrato será ativado imediatamente e as aulas agendadas sem gerar PDF pendente.<br>• <b>Recorrência até o fim do contrato:</b> preencha a coluna data_termino. As aulas serão calculadas até a data final, pulando bloqueios e feriados sem gerar reposição.<br>• <b>Horários da agenda:</b> informe os horários ativos do professor (ex.: Seg 09:00 | Qua 14:00).')}
+   ${note('warning','Regras da importação de matrículas','• <b>Matrículas em Dupla:</b> baixe o modelo de duplas com as colunas aluno_1_id e aluno_2_id. O sistema detecta a modalidade de dupla automaticamente.<br>• <b>Contratos preexistentes em andamento:</b> preencha a coluna modelo com "preexistente". O contrato será ativado imediatamente e as aulas agendadas sem gerar PDF pendente.<br>• <b>Recorrência até o fim do contrato:</b> preencha a coluna data_termino. As aulas serão calculadas até a data final, pulando bloqueios e feriados sem gerar reposição.<br>• <b>Horários da agenda:</b> informe os horários ativos do professor (ex.: Seg 09:00 | Qua 14:00).')}
    ${enrollmentPreview()}${report}
    <div class="form-footer">${!standalone?button('onbStep','Voltar','data-step="review"'):''}${button('onbHome','Concluir / importar matrículas depois','','')}</div>`);
  }
@@ -325,13 +325,48 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   }catch(error){row.error=error?.message||String(error);}
   return row;
  }
+ function prepareDuoEnrollmentRow(r){
+  const row={line:r.line,name:`${r.aluno_1_nome||'Aluno 1'} & ${r.aluno_2_nome||'Aluno 2'}`,teacher:r.professor,hours:r.horarios,error:null,payload:null};
+  try{
+   const s1=db.students.find(s=>s.id===r.aluno_1_id&&s.school_id===ui.schoolId);if(!s1)throw Error('aluno_1_id não encontrado nesta escola');
+   const s2=db.students.find(s=>s.id===r.aluno_2_id&&s.school_id===ui.schoolId);if(!s2)throw Error('aluno_2_id não encontrado nesta escola');
+   if(s1.id===s2.id)throw Error('Uma dupla exige dois alunos diferentes');
+   row.name=`${s1.full_name} & ${s2.full_name}`;
+   const t=resolveByName(db.teachers.filter(t=>t.active),r.professor||s1.calendar_teacher_id,'Professor');
+   row.teacher=t.name;
+   const p=resolveByName(db.packages.filter(p=>p.active),r.pacote,'Pacote');
+   const slots=resolveSlots(t,r.horarios);if(slots.length!==Number(p.weekly_frequency))throw Error(`O pacote ${p.name} exige ${p.weekly_frequency} horário(s) por semana; foram selecionados ${slots.length}`);
+   const isPreexisting=!r.modelo||['preexistente','sem contrato','sem_contrato','contrato preexistente','fisico','externo'].includes(normalize(r.modelo));
+   let model=null;
+   if(!isPreexisting){
+    model=resolveByName(db.contract_types.filter(c=>c.active&&c.kind==='dupla'),r.modelo||p.contract_type_id,'Modelo de contrato');
+   }
+   const start=isoDateFor(r.data_inicio);if(!/^\d{4}-\d\d-\d\d$/.test(start)||start<today()||Number.isNaN(new Date(start+'T12:00:00Z').valueOf()))throw Error('Data de início inválida ou passada');
+   const rawEnd=isoDateFor(r.data_termino||r.fim_contrato||'');
+   const isRecurrence=Boolean(rawEnd);
+   if(isRecurrence&&(!/^\d{4}-\d\d-\d\d$/.test(rawEnd)||rawEnd<start))throw Error('Data de término do contrato inválida ou anterior ao início');
+   const amount=normalizeMoney(r.valor_total);if(r.valor_total&&amount===null)throw Error('Valor total inválido');
+   const installments=Number(r.parcelas||1);if(!Number.isInteger(installments)||installments<1||installments>48)throw Error('Informe de 1 a 48 parcelas');
+   const due=isoDateFor(r.primeiro_vencimento||start);if(!/^\d{4}-\d\d-\d\d$/.test(due))throw Error('Primeiro vencimento inválido');
+   const signerIdx=Number(r.quem_assina||1);
+   const closePrior=['sim','true','1','s'].includes(String(r.encerrar_anteriores||'').toLowerCase().trim());
+   row.payload={linha:r.line,aluno_1_id:s1.id,aluno_1_nome:s1.full_name,aluno_2_id:s2.id,aluno_2_nome:s2.full_name,professor_id:t.id,pacote_id:p.id,modelo_id:model?.id||null,contrato_preexistente:isPreexisting,modo:isRecurrence?'recorrencia':'package',data_termino:isRecurrence?rawEnd:null,horarios_ids:slots.map(s=>s.id),data_inicio:start,curso:r.curso||'Inglês',valor_total:amount??p.default_total,valor_total_extenso:amountWords(amount??p.default_total),parcelas:installments,primeiro_vencimento:due,forma_pagamento:r.forma_pagamento||'A combinar',quem_assina:signerIdx===2?2:1,encerrar_anteriores:closePrior};
+  }catch(error){row.error=error?.message||String(error);}
+  return row;
+ }
  async function validateEnrollmentFile(file){
   const rows=parseCSV(await file.text(),{requiredHeaders:[]});if(!rows.length||rows.length>1000)throw Error('Envie de 1 a 1000 matrículas por arquivo');
-  const required=['aluno_id','nome_completo','professor','pacote','horarios','data_inicio'];
-  const keys=Object.keys(rows[0]);const absent=required.filter(x=>!keys.includes(x));if(absent.length)throw Error('Colunas ausentes: '+absent.join(', '));
-  const result=rows.map(prepareEnrollmentRow);
+  const keys=Object.keys(rows[0]);
+  const isDuo=keys.includes('aluno_1_id')||keys.includes('aluno_2_id');
+  state.isDuoEnrollment=isDuo;
+  const required=isDuo?['aluno_1_id','aluno_2_id','professor','pacote','horarios','data_inicio']:['aluno_id','nome_completo','professor','pacote','horarios','data_inicio'];
+  const absent=required.filter(x=>!keys.includes(x));if(absent.length)throw Error('Colunas ausentes: '+absent.join(', '));
+  const result=rows.map(isDuo?prepareDuoEnrollmentRow:prepareEnrollmentRow);
   const taken=new Map(),takenStudents=new Map();for(const r of result.filter(x=>!x.error)){
-   if(takenStudents.has(r.payload.aluno_id)){r.error=`Aluno repetido no CSV (linha ${takenStudents.get(r.payload.aluno_id).line})`;takenStudents.get(r.payload.aluno_id).error=`Aluno repetido no CSV (linha ${r.line})`;}else takenStudents.set(r.payload.aluno_id,r);
+   const stIds=isDuo?[r.payload.aluno_1_id,r.payload.aluno_2_id]:[r.payload.aluno_id];
+   for(const stId of stIds){
+    if(takenStudents.has(stId)){r.error=`Aluno repetido no CSV (linha ${takenStudents.get(stId).line})`;takenStudents.get(stId).error=`Aluno repetido no CSV (linha ${r.line})`;}else takenStudents.set(stId,r);
+   }
    for(const id of r.payload.horarios_ids){const key=r.payload.professor_id+'|'+id;if(taken.has(key)){
      r.error=`Horário repetido no CSV (também na linha ${taken.get(key).line})`;taken.get(key).error=`Horário repetido no CSV (também na linha ${r.line})`;
     }else taken.set(key,r);
@@ -341,7 +376,7 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   const queue=result.filter(x=>!x.error);
   for(let i=0;i<queue.length;i+=4){await Promise.all(queue.slice(i,i+4).map(async x=>{
    try{const p=x.payload;const packageRow=db.packages.find(y=>y.id===p.pacote_id);
-    const previewCount=p.modo==='recorrencia'?null:packageRow.lessons_count;
+    const previewCount=p.modo==='recorrencia'?null:packageRow?.lessons_count;
     const {error}=await sb.rpc('calendar_preview',{p_school:ui.schoolId,p_teacher:p.professor_id,p_start:p.data_inicio,p_count:previewCount,p_slots:p.horarios_ids,p_end_date:p.data_termino||null,p_mode:p.modo||'package'});if(error)throw error;
    }catch(e){x.error='Agenda indisponível: '+(e.message||String(e));}
   }));}
@@ -450,6 +485,31 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   if(action==='onbDownloadIncomplete'){const rows=db.students.filter(s=>s.school_id===ui.schoolId&&missing(s).length).map(s=>({...studentCSVRow(s),informacoes_faltantes:missing(s).join(' | ')}));if(!rows.length)return toast('Nenhum cadastro incompleto.');download(csvExport([...baseFields,'informacoes_faltantes'],rows),'alunos_para_completar.csv');return;}
   if(action==='onbDownloadSlots'){const cols=['professor','professor_id','dia','hora','duracao_minutos','horario_id'];download(csvExport(cols,slotCSVRows()),'horarios_professores.csv');return;}
   if(action==='onbDownloadReady'){const rows=notEnrolled().filter(s=>!missing(s).length).map(readyCSVRow);if(!rows.length)return toast('Nenhum aluno pronto para matrícula.');download(csvExport(enrollmentFields,rows),'alunos_prontos_matricula.csv');return;}
+  if(action==='onbDownloadDuoTemplate'){
+   const headers=['aluno_1_id','aluno_1_nome','aluno_2_id','aluno_2_nome','professor','pacote','horarios','data_inicio','data_termino','curso','valor_total','parcelas','primeiro_vencimento','forma_pagamento','modelo','quem_assina','encerrar_anteriores'];
+   const ready=notEnrolled().filter(s=>!missing(s).length);
+   const sampleRows=[];
+   if(ready.length>=2){
+    sampleRows.push({
+     aluno_1_id:ready[0].id,aluno_1_nome:ready[0].full_name,
+     aluno_2_id:ready[1].id,aluno_2_nome:ready[1].full_name,
+     professor:db.teachers.find(t=>t.active)?.name||'',
+     pacote:db.packages.find(p=>p.kind==='dupla')?.name||'',
+     horarios:'',data_inicio:today(),data_termino:'',curso:'Inglês',
+     valor_total:'',parcelas:'1',primeiro_vencimento:today(),
+     forma_pagamento:'PIX',modelo:'preexistente',quem_assina:'1',encerrar_anteriores:'sim'
+    });
+   }else{
+    sampleRows.push({
+     aluno_1_id:'',aluno_1_nome:'Aluno 1',
+     aluno_2_id:'',aluno_2_nome:'Aluno 2',
+     professor:'',pacote:'',horarios:'',data_inicio:today(),
+     data_termino:'',curso:'Inglês',valor_total:'',parcelas:'1',
+     primeiro_vencimento:today(),forma_pagamento:'PIX',modelo:'preexistente',quem_assina:'1',encerrar_anteriores:'sim'
+    });
+   }
+   download(csvExport(headers,sampleRows),'modelo_importacao_duplas.csv');return;
+  }
   if(action==='onbClearStudents'){state.studentsFile=[];state.studentsHeaders=[];state.studentEdits={};state.errorsDownloaded=false;state.incompleteDownloaded=false;state.importedLines=new Set();state.deferredLines=new Set();state.serverErrorDismissedLines=new Set();state.openedLine=null;setReportForMode(null);render();return;}
   if(action==='onbClearEnrollments'){state.enrollPreview=null;state.enrollFile=[];state.enrollReport=null;render();return;}
   if(action==='onbOpenRow'){state.openedLine=state.openedLine===line?null:line;render();return;}
@@ -482,10 +542,24 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
    if(!await confirm(`Preparar ${valid.length} matrícula(s)? O professor e os horários serão verificados novamente no banco. Contratos ficarão pendentes de assinatura manual.`,'Confirmar matrículas em lote'))return;
    const preErrors=(state.enrollPreview||[]).filter(x=>x.error).map(x=>({linha:x.line,resultado:'erro',motivo:x.error}));
    const merged={preparadas:0,erros:preErrors.length,linhas:[...preErrors]};
-   for(let i=0;i<valid.length;i+=200){
-    const {data,error}=await sb.rpc('onboarding_prepare_enrollments_batch',{p_school:ui.schoolId,p_rows:valid.slice(i,i+200)});
-    if(error){state.enrollReport=merged;throw Error(`Falha no lote ${Math.floor(i/200)+1}. Matrículas anteriores foram preparadas: ${error.message}`);}
-    merged.preparadas+=Number(data.preparadas||0);merged.erros+=Number(data.erros||0);merged.linhas.push(...(data.linhas||[]));
+   if(state.isDuoEnrollment){
+    for(const item of valid){
+     try{
+      const {data,error}=await sb.rpc('onboarding_prepare_duo_enrollment',{p_school:ui.schoolId,p_data:item});
+      if(error)throw error;
+      merged.preparadas+=1;
+      merged.linhas.push({linha:item.linha||1,resultado:'ok',contrato_id:data?.id});
+     }catch(err){
+      merged.erros+=1;
+      merged.linhas.push({linha:item.linha||1,resultado:'erro',motivo:err?.message||String(err)});
+     }
+    }
+   }else{
+    for(let i=0;i<valid.length;i+=200){
+     const {data,error}=await sb.rpc('onboarding_prepare_enrollments_batch',{p_school:ui.schoolId,p_rows:valid.slice(i,i+200)});
+     if(error){state.enrollReport=merged;throw Error(`Falha no lote ${Math.floor(i/200)+1}. Matrículas anteriores foram preparadas: ${error.message}`);}
+     merged.preparadas+=Number(data.preparadas||0);merged.erros+=Number(data.erros||0);merged.linhas.push(...(data.linhas||[]));
+    }
    }
    state.enrollReport=merged;state.enrollPreview=null;state.enrollFile=[];
    await refresh();toast(`${merged.preparadas} matrícula(s) preparada(s); ${merged.erros} erro(s).`);render();return;

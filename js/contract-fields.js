@@ -24,6 +24,17 @@ export const CONTRACT_BASE_FIELDS = Object.freeze([
  {key:'aluno_data_nascimento',label:'Nascimento do aluno (modelo de menor)',who:'contratante',minor:true},
  {key:'aluno_cpf',label:'CPF do aluno (modelo de menor)',who:'contratante',minor:true},
  {key:'aluno_email',label:'E-mail do aluno (modelo de menor)',who:'contratante',minor:true},
+ {key:'contratante_2_nome',label:'Nome completo do contratante 2 (dupla)',who:'contratante',dupla:true},
+ {key:'contratante_2_data_nascimento',label:'Nascimento do contratante 2 (dupla)',who:'contratante',dupla:true},
+ {key:'contratante_2_cpf',label:'CPF do contratante 2 (dupla)',who:'contratante',dupla:true},
+ {key:'contratante_2_endereco',label:'Endereco do contratante 2 (dupla)',who:'contratante',dupla:true},
+ {key:'contratante_2_cep',label:'CEP do contratante 2 (dupla)',who:'contratante',dupla:true},
+ {key:'contratante_2_telefone',label:'Telefone do contratante 2 (dupla)',who:'contratante',dupla:true},
+ {key:'contratante_2_email',label:'E-mail do contratante 2 (dupla)',who:'contratante',dupla:true},
+ {key:'aluno_2_nome',label:'Nome do 2º aluno menor (dupla)',who:'contratante',minor:true,dupla:true},
+ {key:'aluno_2_data_nascimento',label:'Nascimento do 2º aluno menor (dupla)',who:'contratante',minor:true,dupla:true},
+ {key:'aluno_2_cpf',label:'CPF do 2º aluno menor (dupla)',who:'contratante',minor:true,dupla:true},
+ {key:'aluno_2_email',label:'E-mail do 2º aluno menor (dupla)',who:'contratante',minor:true,dupla:true},
  {key:'valor_total_extenso',label:'Valor por extenso',who:'contratado'},
  {key:'valor_primeira_parcela',label:'Valor da primeira parcela',who:'contratado'},
  {key:'valor_primeira_parcela_extenso',label:'Valor da 1ª parcela por extenso',who:'contratado'},
@@ -42,11 +53,11 @@ export const CONTRACT_MARKER = /<<([a-z][a-z0-9_]{1,39})\/(contratante|contratad
 export const CONTRACT_RESERVED = new Set(CONTRACT_BASE_FIELDS.map(x=>x.key));
 const BASE_MAP=new Map(CONTRACT_BASE_FIELDS.map(x=>[x.key,x]));
 const ALIASES={
- cpf:'contratante_cpf',nome:'contratante_nome',nome_completo:'contratante_nome',email:'contratante_email',cel:'contratante_telefone',telefone:'contratante_telefone',endereco:'contratante_endereco',cep:'contratante_cep',data_de_nascimento:'contratante_data_nascimento',data_nascimento:'contratante_data_nascimento',parcela:'valor_parcela',mensalidade:'valor_parcela',preco:'valor_total',pacote_contratado:'pacote',quantidade_de_aulas:'qtd_aulas',valor_1a_parcela:'valor_primeira_parcela',vencimento_1a_parcela:'vencimento_primeira_parcela',parcelas_demais:'qtd_demais_parcelas'
+ cpf:'contratante_cpf',nome:'contratante_nome',nome_completo:'contratante_nome',email:'contratante_email',cel:'contratante_telefone',telefone:'contratante_telefone',endereco:'contratante_endereco',cep:'contratante_cep',data_de_nascimento:'contratante_data_nascimento',data_nascimento:'contratante_data_nascimento',parcela:'valor_parcela',mensalidade:'valor_parcela',preco:'valor_total',pacote_contratado:'pacote',quantidade_de_aulas:'qtd_aulas',valor_1a_parcela:'valor_primeira_parcela',vencimento_1a_parcela:'vencimento_primeira_parcela',parcelas_demais:'qtd_demais_parcelas',cpf_2:'contratante_2_cpf',nome_2:'contratante_2_nome',email_2:'contratante_2_email'
 };
 export const markerFor=(key,who)=>`<<${key}/${who}>>`;
 export function requiredBaseFields(kind='individual'){
- return CONTRACT_BASE_FIELDS.filter(x=>x.required||(x.minor&&kind==='menor'));
+ return [];
 }
 export function analyzeContractMarkers(source,kind='individual'){
  const raw=String(source||'');const issues=[],markers=[],customFields=[];
@@ -67,7 +78,8 @@ export function analyzeContractMarkers(source,kind='individual'){
   if(signature)continue;
   if(field){
    if(field.who!==who)issues.push({code:'role',key,message:`${field.label} e preenchido pelo ${field.who}. Corrija para ${markerFor(key,field.who)}.`});
-   if(field.minor&&kind!=='menor')issues.push({code:'kind',key,message:`O campo ${markerFor(key,who)} e reservado aos modelos de menor de idade.`});
+   if(field.minor&&kind!=='menor'&&kind!=='dupla')issues.push({code:'kind',key,message:`O campo ${markerFor(key,who)} e reservado aos modelos de menor de idade ou dupla.`});
+   if(field.dupla&&kind!=='dupla')issues.push({code:'kind',key,message:`O campo ${markerFor(key,who)} e reservado aos modelos de dupla.`});
    continue;
   }
   if(/^(contratante_|contratado_|aluno_|assinatura_)/.test(key)||ALIASES[key]){
@@ -80,9 +92,6 @@ export function analyzeContractMarkers(source,kind='individual'){
  for(const [id,count] of occurrences){if(count>1){const isSignature=id.startsWith('assinatura/');const key=isSignature?'assinatura':id;const who=isSignature?id.split('/')[1]:(BASE_MAP.get(id)?.who||markers.find(x=>x.key===id)?.who);
    issues.push({code:'duplicate',key,message:`Campo repetido ${count} vezes: ${markerFor(key,who)}. Deixe uma unica ocorrencia no Word.`});
   }}
- for(const spec of requiredBaseFields(kind)){
-  if(!markers.some(x=>x.key===spec.key&&x.who===spec.who))issues.push({code:'missing',key:spec.key,message:`Campo obrigatorio ausente: ${spec.label} — ${markerFor(spec.key,spec.who)}.`});
- }
  for(const who of ['contratante','contratado']){
   if(!markers.some(x=>x.key==='assinatura'&&x.who===who))issues.push({code:'missing',key:`assinatura_${who}`,message:`Assinatura obrigatoria ausente: ${markerFor('assinatura',who)}.`});
  }
@@ -91,13 +100,13 @@ export function analyzeContractMarkers(source,kind='individual'){
  // Detecta delimitadores incompletos; se houver sinais << sem um par valido, impede o upload.
  const cleaned=raw.replace(tokenRegex,'');
  if(cleaned.includes('<<')||cleaned.includes('>>'))issues.push({code:'syntax',message:'Ha um marcador aberto ou malformado. Confira os sinais << e >> no Word.'});
- return {valid:issues.length===0,issues,customFields:custom,baseFound:requiredBaseFields(kind).filter(x=>markers.some(m=>m.key===x.key&&m.who===x.who)).length,requiredCount:requiredBaseFields(kind).length};
+ const baseFoundCount = markers.filter(m => m.key !== 'assinatura' && BASE_MAP.has(m.key)).length;
+ return {valid:issues.length===0,issues,customFields:custom,baseFound:baseFoundCount,requiredCount:2};
 }
 // Os modelos convertidos mantem apenas {{campo}}; valida novamente antes do envio externo.
 export function validateConvertedTemplate(html,kind='individual'){
  const seen=new Map(),issues=[];
  for(const m of String(html||'').matchAll(/\{\{([a-z][a-z0-9_]+)\}\}/g))seen.set(m[1],(seen.get(m[1])||0)+1);
- for(const field of requiredBaseFields(kind))if(!seen.has(field.key))issues.push(`Ausente: ${field.key}`);
  for(const signature of ['assinatura_contratante','assinatura_contratado'])if(!seen.has(signature))issues.push(`Ausente: ${signature}`);
  for(const [key,count] of seen)if(count>1)issues.push(`Repetido: ${key}`);
  if(/<<[^<>]*>>/.test(String(html||'')))issues.push('Marcadores antigos ou incorretos nao convertidos.');

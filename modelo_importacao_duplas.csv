@@ -1,0 +1,2 @@
+aluno_1_id;aluno_1_nome;aluno_2_id;aluno_2_nome;professor;pacote;horarios;data_inicio;data_termino;curso;valor_total;parcelas;primeiro_vencimento;forma_pagamento;modelo;quem_assina;encerrar_anteriores
+00000000-0000-0000-0000-000000000001;Lucas Silva;00000000-0000-0000-0000-000000000002;Mariana Silva;Prof. João;Dupla Semestral;Seg 14:00 | Qua 14:00;2025-02-01;;Inglês;2400.00;6;2025-02-05;PIX;preexistente;1;sim
