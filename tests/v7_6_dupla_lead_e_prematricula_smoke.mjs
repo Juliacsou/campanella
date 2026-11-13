@@ -37,16 +37,20 @@ assert(appJs.includes('btnDuoModeSearch') && appJs.includes('btnDuoModeNew'), 'a
 assert(appJs.includes('adminPreEnrollmentModal'), 'app.js deve ter modal de pré-matrícula direta pelo admin');
 assert(appJs.includes('completeAdminPreEnrollment'), 'app.js deve ter função de conclusão de pré-matrícula pelo admin');
 assert(appJs.includes('fillPreEnrollment'), 'app.js deve ter ação fillPreEnrollment no menu e modal');
+assert(appJs.includes('activatePreexisting'), 'app.js deve ter ação activatePreexisting no menu e click listener');
+assert(appJs.includes('name="agree_terms"'), 'app.js deve ter checkbox de concordância com os termos do plano na pré-matrícula pública');
+assert(appJs.includes('!isPreexistingContract(c) && c.terms?.template_rules_version===\'v5.2\''), 'manualContractHTML não deve validar assinaturas em contratos preexistentes');
 assert(appJs.includes('preEnrollmentError'), 'app.js deve ter banner de erro inline no formulário público');
 assert(appJs.includes('<form id="preEnrollmentForm" novalidate>'), 'app.js deve usar novalidate para evitar bloqueio silencioso do Chrome');
-console.log('✓ app.js possui formulários, busca, cadastro inline, pré-matrícula interna e correções de envio.');
+console.log('✓ app.js possui formulários, busca, cadastro inline, pré-matrícula interna e suporte a contratos preexistentes.');
 
 // Verificação nas Edge Functions
 assert(entrevistaFn.includes('student2_name') && entrevistaFn.includes('kind'), 'Edge function entrevista deve persistir student2_name e kind');
 assert(entrevistaFn.includes('enrollment_mode'), 'Edge function entrevista deve persistir enrollment_mode');
 assert(entrevistaFn.includes('guardian_name'), 'Edge function entrevista deve suportar guardian_name');
 assert(matriculaFn.includes('student2_name'), 'Edge function matricula-v5 deve retornar student2_name no lookup');
-console.log('✓ Edge functions (entrevista e matricula-v5) preparadas para Dupla e Formato.');
+assert(!matriculaFn.includes('assertCanonicalContract(c.template_html'), 'Edge function matricula-v5 não deve bloquear pré-matrícula por assinaturas do modelo');
+console.log('✓ Edge functions (entrevista e matricula-v5) preparadas para Dupla, Formato e sem bloqueio indevido de assinatura.');
 
 // 2. Verificação de consultas SQL e banco Supabase (se token disponível)
 const token = process.env.SUPABASE_ACCESS_TOKEN || process.env.SUPABASE_TOKEN;
@@ -64,7 +68,8 @@ if (token) {
           (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'leads' AND column_name IN ('student2_name', 'kind')) as lead_cols,
           (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'interviews' AND column_name IN ('student2_name', 'kind')) as interview_cols,
           (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'contracts' AND column_name IN ('student2_id', 'signer_student_index')) as contract_cols,
-          (SELECT COUNT(*) FROM pg_proc WHERE proname = 'admin_complete_pre_enrollment') as rpc_admin_pre_matricula;
+          (SELECT COUNT(*) FROM pg_proc WHERE proname = 'admin_complete_pre_enrollment') as rpc_admin_pre_matricula,
+          (SELECT COUNT(*) FROM pg_proc WHERE proname = 'activate_preexisting_contract') as rpc_activate_preexisting;
       `
     })
   });
@@ -74,7 +79,8 @@ if (token) {
   assert.equal(Number(data[0].interview_cols), 2, 'Tabela interviews deve possuir student2_name e kind');
   assert.equal(Number(data[0].contract_cols), 2, 'Tabela contracts deve possuir student2_id e signer_student_index');
   assert.equal(Number(data[0].rpc_admin_pre_matricula), 1, 'Função RPC admin_complete_pre_enrollment deve existir no Supabase');
-  console.log('✓ Colunas de dupla e função RPC admin_complete_pre_enrollment confirmadas no banco.');
+  assert.equal(Number(data[0].rpc_activate_preexisting), 1, 'Função RPC activate_preexisting_contract deve existir no Supabase');
+  console.log('✓ Colunas de dupla, admin_complete_pre_enrollment e activate_preexisting_contract confirmadas no banco.');
 } else {
   console.log('\n2. Verificação ativa no banco pulada (SUPABASE_ACCESS_TOKEN não definido).');
 }

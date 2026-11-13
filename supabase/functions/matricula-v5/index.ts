@@ -1,7 +1,6 @@
 // Campanella V5.6 - pre-matricula publica sem contrato e sem assinatura.
 // O token de 256 bits foi emitido pela escola. Nunca aceita school_id ou signatarios do navegador.
 import {service,shaHex} from '../_shared/v5.ts';
-import {assertCanonicalContract} from '../_shared/contractFields.ts';
 const origins=new Set(['https://juliacsou.github.io','http://127.0.0.1:8000','http://localhost:8000']);
 function publicCors(req:Request){const origin=req.headers.get('origin')||'';return {
  'Access-Control-Allow-Origin':origins.has(origin)?origin:'null',
@@ -123,13 +122,28 @@ Deno.serve(async(req)=>{
       custom_field_schema:(c.terms?.custom_field_schema||[]).filter((f:any)=>f.who==='aluno')},
     lead:{name:lead?.name||'',guardian_name:lead?.guardian_name||'',student2_name:lead?.student2_name||'',kind:lead?.kind||c.kind},existing:existingDuo});
   }
-  if(c.terms?.template_rules_version==='v5.2')assertCanonicalContract(c.template_html,c.kind);
+  const isPreexisting=!!(c.terms?.is_preexisting_contract||c.template_version==='preexisting');
   const student=normalizeStudent(body.student,c.kind,c.terms);
+  const newStatus=isPreexisting?'signed':'pre_enrolled';
+  const updatePayload:any={student_snapshot:student,status:newStatus,token_hash:null,token_expires_at:null};
+  if(isPreexisting){
+   updatePayload.audit={method:c.kind==='dupla'?'preexisting_enrollment_duo':'preexisting_enrollment',signature:'physical_prior'};
+  }
   const {data:updated,error:updateError}=await service.from('contracts')
-    .update({student_snapshot:student,status:'pre_enrolled',token_hash:null,token_expires_at:null})
+    .update(updatePayload)
     .eq('id',c.id).eq('school_id',c.school_id).eq('status','sent').eq('token_hash',tokenHash).select('id').maybeSingle();
   if(updateError)throw updateError;
   if(!updated)return json(req,{error:'O cadastro ja foi enviado. Consulte a escola.'},409);
-  return json(req,{ok:true,pre_enrolled:true,message:'Pre-matricula recebida. A escola entrara em contato sobre o contrato.'});
+  if(c.lead_id){
+   await service.from('leads').update({
+    name:c.kind==='dupla'?student.student1?.full_name:student.full_name,
+    student2_name:c.kind==='dupla'?student.student2?.full_name:null,
+    guardian_name:student.guardian_name||null,
+    status:isPreexisting?'convertido':'em_andamento',
+    crm_stage:isPreexisting?'matriculado':'pre_matricula_feita',
+    updated_at:new Date().toISOString()
+   }).eq('id',c.lead_id).eq('school_id',c.school_id);
+  }
+  return json(req,{ok:true,pre_enrolled:true,signed:isPreexisting,message:isPreexisting?'Matrícula preexistente ativada com sucesso.':'Pre-matricula recebida. A escola entrara em contato sobre o contrato.'});
  }catch(err){const message=String(err instanceof Error?err.message:err);return json(req,{error:message},400);}
 });

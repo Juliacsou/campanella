@@ -2,7 +2,7 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
-import {createCRM} from './crm.js?v=7.6.4';
+import {createCRM} from './crm.js?v=7.6.5';
 import {createCalendar} from './calendar-v6.js?v=7.1.1';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
@@ -867,7 +867,7 @@ function render(){
  const func={dashboard,calendar:calendar.view,leads:crm.view,interviews:interviewsView,contracts:contractsView,students:studentsView,directory:directoryView,teachers:teachersView,packages:packagesView,templates:templatesView}[ui.page]||dashboard;
  $('#pageContent').innerHTML=func();
 }
-function isPreexistingContract(c){return !!(c&&(c.template_version==='preexisting'||c.terms?.is_preexisting_contract||c.audit?.method==='preexisting_enrollment'));}
+function isPreexistingContract(c){return !!(c&&(c.template_version==='preexisting'||c.terms?.is_preexisting_contract||String(c.audit?.method||'').startsWith('preexisting_')));};
 function enrollmentState(c){if(c.status==='closed'||c.status==='superseded')return 'closed';if(c.status!=='signed')return null;if(c.terms?.start_date>today())return 'scheduled';return diffDays(c.terms?.end_date||'')<0?'expired':'active';}
 function enrollmentTag(c){if(isPreexistingContract(c))return '<span class="pill pill-signed">Contrato preexistente</span>';if(c.status==='signed'&&c.audit?.method==='manual_registry')return `<span class="pill pill-signed">${enrollmentState(c)==='expired'?'Expirada · Manual':enrollmentState(c)==='scheduled'?'Agendada · Manual':'Assinado · Manual'}</span>`;const st=enrollmentState(c);return st==='closed'?'<span class="pill">Encerrada</span>':st==='scheduled'?'<span class="pill pill-sent">Agendada</span>':st==='expired'?'<span class="pill pill-sent">Expirada</span>':st==='active'?'<span class="pill pill-signed">Ativa</span>':contractTag(c);}
 function contractTag(c){if(isPreexistingContract(c))return '<span class="pill pill-signed">Contrato preexistente</span>';if(c.status==='pre_enrolled')return '<span class="pill pill-sent">Pré-matrícula feita</span>';if(c.status==='ready_manual')return '<span class="pill pill-sent">Contrato gerado · Assinatura pendente</span>';if(c.status==='sent'&&!externalSignatureFor(c.id))return '<span class="pill pill-sent">Aguardando pré-matrícula</span>';if(c.status==='signed'&&c.audit?.method==='manual_registry')return '<span class="pill pill-signed">Assinado · Registro manual</span>';return c.status==='draft'?'<span class="pill">A enviar</span>':c.status==='sent'?'<span class="pill pill-sent">Enviado</span>':c.status==='signed'?(enrollmentState(c)==='expired'?'<span class="pill pill-sent">Expirado</span>':'<span class="pill pill-signed">Ativo</span>'):c.status==='closed'||c.status==='superseded'?'<span class="pill">Encerrado</span>':c.status==='void'?'<span class="pill pill-void">Cancelado</span>':tag(c.status);}
@@ -1178,6 +1178,11 @@ function contractActionsMenu(c){
  if(e){
   // Contratos externos permanecem gravados, mas as acoes da API ficam escondidas.
   // Os adapters continuam no repositorio para uma futura reativacao controlada.
+ }else if(isPreexistingContract(c)){
+  if(['draft','sent','pre_enrolled'].includes(c.status)){
+   opt('activatePreexisting','Ativar matrícula (contrato em vigor)');
+   opt('voidContract','Cancelar contrato','danger');
+  }
  }else{
   if(['draft','sent'].includes(c.status)){opt('fillPreEnrollment','Preencher pré-matrícula');opt('sendContract','Gerar link de pré-matrícula');}
   if(['pre_enrolled','ready_manual'].includes(c.status)||(c.status==='signed'&&c.audit?.method==='manual_registry'))opt('manualDownload','Baixar contrato sem assinaturas (PDF)');
@@ -1234,7 +1239,7 @@ function manualContractHTML(c){
   student=student||lookup('students',c.student_id)||{};
   if(!student.full_name)throw new Error('Informe o nome completo do aluno.');
  }
- if(c.terms?.template_rules_version==='v5.2'){
+ if(!isPreexistingContract(c) && c.terms?.template_rules_version==='v5.2'){
   const report=validateConvertedTemplate(c.template_html,c.kind);
   if(!report.valid)throw new Error('Modelo DOCX inválido: '+report.issues[0]);
  }
@@ -1255,6 +1260,44 @@ async function downloadManualContract(id){
   await refresh();toast('PDF gerado sem assinaturas. O contrato aguarda confirmação manual.');
  }else toast('PDF sem assinaturas baixado.');
 }
+async function activatePreexisting(id){
+ const c=lookup('contracts',id);
+ if(!c)throw new Error('Contrato não encontrado.');
+ if(!await window.campanellaConfirm(`Ativar imediatamente esta matrícula com base no contrato preexistente (em vigor até ${dateBR(c.terms?.end_date)})?`,'Ativar contrato preexistente','Ativar agora'))return;
+ startBusy('Ativando matrícula preexistente...');
+ try{
+  const {error:rpcErr}=await sb.rpc('activate_preexisting_contract',{p_contract_id:id});
+  if(rpcErr){
+   console.warn('Fallback activate_preexisting_contract:', rpcErr);
+   let studentId=c.student_id;
+   if(!studentId&&c.lead_id){
+    const l=lookup('leads',c.lead_id);
+    let s=db.students.find(x=>x.lead_id===c.lead_id);
+    if(!s&&l){
+     s=await save('students',{lead_id:c.lead_id,full_name:l.name||'Aluno',phone:l.phone||null,guardian_name:l.guardian_name||null,is_minor:(c.kind==='menor')});
+    }
+    if(s)studentId=s.id;
+   }
+   const isDuo=c.kind==='dupla';
+   let student2Id=c.student2_id;
+   if(isDuo&&!student2Id&&c.lead_id){
+    const l=lookup('leads',c.lead_id),i=db.interviews.find(v=>v.lead_id===c.lead_id);
+    const s2Name=i?.student2_name||l?.student2_name||'Aluno 2';
+    const s2=await save('students',{full_name:s2Name,guardian_name:l?.guardian_name||null,is_minor:false});
+    student2Id=s2.id;
+   }
+   await save('contracts',{status:'signed',student_id:studentId||c.student_id,student2_id:isDuo?(student2Id||c.student2_id):null,audit:{method:isDuo?'preexisting_interview_duo':'preexisting_interview',signature:'physical_prior',activated_by:ui.user.id}},c.id);
+   if(c.lead_id)await save('leads',{status:'convertido',crm_stage:'matriculado'},c.lead_id);
+   if(c.interview_id)await save('interviews',{pipeline_status:'enrolled'},c.interview_id);
+  }
+  closeModal();
+  await refresh();
+  toast(`Matrícula ativada com sucesso! Contrato preexistente em vigor até ${dateBR(c.terms?.end_date)}.`);
+ }finally{
+  finishBusy();
+ }
+}
+
 async function confirmManualSignatureUI(){
  return new Promise(resolve=>{
   const dialog=document.getElementById('modal');let settled=false;
@@ -2523,6 +2566,18 @@ async function completeAdminPreEnrollment(f){
   }
 
   startBusy('Salvando pré-matrícula...');
+  if(isPreexistingContract(c)){
+   const {error:rpcErr}=await sb.rpc('activate_preexisting_contract',{p_contract_id:contractId});
+   if(rpcErr){
+    await save('contracts',{student_snapshot:payload,status:'signed',audit:{method:isDuo?'preexisting_admin_duo':'preexisting_admin',signature:'physical_prior',activated_by:ui.user.id},token_hash:null,token_expires_at:null},contractId);
+    if(c.lead_id)await save('leads',{status:'convertido',crm_stage:'matriculado'},c.lead_id);
+    if(c.interview_id)await save('interviews',{pipeline_status:'enrolled'},c.interview_id);
+   }
+   closeModal();
+   await refresh();
+   toast(`Matrícula preexistente ativada com sucesso! Em vigor até ${dateBR(c.terms?.end_date)}.`);
+   return;
+  }
   const {error:rpcErr}=await sb.rpc('admin_complete_pre_enrollment',{p_contract_id:contractId,p_student:payload});
   if(rpcErr){
    console.warn('Fallback admin_complete_pre_enrollment:', rpcErr);
@@ -2682,6 +2737,7 @@ document.addEventListener('click',async e=>{
  if(action==='driveDisconnect'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração com Drive indisponível nesta versão.');if(!await window.campanellaConfirm('Desconectar o Drive desta escola? Os arquivos já enviados não serão apagados.'))return;await v5Request('google-drive-oauth',{action:'disconnect',schoolId:ui.schoolId});toast('Drive desconectado.');return refresh();}
  if(action==='manualDownload')return await downloadManualContract(id);
  if(action==='manualConfirm')return await confirmManualContract(id);
+ if(action==='activatePreexisting')return await activatePreexisting(id);
  if(action==='fillPreEnrollment'){return adminPreEnrollmentModal(id);}
  if(action==='sendContract'){await sendLink(id);return;}
  if(action==='downloadDocx')return await downloadDocx(id);
@@ -3073,6 +3129,30 @@ document.addEventListener('submit',async event=>{
   const plannedTerms=await calendar.applyTerms(f,baseTerms);
   const snapshot=snapshotFromForm(f,isDuo?'dupla':null,plannedTerms);
   if(p && ((p.kind||'individual')==='dupla')!==(snapshot.kind==='dupla'))throw new Error('Modalidade incompatível com o pacote.');
+  const isPreexisting=f.elements.type_option?.value==='preexisting';
+  if(isPreexisting){
+   let student=l.student_id?lookup('students',l.student_id):db.students.find(s=>s.lead_id===lead);
+   if(!student){
+    student=await save('students',{lead_id:lead,full_name:l.name||'Aluno',phone:l.phone||null,guardian_name:l.guardian_name||null,is_minor:(snapshot.kind==='menor')});
+    await save('leads',{student_id:student.id},lead);
+   }
+   let student2=null;
+   if(isDuo){
+    const s2Name=i.student2_name||l.student2_name||'Aluno 2';
+    student2=await save('students',{full_name:s2Name,guardian_name:l.guardian_name||null,is_minor:false});
+   }
+   const studentSnapshot=isDuo?{student1:student,student2:student2,signer_student_index:1,full_name:`${student.full_name} & ${student2?.full_name||''}`}:student;
+   const audit={method:isDuo?'preexisting_interview_duo':'preexisting_interview',signature:'physical_prior',created_by:ui.user.id};
+   const contractPayload={lead_id:lead,student_id:student.id,student2_id:isDuo?student2?.id:null,signer_student_index:isDuo?1:null,interview_id:i.id,...snapshot,status:'signed',audit,student_snapshot:studentSnapshot,kind:isDuo?'dupla':snapshot.kind,created_by:ui.user.id};
+   const created=await save('contracts',contractPayload);
+   await save('leads',{status:'convertido',crm_stage:'matriculado'},lead);
+   await save('interviews',{pipeline_status:'enrolled'},i.id);
+   closeModal();
+   await refresh();
+   toast(`Matrícula ativada com sucesso! Contrato preexistente em vigor até ${dateBR(plannedTerms.end_date)}.`);
+   if(student?.id)studentDetail(student.id);
+   return;
+  }
   const created=await save('contracts',{lead_id:lead,interview_id:i.id,...snapshot,kind:isDuo?'dupla':snapshot.kind,created_by:ui.user.id});toast('Pré-matrícula iniciada. Compartilhe o link de cadastro.');await refresh();await sendLink(created.id);return;
  }
  else if(f.id==='renewForm'){
@@ -3389,7 +3469,7 @@ function renderPublic(){
   <div id="preGuardianSection" style="display:none"><h3 class="form-section">Responsável Legal</h3><p class="muted">Preencha os dados do responsável legal caso ambos os alunos sejam menores de idade.</p><div class="form-grid">${input('Nome do responsável legal','guardian_name',read(s1,'guardian_name',d.lead?.guardian_name),'text',false)}${input('Nascimento do responsável','guardian_birth_date',read(s1,'guardian_birth_date'),'date',false)}${input('CPF do responsável','guardian_cpf',read(s1,'guardian_cpf'),'text',false)}${input('Telefone do responsável','guardian_phone',read(s1,'guardian_phone'),'tel',false)}${input('E-mail do responsável','guardian_email',read(s1,'guardian_email'),'email',false)}${input('CEP do responsável','guardian_cep',read(s1,'guardian_cep'),'text',false)}<div class="wide">${input('Endereço do responsável','guardian_address',read(s1,'guardian_address'),'text',false)}</div></div></div>
   ${(t.custom_field_schema||[]).length?`<h3 class="form-section">Informações adicionais</h3><div class="form-grid">${t.custom_field_schema.map(x=>input(safe(x.label),'extra_'+x.key,s1.custom_fields?.[x.key]||'','text',false)).join('')}</div>`:''}
   <div id="preEnrollmentError" class="notice error-notice" style="display:none;background:#fde8e8;color:#9b1c1c;border:1px solid #f87171;padding:12px 16px;border-radius:8px;margin-top:14px;font-weight:600;"></div>
-  <p class="form-note">Seus dados serão enviados à administração da escola para elaboração do contrato. Nenhuma assinatura é realizada aqui.</p><button class="btn sign-button" type="submit">Concluir pré-matrícula →</button></section></form>`;
+  <label class="form-checkbox" style="display:flex;align-items:flex-start;gap:10px;margin:18px 0;cursor:pointer;"><input type="checkbox" name="agree_terms" required checked style="margin-top:3px;cursor:pointer;"><span><strong>Concordo com os termos do curso:</strong> Revisei as informações do plano (aulas, valores e datas) e autorizo o envio dos dados para que a escola elabore o contrato a ser assinado.</span></label><p class="form-note">Seus dados serão enviados à administração da escola para elaboração do contrato. Nenhuma assinatura é realizada aqui.</p><button class="btn sign-button" type="submit">Concluir pré-matrícula →</button></section></form>`;
   return;
  }
  const readSingle=(key,fallback='')=>e[key]??fallback;
@@ -3399,13 +3479,14 @@ function renderPublic(){
  ${minor?`<h3 class="form-section">Responsável legal</h3><p class="muted">Os dados do responsável são necessários porque o aluno é menor de idade.</p><div class="form-grid">${input('Nome completo do responsável','guardian_name',readSingle('guardian_name',d.lead.guardian_name))}${input('Nascimento do responsável','guardian_birth_date',readSingle('guardian_birth_date'),'date',false)}${input('CPF do responsável','guardian_cpf',readSingle('guardian_cpf'),'text',false)}${input('Telefone do responsável','guardian_phone',readSingle('guardian_phone'),'tel',false)}${input('E-mail do responsável','guardian_email',readSingle('guardian_email'),'email',false)}${input('CEP do responsável','guardian_cep',readSingle('guardian_cep'),'text',false)}<div class="wide">${input('Endereço completo do responsável','guardian_address',readSingle('guardian_address'),'text',false)}</div></div>`:''}
  ${(t.custom_field_schema||[]).length?`<h3 class="form-section">Informações adicionais</h3><div class="form-grid">${t.custom_field_schema.map(x=>input(safe(x.label),'extra_'+x.key,e.custom_fields?.[x.key]||'','text',false)).join('')}</div>`:''}
  <div id="preEnrollmentError" class="notice error-notice" style="display:none;background:#fde8e8;color:#9b1c1c;border:1px solid #f87171;padding:12px 16px;border-radius:8px;margin-top:14px;font-weight:600;"></div>
- <p class="form-note">Seus dados serão enviados à administração da escola para elaboração do contrato. Nenhuma assinatura é realizada aqui.</p><button class="btn sign-button" type="submit">Concluir pré-matrícula →</button></section></form>`;
+ <label class="form-checkbox" style="display:flex;align-items:flex-start;gap:10px;margin:18px 0;cursor:pointer;"><input type="checkbox" name="agree_terms" required checked style="margin-top:3px;cursor:pointer;"><span><strong>Concordo com os termos do curso:</strong> Revisei as informações do plano (aulas, valores e datas) e autorizo o envio dos dados para que a escola elabore o contrato a ser assinado.</span></label><p class="form-note">Seus dados serão enviados à administração da escola para elaboração do contrato. Nenhuma assinatura é realizada aqui.</p><button class="btn sign-button" type="submit">Concluir pré-matrícula →</button></section></form>`;
 }
 async function completePreEnrollment(f){
  const errBox=$('#preEnrollmentError');
  if(errBox){errBox.style.display='none';errBox.textContent='';}
  try{
   const d=formData(f);
+  if(!f.elements.agree_terms?.checked)throw new Error('É necessário declarar que concorda com os termos para concluir a pré-matrícula.');
   if(publicData.kind==='dupla'){
    if(!d.s1_full_name?.trim())throw new Error('Informe o nome do 1º aluno.');
    if(!d.s2_full_name?.trim())throw new Error('Informe o nome do 2º aluno.');
