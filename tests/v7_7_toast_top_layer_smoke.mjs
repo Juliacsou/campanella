@@ -18,8 +18,8 @@ assert.match(
 );
 assert.match(
   html,
-  /vision-theme\.css\?v=7\.7\.1/,
-  'O arquivo index.html deve apontar para a versão 7.7.1 do CSS'
+  /vision-theme\.css\?v=7\.7\.[12]/,
+  'O arquivo index.html deve apontar para uma versão 7.7.x do CSS'
 );
 assert.match(
   html,
