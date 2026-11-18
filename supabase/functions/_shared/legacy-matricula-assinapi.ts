@@ -2,7 +2,7 @@
 // O token de 256 bits foi emitido pela escola. Nunca aceita school_id ou signatarios do navegador.
 import {service,response,environment,assinapiJSON,shaHex} from '../_shared/v5.ts';
 import {assertCanonicalContract} from '../_shared/contractFields.ts';
-const origins=new Set(['https://juliacsou.github.io','http://127.0.0.1:8000','http://localhost:8000']);
+const origins=new Set(['https://crm.profsupport.com.br','https://profsupport.com.br','https://juliacsou.github.io','http://127.0.0.1:8000','http://localhost:8000','http://127.0.0.1:8001','http://localhost:8001']);
 function publicCors(req:Request){const origin=req.headers.get('origin')||'';return {
  'Access-Control-Allow-Origin':origins.has(origin)?origin:'null',
  'Access-Control-Allow-Headers':'content-type,apikey,x-client-info',

@@ -1,15 +1,15 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 
 export const BASE = 'https://api.assinapi.com.br/v1';
-export const SITE = 'https://juliacsou.github.io/campanella/';
+export const SITE = 'https://crm.profsupport.com.br/';
 export const SUPA_URL = Deno.env.get('SUPABASE_URL') || '';
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
 export const service = createClient(SUPA_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
-const fromAllowed = new Set(['https://juliacsou.github.io','http://localhost:8000','http://127.0.0.1:8000']);
+const fromAllowed = new Set(['https://crm.profsupport.com.br','https://profsupport.com.br','https://juliacsou.github.io','http://localhost:8000','http://127.0.0.1:8000','http://localhost:8001','http://127.0.0.1:8001']);
 export function cors(req:Request):HeadersInit {
  const origin=req.headers.get('origin')||'';
- return {'Access-Control-Allow-Origin':fromAllowed.has(origin)?origin:SITE.slice(0,-'/campanella/'.length),
+ return {'Access-Control-Allow-Origin':fromAllowed.has(origin)?origin:'https://crm.profsupport.com.br',
    'Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info',
    'Access-Control-Allow-Methods':'GET,POST,OPTIONS','Vary':'Origin','Cache-Control':'no-store'};
 }
