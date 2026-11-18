@@ -17,7 +17,7 @@ const sb=createClient(SUPA_URL,KEY);
 // Campanella V6: calendario interno. As integracoes de assinaturas/Drive seguem suspensas.
 const EXTERNAL_SIGNATURE_ENABLED=false;
 const db={leads:[],interviews:[],packages:[],students:[],contracts:[],profiles:[],teachers:[],contract_types:[],school_settings:[],interview_invites:[],external_signatures:[],crm_followups:[],crm_appointments:[],crm_activities:[],crm_pipeline_columns:[],crm_tags:[]};
-const ui={page:'dashboard',user:null,role:null,teacherId:null,teacherSchoolName:null,teacherAccess:[],schoolId:null,schools:[],memberships:[],schoolMembers:[],schoolAdmins:null,emailConfirmCallback:false,isPlatformAdmin:false,schoolLicense:null,licenseActive:false,licenses:[],platformSchools:[],platformProfiles:[],platformKeys:[],platformEvents:[],platformRenewalKeys:[],platformSearch:'',platformFilter:'all',newlyIssuedKey:null,driveConnection:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',studentId:null,studentReturnPage:'directory',contractTab:'current',interviewTab:'current'};
+const ui={page:'dashboard',user:null,role:null,teacherId:null,teacherSchoolName:null,teacherAccess:[],schoolId:null,schools:[],memberships:[],schoolMembers:[],schoolAdmins:null,emailConfirmCallback:false,isPlatformAdmin:false,schoolLicense:null,licenseActive:false,licenses:[],platformSchools:[],platformProfiles:[],platformKeys:[],platformEvents:[],platformRenewalKeys:[],platformSearch:'',platformFilter:'all',newlyIssuedKey:null,driveConnection:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',studentId:null,studentReturnPage:'directory',contractTab:'current',interviewTab:'current',sidebarCollapsed:(()=>{try{return localStorage.getItem('campanella:sidebar-collapsed')==='true';}catch(e){return false;}})(),expandedNavGroups:null};
 
 // Campanella V7.2 - Planos de Uso, Limites e Adicionais
 const PLAN_CONFIGS={
@@ -436,7 +436,9 @@ const ICONS={
  key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 10-10m-4 0h4v4m-5 2 2 2"/>',
  sun:'<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
  moon:'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
- monitor:'<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>'
+ monitor:'<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',
+ sidebarCollapse:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M15 9l-3 3 3 3"/>',
+ sidebarExpand:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M13 15l3-3-3-3"/>'
 };
 function ico(name,size=18){return `<svg class="camp-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||ICONS.school}</svg>`;}
 function getThemeMode(){
@@ -534,13 +536,102 @@ function myTeacherInActiveSchool(){const email=ui.user?.email?.trim().toLowerCas
 function accountMenu(){return `<details class="account-popover"><summary class="account-trigger"><span class="account-avatar">${safe(avatarInitials())}</span><span class="account-person"><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></span>${ico('chevron',15)}</summary><div class="account-dropdown" role="group" aria-label="Menu de conta"><div class="account-dropdown-top"><span class="account-avatar">${safe(avatarInitials())}</span><div><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></div></div><div class="account-dropdown-title">Alternar escola</div>${ui.schools.map(s=>`<button class="account-option" data-action="selectSchool" data-id="${safe(s.id)}"><span class="account-option-icon">${ico('school',17)}</span><span class="account-option-label">${safe(s.name)}${s.deletion_requested_at?'<small>Exclusão agendada</small>':''}</span>${ui.schoolId===s.id?ico('check',16):''}</button>`).join('')||'<p class="account-hint">Nenhuma escola cadastrada.</p>'}<button class="account-option account-create" data-action="showActivation">${ico('plus',17)}<span>Ativar outra escola</span></button><div class="account-divider"></div><button class="account-option" data-action="navigate" data-page="profile">${ico('profile',17)}<span>Meu perfil</span></button>${ui.schoolId?`<button class="account-option" data-action="navigate" data-page="settings">${ico('settings',17)}<span>Configurações da escola</span></button>`:''}${ui.schoolId&&myTeacherInActiveSchool()?`<button class="account-option" data-action="switchToTeacherMode">${ico('calendar',17)}<span>Modo professor (Minha agenda)</span></button>`:''}<button class="account-option" data-action="navigate" data-page="schools">${ico('school',17)}<span>Minhas escolas</span></button>${ui.isPlatformAdmin?`<button class="account-option" data-action="navigate" data-page="licenses">${ico('licenses',17)}<span>Administração geral</span></button>`:''}<div class="account-divider"></div><button class="account-option account-logout" data-action="logout">${ico('logout',17)}<span>Sair da conta</span></button></div></details>`;}
 function brandMarkup(isSidebar=true){return `<div class="brand" aria-label="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-light" src="./assets/img/logo-horizontal-color.png" alt="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-dark" src="./assets/img/logo-horizontal-white.png" alt="Campanella">${isSidebar?`<img class="brand-logo brand-logo-icon brand-logo-light" src="./assets/img/logo-icon-color.png" alt="Campanella"><img class="brand-logo brand-logo-icon brand-logo-dark" src="./assets/img/logo-icon-white.png" alt="Campanella">`:''}</div>`;}
 if(typeof window!=='undefined')window.brandMarkup=brandMarkup;
+function getNavGroupSlug(title){
+ return title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');
+}
+function getActiveNavGroupSlug(){
+ for(const [title,links] of navGroups){
+  if(links.some(([key])=>key===ui.page))return getNavGroupSlug(title);
+ }
+ if(ui.page==='licenses')return 'administracao-geral';
+ return 'inicio';
+}
+function initNavGroupsState(){
+ try{
+  const saved=localStorage.getItem('campanella:nav-groups-expanded');
+  if(saved){
+   const parsed=JSON.parse(saved);
+   if(Array.isArray(parsed))return new Set(parsed);
+  }
+ }catch(e){}
+ return new Set([getActiveNavGroupSlug()]);
+}
+function ensureActiveNavGroupOpen(){
+ if(!ui.expandedNavGroups)ui.expandedNavGroups=initNavGroupsState();
+ const activeSlug=getActiveNavGroupSlug();
+ if(activeSlug&&!ui.expandedNavGroups.has(activeSlug)){
+  ui.expandedNavGroups.add(activeSlug);
+  try{localStorage.setItem('campanella:nav-groups-expanded',JSON.stringify(Array.from(ui.expandedNavGroups)));}catch(e){}
+ }
+}
+function isNavGroupOpen(groupId){
+ if(!ui.expandedNavGroups)ui.expandedNavGroups=initNavGroupsState();
+ return ui.expandedNavGroups.has(groupId);
+}
+function toggleNavGroup(groupId){
+ if(!ui.expandedNavGroups)ui.expandedNavGroups=initNavGroupsState();
+ const willOpen=!ui.expandedNavGroups.has(groupId);
+ if(willOpen){
+  ui.expandedNavGroups.add(groupId);
+ }else{
+  ui.expandedNavGroups.delete(groupId);
+ }
+ try{localStorage.setItem('campanella:nav-groups-expanded',JSON.stringify(Array.from(ui.expandedNavGroups)));}catch(e){}
+ const section=document.querySelector(`.nav-section[data-group="${groupId}"]`);
+ if(section){
+  const btn=section.querySelector('.nav-group-btn');
+  const navEl=section.querySelector('.nav');
+  if(btn){
+   btn.classList.toggle('is-open',willOpen);
+   btn.classList.toggle('is-collapsed',!willOpen);
+   btn.setAttribute('aria-expanded',willOpen?'true':'false');
+  }
+  if(navEl){
+   navEl.classList.toggle('is-open',willOpen);
+   navEl.classList.toggle('is-collapsed',!willOpen);
+   if(willOpen){
+    navEl.removeAttribute('hidden');
+   }else{
+    navEl.setAttribute('hidden','');
+   }
+  }
+ }else{
+  render();
+ }
+}
+function toggleSidebar(){
+ ui.sidebarCollapsed=!ui.sidebarCollapsed;
+ try{localStorage.setItem('campanella:sidebar-collapsed',ui.sidebarCollapsed?'true':'false');}catch(e){}
+ const shellEl=document.querySelector('.shell:not(.platform-shell)');
+ const sidebarEl=document.querySelector('.sidebar');
+ const isC=ui.sidebarCollapsed&&ui.page!=='calendar';
+ if(shellEl&&sidebarEl){
+  shellEl.classList.toggle('sidebar-collapsed',isC);
+  sidebarEl.classList.toggle('collapsed',isC);
+  sidebarEl.setAttribute('data-collapsed',isC?'true':'false');
+  document.querySelectorAll('[data-action="toggleSidebar"]').forEach(btn=>{
+   btn.title=isC?'Expandir menu':'Recuar menu';
+   btn.setAttribute('aria-label',isC?'Expandir menu':'Recuar menu');
+   btn.innerHTML=ico(isC?'sidebarExpand':'sidebarCollapse',btn.classList.contains('topbar-toggle-btn')?17:16);
+  });
+ }else{
+  render();
+ }
+}
 function shell(){
+ ensureActiveNavGroupOpen();
+ const isC=!!ui.sidebarCollapsed&&ui.page!=='calendar';
  const activeName=ui.page==='student-profile'?'Perfil do aluno':ui.page==='schools'?'Minhas escolas':ui.page.startsWith('profile')?'Meu perfil':ui.page.startsWith('settings')?'Configurações da escola':nav.find(x=>x[0]===ui.page)?.[2]||'Visão geral';
  const crmOnly=isCurrentSchoolCrmOnly();
- return `<div class="shell ${ui.page==='calendar'?'cal-admin-shell':''}"><aside class="sidebar">${brandMarkup(true)}<div class="sidebar-current"><span class="sidebar-current-label">ESCOLA ATIVA</span><span class="sidebar-current-name">${ico('school',16)} ${safe(currentSchool().name||'Nenhuma escola')}</span></div><div class="sidebar-menu">${navGroups.map(([title,links])=>`<section class="nav-section"><div class="nav-group">${title}</div><nav class="nav">${links.map(([key,iconName,label])=>{
-  const isLocked=crmOnly&&MANAGEMENT_PAGES.includes(key);
-  return `<button class="nav-btn ${ui.page===key?'active':''} ${isLocked?'is-crm-locked':''}" data-action="navigate" data-page="${key}"><span class="nav-ico">${ico(iconName,18)}</span><span>${label}</span>${isLocked?`<span class="nav-upgrade-pill">${ico('lock',10)} Upgrade</span>`:''}</button>`;
- }).join('')}</nav></section>`).join('')}${ui.isPlatformAdmin?`<section class="nav-section"><div class="nav-group">Administração Geral</div><nav class="nav"><button class="nav-btn ${ui.page==='licenses'?'active':''}" data-action="navigate" data-page="licenses"><span class="nav-ico">${ico('licenses',18)}</span><span>Planos & Licenças</span></button></nav></section>`:''}</div><div class="sidebar-bottom">${accountMenu()}</div></aside>${ui.page==='calendar'?calendar.adminNav():''}<div class="workspace"><div class="topbar"><span class="subtle">${safe(currentSchool().name)} <b> / ${safe(activeName)}</b></span><div class="topbar-right">${themeToggleMarkup()}<span class="topbar-chip">${ico('school',14)} ${safe(roleName(ui.role))}${myTeacherInActiveSchool()?' · Professor':''}</span></div></div><main class="content" id="pageContent"></main></div></div>`;
+ return `<div class="shell ${ui.page==='calendar'?'cal-admin-shell':''} ${isC?'sidebar-collapsed':''}"><aside class="sidebar ${isC?'collapsed':''}" data-collapsed="${isC?'true':'false'}"><div class="sidebar-brand-row">${brandMarkup(true)}<button type="button" class="sidebar-collapse-btn" data-action="toggleSidebar" title="${isC?'Expandir menu':'Recuar menu'}" aria-label="${isC?'Expandir menu':'Recuar menu'}">${ico(isC?'sidebarExpand':'sidebarCollapse',16)}</button></div><div class="sidebar-current"><span class="sidebar-current-label">ESCOLA ATIVA</span><span class="sidebar-current-name">${ico('school',16)} ${safe(currentSchool().name||'Nenhuma escola')}</span></div><div class="sidebar-menu">${navGroups.map(([title,links])=>{
+  const groupSlug=getNavGroupSlug(title);
+  const isOpen=isNavGroupOpen(groupSlug);
+  const hasActive=links.some(([k])=>k===ui.page);
+  return `<section class="nav-section ${hasActive?'has-active':''}" data-group="${groupSlug}"><button type="button" data-action="toggleNavGroup" data-group="${groupSlug}" aria-expanded="${isOpen}" class="${isOpen?'is-open':'is-collapsed'} nav-group-btn nav-group">${title} <span class="nav-group-arrow">${ico('chevron',12)}</span></button><nav class="nav ${isOpen?'is-open':'is-collapsed'}" ${isOpen?'':'hidden'}>${links.map(([key,iconName,label])=>{
+   const isLocked=crmOnly&&MANAGEMENT_PAGES.includes(key);
+   return `<button class="nav-btn ${ui.page===key?'active':''} ${isLocked?'is-crm-locked':''}" data-action="navigate" data-page="${key}" title="${label}" data-tooltip="${label}"><span class="nav-ico">${ico(iconName,18)}</span><span>${label}</span>${isLocked?`<span class="nav-upgrade-pill">${ico('lock',10)} Upgrade</span>`:''}</button>`;
+  }).join('')}</nav></section>`;
+ }).join('')}${ui.isPlatformAdmin?`<section class="nav-section ${ui.page==='licenses'?'has-active':''}" data-group="administracao-geral"><button type="button" data-action="toggleNavGroup" data-group="administracao-geral" aria-expanded="${isNavGroupOpen('administracao-geral')}" class="${isNavGroupOpen('administracao-geral')?'is-open':'is-collapsed'} nav-group-btn nav-group">Administração Geral <span class="nav-group-arrow">${ico('chevron',12)}</span></button><nav class="nav ${isNavGroupOpen('administracao-geral')?'is-open':'is-collapsed'}" ${isNavGroupOpen('administracao-geral')?'':'hidden'}><button class="nav-btn ${ui.page==='licenses'?'active':''}" data-action="navigate" data-page="licenses" title="Planos & Licenças" data-tooltip="Planos & Licenças"><span class="nav-ico">${ico('licenses',18)}</span><span>Planos & Licenças</span></button></nav></section>`:''}</div><div class="sidebar-bottom">${accountMenu()}</div></aside>${ui.page==='calendar'?calendar.adminNav():''}<div class="workspace"><div class="topbar"><div class="topbar-left"><button type="button" class="topbar-toggle-btn" data-action="toggleSidebar" title="${isC?'Expandir menu':'Recuar menu'}" aria-label="${isC?'Expandir menu':'Recuar menu'}">${ico(isC?'sidebarExpand':'sidebarCollapse',17)}</button><span class="subtle">${safe(currentSchool().name)} <b> / ${safe(activeName)}</b></span></div><div class="topbar-right">${themeToggleMarkup()}<span class="topbar-chip">${ico('school',14)} ${safe(roleName(ui.role))}${myTeacherInActiveSchool()?' · Professor':''}</span></div></div><main class="content" id="pageContent"></main></div></div>`;
 }
 function currentSchool(){return ui.schools.find(x=>x.id===ui.schoolId)||{};}
 function roleName(role){if(role==='admin')return currentSchool().admin_user_id&&currentSchool().admin_user_id===ui.user?.id?'Administrador Super':'Administrador';return role==='teacher'?'Professor':'Sem acesso';}
@@ -2662,6 +2753,8 @@ document.addEventListener('click',async e=>{
  if(action==='toggleTheme'){window.toggleTheme();return;}
  if(action==='setTheme'){window.toggleTheme(x.dataset.theme);render();return;}
  if(action==='setThemeMode'){window.setThemeMode(x.dataset.mode);return;}
+ if(action==='toggleNavGroup'){toggleNavGroup(x.dataset.group);return;}
+ if(action==='toggleSidebar'){toggleSidebar();return;}
  startBusy();
  try{
  if(action.startsWith('onb'))return await onboarding.action(action,x);
@@ -2670,7 +2763,7 @@ document.addEventListener('click',async e=>{
  if(action==='showSignup'){$('#app').innerHTML=signupPage();return;}
  if(action==='showForgotPassword'){$('#app').innerHTML=forgotPasswordPage();return;}
  if(action==='backLogin'){if(passwordRecoveryRoute())await sb.auth.signOut();history.replaceState({},'',location.pathname);ui.user=null;$('#app').innerHTML=login();return;}
- if(action==='navigate'){if(ui.role==='teacher'&&page!=='calendar')throw new Error('Acesso restrito ao professor.');if(page==='licenses'&&!ui.isPlatformAdmin)throw new Error('Acesso negado.');if((page==='settings'||page.startsWith('settings-')||['templates','teachers','packages'].includes(page))&&ui.schoolId&&!canAdmin())throw new Error('Área restrita.');ui.page=page;if(page==='calendar')await calendar.load();if(page!=='licenses')ui.newlyIssuedKey=null;ui.search='';ui.expiry='all';if(page==='licenses')await loadPlatformData();return render();}
+ if(action==='navigate'){if(ui.role==='teacher'&&page!=='calendar')throw new Error('Acesso restrito ao professor.');if(page==='licenses'&&!ui.isPlatformAdmin)throw new Error('Acesso negado.');if((page==='settings'||page.startsWith('settings-')||['templates','teachers','packages'].includes(page))&&ui.schoolId&&!canAdmin())throw new Error('Área restrita.');ui.page=page;ensureActiveNavGroupOpen();if(page==='calendar')await calendar.load();if(page!=='licenses')ui.newlyIssuedKey=null;ui.search='';ui.expiry='all';if(page==='licenses')await loadPlatformData();return render();}
  if(action==='logout'){refreshVersion++;await sb.auth.signOut();ui.user=null;ui.role=null;ui.schoolId=null;ui.isPlatformAdmin=false;ui.newlyIssuedKey=null;ui.page='dashboard';return initialize();}
  if(action==='selectSchool')return switchSchool(id);
  if(action==='showActivation')return activationModal();
