@@ -60,8 +60,7 @@ export function requiredBaseFields(kind='individual'){
  return [];
 }
 export function analyzeContractMarkers(source,kind='individual'){
- const raw=String(source||'');const issues=[],markers=[],customFields=[];
- const occurrences=new Map();
+ const raw=String(source||'');const issues=[],markers=[],customFieldsMap=new Map();
  const tokenRegex=/<<([^<>]{0,120})>>/g;
  for(const match of raw.matchAll(tokenRegex)){
   const token=match[1].trim(),full=match[0];
@@ -72,8 +71,6 @@ export function analyzeContractMarkers(source,kind='individual'){
   }
   const [,key,who]=parts,signature=key==='assinatura';
   const field=BASE_MAP.get(key);
-  const identity=signature?`${key}/${who}`:key;
-  occurrences.set(identity,(occurrences.get(identity)||0)+1);
   markers.push({key,who});
   if(signature)continue;
   if(field){
@@ -87,28 +84,40 @@ export function analyzeContractMarkers(source,kind='individual'){
    issues.push({code:'reserved',key,message:replacement?`"${key}" ja e um dado base. Use ${markerFor(replacement.key,replacement.who)}.`:`"${key}" usa um prefixo reservado do Campanella. Escolha outro nome para o campo adicional.`});
    continue;
   }
-  customFields.push({key,label:key.replaceAll('_',' ').replace(/^./,x=>x.toUpperCase()),who:who==='contratante'?'aluno':'admin'});
+  const existingCustom=customFieldsMap.get(key);
+  if(existingCustom){
+   if(existingCustom.rawWho!==who){
+    issues.push({code:'role',key,message:`O campo adicional "${key}" possui responsaveis conflitantes (/contratante e /contratado). Use o mesmo responsavel em todas as ocorrencias.`});
+   }
+  }else{
+   customFieldsMap.set(key,{key,label:key.replaceAll('_',' ').replace(/^./,x=>x.toUpperCase()),who:who==='contratante'?'aluno':'admin',rawWho:who});
+  }
  }
- for(const [id,count] of occurrences){if(count>1){const isSignature=id.startsWith('assinatura/');const key=isSignature?'assinatura':id;const who=isSignature?id.split('/')[1]:(BASE_MAP.get(id)?.who||markers.find(x=>x.key===id)?.who);
-   issues.push({code:'duplicate',key,message:`Campo repetido ${count} vezes: ${markerFor(key,who)}. Deixe uma unica ocorrencia no Word.`});
-  }}
  for(const who of ['contratante','contratado']){
   if(!markers.some(x=>x.key==='assinatura'&&x.who===who))issues.push({code:'missing',key:`assinatura_${who}`,message:`Assinatura obrigatoria ausente: ${markerFor('assinatura',who)}.`});
  }
- const custom=Array.from(new Map(customFields.map(x=>[x.key,x])).values());
+ const custom=Array.from(customFieldsMap.values()).map(({key,label,who})=>({key,label,who}));
  if(custom.length>25)issues.push({code:'limit',message:'O modelo pode ter no maximo 25 campos adicionais.'});
  // Detecta delimitadores incompletos; se houver sinais << sem um par valido, impede o upload.
  const cleaned=raw.replace(tokenRegex,'');
  if(cleaned.includes('<<')||cleaned.includes('>>'))issues.push({code:'syntax',message:'Ha um marcador aberto ou malformado. Confira os sinais << e >> no Word.'});
  const baseFoundCount = markers.filter(m => m.key !== 'assinatura' && BASE_MAP.has(m.key)).length;
- return {valid:issues.length===0,issues,customFields:custom,baseFound:baseFoundCount,requiredCount:2};
+ const uniqueIssues=[];
+ const seenMsg=new Set();
+ for(const issue of issues){
+  const msgKey=`${issue.code}:${issue.message}`;
+  if(!seenMsg.has(msgKey)){
+   seenMsg.add(msgKey);
+   uniqueIssues.push(issue);
+  }
+ }
+ return {valid:uniqueIssues.length===0,issues:uniqueIssues,customFields:custom,baseFound:baseFoundCount,requiredCount:2};
 }
 // Os modelos convertidos mantem apenas {{campo}}; valida novamente antes do envio externo.
 export function validateConvertedTemplate(html,kind='individual'){
- const seen=new Map(),issues=[];
- for(const m of String(html||'').matchAll(/\{\{([a-z][a-z0-9_]+)\}\}/g))seen.set(m[1],(seen.get(m[1])||0)+1);
+ const seen=new Set(),issues=[];
+ for(const m of String(html||'').matchAll(/\{\{([a-z][a-z0-9_]+)\}\}/g))seen.add(m[1]);
  for(const signature of ['assinatura_contratante','assinatura_contratado'])if(!seen.has(signature))issues.push(`Ausente: ${signature}`);
- for(const [key,count] of seen)if(count>1)issues.push(`Repetido: ${key}`);
  if(/<<[^<>]*>>/.test(String(html||'')))issues.push('Marcadores antigos ou incorretos nao convertidos.');
  return {valid:!issues.length,issues};
 }
