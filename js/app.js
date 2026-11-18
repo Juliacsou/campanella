@@ -370,18 +370,55 @@ async function confirmExternalSignature(){
   document.getElementById('externalSignatureYes').addEventListener('click',()=>done(true),{once:true});
  });
 }
-function toast(msg,bad=false){const el=$('#toast');el.textContent=msg;el.style.background=bad?'#8a332d':'#163b38';el.classList.add('visible');clearTimeout(toast.timeout);toast.timeout=setTimeout(()=>el.classList.remove('visible'),3900)}
+function dismissToast(){
+ const el=$('#toast');
+ if(!el)return;
+ clearTimeout(toast.timeout);
+ el.classList.remove('visible');
+ if(typeof el.hidePopover==='function'){
+  try{
+   if(el.matches(':popover-open'))el.hidePopover();
+  }catch(e){}
+ }
+ if(el.parentElement&&el.parentElement!==document.body&&document.body){
+  document.body.appendChild(el);
+ }
+}
+function toast(msg,bad=false){
+ const el=$('#toast');
+ if(!el)return;
+ const icon=bad?ico('lock',15):ico('check',15);
+ el.innerHTML=`<span class="toast-ico" aria-hidden="true">${icon}</span><span class="toast-msg">${safe(msg)}</span>`;
+ el.setAttribute('data-kind',bad?'error':'success');
+ el.style.background=bad?'#8a332d':'#163b38';
+ el.classList.add('visible');
+ let usedPopover=false;
+ if(typeof el.showPopover==='function'){
+  try{
+   if(!el.matches(':popover-open'))el.showPopover();
+   usedPopover=true;
+  }catch(e){}
+ }
+ if(!usedPopover){
+  const m=document.querySelector('dialog[open]:last-of-type')||$('#modal');
+  if(m&&m.open&&!m.contains(el)){
+   m.appendChild(el);
+  }
+ }
+ clearTimeout(toast.timeout);
+ toast.timeout=setTimeout(dismissToast,3900);
+}
 function lockModalScroll(){document.body.classList.add('modal-open');document.documentElement.classList.add('modal-open');}
 function unlockModalScroll(){if(!document.querySelector('dialog[open]')){document.body.classList.remove('modal-open');document.documentElement.classList.remove('modal-open');}}
 function showModal(content){const m=$('#modal');$('#modal-body').innerHTML=content;lockModalScroll();if(!m.open)m.showModal();m.scrollTop=0;}
-function closeModal(){const m=$('#modal');if(m&&m.open)m.close();unlockModalScroll();}
+function closeModal(){const m=$('#modal');const t=$('#toast');if(t&&t.parentElement&&t.parentElement!==document.body&&document.body)document.body.appendChild(t);if(m&&m.open)m.close();unlockModalScroll();}
 function escapeHtmlText(v){return safe(v==null?'':String(v)).replace(/\n/g,'<br>');}
 function toModalMessage(message){return Array.isArray(message)?message.join('\n'):String(message||'');}
 function independentDialog(body,buttons){
  return new Promise(resolve=>{
   const d=document.createElement('dialog');d.className='camp-app-dialog';
   d.innerHTML=`<div class="camp-app-dialog-content">${body}<div class="form-footer">${buttons.map((b,i)=>`<button type="button" class="btn ${b.secondary?'ghost':''}" data-choice="${i}">${safe(b.label)}</button>`).join('')}</div></div>`;
-  const finish=v=>{if(d.open)d.close();d.remove();unlockModalScroll();resolve(v)};
+  const finish=v=>{const t=$('#toast');if(t&&t.parentElement&&t.parentElement!==document.body&&document.body)document.body.appendChild(t);if(d.open)d.close();d.remove();unlockModalScroll();resolve(v)};
   d.addEventListener('cancel',e=>{e.preventDefault();finish(false)},{once:true});
   d.addEventListener('click',e=>{const el=e.target.closest('[data-choice]');if(el)finish(buttons[+el.dataset.choice].value)});
   document.body.append(d);lockModalScroll();d.showModal();d.scrollTop=0;
@@ -2743,7 +2780,7 @@ async function downloadDocx(id){const c=lookup('contracts',id);if(!c)throw new E
  doc.render(vals);const signed=EXTERNAL_SIGNATURE_ENABLED?await embedOwnerSignature(doc.toBlob(),c.owner_signature_png,c.owner_name):doc.toBlob();const a=document.createElement('a'),url=URL.createObjectURL(signed);a.href=url;a.download=`Contrato-${c.id.slice(0,8)}.docx`;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
 
-document.addEventListener('click',e=>{if(!e.target.closest('.account-popover'))document.querySelectorAll('.account-popover[open]').forEach(d=>d.removeAttribute('open'));if(!e.target.closest('.contract-actions-dropdown'))document.querySelectorAll('.contract-actions-dropdown[open]').forEach(d=>d.removeAttribute('open'));});
+document.addEventListener('click',e=>{if(e.target.closest('#toast')){dismissToast();return;}if(!e.target.closest('.account-popover'))document.querySelectorAll('.account-popover[open]').forEach(d=>d.removeAttribute('open'));if(!e.target.closest('.contract-actions-dropdown'))document.querySelectorAll('.contract-actions-dropdown[open]').forEach(d=>d.removeAttribute('open'));});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.account-popover[open]').forEach(d=>d.removeAttribute('open'));if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('.cal-editor-target')){e.preventDefault();e.target.click();}});
 document.addEventListener('click',async e=>{
  const x=e.target.closest('[data-action]');if(!x||appBusy)return;
