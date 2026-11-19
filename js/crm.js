@@ -256,21 +256,24 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   </div>`;
 
   const primaryFilters=`<div class="crm-filters-bar">
-   <div class="crm-search">
-    <span class="crm-search-icon">${crmIcon('search',17)}</span>
-    <input id="crmSearch" type="search" autocomplete="off" placeholder="Buscar por nome, WhatsApp, tag, indicação…" value="${safe(state.search)}">
-   </div>
-   <div class="crm-filter-tag-wrap">
-    <select id="crmFilterTag" title="Filtrar por Tag">
-     ${opt([['all','Todas as tags'],...tags.map(t=>[t.id,t.name])],state.tag)}
-    </select>
-   </div>
-   <button type="button" class="crm-btn subtle crm-filters-toggle-btn ${state.filtersOpen||activeSecondaryCount?'is-active':''}" data-action="crmToggleFilters">
-    ${crmIcon('sliders',14)} <span>Filtros</span>${activeSecondaryCount?`<span class="tab-count">${activeSecondaryCount}</span>`:''}
-   </button>
-   <div class="crm-toggle">
-    <button class="${state.mode==='board'?'active':''}" data-action="crmMode" data-mode="board">${crmIcon('kanban',15)} Pipeline</button>
-    <button class="${state.mode==='list'?'active':''}" data-action="crmMode" data-mode="list">${crmIcon('list',15)} Lista</button>
+   ${tabsMarkup}
+   <div class="crm-filters-right">
+    <div class="crm-search">
+     <span class="crm-search-icon">${crmIcon('search',15)}</span>
+     <input id="crmSearch" type="search" autocomplete="off" placeholder="Buscar lead, telefone, tag…" value="${safe(state.search)}">
+    </div>
+    <div class="crm-filter-tag-wrap">
+     <select id="crmFilterTag" title="Filtrar por Tag">
+      ${opt([['all','Todas as tags'],...tags.map(t=>[t.id,t.name])],state.tag)}
+     </select>
+    </div>
+    <button type="button" class="crm-btn subtle crm-filters-toggle-btn ${state.filtersOpen||activeSecondaryCount?'is-active':''}" data-action="crmToggleFilters">
+     ${crmIcon('sliders',14)} <span>Filtros</span>${activeSecondaryCount?`<span class="tab-count">${activeSecondaryCount}</span>`:''}
+    </button>
+    <div class="crm-toggle">
+     <button class="${state.mode==='board'?'active':''}" data-action="crmMode" data-mode="board">${crmIcon('kanban',14)} Pipeline</button>
+     <button class="${state.mode==='list'?'active':''}" data-action="crmMode" data-mode="list">${crmIcon('list',14)} Lista</button>
+    </div>
    </div>
   </div>`;
 
@@ -285,17 +288,11 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    ${activeSecondaryCount?`<div class="crm-advanced-actions"><button type="button" class="crm-btn subtle mini" data-action="crmClearAdvancedFilters">${crmIcon('x',12)} Limpar filtros avançados</button></div>`:''}
   </div>`:'';
 
-  const listControls=`<div class="crm-list-controls">
-   <div><b>${rows.length}</b> ${rows.length===1?'contato':'contatos'} nesta visão</div>
-  </div>`;
-
   return `<div class="crm-root">${header}${crmMetrics()}
    <section class="crm-workspace">
-    ${tabsMarkup}
     <div class="crm-workspace-header">
      ${primaryFilters}
      ${advancedFilters}
-     ${listControls}
     </div>
     ${state.mode==='board'&&state.tab==='open'?board(rows):listing(rows)}
    </section>
@@ -311,9 +308,9 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   const isDuo=l.kind==='dupla'||!!l.student2_name;
   const displayName=isDuo?`${l.name} & ${l.student2_name||'2º Aluno'}`:l.name;
   return `<article class="crm-lead-card" draggable="true" data-action="crmDetail" data-id="${l.id}" role="button" tabindex="0">
-   <div class="crm-lead-top"><strong>${safe(displayName)}</strong>${isDuo?pill('Dupla','signed'):''}${fiche?pill('Ficha inicial','green'):''}</div>
+   <div class="crm-lead-top"><strong>${safe(displayName)}</strong>${(isDuo||fiche)?`<div class="crm-lead-badges">${isDuo?pill('Dupla','signed'):''}${fiche?pill('Ficha inicial','green'):''}</div>`:''}</div>
    ${tags.length?`<div class="crm-card-tags">${tags.map(renderTagBadge).join('')}</div>`:''}
-   ${l.crm_service?`<div class="crm-muted">${safe(l.crm_service)}</div>`:''}
+   ${l.crm_service||l.phone?`<div class="crm-muted">${safe([l.crm_service,l.phone].filter(Boolean).join(' · '))}</div>`:''}
    ${l.crm_last_contact_on?`<div class="crm-card-foot"><span class="crm-mini-date">Último contato: ${shortDate(l.crm_last_contact_on)}</span></div>`:''}
    ${appt?`<div class="crm-card-interview">${crmIcon('calendar',13)} <span>${dateTime(appt.scheduled_at)} · ${safe(teacherName(appt.teacher_id))}</span></div>`:lastAppt?.state==='completed'?`<div class="crm-card-interview is-done">${crmIcon('checkCircle',13)} <span>Entrevista realizada · ${safe(teacherName(lastAppt.teacher_id))}</span></div>`:''}
   </article>`;
@@ -351,14 +348,14 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    const statusLabel=l.crm_outcome==='lost'?(l.crm_loss_reason||'Não convertido'):l.crm_outcome==='won'?'Fechado':(col?.name||'Sem coluna');
    const isDuo=l.kind==='dupla'||!!l.student2_name;
    const displayName=isDuo?`${l.name} & ${l.student2_name||'2º Aluno'}`:l.name;
-   return `<tr><td><strong>${safe(displayName)}</strong>${isDuo?' <span class="pill pill-signed" style="margin-left:4px">Dupla</span>':''}<small>${safe(l.phone||'Sem telefone')}</small></td><td>${pill(statusLabel,'soft')}</td><td>${tags.length?`<div class="crm-card-tags">${tags.map(renderTagBadge).join('')}</div>`:'<span class="crm-muted">—</span>'}</td><td>${safe(l.crm_source||'—')}<small>${safe(l.crm_service||'')}</small></td><td>${interviewText(l)}</td><td>${ficheText(l)}</td><td>${btn('crmDetail',`${crmIcon('eye',14)} <span>ABRIR</span>`,l.id,'table-action-btn subtle')}</td></tr>`;
+   return `<tr><td><strong>${safe(displayName)}</strong>${isDuo?' <span class="pill pill-signed" style="margin-left:4px">Dupla</span>':''}<small>${safe(l.phone||'Sem telefone')}</small></td><td>${pill(statusLabel,'soft')}</td><td>${tags.length?`<div class="crm-card-tags">${tags.map(renderTagBadge).join('')}</div>`:'<span class="crm-muted">—</span>'}</td><td>${safe(l.crm_source||'—')}<small>${safe(l.crm_service||'')}</small></td><td>${interviewText(l)}</td><td>${ficheText(l)}</td><td>${btn('crmDetail',`${crmIcon('eye',14)} <span>Abrir</span>`,l.id,'table-action-btn subtle')}</td></tr>`;
   }).join('')||'<tr><td colspan="7" class="crm-no-data">Nenhum lead corresponde a estes filtros.</td></tr>'}</tbody></table></div>`;
  }
 
  function upcomingInterviews(){
   const open=allLeadStates().filter(l=>l.crm_outcome==='open');
   const upcomingList=(db.crm_appointments||[]).filter(a=>a.state==='scheduled'&&open.some(l=>l.id===a.lead_id)).sort((a,b)=>String(a.scheduled_at).localeCompare(String(b.scheduled_at))).slice(0,8);
-  return `<section class="crm-due-panel"><div class="crm-due-head"><div><div class="eyebrow">Calendário comercial & docente</div><h2>Próximas entrevistas agendadas</h2></div></div><div class="crm-due-list">${upcomingList.length?upcomingList.map(a=>`<div class="crm-due-item"><span class="crm-due-icon">${crmIcon('calendar',16)}</span><div><b>${safe(lookup('leads',a.lead_id)?.name||'Lead')}</b><p>Professor: ${safe(teacherName(a.teacher_id))} · ${Number(a.duration_minutes||30)} min${a.note?' · '+safe(a.note):''}</p></div><span class="crm-due-date">${dateTime(a.scheduled_at)}</span>${btn('crmDetail',`${crmIcon('eye',14)} <span>ABRIR</span>`,a.lead_id,'table-action-btn subtle')}</div>`).join(''):'<p class="crm-muted">Nenhuma entrevista agendada no momento.</p>'}</div></section>`;
+  return `<section class="crm-due-panel"><div class="crm-due-head"><div><div class="eyebrow">Calendário comercial & docente</div><h2>Próximas entrevistas agendadas</h2></div></div><div class="crm-due-list">${upcomingList.length?upcomingList.map(a=>`<div class="crm-due-item"><span class="crm-due-icon">${crmIcon('calendar',16)}</span><div><b>${safe(lookup('leads',a.lead_id)?.name||'Lead')}</b><p>Professor: ${safe(teacherName(a.teacher_id))} · ${Number(a.duration_minutes||30)} min${a.note?' · '+safe(a.note):''}</p></div><span class="crm-due-date">${dateTime(a.scheduled_at)}</span>${btn('crmDetail',`${crmIcon('eye',14)} <span>Abrir</span>`,a.lead_id,'table-action-btn subtle')}</div>`).join(''):'<p class="crm-muted">Nenhuma entrevista agendada no momento.</p>'}</div></section>`;
  }
 
  function clean(phone){return onlyDigits(phone||'');}

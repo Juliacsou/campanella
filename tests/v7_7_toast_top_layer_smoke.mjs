@@ -5,9 +5,9 @@ import path from 'node:path';
 const basePath = path.resolve('/home/antigravity/Juliacsou/campanella');
 const html = fs.readFileSync(path.join(basePath, 'index.html'), 'utf8');
 const appJs = fs.readFileSync(path.join(basePath, 'js/app.js'), 'utf8');
-const css = fs.readFileSync(path.join(basePath, 'css/vision-theme.css'), 'utf8');
+const css = fs.readFileSync(path.join(basePath, 'css/style.css'), 'utf8');
 
-console.log('=== Iniciando Testes V7.7: Toast Notifications no Top Layer (Popover API) ===\n');
+console.log('=== Iniciando Testes V8.0: Toast Notifications no Top Layer (Popover API) ===\n');
 
 // 1. Verificando index.html
 console.log('1. Verificando declaração do elemento #toast no index.html...');
@@ -18,13 +18,12 @@ assert.match(
 );
 assert.match(
   html,
-  /vision-theme\.css\?v=7\.7\.\d+/,
-  'O arquivo index.html deve apontar para uma versão 7.7.x do CSS'
+  /style\.css\?v=8\.0\.\d+/,
+  'O arquivo index.html deve apontar para a versão 8.0.x do style.css'
 );
-assert.match(
-  html,
-  /app\.js\?v=7\.7\.1/,
-  'O arquivo index.html deve apontar para a versão 7.7.1 do app.js'
+assert.ok(
+  !html.includes('vision-theme.css'),
+  'O arquivo index.html não deve referenciar vision-theme.css'
 );
 console.log('  -> Declaração no HTML validada.');
 
@@ -52,7 +51,7 @@ assert.ok(
 );
 console.log('  -> Lógica no app.js validada.');
 
-// 3. Verificando estilos no css/vision-theme.css
+// 3. Verificando estilos no css/style.css
 console.log('3. Verificando regras de CSS para #toast e #toast:popover-open...');
 assert.ok(
   css.includes('#toast:popover-open'),

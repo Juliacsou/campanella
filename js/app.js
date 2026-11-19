@@ -390,7 +390,7 @@ function toast(msg,bad=false){
  const icon=bad?ico('lock',15):ico('check',15);
  el.innerHTML=`<span class="toast-ico" aria-hidden="true">${icon}</span><span class="toast-msg">${safe(msg)}</span>`;
  el.setAttribute('data-kind',bad?'error':'success');
- el.style.background=bad?'#8a332d':'#163b38';
+ el.style.removeProperty('background');
  el.classList.add('visible');
  let usedPopover=false;
  if(typeof el.showPopover==='function'){
@@ -434,9 +434,9 @@ function alertModal(message,title='Aviso',buttonLabel='Entendi'){
 }
 window.campanellaConfirm=confirmModal;
 window.campanellaAlert=alertModal;
-function heading(eyebrow,title,sub,action=''){return `<header class="page-head"><div>${eyebrow?`<div class="eyebrow">${eyebrow}</div>`:''}<h1>${title}</h1>${sub?`<p class="leadline">${sub}</p>`:''}</div>${action}</header>`;}
-const card=(title,body,extra='')=>`<section class="panel"><div class="panel-head"><h2>${title}</h2>${extra}</div>${body}</section>`;
-const empty=text=>`<div class="empty"><span class="empty-symbol">✳</span>${safe(text)}</div>`;
+function heading(eyebrow,title,sub,action=''){return `<header class="page-head"><div class="page-head-main">${eyebrow?`<div class="eyebrow">${eyebrow}</div>`:''}<h1>${title}</h1>${sub?`<p class="leadline">${sub}</p>`:''}</div>${action?`<div class="page-head-actions">${action}</div>`:''}</header>`;}
+const card=(title,body,extra='')=>`<section class="panel">${title||extra?`<div class="panel-head">${title?`<h2>${title}</h2>`:'<div></div>'}${extra}</div>`:''}${body}</section>`;
+const empty=text=>`<div class="empty"><span class="empty-symbol">○</span><span>${safe(text)}</span></div>`;
 const row=(columns)=>`<tr>${columns.map(c=>`<td>${c}</td>`).join('')}</tr>`;
 function table(headers,rows,placeholder='Nenhum registro encontrado'){return `<div class="table-wrap">${rows.length?`<table class="data-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`:empty(placeholder)}</div>`;}
 const crm=createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy:()=>appBusy});
@@ -478,85 +478,25 @@ const ICONS={
  sidebarExpand:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M13 15l3-3-3-3"/>'
 };
 function ico(name,size=18){return `<svg class="camp-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||ICONS.school}</svg>`;}
-function getThemeMode(){
- try{
-  const saved=localStorage.getItem('campanella:theme');
-  return (saved==='light'||saved==='dark'||saved==='system')?saved:'system';
- }catch(e){return 'system';}
-}
-function resolveTheme(mode){
- if(mode==='light'||mode==='dark')return mode;
- const systemDark=typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
- return systemDark?'dark':'light';
-}
-function currentTheme(){
- try{
-  const attr=document.documentElement.getAttribute('data-theme');
-  if(attr==='light'||attr==='dark')return attr;
-  return resolveTheme(getThemeMode());
- }catch(e){return 'light';}
-}
-function themeSelectorMarkup(){
- const mode=getThemeMode();
- return `<div class="theme-segmented-ctrl" role="group" aria-label="Preferência de tema">`+
-  `<button type="button" class="theme-seg-btn ${mode==='system'?'active':''}" data-action="setThemeMode" data-mode="system" title="Tema automático (baseado nas configurações do navegador)">${ico('monitor',14)}<span>Auto</span></button>`+
-  `<button type="button" class="theme-seg-btn ${mode==='light'?'active':''}" data-action="setThemeMode" data-mode="light" title="Modo Claro">${ico('sun',14)}<span>Claro</span></button>`+
-  `<button type="button" class="theme-seg-btn ${mode==='dark'?'active':''}" data-action="setThemeMode" data-mode="dark" title="Modo Escuro">${ico('moon',14)}<span>Escuro</span></button>`+
- `</div>`;
-}
-function themeToggleMarkup(){
- const isDark=currentTheme()==='dark';
- const mode=getThemeMode();
- const title=mode==='system'?`Tema: Automático (${isDark?'Escuro':'Claro'}). Clique para alternar.`:`Tema: Modo ${isDark?'Escuro':'Claro'}. Clique para alternar.`;
- return `<button type="button" class="theme-toggle-btn" data-action="toggleTheme" aria-label="Alternar tema" title="${title}"><span class="theme-toggle-icon">${isDark?ico('sun',16):ico('moon',16)}</span><span>${isDark?'Modo Claro':'Modo Escuro'}</span></button>`;
-}
-function applyTheme(targetMode,persist=true){
- const mode=(targetMode==='light'||targetMode==='dark'||targetMode==='system')?targetMode:'system';
- if(persist){
-  try{localStorage.setItem('campanella:theme',mode);}catch(e){}
- }
- const theme=resolveTheme(mode);
- document.documentElement.setAttribute('data-theme',theme);
- document.documentElement.setAttribute('data-theme-mode',mode);
- document.documentElement.style.colorScheme=theme;
- document.querySelectorAll('.theme-toggle-btn').forEach(btn=>{
-  const isDark=theme==='dark';
-  const title=mode==='system'?`Tema: Automático (${isDark?'Escuro':'Claro'})`:`Tema: Modo ${isDark?'Escuro':'Claro'}`;
-  btn.setAttribute('aria-label','Alternar tema');
-  btn.setAttribute('title',title);
-  btn.innerHTML=`<span class="theme-toggle-icon">${isDark?ico('sun',16):ico('moon',16)}</span><span>${isDark?'Modo Claro':'Modo Escuro'}</span>`;
- });
- document.querySelectorAll('.theme-seg-btn').forEach(btn=>{
-  btn.classList.toggle('active',btn.dataset.mode===mode);
- });
- if(typeof window!=='undefined'){
-  window.dispatchEvent(new CustomEvent('campanella:theme-changed',{detail:{theme,mode}}));
- }
+function getThemeMode(){return 'light';}
+function resolveTheme(){return 'light';}
+function currentTheme(){return 'light';}
+function themeSelectorMarkup(){return '';}
+function themeToggleMarkup(){return '';}
+function applyTheme(){
+ try{localStorage.setItem('campanella:theme','light');}catch(e){}
+ document.documentElement.setAttribute('data-theme','light');
+ document.documentElement.setAttribute('data-theme-mode','light');
+ document.documentElement.style.colorScheme='light';
 }
 if(typeof window!=='undefined'){
- window.toggleTheme=(explicit)=>{
-  if(explicit){
-   applyTheme(explicit,true);
-  }else{
-   const next=currentTheme()==='dark'?'light':'dark';
-   applyTheme(next,true);
-  }
- };
- window.setThemeMode=(mode)=>applyTheme(mode,true);
+ window.toggleTheme=()=>applyTheme();
+ window.setThemeMode=()=>applyTheme();
  window.themeToggleMarkup=themeToggleMarkup;
  window.themeSelectorMarkup=themeSelectorMarkup;
  window.currentTheme=currentTheme;
  window.getThemeMode=getThemeMode;
  window.applyTheme=applyTheme;
- if(window.matchMedia){
-  const mq=window.matchMedia('(prefers-color-scheme: dark)');
-  const handleSystemChange=()=>{
-   if(getThemeMode()==='system'){
-    applyTheme('system',false);
-   }
-  };
-  try{mq.addEventListener('change',handleSystemChange);}catch(e){mq.addListener(handleSystemChange);}
- }
 }
 const onboarding=typeof createOnboarding==='function'?createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe,ico,today,dateBR,cpfValid,amountWords,confirm:confirmModal,toast}):null;
 const navGroups=[
@@ -570,8 +510,8 @@ const nav=navGroups.flatMap(g=>g[1]);
 const displayName=()=>ui.user?.user_metadata?.full_name?.trim()||ui.user?.email?.split('@')[0]||'Minha conta';
 const avatarInitials=()=>displayName().split(/\s+/).slice(0,2).map(x=>x.charAt(0)).join('').toUpperCase();
 function myTeacherInActiveSchool(){const email=ui.user?.email?.trim().toLowerCase();if(!email)return null;return (db.teachers||[]).find(t=>t.active!==false&&t.email?.trim().toLowerCase()===email)||(ui.teacherAccess||[]).find(a=>a.school_id===ui.schoolId)||null;}
-function accountMenu(){return `<details class="account-popover"><summary class="account-trigger"><span class="account-avatar">${safe(avatarInitials())}</span><span class="account-person"><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></span>${ico('chevron',15)}</summary><div class="account-dropdown" role="group" aria-label="Menu de conta"><div class="account-dropdown-top"><span class="account-avatar">${safe(avatarInitials())}</span><div><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></div></div><div class="account-dropdown-title">Alternar escola</div>${ui.schools.map(s=>`<button class="account-option" data-action="selectSchool" data-id="${safe(s.id)}"><span class="account-option-icon">${ico('school',17)}</span><span class="account-option-label">${safe(s.name)}${s.deletion_requested_at?'<small>Exclusão agendada</small>':''}</span>${ui.schoolId===s.id?ico('check',16):''}</button>`).join('')||'<p class="account-hint">Nenhuma escola cadastrada.</p>'}<button class="account-option account-create" data-action="showActivation">${ico('plus',17)}<span>Ativar outra escola</span></button><div class="account-divider"></div><button class="account-option" data-action="navigate" data-page="profile">${ico('profile',17)}<span>Meu perfil</span></button>${ui.schoolId?`<button class="account-option" data-action="navigate" data-page="settings">${ico('settings',17)}<span>Configurações da escola</span></button>`:''}${ui.schoolId&&myTeacherInActiveSchool()?`<button class="account-option" data-action="switchToTeacherMode">${ico('calendar',17)}<span>Modo professor (Minha agenda)</span></button>`:''}<button class="account-option" data-action="navigate" data-page="schools">${ico('school',17)}<span>Minhas escolas</span></button>${ui.isPlatformAdmin?`<button class="account-option" data-action="navigate" data-page="licenses">${ico('licenses',17)}<span>Administração geral</span></button>`:''}<div class="account-divider"></div><button class="account-option account-logout" data-action="logout">${ico('logout',17)}<span>Sair da conta</span></button></div></details>`;}
-function brandMarkup(isSidebar=true){return `<div class="brand" aria-label="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-light" src="./assets/img/logo-horizontal-color.png" alt="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-dark" src="./assets/img/logo-horizontal-white.png" alt="Campanella">${isSidebar?`<img class="brand-logo brand-logo-icon brand-logo-light" src="./assets/img/logo-icon-color.png" alt="Campanella"><img class="brand-logo brand-logo-icon brand-logo-dark" src="./assets/img/logo-icon-white.png" alt="Campanella">`:''}</div>`;}
+function accountMenu(){return `<details class="account-popover"><summary class="account-trigger"><span class="account-avatar">${safe(avatarInitials())}</span><span class="account-person"><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></span>${ico('chevron',14)}</summary><div class="account-dropdown" role="group" aria-label="Menu de conta"><div class="account-dropdown-top"><span class="account-avatar">${safe(avatarInitials())}</span><div><b>${safe(displayName())}</b><small>${safe(ui.user?.email||'')}</small></div></div><div class="account-dropdown-title">Alternar escola</div>${ui.schools.map(s=>`<button class="account-option" data-action="selectSchool" data-id="${safe(s.id)}"><span class="account-option-icon">${ico('school',16)}</span><span class="account-option-label">${safe(s.name)}${s.deletion_requested_at?'<small>Exclusão agendada</small>':''}</span>${ui.schoolId===s.id?ico('check',15):''}</button>`).join('')||'<p class="account-hint">Nenhuma escola cadastrada.</p>'}<button class="account-option account-create" data-action="showActivation">${ico('plus',16)}<span>Ativar outra escola</span></button><div class="account-divider"></div><button class="account-option" data-action="navigate" data-page="profile">${ico('profile',16)}<span>Meu perfil</span></button>${ui.schoolId?`<button class="account-option" data-action="navigate" data-page="settings">${ico('settings',16)}<span>Configurações da escola</span></button>`:''}${ui.schoolId&&myTeacherInActiveSchool()?`<button class="account-option" data-action="switchToTeacherMode">${ico('calendar',16)}<span>Modo professor (Minha agenda)</span></button>`:''}<button class="account-option" data-action="navigate" data-page="schools">${ico('school',16)}<span>Minhas escolas</span></button>${ui.isPlatformAdmin?`<button class="account-option" data-action="navigate" data-page="licenses">${ico('licenses',16)}<span>Administração geral</span></button>`:''}<div class="account-divider"></div><button class="account-option account-logout" data-action="logout">${ico('logout',16)}<span>Sair da conta</span></button></div></details>`;}
+function brandMarkup(isSidebar=true){return `<div class="brand" aria-label="Campanella"><img class="brand-logo brand-logo-horizontal brand-logo-light" src="./assets/img/logo-horizontal-color.png" alt="Campanella">${isSidebar?`<img class="brand-logo brand-logo-icon brand-logo-light" src="./assets/img/logo-icon-color.png" alt="Campanella">`:''}</div>`;}
 if(typeof window!=='undefined')window.brandMarkup=brandMarkup;
 function getNavGroupSlug(title){
  return title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');
@@ -588,10 +528,10 @@ function initNavGroupsState(){
   const saved=localStorage.getItem('campanella:nav-groups-expanded');
   if(saved){
    const parsed=JSON.parse(saved);
-   if(Array.isArray(parsed))return new Set(parsed);
+   if(Array.isArray(parsed)&&parsed.length)return new Set(parsed);
   }
  }catch(e){}
- return new Set([getActiveNavGroupSlug()]);
+ return new Set([...navGroups.map(([title])=>getNavGroupSlug(title)),'administracao-geral']);
 }
 function ensureActiveNavGroupOpen(){
  if(!ui.expandedNavGroups)ui.expandedNavGroups=initNavGroupsState();
@@ -641,7 +581,7 @@ function toggleSidebar(){
  try{localStorage.setItem('campanella:sidebar-collapsed',ui.sidebarCollapsed?'true':'false');}catch(e){}
  const shellEl=document.querySelector('.shell:not(.platform-shell)');
  const sidebarEl=document.querySelector('.sidebar');
- const isC=ui.sidebarCollapsed&&ui.page!=='calendar';
+ const isC=ui.sidebarCollapsed;
  if(shellEl&&sidebarEl){
   shellEl.classList.toggle('sidebar-collapsed',isC);
   sidebarEl.classList.toggle('collapsed',isC);
@@ -649,7 +589,7 @@ function toggleSidebar(){
   document.querySelectorAll('[data-action="toggleSidebar"]').forEach(btn=>{
    btn.title=isC?'Expandir menu':'Recuar menu';
    btn.setAttribute('aria-label',isC?'Expandir menu':'Recuar menu');
-   btn.innerHTML=ico(isC?'sidebarExpand':'sidebarCollapse',btn.classList.contains('topbar-toggle-btn')?17:16);
+   btn.innerHTML=ico(isC?'sidebarExpand':'sidebarCollapse',16);
   });
  }else{
   render();
@@ -657,18 +597,18 @@ function toggleSidebar(){
 }
 function shell(){
  ensureActiveNavGroupOpen();
- const isC=!!ui.sidebarCollapsed&&ui.page!=='calendar';
+ const isC=!!ui.sidebarCollapsed;
  const activeName=ui.page==='student-profile'?'Perfil do aluno':ui.page==='schools'?'Minhas escolas':ui.page.startsWith('profile')?'Meu perfil':ui.page.startsWith('settings')?'Configurações da escola':nav.find(x=>x[0]===ui.page)?.[2]||'Visão geral';
  const crmOnly=isCurrentSchoolCrmOnly();
- return `<div class="shell ${ui.page==='calendar'?'cal-admin-shell':''} ${isC?'sidebar-collapsed':''}"><aside class="sidebar ${isC?'collapsed':''}" data-collapsed="${isC?'true':'false'}"><div class="sidebar-brand-row">${brandMarkup(true)}<button type="button" class="sidebar-collapse-btn" data-action="toggleSidebar" title="${isC?'Expandir menu':'Recuar menu'}" aria-label="${isC?'Expandir menu':'Recuar menu'}">${ico(isC?'sidebarExpand':'sidebarCollapse',16)}</button></div><div class="sidebar-current"><span class="sidebar-current-label">ESCOLA ATIVA</span><span class="sidebar-current-name">${ico('school',16)} ${safe(currentSchool().name||'Nenhuma escola')}</span></div><div class="sidebar-menu">${navGroups.map(([title,links])=>{
+ return `<div class="shell ${ui.page==='calendar'?'cal-admin-shell':''} ${isC?'sidebar-collapsed':''}"><aside class="sidebar ${isC?'collapsed':''}" data-collapsed="${isC?'true':'false'}"><div class="sidebar-brand-row">${brandMarkup(true)}<button type="button" class="sidebar-collapse-btn" data-action="toggleSidebar" title="${isC?'Expandir menu':'Recuar menu'}" aria-label="${isC?'Expandir menu':'Recuar menu'}">${ico(isC?'sidebarExpand':'sidebarCollapse',16)}</button></div><div class="sidebar-current"><span class="sidebar-current-label">Escola ativa</span><span class="sidebar-current-name">${ico('school',15)} ${safe(currentSchool().name||'Nenhuma escola')}</span></div><div class="sidebar-menu">${navGroups.map(([title,links])=>{
   const groupSlug=getNavGroupSlug(title);
   const isOpen=isNavGroupOpen(groupSlug);
   const hasActive=links.some(([k])=>k===ui.page);
-  return `<section class="nav-section ${hasActive?'has-active':''}" data-group="${groupSlug}"><button type="button" data-action="toggleNavGroup" data-group="${groupSlug}" aria-expanded="${isOpen}" class="${isOpen?'is-open':'is-collapsed'} nav-group-btn nav-group">${title} <span class="nav-group-arrow">${ico('chevron',12)}</span></button><nav class="nav ${isOpen?'is-open':'is-collapsed'}" ${isOpen?'':'hidden'}>${links.map(([key,iconName,label])=>{
+  return `<section class="nav-section ${hasActive?'has-active':''}" data-group="${groupSlug}"><button type="button" data-action="toggleNavGroup" data-group="${groupSlug}" aria-expanded="${isOpen}" class="${isOpen?'is-open':'is-collapsed'} nav-group-btn nav-group">${title} <span class="nav-group-arrow">${ico('chevron',11)}</span></button><nav class="nav ${isOpen?'is-open':'is-collapsed'}" ${isOpen?'':'hidden'}>${links.map(([key,iconName,label])=>{
    const isLocked=crmOnly&&MANAGEMENT_PAGES.includes(key);
-   return `<button class="nav-btn ${ui.page===key?'active':''} ${isLocked?'is-crm-locked':''}" data-action="navigate" data-page="${key}" title="${label}" data-tooltip="${label}"><span class="nav-ico">${ico(iconName,18)}</span><span>${label}</span>${isLocked?`<span class="nav-upgrade-pill">${ico('lock',10)} Upgrade</span>`:''}</button>`;
+   return `<button class="nav-btn ${ui.page===key?'active':''} ${isLocked?'is-crm-locked':''}" data-action="navigate" data-page="${key}" title="${label}" data-tooltip="${label}"><span class="nav-ico">${ico(iconName,16)}</span><span>${label}</span>${isLocked?`<span class="nav-upgrade-pill">${ico('lock',10)} Upgrade</span>`:''}</button>`;
   }).join('')}</nav></section>`;
- }).join('')}${ui.isPlatformAdmin?`<section class="nav-section ${ui.page==='licenses'?'has-active':''}" data-group="administracao-geral"><button type="button" data-action="toggleNavGroup" data-group="administracao-geral" aria-expanded="${isNavGroupOpen('administracao-geral')}" class="${isNavGroupOpen('administracao-geral')?'is-open':'is-collapsed'} nav-group-btn nav-group">Administração Geral <span class="nav-group-arrow">${ico('chevron',12)}</span></button><nav class="nav ${isNavGroupOpen('administracao-geral')?'is-open':'is-collapsed'}" ${isNavGroupOpen('administracao-geral')?'':'hidden'}><button class="nav-btn ${ui.page==='licenses'?'active':''}" data-action="navigate" data-page="licenses" title="Planos & Licenças" data-tooltip="Planos & Licenças"><span class="nav-ico">${ico('licenses',18)}</span><span>Planos & Licenças</span></button></nav></section>`:''}</div><div class="sidebar-bottom">${accountMenu()}</div></aside>${ui.page==='calendar'?calendar.adminNav():''}<div class="workspace"><div class="topbar"><div class="topbar-left"><button type="button" class="topbar-toggle-btn" data-action="toggleSidebar" title="${isC?'Expandir menu':'Recuar menu'}" aria-label="${isC?'Expandir menu':'Recuar menu'}">${ico(isC?'sidebarExpand':'sidebarCollapse',17)}</button><span class="subtle">${safe(currentSchool().name)} <b> / ${safe(activeName)}</b></span></div><div class="topbar-right">${themeToggleMarkup()}<span class="topbar-chip">${ico('school',14)} ${safe(roleName(ui.role))}${myTeacherInActiveSchool()?' · Professor':''}</span></div></div><main class="content" id="pageContent"></main></div></div>`;
+ }).join('')}${ui.isPlatformAdmin?`<section class="nav-section ${ui.page==='licenses'?'has-active':''}" data-group="administracao-geral"><button type="button" data-action="toggleNavGroup" data-group="administracao-geral" aria-expanded="${isNavGroupOpen('administracao-geral')}" class="${isNavGroupOpen('administracao-geral')?'is-open':'is-collapsed'} nav-group-btn nav-group">Administração Geral <span class="nav-group-arrow">${ico('chevron',11)}</span></button><nav class="nav ${isNavGroupOpen('administracao-geral')?'is-open':'is-collapsed'}" ${isNavGroupOpen('administracao-geral')?'':'hidden'}><button class="nav-btn ${ui.page==='licenses'?'active':''}" data-action="navigate" data-page="licenses" title="Planos & Licenças" data-tooltip="Planos & Licenças"><span class="nav-ico">${ico('licenses',16)}</span><span>Planos & Licenças</span></button></nav></section>`:''}</div><div class="sidebar-bottom">${accountMenu()}</div></aside>${ui.page==='calendar'?calendar.adminNav():''}<div class="workspace"><div class="topbar"><div class="topbar-left"><button type="button" class="topbar-toggle-btn" data-action="toggleSidebar" title="${isC?'Expandir menu':'Recuar menu'}" aria-label="${isC?'Expandir menu':'Recuar menu'}">${ico(isC?'sidebarExpand':'sidebarCollapse',16)}</button><span class="subtle">${safe(currentSchool().name)} <b>/ ${safe(activeName)}</b></span></div><div class="topbar-right"><span class="topbar-chip">${ico('school',13)} ${safe(roleName(ui.role))}${myTeacherInActiveSchool()?' · Professor':''}</span></div></div><main class="content" id="pageContent"></main></div></div>`;
 }
 function currentSchool(){return ui.schools.find(x=>x.id===ui.schoolId)||{};}
 function roleName(role){if(role==='admin')return currentSchool().admin_user_id&&currentSchool().admin_user_id===ui.user?.id?'Administrador Super':'Administrador';return role==='teacher'?'Professor':'Sem acesso';}
@@ -1018,23 +958,25 @@ function dashboard(){
  ]:[
   ['leads','Leads em andamento',pending,'leads'],
   ['interviews','Fichas sem contrato',fichas,'interviews'],
-  ['contracts','Pré-matrículas e contratos pendentes',awaiting.length,'contracts'],
+  ['contracts','Pré-matrículas e contratos',awaiting.length,'contracts'],
   ['students','Matrículas a vencer',exp.length,'students']
  ];
 
  const shortcuts=isCrm?[
-  ['leads','CRM e interessados','Acompanhe o funil de atendimento e contatos'],
-  ['interviews','Fichas de nivelamento','Consulte entrevistas realizadas']
+  ['leads','CRM e interessados','Funil de atendimento e contatos'],
+  ['interviews','Fichas de nivelamento','Entrevistas realizadas']
  ]:[
-  ['leads','CRM e interessados','Acompanhe o primeiro contato'],
-  ['directory','Alunos','Consulte o histórico dos alunos'],
-  ['contracts','Contratos','Gerencie assinaturas e documentos'],
-  ['teachers','Professores','Organize sua equipe']
+  ['leads','CRM e interessados','Acompanhe o funil de atendimento'],
+  ['directory','Alunos','Histórico e cadastros de alunos'],
+  ['contracts','Contratos','Assinaturas e documentos'],
+  ['teachers','Professores','Equipe docente e acessos'],
+  ['calendar','Calendário de aulas','Grade semanal dos professores'],
+  ['packages','Pacotes de aulas','Planos e valores cadastrados']
  ];
 
- const bottomSection=isCrm?`
- <section class="panel plan-upgrade-panel" style="margin-top:20px">
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+ const mainPanel=isCrm?`
+ <section class="panel plan-upgrade-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;padding:16px">
    <div>
     <span class="pill pill-crm">Plano Somente CRM</span>
     <h3 style="margin:6px 0 4px 0">Quer gerenciar matrículas, contratos e professores?</h3>
@@ -1042,9 +984,9 @@ function dashboard(){
    </div>
    <button class="btn light" data-action="contactUpgradeSupport">${ico('school',16)} Ver planos e upgrades</button>
   </div>
- </section>`:card('Matrículas recentes',`<div class="recent-enrollments-table">${table(['Aluno','Pacote','Fim','Estado'],signed.sort((a,b)=>a.terms.end_date.localeCompare(b.terms.end_date)).slice(0,8).map(c=>row([safe(lookup('students',c.student_id)?.full_name),safe(c.terms.package_name),dateBR(c.terms.end_date),enrollmentTag(c)])))}</div>`);
+ </section>`:card('Matrículas recentes',`<div class="recent-enrollments-table">${table(['Aluno','Pacote','Término','Estado'],signed.sort((a,b)=>a.terms.end_date.localeCompare(b.terms.end_date)).slice(0,8).map(c=>row([`<b>${safe(lookup('students',c.student_id)?.full_name||'—')}</b>`,safe(c.terms.package_name),dateBR(c.terms.end_date),enrollmentTag(c)])))}</div>`,`<button type="button" class="btn mini light" data-action="navigate" data-page="students">Ver todas</button>`);
 
- return `${heading('','Visão geral','')}<div class="metric-grid">${metrics.map(([type,label,value,target])=>`<button type="button" class="metric metric-action" data-action="navigate" data-page="${target}"><span class="metric-icon">${ico(type,23)}</span><span class="metric-value">${value}</span><span class="metric-label">${label}</span><span class="metric-go">${ico('arrow',16)}</span></button>`).join('')}</div><section class="home-actions"><div class="home-actions-title"><h2>Acesso rápido</h2><p class="muted">Continue de onde parou</p></div><div class="home-shortcuts">${shortcuts.map(([type,title,subtitle])=>`<button class="home-shortcut" data-action="navigate" data-page="${type}"><span class="shortcut-ico">${ico(type,23)}</span><span><b>${title}</b><small>${subtitle}</small></span>${ico('arrow',16)}</button>`).join('')}</div></section>${bottomSection}`;
+ return `${heading('Início','Visão geral',`Resumo operacional de ${safe(currentSchool().name||'sua escola')}.`)}<div class="metric-grid">${metrics.map(([type,label,value,target])=>`<button type="button" class="metric metric-action" data-action="navigate" data-page="${target}"><span class="metric-icon">${ico(type,18)}</span><div class="metric-body"><span class="metric-label">${label}</span><span class="metric-value">${value}</span></div><span class="metric-go">${ico('arrow',14)}</span></button>`).join('')}</div><div class="dashboard-split">${mainPanel}<section class="panel home-actions"><div class="panel-head"><div class="home-actions-title"><h2>Acesso rápido</h2></div></div><div class="home-shortcuts">${shortcuts.map(([type,title,subtitle])=>`<button class="home-shortcut" data-action="navigate" data-page="${type}"><span class="shortcut-ico">${ico(type,18)}</span><span class="shortcut-copy"><b>${title}</b><small>${subtitle}</small></span>${ico('arrow',14)}</button>`).join('')}</div></section></div>`;
 }
 function leadsView(){
  const list=db.leads.filter(l=>l.status!=='convertido'&&(!ui.search||[l.name,l.student2_name,l.phone,l.guardian_name].filter(Boolean).join(' ').toLowerCase().includes(ui.search))&&(ui.leadStatus==='all'||ui.leadStatus==='com_ficha'&&!!l.ficha_iniciada_at||ui.leadStatus==='sem_ficha'&&!l.ficha_iniciada_at||ui.leadStatus===l.status));
@@ -1052,11 +994,10 @@ function leadsView(){
   const initialized=!!l.ficha_iniciada_at||db.interviews.some(i=>i.lead_id===l.id);
   const isDuo=l.kind==='dupla'||!!l.student2_name;
   const leadTitle=isDuo?`<b>${safe(l.name)} & ${safe(l.student2_name||'2º Aluno')}</b> <span class="pill pill-signed" style="margin-left:4px">Dupla</span>`:`<b>${safe(l.name)}</b>`;
-  return row([`${leadTitle}<div class="muted">${safe(l.guardian_name||'')}</div>`,safe(l.phone),initialized?'<span class="pill pill-signed">Ficha iniciada</span>':tag(l.status),`<div class="actions actions-right">${!initialized?`<button class="table-action-btn primary" data-action="startFiche" data-id="${l.id}">${ico('plus',14)} <span>CRIAR FICHA</span></button>`:`<button class="table-action-btn" data-action="navigateFiche" data-id="${l.id}">${ico('arrow',14)} <span>IR À FICHA</span></button>`}<details class="contract-actions-dropdown"><summary class="table-action-btn" aria-label="Ações do lead"><span>AÇÕES</span> ${ico('chevron',12)}</summary><div class="contract-actions-popover" role="menu"><button class="contract-menu-item" type="button" role="menuitem" data-action="editLead" data-id="${l.id}">${ico('edit',14)} Editar lead</button><button class="contract-menu-item danger" type="button" role="menuitem" data-action="removeLead" data-id="${l.id}">${ico('trash',14)} Excluir lead</button></div></details></div>`]);
+  return row([`${leadTitle}<div class="muted">${safe(l.guardian_name||'')}</div>`,safe(l.phone),initialized?'<span class="pill pill-signed">Ficha iniciada</span>':tag(l.status),`<div class="actions actions-right">${!initialized?`<button class="table-action-btn primary" data-action="startFiche" data-id="${l.id}">${ico('plus',13)} <span>Criar ficha</span></button>`:`<button class="table-action-btn" data-action="navigateFiche" data-id="${l.id}">${ico('arrow',13)} <span>Ver ficha</span></button>`}<details class="contract-actions-dropdown"><summary class="table-action-btn" aria-label="Ações do lead"><span>Ações</span> ${ico('chevron',11)}</summary><div class="contract-actions-popover" role="menu"><button class="contract-menu-item" type="button" role="menuitem" data-action="editLead" data-id="${l.id}">${ico('edit',14)} Editar lead</button><button class="contract-menu-item danger" type="button" role="menuitem" data-action="removeLead" data-id="${l.id}">${ico('trash',14)} Excluir lead</button></div></details></div>`]);
  });
  return `${heading('Relacionamento','Leads','O lead entra em Fichas iniciais somente quando você escolher Criar ficha.','<button class="btn" data-action="editLead">＋ Novo lead</button>')}
- <div class="toolbar"><input class="search" id="search" placeholder="Buscar nome ou telefone…" value="${safe(ui.search)}"><label class="small">Etapa <select id="leadFilter">${[['all','Todos'],['sem_ficha','Sem ficha'],['com_ficha','Ficha iniciada'],['novo','Novo'],['entrevistado','Entrevistado'],['perdido','Desistiu']].map(([k,v])=>`<option value="${k}" ${ui.leadStatus===k?'selected':''}>${v}</option>`).join('')}</select></label></div>
- ${card('Leads cadastrados',table(['Nome','Telefone','Etapa','Ações'],markup,'Nenhum lead neste filtro.'))}`;
+ <section class="panel"><div class="panel-head panel-controls"><h2>Leads cadastrados</h2><div class="toolbar"><input class="search" id="search" placeholder="Buscar nome ou telefone…" value="${safe(ui.search)}"><label class="small">Etapa <select id="leadFilter">${[['all','Todos'],['sem_ficha','Sem ficha'],['com_ficha','Ficha iniciada'],['novo','Novo'],['entrevistado','Entrevistado'],['perdido','Desistiu']].map(([k,v])=>`<option value="${k}" ${ui.leadStatus===k?'selected':''}>${v}</option>`).join('')}</select></label></div></div>${table(['Nome','Telefone','Etapa','Ações'],markup,'Nenhum lead neste filtro.')}</section>`;
 }
 
 function leadForm(id){
@@ -1084,7 +1025,7 @@ function leadForm(id){
   updateLeadDuo(e.target.value==='dupla');
  });
 }
-function packagesView(){return `${heading('Serviços e contratos','Pacotes de aulas','Pacotes reutilizáveis ou matrículas personalizadas sem pacote.','<button class="btn" data-action="editPackage">＋ Novo pacote</button>')}${card('Pacotes cadastrados',table(['Pacote','Aulas','Frequência','Modelo vinculado','Valor','Ações'],db.packages.map(p=>row([`<b>${safe(p.name)}</b>`,`${p.lessons_count} aulas`,`${p.weekly_frequency}x/semana`,safe(lookup('contract_types',p.contract_type_id)?.name||'Escolher ao matricular'),money(p.default_total),`<div class="actions"><button class="table-action-btn edit" data-action="editPackage" data-id="${p.id}">${ico('edit',14)} <span>EDITAR</span></button><button class="table-action-btn danger" data-action="removePackage" data-id="${p.id}">${ico('trash',14)} <span>EXCLUIR</span></button></div>`])),'Nenhum pacote cadastrado.'))}<div class="notice">Para um plano especial, selecione <b>Personalizado · sem pacote</b> ao preencher a ficha inicial. Você poderá definir quantidades, valores e horários manualmente.</div>`;}
+function packagesView(){return `${heading('Serviços e contratos','Pacotes de aulas','Pacotes reutilizáveis ou matrículas personalizadas sem pacote.','<button class="btn" data-action="editPackage">＋ Novo pacote</button>')}${card('Pacotes cadastrados',table(['Pacote','Aulas','Frequência','Modelo vinculado','Valor','Ações'],db.packages.map(p=>row([`<b>${safe(p.name)}</b>`,`${p.lessons_count} aulas`,`${p.weekly_frequency}x/semana`,safe(lookup('contract_types',p.contract_type_id)?.name||'Escolher ao matricular'),money(p.default_total),`<div class="actions actions-right"><button class="table-action-btn edit" data-action="editPackage" data-id="${p.id}">${ico('edit',13)} <span>Editar</span></button><button class="table-action-btn danger" data-action="removePackage" data-id="${p.id}">${ico('trash',13)} <span>Excluir</span></button></div>`])),'Nenhum pacote cadastrado.'),`<span class="muted small">${db.packages.length} pacote(s)</span>`)}<div class="notice">Para um plano especial, selecione <b>Personalizado · sem pacote</b> ao preencher a ficha inicial. Você poderá definir quantidades, valores e horários manualmente.</div>`;}
 function packageForm(id){const p=lookup('packages',id)||{};showModal(`<h2>${id?'Editar pacote':'Novo pacote'}</h2><form id="packageForm" data-id="${id||''}"><div class="form-grid"><div class="wide">${input('Nome do pacote','name',p.name||'')}</div><label class="field"><span>Modalidade</span><select name="kind"><option value="individual" ${p.kind==='individual'?'selected':''}>Individual</option><option value="dupla" ${p.kind==='dupla'?'selected':''}>Dupla</option></select></label>${input('Quantidade de aulas','lessons_count',p.lessons_count||24,'number')}${input('Aulas por semana','weekly_frequency',p.weekly_frequency||2,'number')}${input('Valor padrão (R$)','default_total',p.default_total??1200,'number')}<label class="field wide"><span>Modelo de contrato associado (opcional)</span><select name="contract_type_id"><option value="">Nenhum · escolha na matrícula</option>${options(db.contract_types.filter(t=>t.active&&(p.kind==='dupla'?t.kind==='dupla':t.kind!=='dupla')),p.contract_type_id)}</select></label><label class="field"><span>Situação</span><select name="active"><option value="true" ${p.active!==false?'selected':''}>Ativo</option><option value="false" ${p.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar pacote</button></div></form>`);}
 function ficheStage(l,i){return i?.pipeline_status||l.ficha_status||'open';}
 function interviewsView(){
@@ -1099,19 +1040,16 @@ function interviewsView(){
   if(ui.interviewStatus==='ready'&&!i)return false;
   return !ui.search||[l.name,l.student2_name,i?.student2_name,l.phone,i?.course,lookup('teachers',i?.teacher_id)?.name].filter(Boolean).join(' ').toLowerCase().includes(ui.search);
  });
- const titles={current:'Fichas em andamento',lost:'Leads que desistiram',archived:'Fichas arquivadas'};
- return `${heading('Entrevistas','Fichas iniciais','')}
- <div class="tabs" role="group" aria-label="Etapas da ficha">${[['current','Em andamento'],['lost','Desistiu'],['archived','Arquivadas']].map(([k,v])=>`<button class="btn ${ui.interviewTab===k?'':'light'}" data-action="interviewTab" data-tab="${k}">${v} <span class="tab-count">${db.leads.filter(l=>l.status!=='convertido'&&(l.ficha_iniciada_at||db.interviews.some(i=>i.lead_id===l.id))&& (k==='current'?!['lost','archived'].includes(ficheStage(l,db.interviews.find(i=>i.lead_id===l.id))):ficheStage(l,db.interviews.find(i=>i.lead_id===l.id))===k)).length}</span></button>`).join('')}</div>
- <div class="toolbar"><input id="search" class="search" placeholder="Buscar lead, curso ou professor" value="${safe(ui.search)}"><label class="small">Preenchimento <select id="interviewFilter">${[['all','Todos'],['unfilled','A preencher'],['ready','Preenchida']].map(([v,t])=>`<option value="${v}" ${ui.interviewStatus===v?'selected':''}>${t}</option>`).join('')}</select></label></div>
- ${card(titles[ui.interviewTab]||titles.current,table(['Lead','Professor responsável','Curso / pacote','Preenchimento','Contrato','Ações'],list.map(({l,i})=>{
+ return `${heading('Entrevistas','Fichas iniciais','Acompanhe entrevistas pedagógicas, pacotes propostos e encaminhamento para matrícula.')}
+ <section class="panel"><div class="panel-head panel-controls"><div class="tabs" role="group" aria-label="Etapas da ficha">${[['current','Em andamento'],['lost','Desistiu'],['archived','Arquivadas']].map(([k,v])=>`<button class="btn ${ui.interviewTab===k?'':'light'}" data-action="interviewTab" data-tab="${k}">${v} <span class="tab-count">${db.leads.filter(l=>l.status!=='convertido'&&(l.ficha_iniciada_at||db.interviews.some(i=>i.lead_id===l.id))&& (k==='current'?!['lost','archived'].includes(ficheStage(l,db.interviews.find(i=>i.lead_id===l.id))):ficheStage(l,db.interviews.find(i=>i.lead_id===l.id))===k)).length}</span></button>`).join('')}</div><div class="toolbar"><input id="search" class="search" placeholder="Buscar lead, curso ou professor" value="${safe(ui.search)}"><label class="small">Preenchimento <select id="interviewFilter">${[['all','Todos'],['unfilled','A preencher'],['ready','Preenchida']].map(([v,t])=>`<option value="${v}" ${ui.interviewStatus===v?'selected':''}>${t}</option>`).join('')}</select></label></div></div>${table(['Lead','Professor responsável','Curso / pacote','Preenchimento','Contrato','Ações'],list.map(({l,i})=>{
   const ct=db.contracts.filter(c=>c.interview_id===i?.id&&c.status!=='void').sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];
   const invite=db.interview_invites?.find(x=>x.lead_id===l.id&&!x.revoked_at&&!x.used_at&&new Date(x.expires_at)>new Date());
   const st=ficheStage(l,i);
   const isDuo=(i?.kind==='dupla'||(!i?.kind&&(l.kind==='dupla'||!!l.student2_name)));
   const s2Name=i?.student2_name||l.student2_name;
-  const nameLabel=isDuo&&s2Name?`<b>${safe(l.name)} & ${safe(s2Name)}</b> <span class="pill pill-signed" style="font-size:10px;margin-left:4px">Dupla</span>`:`<b>${safe(l.name)}</b>`;
-  return row([`${nameLabel}<div class="muted">${safe(l.phone)}</div>`,safe(lookup('teachers',i?.teacher_id)?.name||lookup('teachers',invite?.teacher_id)?.name||'—')+(i?.interviewer_teacher_id&&i.interviewer_teacher_id!==i.teacher_id?`<div class="small muted">Entrevistador: ${safe(lookup('teachers',i.interviewer_teacher_id)?.name||'—')}</div>`:''),i?`${safe(i.course||'Inglês')}<div class="small muted">${safe(lookup('packages',i.package_id)?.name||'')}</div>`:'<span class="muted">—</span>',i?'<span class="pill pill-signed">Preenchida</span>':'<span class="pill pill-sent">A preencher</span>',ct?contractTag(ct):'<span class="pill">Não gerado</span>',`<details class="contract-actions-dropdown interview-actions-menu"><summary class="table-action-btn"><span>AÇÕES</span> ${ico('chevron',12)}</summary><div class="contract-actions-popover" role="menu">${st==='open'&&i&&!ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="newContract" data-id="${safe(l.id)}">Matricular</button>`:''}${st==='open'&&(!i||!ct)?`<button class="contract-menu-item" type="button" role="menuitem" data-action="inviteInterview" data-id="${safe(l.id)}">Link do entrevistador</button>`:''}<button class="contract-menu-item" type="button" role="menuitem" data-action="editInterview" data-id="${safe(l.id)}">${i?'Editar ficha':'Preencher ficha'}</button>${ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="openInterviewContract" data-id="${safe(ct.id)}">Abrir contrato</button>`:''}${st==='lost'||st==='archived'?`<button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="open">Retomar ficha</button>`:`<button class="contract-menu-item danger" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="lost">Registrar desistência</button><button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="archived">Arquivar ficha</button>`}</div></details>`]);
- }),'Nenhuma ficha nesta aba.'))}`;
+  const nameLabel=isDuo&&s2Name?`<b>${safe(l.name)} & ${safe(s2Name)}</b> <span class="pill pill-signed" style="margin-left:4px">Dupla</span>`:`<b>${safe(l.name)}</b>`;
+  return row([`${nameLabel}<div class="muted">${safe(l.phone)}</div>`,safe(lookup('teachers',i?.teacher_id)?.name||lookup('teachers',invite?.teacher_id)?.name||'—')+(i?.interviewer_teacher_id&&i.interviewer_teacher_id!==i.teacher_id?`<div class="small muted">Entrevistador: ${safe(lookup('teachers',i.interviewer_teacher_id)?.name||'—')}</div>`:''),i?`${safe(i.course||'Inglês')}<div class="small muted">${safe(lookup('packages',i.package_id)?.name||'')}</div>`:'<span class="muted">—</span>',i?'<span class="pill pill-signed">Preenchida</span>':'<span class="pill pill-sent">A preencher</span>',ct?contractTag(ct):'<span class="pill">Não gerado</span>',`<div class="actions actions-right"><details class="contract-actions-dropdown interview-actions-menu"><summary class="table-action-btn"><span>Ações</span> ${ico('chevron',11)}</summary><div class="contract-actions-popover" role="menu">${st==='open'&&i&&!ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="newContract" data-id="${safe(l.id)}">Matricular</button>`:''}${st==='open'&&(!i||!ct)?`<button class="contract-menu-item" type="button" role="menuitem" data-action="inviteInterview" data-id="${safe(l.id)}">Link do entrevistador</button>`:''}<button class="contract-menu-item" type="button" role="menuitem" data-action="editInterview" data-id="${safe(l.id)}">${i?'Editar ficha':'Preencher ficha'}</button>${ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="openInterviewContract" data-id="${safe(ct.id)}">Abrir contrato</button>`:''}${st==='lost'||st==='archived'?`<button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="open">Retomar ficha</button>`:`<button class="contract-menu-item danger" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="lost">Registrar desistência</button><button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="archived">Arquivar ficha</button>`}</div></details></div>`]);
+ }),'Nenhuma ficha nesta aba.')}</section>`;
 }
 
 function ficheCreatedPopup(leadId){
@@ -1474,14 +1412,12 @@ function contractsView(){
   return ui.expiry==='all'||ui.expiry==='expired'&&remaining<0||ui.expiry!=='expired'&&remaining>=0&&remaining<=Number(ui.expiry);
  });
  const tabs=[['current','Em andamento'],['closed','Encerrados'],['canceled','Cancelados']];
- return `${heading('Serviços e contratos','Contratos','Pré-matrículas, contratos para assinatura física e histórico preservado.','')}
- <div class="tabs" role="group" aria-label="Estado dos contratos">${tabs.map(([id,label])=>`<button class="btn ${ui.contractTab===id?'':'light'}" data-action="contractTab" data-tab="${id}">${label}</button>`).join('')}</div>
- <div class="toolbar"><input class="search" id="search" placeholder="Buscar nome, curso ou pacote" value="${safe(ui.search)}">${ui.contractTab==='current'?`<label class="small">Situação <select id="contractFilter">${[['all','Todas'],['draft','A preparar'],['sent','Aguardando pré-matrícula'],['pre_enrolled','Pré-matrícula feita'],['ready_manual','Contrato gerado'],['active','Ativo'],['expired','Expirado']].map(([v,n])=>`<option value="${v}" ${ui.contractStatus===v?'selected':''}>${n}</option>`).join('')}</select></label>`:''}<label class="small">Vencimento <select id="expiryFilter"><option value="all">Todos</option>${[7,15,30,60,90].map(n=>`<option value="${n}" ${ui.expiry==n?'selected':''}>Até ${n} dias</option>`).join('')}<option value="expired" ${ui.expiry==='expired'?'selected':''}>Expirados</option></select></label></div>
- ${card('Contratos',table(['Aluno / lead','Modelo','Vigência','Estado','Ações'],list.map(c=>{
+ return `${heading('Serviços e contratos','Contratos','Pré-matrículas, contratos para assinatura física e histórico preservado.')}
+ <section class="panel"><div class="panel-head panel-controls"><div class="tabs" role="group" aria-label="Estado dos contratos">${tabs.map(([id,label])=>`<button class="btn ${ui.contractTab===id?'':'light'}" data-action="contractTab" data-tab="${id}">${label}</button>`).join('')}</div><div class="toolbar"><input class="search" id="search" placeholder="Buscar nome, curso ou pacote" value="${safe(ui.search)}">${ui.contractTab==='current'?`<label class="small">Situação <select id="contractFilter">${[['all','Todas'],['draft','A preparar'],['sent','Aguardando pré-matrícula'],['pre_enrolled','Pré-matrícula feita'],['ready_manual','Contrato gerado'],['active','Ativo'],['expired','Expirado']].map(([v,n])=>`<option value="${v}" ${ui.contractStatus===v?'selected':''}>${n}</option>`).join('')}</select></label>`:''}<label class="small">Vencimento <select id="expiryFilter"><option value="all">Todos</option>${[7,15,30,60,90].map(n=>`<option value="${n}" ${ui.expiry==n?'selected':''}>Até ${n} dias</option>`).join('')}<option value="expired" ${ui.expiry==='expired'?'selected':''}>Expirados</option></select></label></div></div>${table(['Aluno / lead','Modelo','Vigência','Estado','Ações'],list.map(c=>{
    const s=lookup('students',c.student_id),s2=c.student2_id?lookup('students',c.student2_id):null;
-   const nameLabel=c.kind==='dupla'?`${safe(s?.full_name||'Aluno 1')} & ${safe(s2?.full_name||'Aluno 2')} <span class="pill pill-signed" style="margin-left:4px">Dupla</span>`:safe(s?.full_name||lookup('leads',c.lead_id)?.name||'—');
-   return row([nameLabel,safe(lookup('contract_types',c.contract_type_id)?.name||c.kind),`${dateBR(c.terms?.start_date)} — ${dateBR(c.terms?.end_date)}`,externalSignatureTag(c)+(externalSignatureActions(c)?`<div class="contract-backup-status">${externalSignatureActions(c)}</div>`:''),contractActionsMenu(c)]);
- })),'Nenhum contrato nesta aba.')}`;
+   const nameLabel=c.kind==='dupla'?`<b>${safe(s?.full_name||'Aluno 1')} & ${safe(s2?.full_name||'Aluno 2')}</b> <span class="pill pill-signed" style="margin-left:4px">Dupla</span>`:`<b>${safe(s?.full_name||lookup('leads',c.lead_id)?.name||'—')}</b>`;
+   return row([nameLabel,safe(lookup('contract_types',c.contract_type_id)?.name||c.kind),`${dateBR(c.terms?.start_date)} — ${dateBR(c.terms?.end_date)}`,externalSignatureTag(c)+(externalSignatureActions(c)?`<div class="contract-backup-status">${externalSignatureActions(c)}</div>`:''),`<div class="actions actions-right">${contractActionsMenu(c)}</div>`]);
+ }),'Nenhum contrato nesta aba.')}</section>`;
 }
 
 function contractForm(leadId){
@@ -1509,21 +1445,19 @@ function studentsView(){
   if(ui.search&&!text.includes(ui.search))return false;
   const remaining=diffDays(c.terms.end_date);return ui.expiry==='all'||ui.expiry==='expired'&&remaining<0||ui.expiry!=='expired'&&remaining>=0&&remaining<=+ui.expiry;
  });
- return `${heading('Gestão contratual','Matrículas','')}
- <div class="tabs"><button class="btn ${ui.enrollmentTab==='current'?'':'light'}" data-action="enrollmentTab" data-tab="current">Ativas e expiradas</button><button class="btn ${ui.enrollmentTab==='closed'?'':'light'}" data-action="enrollmentTab" data-tab="closed">Encerradas</button></div>
- <div class="toolbar"><input id="search" class="search" placeholder="Buscar aluno, pacote ou curso" value="${safe(ui.search)}"><label class="small">Vencimento <select id="expiryFilter"><option value="all">Todos</option>${[7,15,30,60,90].map(n=>`<option value="${n}" ${ui.expiry==n?'selected':''}>Próximos ${n} dias</option>`).join('')}<option value="expired" ${ui.expiry==='expired'?'selected':''}>Expirados</option></select></label></div>
- ${card('Matrículas',table(['Aluno','Pacote','Vigência','Matrícula','Ações'],list.map(c=>{
+ return `${heading('Gestão contratual','Matrículas','Acompanhe vigência, vencimento e rematrícula dos alunos.')}
+ <section class="panel"><div class="panel-head panel-controls"><div class="tabs"><button class="btn ${ui.enrollmentTab==='current'?'':'light'}" data-action="enrollmentTab" data-tab="current">Ativas e expiradas</button><button class="btn ${ui.enrollmentTab==='closed'?'':'light'}" data-action="enrollmentTab" data-tab="closed">Encerradas</button></div><div class="toolbar"><input id="search" class="search" placeholder="Buscar aluno, pacote ou curso" value="${safe(ui.search)}"><label class="small">Vencimento <select id="expiryFilter"><option value="all">Todos</option>${[7,15,30,60,90].map(n=>`<option value="${n}" ${ui.expiry==n?'selected':''}>Próximos ${n} dias</option>`).join('')}<option value="expired" ${ui.expiry==='expired'?'selected':''}>Expirados</option></select></label></div></div>${table(['Aluno','Pacote','Vigência','Matrícula','Ações'],list.map(c=>{
    const s=lookup('students',c.student_id),s2=c.student2_id?lookup('students',c.student2_id):null;
-   const nameLabel=c.kind==='dupla'?`${safe(s?.full_name)} & ${safe(s2?.full_name||'2º Aluno')} <span class="pill pill-signed" style="margin-left:4px">Dupla</span>`:safe(s?.full_name);
+   const nameLabel=c.kind==='dupla'?`<b>${safe(s?.full_name)} & ${safe(s2?.full_name||'2º Aluno')}</b> <span class="pill pill-signed" style="margin-left:4px">Dupla</span>`:`<b>${safe(s?.full_name)}</b>`;
    return row([nameLabel,safe(c.terms.package_name),`${dateBR(c.terms.start_date)} — ${dateBR(c.terms.end_date)}`,enrollmentTag(c),`${(()=>{
   const canRenew=['signed','closed','superseded'].includes(c.status);
   const canClose=c.status==='signed';
   const total=1+(canRenew?1:0)+(canClose?1:0);
   if(total>2){
-    return `<div class="actions actions-right"><button class="table-action-btn" data-action="studentDetail" data-id="${s?.id}">${ico('profile',14)} <span>ABRIR PERFIL</span></button><details class="contract-actions-dropdown"><summary class="table-action-btn" aria-label="Mais ações"><span>AÇÕES</span> ${ico('chevron',12)}</summary><div class="contract-actions-popover" role="menu"><button class="contract-menu-item" type="button" role="menuitem" data-action="renew" data-id="${c.id}">${ico('restore',14)} Rematricular</button><button class="contract-menu-item danger" type="button" role="menuitem" data-action="closeEnrollment" data-id="${c.id}">${ico('trash',14)} Encerrar matrícula</button></div></details></div>`;
+    return `<div class="actions actions-right"><button class="table-action-btn" data-action="studentDetail" data-id="${s?.id}">${ico('profile',13)} <span>Ver perfil</span></button><details class="contract-actions-dropdown"><summary class="table-action-btn" aria-label="Mais ações"><span>Ações</span> ${ico('chevron',11)}</summary><div class="contract-actions-popover" role="menu"><button class="contract-menu-item" type="button" role="menuitem" data-action="renew" data-id="${c.id}">${ico('restore',14)} Rematricular</button><button class="contract-menu-item danger" type="button" role="menuitem" data-action="closeEnrollment" data-id="${c.id}">${ico('trash',14)} Encerrar matrícula</button></div></details></div>`;
   }
-  return `<div class="actions actions-right"><button class="table-action-btn" data-action="studentDetail" data-id="${s?.id}">${ico('profile',14)} <span>ABRIR PERFIL</span></button>${canRenew?`<button class="table-action-btn primary" data-action="renew" data-id="${c.id}">${ico('restore',14)} <span>REMATRICULAR</span></button>`:''}${canClose?`<button class="table-action-btn danger" data-action="closeEnrollment" data-id="${c.id}">${ico('trash',14)} <span>ENCERRAR</span></button>`:''}</div>`;
-})()}`]);}),'Nenhuma matrícula neste filtro.'))}`;
+  return `<div class="actions actions-right"><button class="table-action-btn" data-action="studentDetail" data-id="${s?.id}">${ico('profile',13)} <span>Ver perfil</span></button>${canRenew?`<button class="table-action-btn primary" data-action="renew" data-id="${c.id}">${ico('restore',13)} <span>Rematricular</span></button>`:''}${canClose?`<button class="table-action-btn danger" data-action="closeEnrollment" data-id="${c.id}">${ico('trash',13)} <span>Encerrar</span></button>`:''}</div>`;
+})()}`]);}),'Nenhuma matrícula neste filtro.')}</section>`;
 }
 
 async function studentDetail(id){
@@ -1547,7 +1481,7 @@ function studentProfilePage(){
   const partnerId=isDuo?(c.student_id===s.id?c.student2_id:c.student_id):null;
   const partner=partnerId?lookup('students',partnerId):null;
   const duoBadge=isDuo?`<span class="pill pill-signed" style="margin-left:6px">Dupla com ${safe(partner?.full_name||'2º Aluno')}</span>`:'';
-  return `<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.terms?.package_name||'Contrato')} · ${safe(c.terms?.course||'Aulas')} ${isPre?'<span class="pill pill-signed" style="margin-left:6px">Contrato preexistente</span>':''}${duoBadge}</strong><small>${dateBR(c.terms?.start_date)} a ${dateBR(c.terms?.end_date)} · ${money(c.terms?.total_amount)} · ${safe(lookup('teachers',c.terms?.teacher_id)?.name||'')}</small></div><div class="cal-lesson-actions">${contractActionsMenu(c)}${c.status==='signed'?`<button class="table-action-btn primary" data-action="renew" data-id="${c.id}">${ico('restore',14)} <span>REMATRICULAR</span></button>`:''}</div></div>`;
+  return `<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.terms?.package_name||'Contrato')} · ${safe(c.terms?.course||'Aulas')} ${isPre?'<span class="pill pill-signed" style="margin-left:6px">Contrato preexistente</span>':''}${duoBadge}</strong><small>${dateBR(c.terms?.start_date)} a ${dateBR(c.terms?.end_date)} · ${money(c.terms?.total_amount)} · ${safe(lookup('teachers',c.terms?.teacher_id)?.name||'')}</small></div><div class="cal-lesson-actions">${contractActionsMenu(c)}${c.status==='signed'?`<button class="table-action-btn primary" data-action="renew" data-id="${c.id}">${ico('restore',13)} <span>Rematricular</span></button>`:''}</div></div>`;
  }).join('')||'<p class="muted">Sem contratos.</p>';
  return calendar.studentProfileView(true,{registration,contractCount:all.length,contracts:contracts+(!all.length?`<div class="form-footer"><button class="btn" data-action="manualEnrollment" data-id="${s.id}">Criar matrícula</button></div>`:'')});
 }
@@ -1570,7 +1504,6 @@ function renewForm(id){
 
 const profileSections=[
  ['profile-personal','profile','Dados pessoais','Nome e e-mail de acesso'],
- ['profile-appearance','sun','Aparência e Tema','Modo escuro e modo claro'],
  ['profile-security','lock','Senha e segurança','Atualizar sua senha'],
  ['profile-schools','school','Escolas vinculadas','Unidades que você administra']
 ];
@@ -1606,7 +1539,7 @@ function settingsAdminsPanel(s,pending){
    `<b>${safe(a.full_name||'Administrador')}</b><div class="muted">${safe(a.email||'—')}</div>`,
    a.is_super?'<span class="pill pill-signed">Administrador Super</span>':'<span class="pill">Administrador</span>',
    a.is_teacher?'<span class="pill pill-signed">Também é professor</span>':'<span class="pill">Apenas administração</span>',
-   `<div class="actions">${canToggleTeacher?`<button type="button" class="table-action-btn ${a.is_teacher?'':'primary'}" data-action="adminToggleTeacher" data-id="${safe(a.user_id)}" data-enable="${a.is_teacher?'false':'true'}" data-name="${safe(a.full_name||'')}">${ico('teachers',14)} <span>${a.is_teacher?'Desativar como professor':'Tornar professor'}</span></button>`:''}${canRemove?`<button type="button" class="table-action-btn danger" data-action="removeSchoolAdmin" data-id="${safe(a.user_id)}" data-email="${safe(a.email||'')}">${ico('trash',14)} <span>Remover admin</span></button>`:''}</div>`
+   `<div class="actions">${canToggleTeacher?`<button type="button" class="table-action-btn ${a.is_teacher?'':'primary'}" data-action="adminToggleTeacher" data-id="${safe(a.user_id)}" data-enable="${a.is_teacher?'false':'true'}" data-name="${safe(a.full_name||'')}">${ico('teachers',13)} <span>${a.is_teacher?'Desativar como professor':'Tornar professor'}</span></button>`:''}${canRemove?`<button type="button" class="table-action-btn danger" data-action="removeSchoolAdmin" data-id="${safe(a.user_id)}" data-email="${safe(a.email||'')}">${ico('trash',13)} <span>Remover admin</span></button>`:''}</div>`
   ]);
  });
  const inviteRows=invites.map(inv=>{
@@ -1618,11 +1551,11 @@ function settingsAdminsPanel(s,pending){
    `<b>${safe(inv.full_name)}</b><div class="muted">${safe(inv.email)}</div>`,
    inv.also_teacher?'<span class="pill pill-sent">Admin + Professor</span>':'<span class="pill">Administrador</span>',
    inv.expires_at?dateBR(String(inv.expires_at).slice(0,10)):'14 dias',
-   `<div class="actions">${inv.invite_token?`<button type="button" class="table-action-btn" data-action="copyAdminInviteLink" data-token="${safe(inv.invite_token)}">${ico('key',14)} <span>Copiar link</span></button><a class="table-action-btn" href="https://wa.me/?text=${waText}" target="_blank" rel="noopener">${ico('arrow',14)} <span>WhatsApp</span></a><a class="table-action-btn" href="mailto:${encodeURIComponent(inv.email)}?subject=${mailSub}&body=${mailBody}">${ico('profile',14)} <span>E-mail</span></a>`:''}${superUser?`<button type="button" class="table-action-btn danger" data-action="revokeAdminInvite" data-id="${safe(inv.id)}">${ico('trash',14)} <span>Revogar</span></button>`:''}</div>`
+   `<div class="actions">${inv.invite_token?`<button type="button" class="table-action-btn" data-action="copyAdminInviteLink" data-token="${safe(inv.invite_token)}">${ico('key',13)} <span>Copiar link</span></button><a class="table-action-btn" href="https://wa.me/?text=${waText}" target="_blank" rel="noopener">${ico('arrow',13)} <span>WhatsApp</span></a><a class="table-action-btn" href="mailto:${encodeURIComponent(inv.email)}?subject=${mailSub}&body=${mailBody}">${ico('profile',13)} <span>E-mail</span></a>`:''}${superUser?`<button type="button" class="table-action-btn danger" data-action="revokeAdminInvite" data-id="${safe(inv.id)}">${ico('trash',13)} <span>Revogar</span></button>`:''}</div>`
   ]);
  });
  const inviteSection=superUser
-  ?`<h3 class="form-section" style="margin-top:24px">Convidar novo administrador</h3><p class="muted">Gere um link exclusivo e seguro para enviar ao convidado por WhatsApp ou e-mail. Ao abrir o link, ele definirá sua senha e ativará o acesso administrativo (e opcionalmente docente) nesta escola.</p><form id="inviteAdminForm" class="license-form"><div class="form-grid">${input('Nome completo','full_name','','text')}${input('E-mail do novo administrador','email','','email')}<label class="field wide checkrow"><input type="checkbox" name="also_teacher" value="1"> Também cadastrar e habilitar como professor desta escola</label></div><div class="form-footer"><button class="btn" type="submit" ${pending?'disabled':''}>${ico('plus',16)} Gerar link de convite</button></div></form>${invites.length?`<h3 class="form-section" style="margin-top:24px">Convites pendentes</h3><p class="muted" style="margin-bottom:12px">Estes são os links de convite gerados. Você pode copiar ou reenviar por WhatsApp/e-mail a qualquer momento:</p>${table(['Convidado','Perfil','Expira em','Ações'],inviteRows)}`:''}`
+  ?`<h3 class="form-section" style="margin-top:20px">Convidar novo administrador</h3><p class="muted">Gere um link exclusivo e seguro para enviar ao convidado por WhatsApp ou e-mail. Ao abrir o link, ele definirá sua senha e ativará o acesso administrativo (e opcionalmente docente) nesta escola.</p><form id="inviteAdminForm" class="license-form"><div class="form-grid">${input('Nome completo','full_name','','text')}${input('E-mail do novo administrador','email','','email')}<label class="field wide checkrow"><input type="checkbox" name="also_teacher" value="1"> Também cadastrar e habilitar como professor desta escola</label></div><div class="form-footer"><button class="btn" type="submit" ${pending?'disabled':''}>${ico('plus',15)} Gerar link de convite</button></div></form>${invites.length?`<h3 class="form-section" style="margin-top:20px">Convites pendentes</h3><p class="muted" style="margin-bottom:10px">Estes são os links de convite gerados. Você pode copiar ou reenviar por WhatsApp/e-mail a qualquer momento:</p>${table(['Convidado','Perfil','Expira em','Ações'],inviteRows)}`:''}`
   :`<p class="form-note" style="margin-top:16px">Somente o <b>Administrador Super</b> (${safe(superAdminRow.email)}) pode convidar ou remover outros administradores.</p>`;
  const teamPanel=preferencesPanel(
   'Administradores da escola',
@@ -1638,19 +1571,18 @@ function settingsAdminsPanel(s,pending){
  );
  return `${teamPanel}${transferPanel}`;
 }
-function preferencesOverview(sections,description){return `<div class="preferences-intro"><span class="preferences-intro-icon">${ico('settings',26)}</span><h2>Escolha uma configuração</h2><p>${safe(description)}</p></div><div class="preferences-overview-grid">${sections.map(([page,icon,label,hint])=>`<button class="preferences-tile" type="button" data-action="navigate" data-page="${page}"><span class="preferences-tile-icon">${ico(icon,21)}</span><span><b>${safe(label)}</b><small>${safe(hint)}</small></span>${ico('arrow',18)}</button>`).join('')}</div>`;}
-function preferencesLayout(scope,headingText,description,sections,selection,main){return `${heading(scope,headingText,description)}<div class="preferences-layout"><nav class="preferences-nav" aria-label="${safe(headingText)}"><div class="preferences-nav-title">Configurações</div><button class="preferences-nav-item ${selection===sections[0][0].split('-')[0]?'selected':''}" type="button" data-action="navigate" data-page="${sections[0][0].split('-')[0]}">${ico('dashboard',18)}<span>Visão geral</span></button>${sections.map(([page,icon,label])=>`<button class="preferences-nav-item ${selection===page?'selected':''}" type="button" data-action="navigate" data-page="${page}">${ico(icon,18)}<span>${safe(label)}</span>${ico('arrow',14)}</button>`).join('')}</nav><div class="preferences-main">${main}</div></div>`;}
-function preferencesPanel(title,description,body,icon='settings',extra=''){return `<section class="panel preferences-panel"><div class="preferences-panel-heading"><span class="preferences-panel-symbol">${ico(icon,22)}</span><div><h2>${safe(title)}</h2><p>${safe(description)}</p></div></div><div class="preferences-panel-body">${body}</div>${extra}</section>`;}
+function preferencesOverview(sections,description){return `<div class="preferences-overview-grid">${sections.map(([page,icon,label,hint])=>`<button class="preferences-tile" type="button" data-action="navigate" data-page="${page}"><span class="preferences-tile-icon">${ico(icon,18)}</span><span class="preferences-tile-copy"><b>${safe(label)}</b><small>${safe(hint)}</small></span>${ico('arrow',15)}</button>`).join('')}</div>`;}
+function preferencesLayout(scope,headingText,description,sections,selection,main){return `${heading(scope,headingText,description)}<div class="preferences-layout"><nav class="preferences-nav" aria-label="${safe(headingText)}"><div class="preferences-nav-title">Configurações</div><button class="preferences-nav-item ${selection===sections[0][0].split('-')[0]?'selected':''}" type="button" data-action="navigate" data-page="${sections[0][0].split('-')[0]}">${ico('dashboard',16)}<span>Visão geral</span></button>${sections.map(([page,icon,label])=>`<button class="preferences-nav-item ${selection===page?'selected':''}" type="button" data-action="navigate" data-page="${page}">${ico(icon,16)}<span>${safe(label)}</span>${ico('arrow',13)}</button>`).join('')}</nav><div class="preferences-main">${main}</div></div>`;}
+function preferencesPanel(title,description,body,icon='settings',extra=''){return `<section class="panel preferences-panel"><div class="preferences-panel-heading"><span class="preferences-panel-symbol">${ico(icon,18)}</span><div><h2>${safe(title)}</h2><p>${safe(description)}</p></div></div><div class="preferences-panel-body">${body}</div>${extra}</section>`;}
 function profileView(){const user=ui.user||{},name=user.user_metadata?.full_name||'',section=ui.page;
  let main='';
- if(section==='profile-appearance')main=preferencesPanel('Aparência e Tema','Escolha o tema visual do Campanella.',`<div class="theme-selection-card"><p>O Campanella conta com o <b>Design System Vision UI</b> com dois temas completos e refinados. O tema escuro é o padrão do sistema.</p><div style="display:flex;gap:12px;margin:20px 0;flex-wrap:wrap;"><button type="button" class="btn ${currentTheme()==='dark'?'':'ghost'}" data-action="setTheme" data-theme="dark">${ico('moon',16)} Modo Escuro (Padrão)</button><button type="button" class="btn ${currentTheme()==='light'?'':'ghost'}" data-action="setTheme" data-theme="light">${ico('sun',16)} Modo Claro</button></div><p class="form-note">Sua preferência é salva localmente e aplicada instantaneamente sem recarregar a página.</p></div>`,'sun');
- else if(section==='profile-personal')main=preferencesPanel('Dados pessoais','Mantenha as informações de sua conta atualizadas.',`<form id="profileForm" class="license-form">${input('Nome completo','full_name',name)}<label class="field"><span>E-mail de acesso</span><input type="email" value="${safe(user.email||'')}" disabled></label><p class="form-note">Seu nome será mostrado no menu da conta. O e-mail é utilizado para entrar no sistema.</p><div class="form-footer"><button class="btn">Salvar alterações</button></div></form>`,'profile');
+ if(section==='profile-personal')main=preferencesPanel('Dados pessoais','Mantenha as informações de sua conta atualizadas.',`<form id="profileForm" class="license-form">${input('Nome completo','full_name',name)}<label class="field"><span>E-mail de acesso</span><input type="email" value="${safe(user.email||'')}" disabled></label><p class="form-note">Seu nome será mostrado no menu da conta. O e-mail é utilizado para entrar no sistema.</p><div class="form-footer"><button class="btn">Salvar alterações</button></div></form>`,'profile');
  else if(section==='profile-security')main=preferencesPanel('Senha e segurança','Altere sua senha de acesso ao Campanella.',`<form id="profilePasswordForm" class="license-form"><label class="field"><span>Nova senha</span><input type="password" name="password" autocomplete="new-password" minlength="8" required></label><label class="field"><span>Confirmar nova senha</span><input type="password" name="password_confirm" autocomplete="new-password" minlength="8" required></label><p class="form-note">Utilize pelo menos 8 caracteres. O Supabase poderá solicitar nova autenticação.</p><div class="form-footer"><button class="btn" type="submit">Atualizar senha</button></div></form>`,'lock');
- else if(section==='profile-schools')main=preferencesPanel(`Escolas vinculadas (${ui.schools.length})`,'Cada escola possui seus próprios dados e uma licença independente.',`<div class="profile-school-list">${ui.schools.map(s=>`<button type="button" class="profile-school-item" data-action="selectSchool" data-id="${safe(s.id)}">${ico('school',18)}<span>${safe(s.name)}</span>${fullSchoolStatus(s)}</button>`).join('')||'<p class="muted">Nenhuma escola vinculada à sua conta.</p>'}</div><div class="form-footer"><button type="button" class="btn light" data-action="showActivation">${ico('plus',16)} Ativar outra escola</button></div>`,'school');
+ else if(section==='profile-schools')main=preferencesPanel(`Escolas vinculadas (${ui.schools.length})`,'Cada escola possui seus próprios dados e uma licença independente.',`<div class="profile-school-list">${ui.schools.map(s=>`<button type="button" class="profile-school-item" data-action="selectSchool" data-id="${safe(s.id)}">${ico('school',16)}<span>${safe(s.name)}</span>${fullSchoolStatus(s)}</button>`).join('')||'<p class="muted">Nenhuma escola vinculada à sua conta.</p>'}</div><div class="form-footer"><button type="button" class="btn light" data-action="showActivation">${ico('plus',15)} Ativar outra escola</button></div>`,'school');
  else main=preferencesOverview(profileSections,'Selecione uma categoria ao lado para alterar seus dados, senha ou visualizar as escolas que administra.');
  return preferencesLayout('Conta pessoal','Configurações do perfil','Gerencie sua conta pessoal separadamente das escolas.',profileSections,section,main);
 }
-function schoolRemovalNotice(s){if(!s.deletion_requested_at)return '';const canRestore=s.deletion_due_at&&new Date(s.deletion_due_at)>new Date()&&!s.deletion_started_at;return `<section class="deletion-banner"><div>${ico('trash',25)}<div><b>Exclusão agendada</b><p>Esta escola está desativada. Você pode cancelar a exclusão até ${new Date(s.deletion_due_at).toLocaleString('pt-BR')}. Depois disso, os dados serão removidos pela rotina do servidor.</p></div></div>${canRestore?`<button class="btn light" data-action="restoreSchool" data-id="${safe(s.id)}">${ico('restore',16)} Restaurar escola</button>`:`<strong>Prazo encerrado · limpeza em andamento</strong>`}</section>`;}
+function schoolRemovalNotice(s){if(!s.deletion_requested_at)return '';const canRestore=s.deletion_due_at&&new Date(s.deletion_due_at)>new Date()&&!s.deletion_started_at;return `<section class="deletion-banner"><div>${ico('trash',20)}<div><b>Exclusão agendada</b><p>Esta escola está desativada. Você pode cancelar a exclusão até ${new Date(s.deletion_due_at).toLocaleString('pt-BR')}. Depois disso, os dados serão removidos pela rotina do servidor.</p></div></div>${canRestore?`<button class="btn light" data-action="restoreSchool" data-id="${safe(s.id)}">${ico('restore',15)} Restaurar escola</button>`:`<strong>Prazo encerrado · limpeza em andamento</strong>`}</section>`;}
 function settingsView(){const s=currentSchool(),l=ui.schoolLicense,section=ui.page;const pending=!!s.deletion_requested_at;
  let main='';
  if(section==='settings-import')main=onboarding.view();
@@ -1692,7 +1624,7 @@ function settingsView(){const s=currentSchool(),l=ui.schoolLicense,section=ui.pa
       <div class="plan-progress-fill ${studentsPct>=90?'danger':studentsPct>=75?'warning':''}" style="width:${limits.maxStudents>=999999?100:studentsPct}%"></div>
      </div>
     </div>
-    <div class="plan-usage-item" style="margin-top:16px">
+    <div class="plan-usage-item" style="margin-top:14px">
      <div class="plan-usage-labels">
       <span><b>Professores ativos:</b> ${activeTeachers} de ${limits.maxTeachers>=999999?'Ilimitado':limits.maxTeachers}${limits.extraTeachers>0?` (${limits.baseTeachers} base + ${limits.extraTeachers} adicionais)`:''}</span>
       <span><b>${limits.maxTeachers>=999999?'Livre':teachersPct+'%'}</b></span>
@@ -1709,21 +1641,21 @@ function settingsView(){const s=currentSchool(),l=ui.schoolLicense,section=ui.pa
      <span><b>+10 alunos ativos:</b> R$ 15/mês</span>
      <span><b>+1 professor ativo:</b> R$ 10/mês</span>
     </div>
-    <div style="margin-top:12px"><button class="btn light mini" type="button" data-action="contactUpgradeSupport">${ico('school',14)} Falar com suporte para upgrade</button></div>
+    <div style="margin-top:10px"><button class="btn light mini" type="button" data-action="contactUpgradeSupport">${ico('school',14)} Falar com suporte para upgrade</button></div>
    </div>`}
   </div>
-  <form id="renewSchoolKeyForm" class="license-form"><label class="field"><span>Aplicar nova chave de licença</span><input type="text" name="key" placeholder="CAMP-XXXXXXXX-..." autocomplete="off" spellcheck="false" required></label><div class="form-footer"><button class="btn light" ${pending?'disabled':''}>${ico('key',16)} Aplicar código</button></div></form>
+  <form id="renewSchoolKeyForm" class="license-form"><label class="field"><span>Aplicar nova chave de licença</span><input type="text" name="key" placeholder="CAMP-XXXXXXXX-..." autocomplete="off" spellcheck="false" required></label><div class="form-footer"><button class="btn light" ${pending?'disabled':''}>${ico('key',15)} Aplicar código</button></div></form>
   ${platformPlansShowcase(limits.plan)}`;
   main=preferencesPanel('Licença, Plano e Capacidade','Consulte o plano atual, o consumo de alunos e professores ou aplique uma nova chave.',planBody,'key');
  }
  else if(section==='settings-admin')main=settingsAdminsPanel(s,pending);
  else if(section==='settings-backup')main=preferencesPanel('Backup no Google Drive','Cada escola autoriza seu próprio Drive. Os PDFs finais e certificados são copiados após a assinatura.',`<div class="school-license-summary"><div><span>Conexão</span><b>${ui.driveConnection?.connected?'Drive conectado':'Não conectado'}</b></div><div><span>Último backup</span><b>${ui.driveConnection?.last_success_at?new Date(ui.driveConnection.last_success_at).toLocaleString('pt-BR'):'Ainda não realizado'}</b></div></div>${ui.driveConnection?.last_error?`<p class="notice">${safe(ui.driveConnection.last_error)}</p>`:''}<p class="form-note">O backup fica sob controle da conta Google autorizada por esta escola. Não inclua contas compartilhadas sem autorização. O Drive poderá ser desconectado aqui.</p><div class="form-footer">${ui.driveConnection?.connected?`<button class="btn light" data-action="driveConnect" ${pending?'disabled':''}>Trocar conta Google</button><button class="btn danger" data-action="driveDisconnect">Desconectar Drive</button>`:`<button class="btn" data-action="driveConnect" ${pending?'disabled':''}>Conectar Google Drive</button>`}</div>`,'school');
- else if(section==='settings-deletion')main=preferencesPanel('Exclusão da escola','Gerencie a exclusão programada com prazo de 30 dias.',`<div class="settings-danger-copy"><p>Ao solicitar a exclusão, o acesso operacional é interrompido. Você tem <b>30 dias para restaurar</b> a escola. Depois, o sistema poderá apagar permanentemente seus dados e arquivos.</p></div>${pending?(s.deletion_due_at&&new Date(s.deletion_due_at)>new Date()&&!s.deletion_started_at?`<button class="btn light" data-action="restoreSchool" data-id="${safe(s.id)}">${ico('restore',16)} Cancelar exclusão</button>`:'<p class="muted">Prazo para restauração encerrado.</p>'):`<button class="btn danger" data-action="deleteSchool" ${!canAdmin()||!isSuperAdmin(s)?'disabled':''}>${ico('trash',16)} Solicitar exclusão</button>`}`,'trash');
- else main=`<div class="settings-hero"><span class="school-hero-icon">${ico('school',28)}</span><div><div class="eyebrow">Escola selecionada</div><h2>${safe(s.name)}</h2><div class="settings-hero-meta">${fullSchoolStatus(s)}<span>${safe(licenseExpiration(l))}</span></div></div></div>${preferencesOverview(schoolSections,'Selecione uma categoria para gerenciar a instituição, a licença, os administradores ou a exclusão da escola.')}`;
+ else if(section==='settings-deletion')main=preferencesPanel('Exclusão da escola','Gerencie a exclusão programada com prazo de 30 dias.',`<div class="settings-danger-copy"><p>Ao solicitar a exclusão, o acesso operacional é interrompido. Você tem <b>30 dias para restaurar</b> a escola. Depois, o sistema poderá apagar permanentemente seus dados e arquivos.</p></div>${pending?(s.deletion_due_at&&new Date(s.deletion_due_at)>new Date()&&!s.deletion_started_at?`<button class="btn light" data-action="restoreSchool" data-id="${safe(s.id)}">${ico('restore',15)} Cancelar exclusão</button>`:'<p class="muted">Prazo para restauração encerrado.</p>'):`<button class="btn danger" data-action="deleteSchool" ${!canAdmin()||!isSuperAdmin(s)?'disabled':''}>${ico('trash',15)} Solicitar exclusão</button>`}`,'trash');
+ else main=`<div class="settings-hero"><span class="school-hero-icon">${ico('school',20)}</span><div><div class="eyebrow">Escola selecionada</div><h2>${safe(s.name)}</h2><div class="settings-hero-meta">${fullSchoolStatus(s)}<span>Validade: ${safe(licenseExpiration(l))}</span></div></div></div>${preferencesOverview(schoolSections,'Selecione uma categoria para gerenciar a instituição, a licença, os administradores ou a exclusão da escola.')}`;
  const notice=pending?schoolRemovalNotice(s):'';
  return `${notice}${preferencesLayout('Escola','Configurações da escola',`Administração de ${safe(s.name||'sua unidade')} organizada por categorias.`,schoolSections,section,main)}`;
 }
-function schoolsView(){return `${heading('Conta e unidades','Minhas escolas','Alterne entre suas unidades ou ative uma nova escola com uma chave exclusiva.',`<button class="btn" data-action="showActivation">${ico('plus',17)} Ativar escola</button>`)}<div class="school-cards enhanced-school-cards">${ui.schools.map(s=>{const l=schoolLicense(s.id);return `<section class="school-card ${s.id===ui.schoolId?'is-current':''}"><span class="school-card-icon">${ico('school',25)}</span><div><h3>${safe(s.name)}</h3><p>${fullSchoolStatus(s)} · ${safe(licenseExpiration(l))}</p><small>${safe(s.contact_email||'Sem e-mail institucional')}</small></div><div class="school-card-actions"><button class="table-action-btn" data-action="selectSchool" data-id="${safe(s.id)}">${ico('school',14)} <span>${s.id===ui.schoolId?'ABRIR ESCOLA':'ACESSAR'}</span></button></div></section>`;}).join('')||'<p class="muted">Nenhuma escola cadastrada.</p>'}</div>`;}
+function schoolsView(){return `${heading('Conta e unidades','Minhas escolas','Alterne entre suas unidades ou ative uma nova escola com uma chave exclusiva.',`<button class="btn" data-action="showActivation">${ico('plus',15)} Ativar escola</button>`)}<div class="school-cards enhanced-school-cards">${ui.schools.map(s=>{const l=schoolLicense(s.id);return `<section class="school-card ${s.id===ui.schoolId?'is-current':''}"><span class="school-card-icon">${ico('school',20)}</span><div><h3>${safe(s.name)}</h3><p>${fullSchoolStatus(s)} · ${safe(licenseExpiration(l))}</p><small>${safe(s.contact_email||'Sem e-mail institucional')}</small></div><div class="school-card-actions"><button class="table-action-btn ${s.id===ui.schoolId?'primary':''}" data-action="selectSchool" data-id="${safe(s.id)}">${ico('school',13)} <span>${s.id===ui.schoolId?'Abrir escola':'Acessar'}</span></button></div></section>`;}).join('')||'<p class="muted">Nenhuma escola cadastrada.</p>'}</div>`;}
 function activationModal(){showModal(`<div class="eyebrow">Nova unidade</div><h2>Ativar outra escola</h2><p class="modal-intro">Cada nova escola precisa de uma chave própria, emitida pelo proprietário do Campanella. O administrador da escola será você.</p>${activationForm()}`);}
 function renameSchoolForm(){showModal(`<h2>Renomear escola</h2><p class="modal-intro">Altera apenas o nome, mantendo a licença e todos os registros.</p><form id="renameSchoolForm">${input('Nome da escola','name',currentSchool().name)}<div class="form-footer"><button class="btn">Salvar nome</button></div></form>`);}
 function licensePeriodOptions(){return `<label class="field"><span>Validade</span><select name="validity_mode" id="licenseValidity"><option value="days">Dias após a ativação</option><option value="date">Data de vencimento exata</option><option value="unlimited">Sem vencimento</option></select></label><div id="licensePeriodFields"><label class="field"><span>Quantidade de dias</span><input name="validity_days" type="number" min="1" max="3650" value="30" required></label></div>`;}
@@ -1879,8 +1811,8 @@ function licensesView(){
  </div>
  ${platformPlansShowcase()}
  <section class="panel">
-  <div class="panel-head"><h2>Escolas e clientes</h2><span class="muted small">${filtered.length} resultado(s)</span></div>
-  <div class="panel-body">
+  <div class="panel-head panel-controls">
+   <h2>Escolas e clientes <span class="muted small">(${filtered.length})</span></h2>
    <div class="platform-filters">
     <input type="search" class="search" id="platformSearch" placeholder="Buscar escola ou administrador" value="${safe(ui.platformSearch)}" aria-label="Buscar escolas">
     <select id="platformFilter" aria-label="Filtrar escolas">
@@ -1902,8 +1834,8 @@ function licensesView(){
     `${fullSchoolStatus(s)}<div class="muted">${safe(l?.kind==='cortesia'?'Cortesia':'Paga')}</div>`,
     safe(licenseExpiration(l)),
     `<div class="actions">
-      <button class="table-action-btn" data-action="platformSchoolDetail" data-id="${safe(s.id)}">${ico('eye',14)} <span>DETALHES</span></button>
-      <button class="table-action-btn" data-action="manageLicense" data-id="${safe(s.id)}">${ico('settings',14)} <span>PLANO</span></button>
+      <button class="table-action-btn" data-action="platformSchoolDetail" data-id="${safe(s.id)}">${ico('eye',14)} <span>Detalhes</span></button>
+      <button class="table-action-btn" data-action="manageLicense" data-id="${safe(s.id)}">${ico('settings',14)} <span>Plano</span></button>
       <button class="table-action-btn primary" data-action="issueRenewal" data-id="${safe(s.id)}" ${s.deletion_requested_at?'disabled':''}>${ico('key',14)} <span>Nova chave</span></button>
      </div>`
    ]);
@@ -1919,7 +1851,7 @@ function licensesView(){
     `<strong>${safe(isRenewal?schools.find(s=>s.id===k.school_id)?.name||'Escola removida':k.school_name)}</strong><div class="muted">${isRenewal?'Renovação':'Ativação inicial'}</div>`,
     planText,
     k.redeemed_at?'<span class="pill pill-signed">Utilizada</span>':k.revoked_at?'<span class="pill pill-void">Revogada</span>':'<span class="pill pill-sent">Disponível</span>',
-    `<div class="actions"><span class="muted small">••••${safe(k.code_suffix)}</span>${!k.redeemed_at&&!k.revoked_at?`<button class="table-action-btn danger" data-action="${isRenewal?'revokeRenewal':'revokeKey'}" data-id="${safe(k.id)}">${ico('trash',14)} <span>REVOGAR</span></button>`:''}</div>`
+    `<div class="actions"><span class="muted small">••••${safe(k.code_suffix)}</span>${!k.redeemed_at&&!k.revoked_at?`<button class="table-action-btn danger" data-action="${isRenewal?'revokeRenewal':'revokeKey'}" data-id="${safe(k.id)}">${ico('trash',14)} <span>Revogar</span></button>`:''}</div>`
    ]);
   }),'Nenhuma chave emitida.')}
  </section>
@@ -1933,16 +1865,21 @@ function teachersView(){
  const rows=db.teachers.slice().sort((a,b)=>(b.active!==false)-(a.active!==false)||a.name.localeCompare(b.name,'pt-BR'));
  const admins=resolveSchoolAdminsList();
  return `${heading('Equipe','Professores','Cadastre professores e gerencie o acesso deles à agenda.','<button class="btn" data-action="editTeacher">＋ Novo professor</button>')}
- <div class="teacher-stats"><div><strong>${active}</strong><span>Ativos</span></div><div><strong>${rows.length-active}</strong><span>Inativos</span></div><div><strong>${rows.length}</strong><span>Total</span></div></div>
- ${card('Equipe docente',table(['Professor','E-mail','Situação','Ações'],rows.map(t=>{
-  const adm=t.email?admins.find(a=>a.email&&a.email.toLowerCase()===t.email.toLowerCase()):null;
-  const admBadge=adm?(adm.is_super?' <span class="pill pill-sent">Administrador Super</span>':' <span class="pill">Administrador</span>'):'';
-  return row([
-   `<b>${safe(t.name)}</b>${admBadge}`,t.email?`<a href="mailto:${safe(t.email)}">${safe(t.email)}</a>`:'<span class="muted">Não cadastrado</span>',
-   `<span class="pill ${t.active!==false?'pill-signed':''}">${t.active!==false?'Ativo':'Inativo'}</span>`,
-   teacherActionsMenu(t)
-  ]);
- }),'Nenhum professor cadastrado.'))}<p class="form-note">Se houver histórico vinculado, o professor será desativado em vez de apagado. Para habilitar administradores como professores, acesse <b>Configurações da escola → Administradores e permissões</b>.</p>`;
+ <section class="panel">
+  <div class="panel-head panel-controls">
+   <h2>Equipe docente</h2>
+   <div class="teacher-stats"><div><strong>${active}</strong><span>Ativos</span></div><div><strong>${rows.length-active}</strong><span>Inativos</span></div><div><strong>${rows.length}</strong><span>Total</span></div></div>
+  </div>
+  ${table(['Professor','E-mail','Situação','Ações'],rows.map(t=>{
+   const adm=t.email?admins.find(a=>a.email&&a.email.toLowerCase()===t.email.toLowerCase()):null;
+   const admBadge=adm?(adm.is_super?' <span class="pill pill-sent">Administrador Super</span>':' <span class="pill">Administrador</span>'):'';
+   return row([
+    `<b>${safe(t.name)}</b>${admBadge}`,t.email?`<a href="mailto:${safe(t.email)}">${safe(t.email)}</a>`:'<span class="muted">Não cadastrado</span>',
+    `<span class="pill ${t.active!==false?'pill-signed':''}">${t.active!==false?'Ativo':'Inativo'}</span>`,
+    teacherActionsMenu(t)
+   ]);
+  }),'Nenhum professor cadastrado.')}
+ </section><p class="form-note">Se houver histórico vinculado, o professor será desativado em vez de apagado. Para habilitar administradores como professores, acesse <b>Configurações da escola → Administradores e permissões</b>.</p>`;
 }
 function teacherForm(id){const t=lookup('teachers',id)||{};showModal(`<div class="eyebrow">Equipe e ensino</div><h2>${id?'Editar professor':'Novo professor'}</h2><p class="modal-intro">O e-mail será utilizado para enviar um convite de acesso exclusivo ao calendário do professor.</p><form id="teacherForm" data-id="${safe(id||'')}"><div class="form-grid">${input('Nome completo','name',t.name)}${input('E-mail profissional','email',t.email||'','email')}<label class="field wide"><span>Situação</span><select name="active"><option value="true" ${t.active!==false?'selected':''}>Ativo</option><option value="false" ${t.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar professor</button></div></form>`);}
 async function createInterviewInviteLink(leadId,teacherId){
@@ -1964,7 +1901,7 @@ async function inviteInterview(leadId){const l=lookup('leads',leadId),i=db.inter
 }
 
 function studentCategory(s){const cs=db.contracts.filter(c=>c.student_id===s.id);if(cs.some(c=>enrollmentState(c)==='active'))return 'active';if(cs.some(c=>enrollmentState(c)==='expired'))return 'expired';if(cs.some(c=>enrollmentState(c)==='closed'))return 'closed';return 'none';}
-function directoryView(){const list=db.students.filter(s=>[s.full_name,s.email,s.phone].join(' ').toLowerCase().includes(ui.search)&&studentCategory(s)===ui.studentTab);return `${heading('Cadastros','Alunos','Alunos ativos, expirados, antigos e sem contrato.',`<div class="actions"><button class="btn light" type="button" data-action="importStudents">${ico('plus',16)} Importar CSV</button><button class="btn" type="button" data-action="editStudent">${ico('plus',16)} Novo aluno</button></div>`)}<div class="tabs">${[['active','Alunos ativos'],['expired','Expirados'],['closed','Alunos antigos'],['none','Sem matrícula']].map(([v,label])=>`<button class="btn ${ui.studentTab===v?'':'light'}" data-action="studentTab" data-tab="${v}">${label}</button>`).join('')}</div><div class="toolbar"><input id="search" class="search" placeholder="Buscar nome, telefone ou e-mail" value="${safe(ui.search)}"></div>${card('Alunos',table(['Nome / contato','Último curso / pacote','Professor','Horário atual','Ações'],list.map(s=>{const c=db.contracts.filter(c=>c.student_id===s.id&&['signed','closed','superseded'].includes(c.status)).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];return row([`<b>${safe(s.full_name)}</b><div class="muted">${safe(s.email)} · ${safe(s.phone)}</div>`,c?`${safe(c.terms.course||'Inglês')} · ${safe(c.terms.package_name)}<div class="muted">${c.terms.lessons_count} aulas</div>`:'Sem contrato',safe(lookup('teachers',s.calendar_teacher_id||c?.terms?.teacher_id)?.name||c?.terms?.teacher_name||'—'),safe(formatSchedule(c?.terms?.calendar_v6?calendar.scheduleForContract(c):(s.current_schedule?.length?s.current_schedule:c?.terms?.lesson_schedule),c?.terms?.calendar_v6?[]:(s.current_weekly_days||c?.terms?.weekly_days),c?.terms?.calendar_v6?'':(s.current_lesson_time||c?.terms?.lesson_time))),`<button class="table-action-btn" data-action="studentDetail" data-id="${s.id}">${ico('profile',14)} <span>ABRIR PERFIL</span></button>`]);}),'Nenhum aluno neste grupo.'))}`;}
+function directoryView(){const list=db.students.filter(s=>[s.full_name,s.email,s.phone].join(' ').toLowerCase().includes(ui.search)&&studentCategory(s)===ui.studentTab);return `${heading('Cadastros','Alunos','Alunos ativos, expirados, antigos e sem contrato.',`<div class="actions"><button class="btn light" type="button" data-action="importStudents">${ico('plus',16)} Importar CSV</button><button class="btn" type="button" data-action="editStudent">${ico('plus',16)} Novo aluno</button></div>`)}<section class="panel"><div class="panel-head panel-controls"><div class="tabs">${[['active','Alunos ativos'],['expired','Expirados'],['closed','Alunos antigos'],['none','Sem matrícula']].map(([v,label])=>`<button class="btn ${ui.studentTab===v?'':'light'}" data-action="studentTab" data-tab="${v}">${label}</button>`).join('')}</div><div class="toolbar"><input id="search" class="search" placeholder="Buscar nome, telefone ou e-mail" value="${safe(ui.search)}"></div></div>${table(['Nome / contato','Último curso / pacote','Professor','Horário atual','Ações'],list.map(s=>{const c=db.contracts.filter(c=>c.student_id===s.id&&['signed','closed','superseded'].includes(c.status)).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];return row([`<b>${safe(s.full_name)}</b><div class="muted">${safe(s.email)} · ${safe(s.phone)}</div>`,c?`${safe(c.terms.course||'Inglês')} · ${safe(c.terms.package_name)}<div class="muted">${c.terms.lessons_count} aulas</div>`:'Sem contrato',safe(lookup('teachers',s.calendar_teacher_id||c?.terms?.teacher_id)?.name||c?.terms?.teacher_name||'—'),safe(formatSchedule(c?.terms?.calendar_v6?calendar.scheduleForContract(c):(s.current_schedule?.length?s.current_schedule:c?.terms?.lesson_schedule),c?.terms?.calendar_v6?[]:(s.current_weekly_days||c?.terms?.weekly_days),c?.terms?.calendar_v6?'':(s.current_lesson_time||c?.terms?.lesson_time))),`<button class="table-action-btn" data-action="studentDetail" data-id="${s.id}">${ico('profile',14)} <span>Ver perfil</span></button>`]);}),'Nenhum aluno neste grupo.')}</section>`;}
 function renderStudentScheduleHost(teacherId,selectedSlotIds=[]){
  return calendar.studentSchedulePicker(teacherId,selectedSlotIds);
 }
@@ -2261,9 +2198,9 @@ function templatesView(){
        <div><span>Campos adicionais</span><strong>${t.fields?.length||0}</strong></div>
      </div>
      <div class="template-card-actions">
-        <button class="table-action-btn edit" type="button" data-action="editContractType" data-id="${t.id}">${ico('edit',14)} <span>EDITAR</span></button>
+        <button class="table-action-btn edit" type="button" data-action="editContractType" data-id="${t.id}">${ico('edit',14)} <span>Editar</span></button>
         <details class="contract-actions-dropdown">
-          <summary class="table-action-btn" aria-label="Mais ações"><span>AÇÕES</span> ${ico('chevron',12)}</summary>
+          <summary class="table-action-btn" aria-label="Mais ações"><span>Ações</span> ${ico('chevron',12)}</summary>
           <div class="contract-actions-popover" role="menu">
             <button class="contract-menu-item" type="button" role="menuitem" data-action="viewContractType" data-id="${t.id}">${ico('eye',14)} Visualizar DOCX</button>
             <button class="contract-menu-item" type="button" role="menuitem" data-action="toggleContractType" data-id="${t.id}">${ico('lock',14)} ${activeModel?'Desativar modelo':'Ativar modelo'}</button>
@@ -2276,8 +2213,7 @@ function templatesView(){
  const action=`<div class="template-header-actions"><a class="btn light" href="./ajuda-contratos.html" target="_blank" rel="noopener noreferrer" aria-label="Abrir o tutorial de criação de contratos em nova aba">? Tutorial de contratos</a><button class="btn" data-action="editContractType" type="button">＋ Novo modelo</button></div>`;
  return `${heading('Documentos','Modelos de contratos','Organize seus modelos Word e escolha quais pacotes utilizam cada um.',action)}
    <div class="template-stats" aria-label="Resumo da biblioteca"><div><strong>${count}</strong><span>Modelos cadastrados</span></div><div><strong>${active}</strong><span>Disponíveis</span></div><div><strong>${linked}</strong><span>Com vínculo a pacotes</span></div></div>
-   <section class="template-library" aria-label="Modelos de contrato cadastrados"><div class="template-library-heading"><h2>Minha biblioteca</h2><span class="muted small">${count} ${count===1?'modelo':'modelos'}</span></div>
-   ${cards?`<div class="template-card-grid">${cards}</div>`:`<div class="template-empty"><div class="template-empty-icon">▤</div><h3>Nenhum modelo cadastrado</h3><p>Adicione seu primeiro documento Word para começar.</p><button class="btn" data-action="editContractType" type="button">＋ Cadastrar modelo DOCX</button><a href="./ajuda-contratos.html" target="_blank" rel="noopener noreferrer">Como preparar o documento?</a></div>`}</section>`;
+   ${cards?`<div class="template-card-grid">${cards}</div>`:`<div class="template-empty"><div class="template-empty-icon">▤</div><h3>Nenhum modelo cadastrado</h3><p>Adicione seu primeiro documento Word para começar.</p><button class="btn" data-action="editContractType" type="button">＋ Cadastrar modelo DOCX</button><a href="./ajuda-contratos.html" target="_blank" rel="noopener noreferrer">Como preparar o documento?</a></div>`}`;
 }
 function viewContractType(id){const t=lookup('contract_types',id);if(!t)return;const fields=t.fields||[],pkgs=db.packages.filter(p=>p.contract_type_id===id);
  showModal(`<h2>${safe(t.name)}</h2><p class="modal-intro">Tipo: ${safe(t.kind)} · ${t.active?'Ativo':'Inativo'} · ${pkgs.length?pkgs.map(p=>safe(p.name)).join(', '):'Sem pacote vinculado'}</p><h3 class="form-section">Prévia do modelo</h3><iframe class="doc-frame" sandbox title="Prévia do DOCX" srcdoc="${safe(docFrame(t.template_html||safe(t.body_text||'').replace(/\n/g,'<br>')))}"></iframe><h3 class="form-section">Campos adicionais</h3><div class="info-pair">${fields.length?fields.map(x=>`<div><b>${safe(x.label)}</b><div class="muted">${x.who==='admin'?'Preenchimento pela escola':'Preenchimento pelo contratante'}</div></div>`).join(''):'<span class="muted">Nenhum campo adicional.</span>'}</div><div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button><button class="btn" data-action="editContractType" data-id="${id}">Editar modelo</button></div>`);

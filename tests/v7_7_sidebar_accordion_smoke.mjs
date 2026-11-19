@@ -1,10 +1,10 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 
-console.log('=== Iniciando Testes V7.7: Menu Recuável (Ícones) e Categorias em Acordeão ===\n');
+console.log('=== Iniciando Testes V8.0: Menu Recuável (Ícones) e Categorias ===\n');
 
 const app = fs.readFileSync('./js/app.js', 'utf8');
-const visionCss = fs.readFileSync('./css/vision-theme.css', 'utf8');
+const styleCss = fs.readFileSync('./css/style.css', 'utf8');
 
 // 1. Verificando ícones de recolher/expandir sidebar
 console.log('1. Verificando ícones de navegação e recolhimento...');
@@ -29,15 +29,15 @@ assert.ok(app.includes('nav-group-btn nav-group'), 'Categorias devem ser botões
 assert.ok(app.includes('data-action="toggleNavGroup"'), 'Botões de categoria devem ter data-action="toggleNavGroup"');
 assert.ok(app.includes('data-action="toggleSidebar"'), 'Botões de alternar menu devem ter data-action="toggleSidebar"');
 
-// 4. Verificando CSS no vision-theme.css
-console.log('4. Verificando regras de estilo no Vision UI...');
-assert.ok(visionCss.includes('.shell.sidebar-collapsed'), 'CSS deve ter .shell.sidebar-collapsed');
-assert.ok(visionCss.includes('.sidebar.collapsed'), 'CSS deve ter .sidebar.collapsed');
-assert.ok(visionCss.includes('.nav-group-btn'), 'CSS deve ter estilos de .nav-group-btn');
-assert.ok(visionCss.includes('.nav-group-arrow'), 'CSS deve ter rotação da seta .nav-group-arrow');
-assert.ok(visionCss.includes('.sidebar-collapse-btn'), 'CSS deve ter .sidebar-collapse-btn');
-assert.ok(visionCss.includes('.topbar-toggle-btn'), 'CSS deve ter .topbar-toggle-btn');
-assert.ok(visionCss.includes('data-tooltip'), 'CSS deve ter tooltips flutuantes para modo ícones');
+// 4. Verificando CSS no style.css
+console.log('4. Verificando regras de estilo no style.css...');
+assert.ok(styleCss.includes('.shell.sidebar-collapsed'), 'CSS deve ter .shell.sidebar-collapsed');
+assert.ok(styleCss.includes('.sidebar.collapsed'), 'CSS deve ter .sidebar.collapsed');
+assert.ok(styleCss.includes('.nav-group-btn'), 'CSS deve ter estilos de .nav-group-btn');
+assert.ok(styleCss.includes('.nav-group-arrow'), 'CSS deve ter rotação da seta .nav-group-arrow');
+assert.ok(styleCss.includes('.sidebar-collapse-btn'), 'CSS deve ter .sidebar-collapse-btn');
+assert.ok(styleCss.includes('.topbar-toggle-btn'), 'CSS deve ter .topbar-toggle-btn');
+assert.ok(styleCss.includes('data-tooltip'), 'CSS deve ter tooltips flutuantes para modo ícones');
 
 console.log('\n======================================================');
 console.log('TODOS OS TESTES DO MENU RECUÁVEL E ACORDEÃO PASSARAM! 🎉');
