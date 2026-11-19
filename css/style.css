@@ -1646,6 +1646,24 @@ textarea::placeholder {
   overflow-x: auto;
 }
 
+/* Ensure containers do NOT clip floating dropdown actions and prevent container scrollbars */
+.table-wrap:has(.contract-actions-dropdown[open]),
+.panel:has(.contract-actions-dropdown[open]),
+.card:has(.contract-actions-dropdown[open]),
+.crm-table-scroll:has(.contract-actions-dropdown[open]),
+.crm-workspace:has(.contract-actions-dropdown[open]) {
+  overflow: visible !important;
+}
+
+/* Stacking context: elevate the open row and button so it never gets hidden behind other elements */
+tr:has(.contract-actions-dropdown[open]),
+td:has(.contract-actions-dropdown[open]),
+.actions:has(.contract-actions-dropdown[open]),
+.contract-actions-dropdown[open] {
+  position: relative;
+  z-index: 1000;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -1731,11 +1749,16 @@ textarea::placeholder {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  padding: 5px;
-  z-index: 900;
+  box-shadow: 0 10px 25px -3px rgba(16, 24, 40, 0.15), 0 4px 6px -4px rgba(16, 24, 40, 0.10);
+  padding: 6px;
+  z-index: 9999;
   display: flex;
   flex-direction: column;
+}
+
+.contract-actions-dropdown.drop-up .contract-actions-popover {
+  top: auto;
+  bottom: calc(100% + 5px);
 }
 
 .contract-menu-item {
