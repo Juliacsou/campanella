@@ -11416,7 +11416,6 @@ body,
 
 /* 34.6 Metric & KPI Cards (Harmonized 3D Glass Look) */
 [data-theme="light"] .metric,
-[data-theme="light"] .crm-metric,
 [data-theme="light"] .platform-metrics .metric,
 [data-theme="light"] .home-shortcuts .home-shortcut,
 [data-theme="light"] .teacher-stats > div,
@@ -11435,7 +11434,6 @@ body,
 }
 
 [data-theme="light"] .metric:hover,
-[data-theme="light"] .crm-metric:hover,
 [data-theme="light"] .home-shortcuts .home-shortcut:hover {
   transform: translateY(-2px) !important;
   background: rgba(255, 255, 255, 0.8) !important;
@@ -11479,34 +11477,41 @@ body,
 }
 
 /* 34.7 CRM Metric Cards (Pure Borderless 3D Glassmorphism — ZERO STROKE BORDERS) */
-:root:not([data-theme="light"]) .crm-metric,
-[data-theme="dark"] .crm-metric {
-  background: rgba(22, 26, 38, 0.45) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+.crm-metric {
   border: none !important;
   outline: none !important;
   border-radius: 18px !important;
   padding: 20px 22px !important;
-  box-shadow: 
-    0 16px 36px -8px rgba(0, 0, 0, 0.55),
-    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.25) !important;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
   position: relative !important;
   overflow: hidden !important;
 }
 
-:root:not([data-theme="light"]) .crm-metric::after,
-[data-theme="dark"] .crm-metric::after {
+.crm-metric::after,
+.crm-metric::before {
   display: none !important;
+}
+
+.crm-metric:hover {
+  border: none !important;
+  outline: none !important;
+}
+
+/* --- DARK MODE METRICS --- */
+:root:not([data-theme="light"]) .crm-metric,
+[data-theme="dark"] .crm-metric {
+  background: rgba(22, 26, 38, 0.45) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  box-shadow: 
+    0 16px 36px -8px rgba(0, 0, 0, 0.55),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.25) !important;
 }
 
 :root:not([data-theme="light"]) .crm-metric:hover,
 [data-theme="dark"] .crm-metric:hover {
   transform: translateY(-2.5px) !important;
-  border: none !important;
-  outline: none !important;
   box-shadow: 
     0 24px 48px -10px rgba(0, 0, 0, 0.65),
     inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.12) !important;
@@ -11537,7 +11542,7 @@ body,
   font-weight: 500 !important;
 }
 
-/* Individual Metric Thematic Glass Inner Radial Glows (Zero Stroke / Pure Glass) */
+/* Individual Metric Thematic Glass Inner Radial Glows — Dark Mode */
 :root:not([data-theme="light"]) .crm-metric:nth-child(1),
 [data-theme="dark"] .crm-metric:nth-child(1) {
   border: none !important;
@@ -11596,6 +11601,109 @@ body,
 :root:not([data-theme="light"]) .crm-metric:nth-child(4) strong,
 [data-theme="dark"] .crm-metric:nth-child(4) strong {
   color: #34D399 !important;
+}
+
+/* --- LIGHT MODE METRICS (Pure Borderless 3D Glassmorphism) --- */
+[data-theme="light"] .crm-metric {
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 
+    0 16px 36px -8px rgba(15, 23, 42, 0.08),
+    0 4px 12px -2px rgba(15, 23, 42, 0.03),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme="light"] .crm-metric:hover {
+  transform: translateY(-2.5px) !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: 
+    0 24px 48px -10px rgba(15, 23, 42, 0.12),
+    0 6px 16px -3px rgba(15, 23, 42, 0.05),
+    inset 0 1px 1.5px 0 #FFFFFF !important;
+}
+
+[data-theme="light"] .crm-metric span {
+  color: #64748B !important;
+  font-size: 12.5px !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.1px !important;
+}
+
+[data-theme="light"] .crm-metric strong {
+  font-size: 34px !important;
+  font-weight: 800 !important;
+  letter-spacing: -1.2px !important;
+  line-height: 1.2 !important;
+  margin: 6px 0 !important;
+  color: #1E293B !important;
+}
+
+[data-theme="light"] .crm-metric small {
+  color: #94A3B8 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+
+/* Individual Metric Thematic Glass Inner Radial Glows — Light Mode */
+[data-theme="light"] .crm-metric:nth-child(1) {
+  border: none !important;
+  background: radial-gradient(circle at 85% 15%, rgba(234, 88, 12, 0.14) 0%, transparent 60%), rgba(255, 255, 255, 0.68) !important;
+}
+[data-theme="light"] .crm-metric:nth-child(1):hover {
+  border: none !important;
+  background: radial-gradient(circle at 85% 15%, rgba(234, 88, 12, 0.22) 0%, transparent 65%), rgba(255, 255, 255, 0.86) !important;
+}
+[data-theme="light"] .crm-metric:nth-child(1) strong {
+  color: #EA580C !important;
+}
+
+[data-theme="light"] .crm-metric:nth-child(2) {
+  border: none !important;
+  background: radial-gradient(circle at 85% 15%, rgba(2, 132, 199, 0.14) 0%, transparent 60%), rgba(255, 255, 255, 0.68) !important;
+}
+[data-theme="light"] .crm-metric:nth-child(2):hover {
+  border: none !important;
+  background: radial-gradient(circle at 85% 15%, rgba(2, 132, 199, 0.22) 0%, transparent 65%), rgba(255, 255, 255, 0.86) !important;
+}
+[data-theme="light"] .crm-metric:nth-child(2) strong {
+  color: #0284C7 !important;
+}
+
+[data-theme="light"] .crm-metric:nth-child(3) {
+  border: none !important;
+  background: radial-gradient(circle at 85% 15%, rgba(147, 51, 234, 0.14) 0%, transparent 60%), rgba(255, 255, 255, 0.68) !important;
+}
+[data-theme="light"] .crm-metric:nth-child(3):hover {
+  border: none !important;
+  background: radial-gradient(circle at 85% 15%, rgba(147, 51, 234, 0.22) 0%, transparent 65%), rgba(255, 255, 255, 0.86) !important;
+}
+[data-theme="light"] .crm-metric:nth-child(3) strong {
+  color: #9333EA !important;
+}
+
+[data-theme="light"] .crm-metric:nth-child(4) {
+  border: none !important;
+  background: radial-gradient(circle at 85% 15%, rgba(16, 185, 129, 0.14) 0%, transparent 60%), rgba(255, 255, 255, 0.68) !important;
+}
+[data-theme="light"] .crm-metric:nth-child(4):hover {
+  border: none !important;
+  background: radial-gradient(circle at 85% 15%, rgba(16, 185, 129, 0.22) 0%, transparent 65%), rgba(255, 255, 255, 0.86) !important;
+}
+[data-theme="light"] .crm-metric:nth-child(4) strong {
+  color: #059669 !important;
+}
+
+[data-theme="light"] .crm-metric.hot {
+  border: none !important;
+  background: radial-gradient(circle at 85% 15%, rgba(234, 88, 12, 0.16) 0%, transparent 60%), rgba(255, 255, 255, 0.72) !important;
+}
+[data-theme="light"] .crm-metric.hot strong {
+  color: #EA580C !important;
 }
 
 /* ==========================================================================

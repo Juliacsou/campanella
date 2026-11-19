@@ -38,10 +38,11 @@ assert.ok(
 );
 console.log('  -> Estruturação visual das colunas validada.');
 
-// 3. Verificando métricas no estilo glass sem stroke de borda
-console.log('3. Verificando métricas de KPI em estilo Glass sem borda/stroke...');
+// 3. Verificando métricas no estilo glass sem stroke de borda (Dark & Light)
+console.log('3. Verificando métricas de KPI em estilo Glass sem borda/stroke (Dark & Light)...');
 const metricSectionIndex = css.indexOf('/* 34.7 CRM Metric Cards');
-const metricSectionBlock = css.slice(metricSectionIndex, metricSectionIndex + 2500);
+const section35Index = css.indexOf('/* ==========================================================================\n   35.');
+const metricSectionBlock = css.slice(metricSectionIndex, section35Index);
 
 assert.ok(
   !metricSectionBlock.includes('border-top: 2px solid'),
@@ -60,22 +61,30 @@ assert.ok(
   'As métricas de KPI devem ter desfoque fosco (blur) autêntico de glassmorphism'
 );
 assert.ok(
-  css.includes('.crm-metric:nth-child(1)'),
-  'A métrica 1 (Oportunidades abertas) deve possuir brilho interno suave laranja/âmbar'
+  metricSectionBlock.includes('[data-theme="light"] .crm-metric'),
+  'Deve conter estilização dedicada para métricas de KPI em Light Mode'
 );
 assert.ok(
-  css.includes('.crm-metric:nth-child(2)'),
-  'A métrica 2 (Entrevistas agendadas) deve possuir brilho interno suave azul/celeste'
+  metricSectionBlock.includes('[data-theme="light"] .crm-metric:nth-child(1) strong') &&
+  metricSectionBlock.includes('#EA580C'),
+  'Métrica 1 em Light Mode deve destacar número em tom quente/âmbar (#EA580C)'
 );
 assert.ok(
-  css.includes('.crm-metric:nth-child(3)'),
-  'A métrica 3 (Fichas iniciais) deve possuir brilho interno suave roxo/violeta'
+  metricSectionBlock.includes('[data-theme="light"] .crm-metric:nth-child(2) strong') &&
+  metricSectionBlock.includes('#0284C7'),
+  'Métrica 2 em Light Mode deve destacar número em tom azul celeste (#0284C7)'
 );
 assert.ok(
-  css.includes('.crm-metric:nth-child(4)'),
-  'A métrica 4 (Negócios fechados) deve possuir brilho interno suave verde esmeralda'
+  metricSectionBlock.includes('[data-theme="light"] .crm-metric:nth-child(3) strong') &&
+  metricSectionBlock.includes('#9333EA'),
+  'Métrica 3 em Light Mode deve destacar número em tom roxo violeta (#9333EA)'
 );
-console.log('  -> Estilo Glass sem stroke das métricas validado com sucesso.');
+assert.ok(
+  metricSectionBlock.includes('[data-theme="light"] .crm-metric:nth-child(4) strong') &&
+  metricSectionBlock.includes('#059669'),
+  'Métrica 4 em Light Mode deve destacar número em tom verde esmeralda (#059669)'
+);
+console.log('  -> Estilo Glass sem stroke das métricas validado com sucesso em Dark e Light Mode.');
 
 // 4. Verificando elevação da área de trabalho
 console.log('4. Verificando elevação da área de trabalho (.crm-workspace)...');
