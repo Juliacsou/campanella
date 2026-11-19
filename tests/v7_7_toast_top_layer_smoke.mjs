@@ -18,7 +18,7 @@ assert.match(
 );
 assert.match(
   html,
-  /vision-theme\.css\?v=7\.7\.[12]/,
+  /vision-theme\.css\?v=7\.7\.\d+/,
   'O arquivo index.html deve apontar para uma versão 7.7.x do CSS'
 );
 assert.match(

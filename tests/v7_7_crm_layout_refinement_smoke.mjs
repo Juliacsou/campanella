@@ -38,25 +38,44 @@ assert.ok(
 );
 console.log('  -> Estruturação visual das colunas validada.');
 
-// 3. Verificando métricas temáticas coloridas (anti-monocromático)
-console.log('3. Verificando métricas de KPI com acentos de cor temáticos...');
+// 3. Verificando métricas no estilo glass sem stroke de borda
+console.log('3. Verificando métricas de KPI em estilo Glass sem borda/stroke...');
+const metricSectionIndex = css.indexOf('/* 34.7 CRM Metric Cards');
+const metricSectionBlock = css.slice(metricSectionIndex, metricSectionIndex + 2500);
+
+assert.ok(
+  !metricSectionBlock.includes('border-top: 2px solid'),
+  'Não deve haver traço (stroke) de borda superior nas métricas de KPI'
+);
+assert.ok(
+  !metricSectionBlock.includes('border: 1px solid'),
+  'Não deve haver borda (stroke) de 1px ao redor das métricas de KPI'
+);
+assert.ok(
+  metricSectionBlock.includes('border: none !important'),
+  'As métricas de KPI devem ter border: none !important'
+);
+assert.ok(
+  metricSectionBlock.includes('backdrop-filter: blur(28px)'),
+  'As métricas de KPI devem ter desfoque fosco (blur) autêntico de glassmorphism'
+);
 assert.ok(
   css.includes('.crm-metric:nth-child(1)'),
-  'A métrica 1 (Oportunidades abertas) deve possuir acento laranja/âmbar'
+  'A métrica 1 (Oportunidades abertas) deve possuir brilho interno suave laranja/âmbar'
 );
 assert.ok(
   css.includes('.crm-metric:nth-child(2)'),
-  'A métrica 2 (Entrevistas agendadas) deve possuir acento azul/celeste'
+  'A métrica 2 (Entrevistas agendadas) deve possuir brilho interno suave azul/celeste'
 );
 assert.ok(
   css.includes('.crm-metric:nth-child(3)'),
-  'A métrica 3 (Fichas iniciais) deve possuir acento roxo/violeta'
+  'A métrica 3 (Fichas iniciais) deve possuir brilho interno suave roxo/violeta'
 );
 assert.ok(
   css.includes('.crm-metric:nth-child(4)'),
-  'A métrica 4 (Negócios fechados) deve possuir acento verde esmeralda'
+  'A métrica 4 (Negócios fechados) deve possuir brilho interno suave verde esmeralda'
 );
-console.log('  -> Diferenciação cromática das métricas validada.');
+console.log('  -> Estilo Glass sem stroke das métricas validado com sucesso.');
 
 // 4. Verificando elevação da área de trabalho
 console.log('4. Verificando elevação da área de trabalho (.crm-workspace)...');
