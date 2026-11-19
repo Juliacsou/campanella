@@ -2473,7 +2473,7 @@ async function sendLink(id){if(externalSignatureFor(id))throw new Error('Este co
  await save('contracts',{token_hash,token_expires_at:exp,status:'sent',sent_at:new Date().toISOString()},id);
  const link=location.href.split('#')[0]+'#pre-matricula/'+token;
  const phone=contactWhatsAppNumber(c),publicLink=link.startsWith('https://');
- showModal(`<div class="eyebrow">Matr\u00edcula digital</div><h2>Link de pré-matrícula</h2><p class="modal-intro">O interessado preencherá apenas os dados pessoais. Nenhum contrato será exibido ou assinado nesta etapa. Após o envio, a escola gerará o documento para assinatura manual.</p><div class="link-field" id="generatedLink">${safe(link)}</div><p class="notice">V\u00e1lido por 7 dias. Criar outro link invalida o anterior.</p>${!publicLink?'<p class="form-note">Este link usa 127.0.0.1 e s\u00f3 abre neste computador. O envio pelo WhatsApp estar\u00e1 dispon\u00edvel depois da publica\u00e7\u00e3o em HTTPS.</p>':''}<div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button><button class="btn light" data-action="copyGenerated" data-id="${id}">Copiar link</button><button class="btn" data-action="shareWhatsApp" data-id="${id}" ${phone&&publicLink?'':'disabled title="Requer n\u00famero com DDD e link p\u00fablico HTTPS"'}>Enviar pelo WhatsApp</button><button class="btn" style="background:var(--camp-primary,#ea580c);color:#fff;" type="button" data-action="fillPreEnrollment" data-id="${id}">Preencher pré-matrícula agora →</button></div>`);
+ showModal(`<div class="eyebrow">Matr\u00edcula digital</div><h2>Link de pré-matrícula</h2><p class="modal-intro">O interessado preencherá apenas os dados pessoais. Nenhum contrato será exibido ou assinado nesta etapa. Após o envio, a escola gerará o documento para assinatura manual.</p><div class="link-field" id="generatedLink">${safe(link)}</div><p class="notice">V\u00e1lido por 7 dias. Criar outro link invalida o anterior.</p>${!publicLink?'<p class="form-note">Este link usa 127.0.0.1 e s\u00f3 abre neste computador. O envio pelo WhatsApp estar\u00e1 dispon\u00edvel depois da publica\u00e7\u00e3o em HTTPS.</p>':''}<div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button><button class="btn light" data-action="copyGenerated" data-id="${id}">Copiar link</button><button class="btn" data-action="shareWhatsApp" data-id="${id}" ${phone&&publicLink?'':'disabled title="Requer n\u00famero com DDD e link p\u00fablico HTTPS"'}>Enviar pelo WhatsApp</button><button class="btn" type="button" data-action="fillPreEnrollment" data-id="${id}">Preencher pré-matrícula agora →</button></div>`);
 }
 
 function adminPreEnrollmentModal(contractId){
@@ -3490,7 +3490,11 @@ function externalRender(){
  const poolPackages=isDuo?duoPackages:singlePackages;
  const p=poolPackages.find(x=>x.id===i.package_id)||poolPackages[0];
 
- $('.sign-main').innerHTML=`<h1>Ficha inicial</h1><p class="leadline">Lead: <b>${safe(d.lead.name)}</b> · ${safe(d.lead.phone)}<br>Entrevistador: <b>${safe(d.interviewer.name)}</b></p>
+ $('.sign-main').innerHTML=`<div class="eyebrow">Entrevista pedagógica</div><h1>Ficha inicial</h1>
+ <div class="sign-lead-hero">
+  <div class="sign-lead-item"><span>Lead / Interessado</span><strong>${safe(d.lead.name)}</strong>${d.lead.phone?`<small>${safe(d.lead.phone)}</small>`:''}</div>
+  <div class="sign-lead-item"><span>Professor entrevistador</span><strong>${safe(d.interviewer.name)}</strong><small>Responsável pelo preenchimento</small></div>
+ </div>
  <section class="sign-panel"><form id="externalInterviewForm"><div class="form-grid">
  <label class="field wide"><span>Modalidade da aula</span><select name="kind" id="externalKind"><option value="individual" ${!isDuo?'selected':''}>Individual (1 aluno)</option><option value="dupla" ${isDuo?'selected':''}>Dupla (2 alunos no mesmo horário)</option></select></label>
  ${input('Nome do 1º aluno / lead','lead_name',d.lead?.name||'')}
@@ -3514,7 +3518,7 @@ function externalRender(){
  ${input('Valor da parcela R$','installment_amount',i.installment_amount||'','number')}
  ${input('Primeiro vencimento','first_due_date',i.first_due_date||today(),'date')}
  <label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${x===i.payment_method?'selected':''}>${x}</option>`).join('')}</select></label>
- <label class="field wide"><span>Observações</span><textarea name="notes">${safe(i.notes||'')}</textarea></label></div><div class="form-footer"><button class="btn">Salvar ficha</button></div></form></section>`;
+ <label class="field wide"><span>Observações</span><textarea name="notes">${safe(i.notes||'')}</textarea></label></div><div class="form-footer"><button class="btn sign-button">Salvar ficha inicial</button></div></form></section>`;
  const f=$('#externalInterviewForm');
  applyEnrollmentModeUI(f,currentMode);
  updateInstallment(f);
@@ -3648,7 +3652,7 @@ async function completePreEnrollment(f){
    const result=await publicAPI({action:'submit',student:payload});
    if(!result.pre_enrolled)throw new Error('Não foi possível confirmar o cadastro.');
    history.replaceState({},'',location.pathname+'#pre-matricula-concluida');
-   $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div>${themeToggleMarkup()}</header><main class="sign-main"><section class="sign-panel"><div class="eyebrow">Cadastro recebido</div><h1>Pré-matrícula concluída!</h1><p class="leadline">Os dados da dupla foram enviados à escola. A administração preparará o contrato e combinará com vocês a assinatura por outro meio.</p><div class="notice">Nenhum contrato foi assinado nesta etapa. Aguarde as orientações da escola.</div></section></main></div>`;
+   $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div>${themeToggleMarkup()}</header><main class="sign-main"><section class="sign-panel sign-success-card"><div class="sign-success-icon" aria-hidden="true">✓</div><div class="eyebrow">Cadastro recebido</div><h1>Pré-matrícula concluída!</h1><p class="leadline">Os dados da dupla foram enviados à escola. A administração preparará o contrato e combinará com vocês a assinatura por outro meio.</p><div class="notice">Nenhum contrato foi assinado nesta etapa. Aguarde as orientações da escola.</div></section></main></div>`;
    return;
   }
   if(!d.full_name?.trim())throw new Error('Informe o nome completo do aluno.');
@@ -3662,7 +3666,7 @@ async function completePreEnrollment(f){
   const result=await publicAPI({action:'submit',student});
   if(!result.pre_enrolled)throw new Error('Não foi possível confirmar o cadastro.');
   history.replaceState({},'',location.pathname+'#pre-matricula-concluida');
-  $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div>${themeToggleMarkup()}</header><main class="sign-main"><section class="sign-panel"><div class="eyebrow">Cadastro recebido</div><h1>Pré-matrícula concluída!</h1><p class="leadline">Seus dados foram enviados à escola. A administração preparará o contrato e combinará com você a assinatura por outro meio.</p><div class="notice">Nenhum contrato foi assinado nesta etapa. Aguarde as orientações da escola.</div></section></main></div>`;
+  $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div>${themeToggleMarkup()}</header><main class="sign-main"><section class="sign-panel sign-success-card"><div class="sign-success-icon" aria-hidden="true">✓</div><div class="eyebrow">Cadastro recebido</div><h1>Pré-matrícula concluída!</h1><p class="leadline">Seus dados foram enviados à escola. A administração preparará o contrato e combinará com você a assinatura por outro meio.</p><div class="notice">Nenhum contrato foi assinado nesta etapa. Aguarde as orientações da escola.</div></section></main></div>`;
  }catch(err){
   const msg=err.message||String(err);
   if(errBox){errBox.style.display='block';errBox.textContent=msg;errBox.scrollIntoView({behavior:'smooth',block:'center'});}
