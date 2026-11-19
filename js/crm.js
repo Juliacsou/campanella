@@ -48,7 +48,8 @@ const CRM_ICONS={
  eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
  user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
  messageSquare:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
- sms:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="14" y2="13"/>'
+ sms:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="14" y2="13"/>',
+ x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
 };
 const crmIcon=(name,size=15)=>`<svg class="crm-ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${CRM_ICONS[name]||CRM_ICONS.check}</svg>`;
 
@@ -808,30 +809,99 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   });
  }
 
- function noteForm(id,contact=false){
+ function openNotePopup(id,contact=false){
   const l=lookup('leads',id);
   const nowTime=new Date().toLocaleTimeString('sv-SE',{timeZone:'America/Sao_Paulo'}).slice(0,5);
-  const dateField=fi('occurred_on',contact?'Data do contato':'Data do comentário',todayISO(),'date',true);
-  const timeField=fi('occurred_time',contact?'Horário do contato':'Horário do comentário',nowTime,'time',true);
-  const channelField=contact?sel('channel','Canal de atendimento',channels.map(x=>[x,x]),'WhatsApp'):'';
-  const detailsField=textarea('details',contact?'Resumo do contato':'Comentário','',contact?'placeholder="Descreva o que foi tratado no contato…" required':'placeholder="Escreva seu comentário sobre o lead…" required');
-  showModal(`<div class="crm-form-head">
-   <div class="eyebrow">${contact?'Contato comercial':'Comentário interno'}</div>
-   <h2>${contact?'Adicionar contato':'Adicionar comentário'}</h2>
-   <p class="muted">${safe(l?.name||'')} · Ficará salvo em ordem cronológica no histórico do lead.</p>
-  </div>
-  <form id="crmNoteForm" data-lead="${safe(id)}" data-kind="${contact?'contact':'note'}">
-   <div class="form-grid">
-    ${channelField}
-    ${dateField}
-    ${timeField}
-    ${detailsField}
+  const d=document.createElement('dialog');
+  d.className='crm-popup-dialog';
+  d.innerHTML=`<div class="crm-popup-content">
+   <div class="crm-popup-header">
+    <div class="crm-popup-badge-icon">${crmIcon(contact?'phone':'messageSquare',20)}</div>
+    <div class="crm-popup-headings">
+     <h3>${contact?'Adicionar contato':'Adicionar comentário'}</h3>
+     <p class="crm-popup-sub">${contact?'Registre um novo contato comercial com o lead. Os dados e horários ficarão salvos no histórico.':'Adicione um comentário ao histórico de acompanhamento do lead.'}</p>
+    </div>
    </div>
-   <div class="form-footer">
-    ${btn('crmDetail',`${crmIcon('arrowLeft',14)} Voltar ao lead`,id,'subtle')}
-    <button class="btn" type="submit">${contact?'Salvar contato':'Salvar comentário'}</button>
-   </div>
-  </form>`);
+   <form id="crmNotePopupForm" class="crm-popup-form" data-lead="${safe(id)}" data-kind="${contact?'contact':'note'}">
+    ${contact?`
+     <label class="crm-popup-field">
+      <span>Canal de atendimento</span>
+      <select name="channel" required>
+       ${channels.map(c=>`<option value="${safe(c)}" ${c==='WhatsApp'?'selected':''}>${safe(c)}</option>`).join('')}
+      </select>
+     </label>
+    `:''}
+    <div class="crm-popup-row-2">
+     <label class="crm-popup-field">
+      <span>${contact?'Data do contato':'Data do comentário'}</span>
+      <input type="date" name="occurred_on" value="${todayISO()}" required>
+     </label>
+     <label class="crm-popup-field">
+      <span>${contact?'Horário do contato':'Horário do comentário'}</span>
+      <input type="time" name="occurred_time" value="${nowTime}" required>
+     </label>
+    </div>
+    <label class="crm-popup-field">
+     <span>${contact?'Resumo do contato':'Comentário'}</span>
+     <textarea name="details" rows="3" placeholder="${contact?'Descreva o que foi tratado no contato…':'Escreva seu comentário sobre o lead…'}" required></textarea>
+    </label>
+    <div class="crm-popup-footer">
+     <button type="button" class="crm-popup-btn crm-popup-btn-cancel" data-action="crmClosePopup">CANCELAR</button>
+     <button type="submit" class="crm-popup-btn crm-popup-btn-submit">${contact?'ADICIONAR CONTATO':'ADICIONAR COMENTÁRIO'}</button>
+    </div>
+   </form>
+  </div>`;
+
+  const closeDialog=()=>{
+   if(d.open) d.close();
+   d.remove();
+  };
+
+  d.addEventListener('click',e=>{
+   if(e.target===d) closeDialog();
+  });
+  d.addEventListener('cancel',()=>closeDialog());
+  d.querySelector('[data-action="crmClosePopup"]')?.addEventListener('click',()=>closeDialog());
+
+  const form=d.querySelector('#crmNotePopupForm');
+  form?.addEventListener('submit',async ev=>{
+   ev.preventDefault();
+   ev.stopImmediatePropagation();
+   if(isBusy()) return;
+   const submitBtn=form.querySelector('button[type="submit"]');
+   if(submitBtn) submitBtn.disabled=true;
+   startBusy();
+   try{
+    const fd=formData(form);
+    const details=(fd.details||'').trim();
+    if(!details) throw new Error(contact?'Informe o resumo do contato':'Informe o comentário');
+    const datePart=fd.occurred_on||todayISO();
+    const timePart=fd.occurred_time||new Date().toLocaleTimeString('sv-SE',{timeZone:'America/Sao_Paulo'}).slice(0,5);
+    const at=new Date(`${datePart}T${timePart}:00-03:00`).toISOString();
+    const priorContacts=acts(id).filter(a=>a.kind==='contact').length;
+    await log(id,contact?'contact':'note',contact?`Contato pelo canal ${fd.channel}`:'Comentário adicionado',details,at);
+    if(contact){
+     const firstContactCol=priorContacts===0?columnForTrigger('first_contact'):null;
+     await save('leads',{crm_last_contact_on:datePart,...(firstContactCol?{crm_column_id:firstContactCol.id}:{})},id);
+    }
+    closeDialog();
+    await refresh();
+    detail(id);
+    toast(contact?'Contato registrado no histórico!':'Comentário adicionado ao histórico!');
+   }catch(err){
+    errors(err);
+   }finally{
+    finishBusy();
+    if(submitBtn) submitBtn.disabled=false;
+   }
+  });
+
+  document.body.appendChild(d);
+  d.showModal();
+ }
+
+ function noteForm(id,contact=false){
+  return openNotePopup(id,contact);
  }
 
  const shortWeekDays=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -1055,8 +1125,8 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     }
     return;
    }
-   case 'crmNote':return noteForm(id);
-   case 'crmContact':return noteForm(id,true);
+   case 'crmNote':return openNotePopup(id,false);
+   case 'crmContact':return openNotePopup(id,true);
    case 'crmScheduleInterview':state.apptWeekKey=null;state.apptWeekSnap=null;return appointmentForm(id);
    case 'crmApptWeekNav':{
     const form=document.getElementById('crmAppointmentForm');

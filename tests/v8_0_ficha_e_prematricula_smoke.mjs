@@ -30,8 +30,8 @@ assert.ok(!appJs.includes('#ea580c'), 'app.js não deve conter a cor laranja leg
 console.log('  -> Estrutura no app.js validada.');
 
 console.log('3. Verificando versão de cache dos assets no index.html...');
-assert.ok(/style\.css\?v=8\.0\.[5-9]/.test(indexHtml), 'index.html deve referenciar style.css com versão v=8.0.5 ou superior');
-assert.ok(/app\.js\?v=8\.0\.[5-9]/.test(indexHtml), 'index.html deve referenciar app.js com versão v=8.0.5 ou superior');
+assert.ok(/style\.css\?v=8\.(0\.[5-9]|[1-9]\.[0-9]+)/.test(indexHtml), 'index.html deve referenciar style.css com versão v=8.0.5 ou superior');
+assert.ok(/app\.js\?v=8\.(0\.[5-9]|[1-9]\.[0-9]+)/.test(indexHtml), 'index.html deve referenciar app.js com versão v=8.0.5 ou superior');
 console.log('  -> Versões de cache validadas.');
 
 console.log('\n======================================================');

@@ -72,8 +72,16 @@ assert.ok(
 );
 console.log('  -> Linha do tempo e cards aprimorados validados.');
 
-// 4. Verificando popup de Contato e Comentário com coleta de horário e remoção de "anotação"
-console.log('4. Verificando popups com coleta de horário e ausência do termo "anotação"...');
+// 4. Verificando popup de Contato e Comentário com coleta de horário e micro-modal flutuante
+console.log('4. Verificando micro-modal flutuante com coleta de horário e ausência do termo "anotação"...');
+assert.ok(
+  crmJs.includes("openNotePopup") && crmJs.includes("crm-popup-dialog"),
+  'O crm.js deve definir openNotePopup criando um micro-modal com classe crm-popup-dialog'
+);
+assert.ok(
+  crmCss.includes("dialog.crm-popup-dialog") && crmCss.includes(".crm-popup-badge-icon") && crmCss.includes(".crm-popup-row-2"),
+  'O crm.css deve estilizar o micro-modal dialog.crm-popup-dialog, o badge de ícone e o grid de 2 colunas'
+);
 assert.ok(
   crmJs.includes("occurred_time") && crmJs.includes("'Horário do contato'") && crmJs.includes("'Horário do comentário'"),
   'O formulário popup deve coletar data e horário para contatos e comentários'
@@ -82,7 +90,7 @@ assert.ok(
   !crmJs.toLowerCase().includes('anotação') && !crmJs.toLowerCase().includes('anotações'),
   'O termo "anotação" deve ser 100% removido do crm.js'
 );
-console.log('  -> Coleta de horário e ausência de "anotação" validadas.');
+console.log('  -> Micro-modal flutuante, coleta de horário e ausência de "anotação" validadas.');
 
 // 5. Verificando cabeçalho fixo (sticky) ao rolar para baixo
 console.log('5. Verificando cabeçalho fixo (sticky head) no crm-detail...');
@@ -123,13 +131,13 @@ console.log('  -> Botão de tags link validado.');
 // 8. Verificando versionamento de cache
 console.log('8. Verificando versionamento de cache...');
 assert.ok(
-  indexHtml.includes('crm.css?v=8.0.9') && indexHtml.includes('app.js?v=8.0.9'),
-  'O index.html deve conter crm.css?v=8.0.9 e app.js?v=8.0.9'
+  indexHtml.includes('crm.css?v=8.1.0') && indexHtml.includes('app.js?v=8.1.0'),
+  'O index.html deve conter crm.css?v=8.1.0 e app.js?v=8.1.0'
 );
 assert.ok(
-  appJs.includes('./crm.js?v=8.0.9'),
-  'O app.js deve importar ./crm.js?v=8.0.9'
+  appJs.includes('./crm.js?v=8.1.0'),
+  'O app.js deve importar ./crm.js?v=8.1.0'
 );
-console.log('  -> Cache version v=8.0.9 validado.');
+console.log('  -> Cache version v=8.1.0 validado.');
 
-console.log('\n=== Todos os 8 testes V8.0 de Atendimento e Cabeçalho Fixo passaram com 100% de sucesso! ===');
+console.log('\n=== Todos os 8 testes V8.0/V8.1 de Atendimento, Micro-Modal e Cabeçalho Fixo passaram com 100% de sucesso! ===');

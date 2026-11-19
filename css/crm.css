@@ -1724,3 +1724,176 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ==========================================================================
+   Centered Action Micro-Modal (helloPTO reference: Adicionar Contato / Comentário)
+   ========================================================================== */
+dialog.crm-popup-dialog {
+  margin: auto;
+  width: min(440px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--border, #E4E7EC);
+  border-radius: 14px;
+  background: var(--bg-surface, #FFFFFF);
+  color: var(--text-primary, #101828);
+  box-shadow: 0 20px 40px rgba(16, 24, 40, 0.22);
+  z-index: 9999;
+}
+
+dialog.crm-popup-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.crm-popup-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.crm-popup-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.crm-popup-badge-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #EBF1FD;
+  color: #2F68D6;
+  flex-shrink: 0;
+}
+
+.crm-popup-headings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.crm-popup-headings h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #101828;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.crm-popup-sub {
+  font-size: 13px;
+  color: #475467;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.crm-popup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.crm-popup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.crm-popup-field span {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.crm-popup-field input,
+.crm-popup-field select,
+.crm-popup-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: #101828;
+  background: #FFFFFF;
+  border: 1px solid #D0D5DD;
+  border-radius: 8px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.crm-popup-field input:focus,
+.crm-popup-field select:focus,
+.crm-popup-field textarea:focus {
+  border-color: #2F68D6;
+  box-shadow: 0 0 0 3px rgba(47, 104, 214, 0.15);
+}
+
+.crm-popup-field textarea {
+  resize: vertical;
+  min-height: 76px;
+  line-height: 1.45;
+}
+
+.crm-popup-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.crm-popup-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 6px;
+}
+
+.crm-popup-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: 8px;
+  padding: 11px 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 42px;
+}
+
+.crm-popup-btn-cancel {
+  background: #FFFFFF;
+  border: 1px solid #D0D5DD;
+  color: #344054;
+}
+
+.crm-popup-btn-cancel:hover {
+  background: #F9FAFB;
+  border-color: #98A2B3;
+  color: #1D2939;
+}
+
+.crm-popup-btn-submit {
+  background: #2F68D6;
+  border: 1px solid #2F68D6;
+  color: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+.crm-popup-btn-submit:hover {
+  background: #2554AD;
+  border-color: #2554AD;
+}
+
+.crm-popup-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
