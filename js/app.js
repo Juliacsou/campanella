@@ -2774,7 +2774,7 @@ async function downloadDocx(id){const c=lookup('contracts',id);if(!c)throw new E
 }
 
 document.addEventListener('click',e=>{if(e.target.closest('#toast')){dismissToast();return;}if(!e.target.closest('.account-popover'))document.querySelectorAll('.account-popover[open]').forEach(d=>d.removeAttribute('open'));if(!e.target.closest('.contract-actions-dropdown'))document.querySelectorAll('.contract-actions-dropdown[open]').forEach(d=>d.removeAttribute('open'));});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.account-popover[open]').forEach(d=>d.removeAttribute('open'));if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('.cal-editor-target')){e.preventDefault();e.target.click();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.account-popover[open]').forEach(d=>d.removeAttribute('open'));document.querySelectorAll('.contract-actions-dropdown[open]').forEach(d=>d.removeAttribute('open'));}if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('.cal-editor-target')){e.preventDefault();e.target.click();}});
 document.addEventListener('click',async e=>{
  const x=e.target.closest('[data-action]');if(!x||appBusy)return;
  document.querySelectorAll('.contract-actions-dropdown[open]').forEach(d=>{if(!d.contains(x))d.removeAttribute('open');});
@@ -2917,51 +2917,19 @@ document.addEventListener('click',async e=>{
  }catch(error){errors(error)}finally{finishBusy()}
 });
 document.addEventListener('click',e=>{if(e.target.closest('#externalPreviewBtn'))externalPreview().catch(errors);});
-function positionActionsDropdown(node){
- const menu=node.querySelector('.contract-actions-popover');if(!menu)return;
- const summary=node.querySelector('summary')||node;
- const rect=summary.getBoundingClientRect();
- menu.style.position='fixed';
- menu.style.zIndex='99999';
- const menuHeight=menu.offsetHeight||190;
- const spaceBelow=window.innerHeight-rect.bottom;
- const spaceAbove=rect.top;
- const shouldDropUp=spaceBelow<(menuHeight+12)&&spaceAbove>(menuHeight+12);
- if(shouldDropUp){
-  node.classList.add('drop-up');
-  menu.style.top=`${Math.max(8,rect.top-menuHeight-4)}px`;
-  menu.style.bottom='auto';
- }else{
-  node.classList.remove('drop-up');
-  menu.style.top=`${rect.bottom+4}px`;
-  menu.style.bottom='auto';
- }
- const rightDist=window.innerWidth-rect.right;
- menu.style.right=`${Math.max(12,rightDist)}px`;
- menu.style.left='auto';
-}
-function resetActionsDropdown(node){
- const menu=node.querySelector('.contract-actions-popover');
- if(menu){
-  menu.style.position='';
-  menu.style.top='';
-  menu.style.bottom='';
-  menu.style.left='';
-  menu.style.right='';
-  menu.style.zIndex='';
- }
- node.classList.remove('drop-up');
-}
 document.addEventListener('toggle',event=>{
  const node=event.target;if(!node.matches?.('.contract-actions-dropdown'))return;
  if(node.open){
   document.querySelectorAll('.contract-actions-dropdown[open]').forEach(other=>{if(other!==node)other.open=false;});
-  positionActionsDropdown(node);
+  const rect=node.getBoundingClientRect(),menu=node.querySelector('.contract-actions-popover');
+  const menuHeight=menu?.scrollHeight||180;
+  const spaceBelow=window.innerHeight-rect.bottom;
+  const spaceAbove=rect.top;
+  node.classList.toggle('drop-up',spaceBelow<(menuHeight+12)&&spaceAbove>(menuHeight+12));
  }else{
-  resetActionsDropdown(node);
+  node.classList.remove('drop-up');
  }
 },true);
-window.addEventListener('scroll',()=>{document.querySelectorAll('.contract-actions-dropdown[open]').forEach(d=>{d.open=false;});},{passive:true,capture:true});
 window.addEventListener('resize',()=>{document.querySelectorAll('.contract-actions-dropdown[open]').forEach(d=>{d.open=false;});},{passive:true});
 
 document.addEventListener('input',e=>{
