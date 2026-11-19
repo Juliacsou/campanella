@@ -45,7 +45,8 @@ const CRM_ICONS={
  arrowDown:'<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
  rotateCcw:'<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',
  fileText:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>',
- eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+ eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+ user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'
 };
 const crmIcon=(name,size=15)=>`<svg class="crm-ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${CRM_ICONS[name]||CRM_ICONS.check}</svg>`;
 
@@ -107,7 +108,7 @@ const formFooter=(label='Salvar')=>`<div class="form-footer"><button type="butto
 const formatWhats=s=>{let raw=onlyDigits(s);if(!raw)return '';if(raw.length===10||raw.length===11)raw='55'+raw;return /^[0-9]{11,15}$/.test(raw)?`https://wa.me/${raw}`:''};
 
 export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy}){
- const state={tab:'open',mode:'board',search:'',column:'all',tag:'all',source:'all',service:'all',region:'all',interview:'all',period:'all',sort:'activity',lead:null,importRows:[],editingColId:null,editingTagId:null,dragLeadId:null,filtersOpen:false};
+ const state={tab:'open',mode:'board',search:'',column:'all',tag:'all',source:'all',service:'all',region:'all',interview:'all',period:'all',sort:'activity',lead:null,detailTab:'data',importRows:[],editingColId:null,editingTagId:null,dragLeadId:null,filtersOpen:false};
  const leads=()=>db.leads||[];
  const appts=id=>(db.crm_appointments||[]).filter(x=>x.lead_id===id).sort((a,b)=>String(b.scheduled_at).localeCompare(String(a.scheduled_at)));
  const acts=id=>(db.crm_activities||[]).filter(x=>x.lead_id===id).sort((a,b)=>String(b.occurred_at).localeCompare(String(a.occurred_at)));
@@ -365,7 +366,12 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
  }
 
  function detail(id){
-  const l=lookup('leads',id);if(!l)return;state.lead=id;
+  const l=lookup('leads',id);if(!l)return;
+  if(state.lead!==id){
+   state.lead=id;
+   state.detailTab='data';
+  }
+  const activeTab=state.detailTab||'data';
   const a=nextInterview(id),lastAppt=appts(id)[0],history=acts(id).filter(x=>x.kind!=='followup'),appointments=appts(id);
   const linked=(db.contracts||[]).filter(c=>c.lead_id===id),signed=linked.some(c=>c.status==='signed');
   const fiche=filledFiche(l),ficheStarted=hasFiche(l);
@@ -392,102 +398,245 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     </div>
    </div>
 
+   <div class="crm-detail-tabs-bar">
+    <nav class="crm-detail-nav" role="tablist" aria-label="Etapas e informações do lead">
+     <button type="button" role="tab" class="crm-detail-nav-btn ${activeTab==='data'?'is-active':''}" data-action="crmDetailTab" data-tab="data" aria-selected="${activeTab==='data'}">
+      ${crmIcon('user',14)}
+      <span>Dados</span>
+     </button>
+     <button type="button" role="tab" class="crm-detail-nav-btn ${activeTab==='attendance'?'is-active':''}" data-action="crmDetailTab" data-tab="attendance" aria-selected="${activeTab==='attendance'}">
+      ${crmIcon('phone',14)}
+      <span>Etapas do Atendimento</span>
+      ${history.length?`<span class="crm-nav-count">${history.length}</span>`:''}
+     </button>
+     <button type="button" role="tab" class="crm-detail-nav-btn ${activeTab==='interview'?'is-active':''}" data-action="crmDetailTab" data-tab="interview" aria-selected="${activeTab==='interview'}">
+      ${crmIcon('calendar',14)}
+      <span>Entrevista</span>
+      ${a?`<span class="crm-nav-badge is-scheduled">Agendada</span>`:appointments.length?`<span class="crm-nav-count">${appointments.length}</span>`:''}
+     </button>
+     <button type="button" role="tab" class="crm-detail-nav-btn ${activeTab==='fiche'?'is-active':''}" data-action="crmDetailTab" data-tab="fiche" aria-selected="${activeTab==='fiche'}">
+      ${crmIcon('fileText',14)}
+      <span>Ficha Inicial</span>
+      ${fiche?`<span class="crm-nav-badge is-done">Preenchida</span>`:ficheStarted?`<span class="crm-nav-badge is-pending">Criada</span>`:''}
+     </button>
+    </nav>
+   </div>
+
    <div class="crm-detail-body">
-    <section class="crm-section crm-lead-data-section">
-     <div class="crm-section-title">
-      <h3>Dados do lead</h3>
-      <div class="crm-section-title-actions">
-       ${wa?`<a class="crm-btn subtle" href="${wa}" target="_blank" rel="noopener noreferrer">${crmIcon('whatsapp',14)} Conversar no WhatsApp</a>`:''}
-       ${btn('crmEdit',`${crmIcon('edit',14)} Editar dados do lead`,id,'subtle')}
-      </div>
-     </div>
-     <div class="crm-lead-data-grid">
-      <div class="crm-data-item"><span>WhatsApp / Telefone</span><strong>${safe(l.phone||'Não informado')}</strong></div>
-      ${isDuo?`<div class="crm-data-item"><span>1º Interessado</span><strong>${safe(l.name)}</strong></div><div class="crm-data-item"><span>2º Interessado</span><strong>${safe(l.student2_name||'—')}</strong></div>`:''}
-      <div class="crm-data-item"><span>Responsável</span><strong>${safe(l.guardian_name||'—')}</strong></div>
-      <div class="crm-data-item"><span>Serviço de interesse</span><strong>${safe(l.crm_service||'—')}</strong></div>
-      <div class="crm-data-item"><span>Origem / Indicação</span><strong>${safe(l.crm_source||'—')}</strong></div>
-      <div class="crm-data-item"><span>UF / Região</span><strong>${safe(l.crm_region||'—')}</strong></div>
-      <div class="crm-data-item"><span>Primeiro contato</span><strong>${shortDate(l.crm_first_contact_on)}</strong></div>
-      <div class="crm-data-item"><span>Último contato</span><strong>${shortDate(l.crm_last_contact_on)}</strong></div>
-      ${cols.length&&l.crm_outcome==='open'?`<div class="crm-data-item"><span>Coluna na pipeline</span><select id="crmLeadColumnSelect" data-lead="${safe(id)}" class="crm-inline-col-select">${cols.map(c=>`<option value="${safe(c.id)}" ${c.id===currentCol?.id?'selected':''}>${safe(c.name)}</option>`).join('')}</select></div>`:''}
-      ${l.crm_outcome==='lost'?`<div class="crm-data-item"><span>Motivo do não fechamento</span><strong>${safe(l.crm_loss_reason||'Não informado')}</strong></div>`:''}
-     </div>
-
-     <div class="crm-lead-tags-bar">
-      <div class="crm-lead-tags-head">
-       <span>Tags de identificação</span>
-       ${btn('crmTagsModal',`${crmIcon('tag',13)} Criar / gerenciar tags`,id,'subtle')}
-      </div>
-      <div class="crm-lead-tags-list">
-       ${tags.length?tags.map(t=>{
-        const active=assignedTagIds.has(t.id);
-        return `<button type="button" class="crm-tag-toggle ${active?'is-active':''}" style="--tag-color:${safe(t.color||'#166d59')}" data-action="crmToggleLeadTag" data-id="${safe(id)}" data-tag="${safe(t.id)}"><span class="crm-tag-dot"></span>${safe(t.name)}${active?` ${crmIcon('check',12)}`:''}</button>`;
-       }).join(''):'<span class="crm-muted">Nenhuma tag cadastrada ainda. Clique em "Criar / gerenciar tags" para adicionar etiquetas coloridas.</span>'}
-      </div>
-     </div>
-    </section>
-
-    <section class="crm-section">
-     <div class="crm-section-title"><h3>Etapas do atendimento</h3></div>
-     <div class="crm-info-grid">
-      <div class="crm-priority-box">
-       <div class="crm-box-header">
-        <h4 class="crm-box-title">Contato e Anotações</h4>
-        <span class="crm-box-status ${l.crm_last_contact_on?'is-done':''}">${l.crm_last_contact_on?'Último em '+shortDate(l.crm_last_contact_on):'Sem contato registrado'}</span>
+    <!-- ABA 1: DADOS CADASTRAIS -->
+    <div class="crm-tab-pane ${activeTab==='data'?'is-active':''}" data-pane="data" ${activeTab==='data'?'':'hidden'}>
+     <section class="crm-section crm-lead-data-section">
+      <div class="crm-section-title">
+       <div>
+        <h3>Dados cadastrais do lead</h3>
+        <p class="crm-section-sub">Informações básicas de contato, interesse e canal de captação.</p>
        </div>
-       <p>Registre ligações, conversas de WhatsApp e observações sobre o interesse do aluno.</p>
-       <div class="crm-box-actions">
-        ${btn('crmContact',`${crmIcon('phone',14)} Registrar contato`,id,'subtle')}
-        ${btn('crmNote',`${crmIcon('note',14)} Anotação`,id,'subtle')}
-        ${wa?`<a class="crm-btn subtle" href="${wa}" target="_blank" rel="noopener noreferrer">${crmIcon('whatsapp',14)} WhatsApp</a>`:''}
+       <div class="crm-section-title-actions">
+        ${wa?`<a class="crm-btn subtle" href="${wa}" target="_blank" rel="noopener noreferrer">${crmIcon('whatsapp',14)} Conversar no WhatsApp</a>`:''}
+        ${btn('crmEdit',`${crmIcon('edit',14)} Editar dados do lead`,id,'subtle')}
        </div>
+      </div>
+      <div class="crm-lead-data-grid">
+       <div class="crm-data-item"><span>WhatsApp / Telefone</span><strong>${safe(l.phone||'Não informado')}</strong></div>
+       ${isDuo?`<div class="crm-data-item"><span>1º Interessado</span><strong>${safe(l.name)}</strong></div><div class="crm-data-item"><span>2º Interessado</span><strong>${safe(l.student2_name||'—')}</strong></div>`:''}
+       <div class="crm-data-item"><span>Responsável</span><strong>${safe(l.guardian_name||'—')}</strong></div>
+       <div class="crm-data-item"><span>Serviço de interesse</span><strong>${safe(l.crm_service||'—')}</strong></div>
+       <div class="crm-data-item"><span>Origem / Indicação</span><strong>${safe(l.crm_source||'—')}</strong></div>
+       <div class="crm-data-item"><span>UF / Região</span><strong>${safe(l.crm_region||'—')}</strong></div>
+       <div class="crm-data-item"><span>Primeiro contato</span><strong>${shortDate(l.crm_first_contact_on)}</strong></div>
+       <div class="crm-data-item"><span>Último contato</span><strong>${shortDate(l.crm_last_contact_on)}</strong></div>
+       ${cols.length&&l.crm_outcome==='open'?`<div class="crm-data-item"><span>Coluna na pipeline</span><select id="crmLeadColumnSelect" data-lead="${safe(id)}" class="crm-inline-col-select">${cols.map(c=>`<option value="${safe(c.id)}" ${c.id===currentCol?.id?'selected':''}>${safe(c.name)}</option>`).join('')}</select></div>`:''}
+       ${l.crm_outcome==='lost'?`<div class="crm-data-item"><span>Motivo do não fechamento</span><strong>${safe(l.crm_loss_reason||'Não informado')}</strong></div>`:''}
+       <div class="crm-data-item"><span>Data de cadastro</span><strong>${dateTime(l.created_at)}</strong></div>
       </div>
 
-      <div class="crm-priority-box">
-       <div class="crm-box-header">
-        <h4 class="crm-box-title">Agendamento de Entrevista</h4>
-        <span class="crm-box-status ${a||lastAppt?.state==='completed'?'is-done':''}">${a?`${dateTime(a.scheduled_at)} (${Number(a.duration_minutes||30)} min)`:lastAppt?.state==='completed'?'Entrevista realizada':'Não agendada'}</span>
+      <div class="crm-lead-tags-bar">
+       <div class="crm-lead-tags-head">
+        <div>
+         <span>Tags de identificação</span>
+         <small class="crm-muted" style="display:block;margin-top:2px">Clique em uma tag para vincular ou desvincular deste lead.</small>
+        </div>
+        ${btn('crmTagsModal',`${crmIcon('tag',13)} Criar / gerenciar tags`,id,'subtle')}
        </div>
-       <p>${a?`Professor designado: <b>${safe(teacherName(a.teacher_id))}</b> · integrado ao calendário do professor.${a.note?'<br>Obs.: '+safe(a.note):''}`:lastAppt?.state==='completed'?`Entrevista realizada com <b>${safe(teacherName(lastAppt.teacher_id))}</b> em ${dateTime(lastAppt.scheduled_at)}.`:'Agende em qualquer horário livre do professor designado (sem aula e sem bloqueio).'}</p>
-       <div class="crm-box-actions">
-        ${a?`${btn('crmCompleteInterview',`${crmIcon('check',14)} Realizada`,a.id,'subtle')}${btn('crmScheduleInterview','Remarcar',id,'subtle')}${btn('crmNoShow','Não compareceu',a.id,'subtle')}${btn('crmCancelInterview','Cancelar',a.id,'danger')}`:l.crm_outcome==='open'?btn('crmScheduleInterview',`${crmIcon('calendar',14)} ${lastAppt?.state==='completed'?'Nova entrevista':'Agendar entrevista'}`,id,lastAppt?.state==='completed'?'subtle':'primary'):''}
-       </div>
-      </div>
-
-      <div class="crm-priority-box">
-       <div class="crm-box-header">
-        <h4 class="crm-box-title">Ficha Inicial</h4>
-        <span class="crm-box-status ${fiche||ficheStarted?'is-done':''}">${fiche?`Preenchida · ${safe(fiche.course||'Inglês')}`:ficheStarted?'Criada · aguardando preenchimento':'Ainda não criada'}</span>
-       </div>
-       <p>Prepare a ficha inicial para ser utilizada durante a entrevista marcada ou envie o link diretamente ao professor entrevistador.</p>
-       <div class="crm-box-actions">
-        ${l.status!=='convertido'?(ficheStarted?`${btn('crmGoFiche',`Abrir ficha inicial ${crmIcon('arrowRight',14)}`,id,'primary')}${btn('crmStartFiche','Opções / link do entrevistador',id,'subtle')}`:btn('crmStartFiche',`${crmIcon('fileText',14)} Criar ficha inicial`,id,'primary')):''}
+       <div class="crm-lead-tags-list">
+        ${tags.length?tags.map(t=>{
+         const active=assignedTagIds.has(t.id);
+         return `<button type="button" class="crm-tag-toggle ${active?'is-active':''}" style="--tag-color:${safe(t.color||'#166d59')}" data-action="crmToggleLeadTag" data-id="${safe(id)}" data-tag="${safe(t.id)}"><span class="crm-tag-dot"></span>${safe(t.name)}${active?` ${crmIcon('check',12)}`:''}</button>`;
+        }).join(''):'<span class="crm-muted">Nenhuma tag cadastrada ainda. Clique em "Criar / gerenciar tags" para adicionar etiquetas coloridas.</span>'}
        </div>
       </div>
-
-      <div class="crm-priority-box">
-       <div class="crm-box-header">
-        <h4 class="crm-box-title">Fechar Negócio</h4>
-        <span class="crm-box-status ${signed||l.crm_outcome==='won'?'is-done':l.crm_outcome==='lost'?'is-lost':''}">${signed?'Aluno matriculado':l.crm_outcome==='won'?'Negócio fechado':l.crm_outcome==='lost'?'Encerrado ('+safe(l.crm_loss_reason||'Não convertido')+')':'Em negociação'}</span>
-       </div>
-       <p>Conclua a oportunidade quando o lead fechar negócio ou registre o motivo caso não avance.</p>
-       <div class="crm-box-actions">
-        ${l.crm_outcome==='open'?`${btn('crmWon',`${crmIcon('checkCircle',14)} Fechar negócio`,id,'primary')}${btn('crmLost','Não converteu',id,'danger')}`:l.status!=='convertido'?btn('crmReopen',`${crmIcon('rotateCcw',14)} Reabrir oportunidade`,id,'subtle'):''}
-       </div>
-      </div>
-     </div>
-    </section>
-
-    <div class="crm-history-grid">
-     <section class="crm-section">
-      <div class="crm-section-title"><h3>Histórico de contatos e anotações</h3><span>${history.length} registros</span></div>
-      <div class="crm-timeline">${history.length?history.map(activityHTML).join(''):'<p class="crm-muted">Nenhuma atividade registrada ainda. Registre um contato ou anotação para iniciar o histórico.</p>'}</div>
      </section>
+    </div>
+
+    <!-- ABA 2: ETAPAS DO ATENDIMENTO -->
+    <div class="crm-tab-pane ${activeTab==='attendance'?'is-active':''}" data-pane="attendance" ${activeTab==='attendance'?'':'hidden'}>
+     <div class="crm-attendance-hero">
+      <div class="crm-attendance-hero-info">
+       <span class="crm-badge-pill ${l.crm_last_contact_on?'is-active':''}">${l.crm_last_contact_on?'Último contato em '+shortDate(l.crm_last_contact_on):'Sem contato registrado ainda'}</span>
+       <h4>Registrar Atendimento Comercial</h4>
+       <p>Cadastre ligações, conversas pelo WhatsApp e observações sobre o perfil e interesse do aluno.</p>
+      </div>
+      <div class="crm-attendance-hero-actions">
+       ${btn('crmContact',`${crmIcon('phone',14)} Registrar contato`,id,'primary')}
+       ${btn('crmNote',`${crmIcon('note',14)} Adicionar anotação / comentário`,id,'subtle')}
+       ${wa?`<a class="crm-btn subtle" href="${wa}" target="_blank" rel="noopener noreferrer">${crmIcon('whatsapp',14)} Abrir WhatsApp</a>`:''}
+      </div>
+     </div>
+
+     <div class="crm-outcome-panel ${l.crm_outcome==='won'?'is-won':l.crm_outcome==='lost'?'is-lost':''}">
+      <div class="crm-outcome-head">
+       <div>
+        <span class="eyebrow" style="margin-bottom:2px">Situação Comercial</span>
+        <h4>${signed?'Aluno matriculado com contrato assinado':l.crm_outcome==='won'?'Negócio Fechado':l.crm_outcome==='lost'?'Oportunidade Não Convertida':'Em Negociação'}</h4>
+       </div>
+       <div class="crm-outcome-actions">
+        ${l.crm_outcome==='open'?`
+         ${btn('crmWon',`${crmIcon('checkCircle',14)} Fechar negócio`,id,'primary')}
+         ${btn('crmLost','Não converteu',id,'danger')}
+        `:l.status!=='convertido'?btn('crmReopen',`${crmIcon('rotateCcw',14)} Reabrir oportunidade`,id,'subtle'):''}
+       </div>
+      </div>
+      ${l.crm_outcome==='lost'?`<div class="crm-outcome-details"><span>Motivo:</span> <strong>${safe(l.crm_loss_reason||'Não informado')}</strong></div>`:''}
+     </div>
 
      <section class="crm-section">
-      <div class="crm-section-title"><h3>Histórico de entrevistas</h3><span>${appointments.length}</span></div>
-      <div class="crm-compact-list">${appointments.length?appointments.map(z=>`<div><b>${dateTime(z.scheduled_at)}</b><span>${safe(teacherName(z.teacher_id))}</span><span>${pill(label({scheduled:'Agendada no calendário',completed:'Realizada',canceled:'Cancelada',no_show:'Não compareceu'},z.state),z.state==='scheduled'?'green':z.state==='completed'?'soft':'neutral')}</span>${z.cancellation_reason?`<small>${safe(z.cancellation_reason)}</small>`:z.note?`<small>${safe(z.note)}</small>`:''}</div>`).join(''):'<p class="crm-muted">Nenhuma entrevista registrada.</p>'}</div>
+      <div class="crm-section-title">
+       <div>
+        <h3>Histórico de contatos e comentários</h3>
+        <p class="crm-section-sub">Linha do tempo cronológica com todas as interações e anotações registradas.</p>
+       </div>
+       <span class="crm-counter-badge">${history.length} ${history.length===1?'registro':'registros'}</span>
+      </div>
+      <div class="crm-timeline">
+       ${history.length?history.map(activityHTML).join(''):'<div class="crm-empty-state"><p class="crm-muted">Nenhum contato ou anotação registrado ainda. Use os botões acima para cadastrar a primeira interação.</p></div>'}
+      </div>
+     </section>
+    </div>
+
+    <!-- ABA 3: ENTREVISTA -->
+    <div class="crm-tab-pane ${activeTab==='interview'?'is-active':''}" data-pane="interview" ${activeTab==='interview'?'':'hidden'}>
+     <div class="crm-interview-highlight ${a?'is-scheduled':lastAppt?.state==='completed'?'is-completed':''}">
+      <div class="crm-interview-highlight-header">
+       <span class="crm-interview-badge ${a?'is-scheduled':lastAppt?.state==='completed'?'is-completed':''}">${a?'Entrevista agendada':lastAppt?.state==='completed'?'Última entrevista realizada':'Nenhuma entrevista ativa'}</span>
+       ${a?`<span class="crm-interview-time-pill">${dateTime(a.scheduled_at)} (${Number(a.duration_minutes||30)} min)</span>`:''}
+      </div>
+      <div class="crm-interview-highlight-body">
+       ${a?`
+        <h4>Entrevista com <b>${safe(teacherName(a.teacher_id))}</b></h4>
+        <p>Integrada diretamente à agenda docente. ${a.note?`<br><span class="crm-muted">Observação: ${safe(a.note)}</span>`:''}</p>
+        <div class="crm-box-actions" style="margin-top:14px">
+         ${btn('crmCompleteInterview',`${crmIcon('check',14)} Marcar como realizada`,a.id,'primary')}
+         ${btn('crmScheduleInterview',`${crmIcon('calendar',14)} Remarcar horário`,id,'subtle')}
+         ${btn('crmNoShow','Não compareceu',a.id,'subtle')}
+         ${btn('crmCancelInterview','Cancelar entrevista',a.id,'danger')}
+        </div>
+       `:lastAppt?.state==='completed'?`
+        <h4>Entrevista realizada</h4>
+        <p>Realizada com <b>${safe(teacherName(lastAppt.teacher_id))}</b> em ${dateTime(lastAppt.scheduled_at)}.</p>
+        <div class="crm-box-actions" style="margin-top:14px">
+         ${l.crm_outcome==='open'?btn('crmScheduleInterview',`${crmIcon('calendar',14)} Agendar nova entrevista`,id,'primary'):''}
+        </div>
+       `:`
+        <h4>Sem entrevista agendada</h4>
+        <p>Agende em qualquer horário livre do calendário do professor designado (sem aulas e sem bloqueios).</p>
+        <div class="crm-box-actions" style="margin-top:14px">
+         ${l.crm_outcome==='open'?btn('crmScheduleInterview',`${crmIcon('calendar',14)} Agendar entrevista`,id,'primary'):''}
+        </div>
+       `}
+      </div>
+     </div>
+
+     <section class="crm-section">
+      <div class="crm-section-title">
+       <div>
+        <h3>Histórico de entrevistas</h3>
+        <p class="crm-section-sub">Todas as entrevistas agendadas, realizadas ou canceladas para este lead.</p>
+       </div>
+       <span class="crm-counter-badge">${appointments.length} ${appointments.length===1?'entrevista':'entrevistas'}</span>
+      </div>
+      <div class="crm-compact-list">
+       ${appointments.length?appointments.map(z=>`
+        <div class="crm-interview-row">
+         <div>
+          <b>${dateTime(z.scheduled_at)}</b>
+          <span>Professor: ${safe(teacherName(z.teacher_id))} (${Number(z.duration_minutes||30)} min)</span>
+          ${z.cancellation_reason?`<small class="crm-text-danger">Motivo cancelamento: ${safe(z.cancellation_reason)}</small>`:z.note?`<small>${safe(z.note)}</small>`:''}
+         </div>
+         <div>
+          ${pill(label({scheduled:'Agendada',completed:'Realizada',canceled:'Cancelada',no_show:'Não compareceu'},z.state),z.state==='scheduled'?'green':z.state==='completed'?'soft':'neutral')}
+         </div>
+        </div>
+       `).join(''):'<div class="crm-empty-state"><p class="crm-muted">Nenhuma entrevista registrada para este lead.</p></div>'}
+      </div>
+     </section>
+    </div>
+
+    <!-- ABA 4: FICHA INICIAL -->
+    <div class="crm-tab-pane ${activeTab==='fiche'?'is-active':''}" data-pane="fiche" ${activeTab==='fiche'?'':'hidden'}>
+     <div class="crm-fiche-hero ${fiche?'is-filled':ficheStarted?'is-started':''}">
+      <div class="crm-fiche-hero-head">
+       <div>
+        <span class="crm-interview-badge ${fiche?'is-completed':ficheStarted?'is-scheduled':''}">${fiche?'Ficha preenchida':ficheStarted?'Ficha inicial criada':'Ainda não criada'}</span>
+        <h4>${fiche?`Ficha pedagógica preenchida · ${safe(fiche.course||'Inglês')}`:ficheStarted?'Ficha inicial aguardando preenchimento':'Ficha inicial do lead'}</h4>
+       </div>
+       <div class="crm-fiche-hero-actions">
+        ${l.status!=='convertido'?(ficheStarted?`
+         ${btn('crmGoFiche',`Abrir ficha inicial ${crmIcon('arrowRight',14)}`,id,'primary')}
+         ${btn('crmStartFiche','Link do entrevistador / opções',id,'subtle')}
+        `:btn('crmStartFiche',`${crmIcon('fileText',14)} Criar ficha inicial`,id,'primary')):''}
+       </div>
+      </div>
+      <p style="margin:8px 0 0 0;color:var(--text-secondary,#52606d);font-size:12.5px">
+       ${fiche?'Os dados pedagógicos foram preenchidos durante a entrevista e estão disponíveis para conferência e geração de matrícula / contrato.':ficheStarted?'A ficha inicial foi criada. O professor entrevistador pode preenchê-la diretamente na aba de entrevistas ou pelo link compartilhado.':'Prepare a ficha inicial para ser utilizada durante a entrevista pedagógica com o professor.'}
+      </p>
+
+      ${fiche?`
+       <div class="crm-fiche-summary-grid">
+        <div class="crm-data-item"><span>Curso / Programa</span><strong>${safe(fiche.course||'Inglês')}</strong></div>
+        <div class="crm-data-item"><span>Professor Entrevistador</span><strong>${safe(teacherName(fiche.interviewer_teacher_id||fiche.teacher_id))}</strong></div>
+        <div class="crm-data-item"><span>Modalidade</span><strong>${safe(fiche.modality||fiche.format||'Presencial')}</strong></div>
+        <div class="crm-data-item"><span>Pacote de Aulas</span><strong>${safe(fiche.package||fiche.lessons_per_week||'Padrão')}</strong></div>
+        ${fiche.preferred_schedule?`<div class="crm-data-item"><span>Horário pretendido</span><strong>${safe(fiche.preferred_schedule)}</strong></div>`:''}
+        ${fiche.financial_notes?`<div class="crm-data-item"><span>Condições financeiras</span><strong>${safe(fiche.financial_notes)}</strong></div>`:''}
+        ${fiche.pedagogical_notes?`<div class="crm-data-item wide"><span>Observações pedagógicas</span><p>${safe(fiche.pedagogical_notes)}</p></div>`:''}
+       </div>
+      `:''}
+     </div>
+
+     <section class="crm-section">
+      <div class="crm-section-title">
+       <div>
+        <h3>Matrícula & Contratos</h3>
+        <p class="crm-section-sub">Documentos contratuais e matrícula vinculados a este lead.</p>
+       </div>
+       ${linked.length?`<span class="crm-counter-badge">${linked.length} ${linked.length===1?'contrato':'contratos'}</span>`:''}
+      </div>
+
+      ${linked.length?`
+       <div class="crm-linked-contracts">
+        ${linked.map(c=>`
+         <div class="crm-linked-contract-card">
+          <div class="crm-linked-contract-info">
+           <strong>Contrato ${safe(c.number||'#')} · ${safe(c.course_name||'Curso')}</strong>
+           <small>Gerado em ${shortDate(c.created_at)} · Status: <b>${safe(c.status||'draft')}</b></small>
+          </div>
+          <div>
+           ${pill(label({draft:'Rascunho',sent:'Enviado',signed:'Assinado',cancelled:'Cancelado'},c.status),c.status==='signed'?'green':'soft')}
+          </div>
+         </div>
+        `).join('')}
+       </div>
+      `:`
+       <div class="crm-enrollment-callout">
+        <div class="crm-enrollment-callout-text">
+         <strong>Pronto para matricular?</strong>
+         <p>Quando o lead aceitar as condições, finalize o fechamento comercial para gerar o contrato com base nos dados cadastrais e da ficha inicial.</p>
+        </div>
+        <div class="crm-enrollment-callout-action">
+         ${l.crm_outcome==='open'?btn('crmWon',`${crmIcon('checkCircle',14)} Fechar negócio`,id,'primary'):''}
+        </div>
+       </div>
+      `}
      </section>
     </div>
    </div>
@@ -824,6 +973,25 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    case 'crmNew':return newForm('');
    case 'crmEdit':return newForm(id);
    case 'crmDetail':return detail(id);
+   case 'crmDetailTab':{
+    const targetTab=x.dataset.tab;
+    if(!targetTab)return;
+    state.detailTab=targetTab;
+    const modal=x.closest('.crm-detail');
+    if(modal){
+     modal.querySelectorAll('.crm-detail-nav-btn').forEach(btn=>{
+      const isActive=btn.dataset.tab===targetTab;
+      btn.classList.toggle('is-active',isActive);
+      btn.setAttribute('aria-selected',isActive?'true':'false');
+     });
+     modal.querySelectorAll('.crm-tab-pane').forEach(pane=>{
+      const isActive=pane.dataset.pane===targetTab;
+      pane.hidden=!isActive;
+      pane.classList.toggle('is-active',isActive);
+     });
+    }
+    return;
+   }
    case 'crmNote':return noteForm(id);
    case 'crmContact':return noteForm(id,true);
    case 'crmScheduleInterview':state.apptWeekKey=null;state.apptWeekSnap=null;return appointmentForm(id);
