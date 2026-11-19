@@ -859,6 +859,43 @@
   gap: 6px;
 }
 
+.crm-btn.crm-btn-icon-only {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0 !important;
+}
+
+.crm-btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0 !important;
+  border-radius: var(--radius-sm);
+  background: #25D366;
+  color: #FFFFFF !important;
+  border: 1px solid #1EBE5D;
+  transition: all var(--transition-fast, 0.15s ease);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.crm-btn-whatsapp:hover {
+  background: #1EBE5D;
+  color: #FFFFFF !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(37, 211, 102, 0.35);
+}
+
+.crm-btn-whatsapp svg {
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+}
+
 .crm-lead-data-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

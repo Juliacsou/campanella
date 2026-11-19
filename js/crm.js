@@ -427,13 +427,10 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     <div class="crm-tab-pane ${activeTab==='data'?'is-active':''}" data-pane="data" ${activeTab==='data'?'':'hidden'}>
      <section class="crm-section crm-lead-data-section">
       <div class="crm-section-title">
-       <div>
-        <h3>Dados cadastrais do lead</h3>
-        <p class="crm-section-sub">Informações básicas de contato, interesse e canal de captação.</p>
-       </div>
+       <h3>Dados cadastrais do lead</h3>
        <div class="crm-section-title-actions">
-        ${wa?`<a class="crm-btn subtle" href="${wa}" target="_blank" rel="noopener noreferrer">${crmIcon('whatsapp',14)} Conversar no WhatsApp</a>`:''}
-        ${btn('crmEdit',`${crmIcon('edit',14)} Editar dados do lead`,id,'subtle')}
+        ${wa?`<a class="crm-btn crm-btn-whatsapp" href="${wa}" target="_blank" rel="noopener noreferrer" title="Conversar no WhatsApp" aria-label="Conversar no WhatsApp">${crmIcon('whatsapp',16)}</a>`:''}
+        ${btn('crmEdit',crmIcon('edit',15),id,'subtle crm-btn-icon-only','title="Editar dados do lead" aria-label="Editar dados do lead"')}
        </div>
       </div>
       <div class="crm-lead-data-grid">
@@ -449,21 +446,23 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
        ${l.crm_outcome==='lost'?`<div class="crm-data-item"><span>Motivo do não fechamento</span><strong>${safe(l.crm_loss_reason||'Não informado')}</strong></div>`:''}
        <div class="crm-data-item"><span>Data de cadastro</span><strong>${dateTime(l.created_at)}</strong></div>
       </div>
+     </section>
 
-      <div class="crm-lead-tags-bar">
-       <div class="crm-lead-tags-head">
-        <div>
-         <span>Tags de identificação</span>
-         <small class="crm-muted" style="display:block;margin-top:2px">Clique em uma tag para vincular ou desvincular deste lead.</small>
-        </div>
+     <section class="crm-section crm-lead-tags-section">
+      <div class="crm-section-title">
+       <div>
+        <h3>Tags de identificação</h3>
+        <p class="crm-section-sub">Clique em uma tag para vincular ou desvincular deste lead.</p>
+       </div>
+       <div class="crm-section-title-actions">
         ${btn('crmTagsModal',`${crmIcon('tag',13)} Criar / gerenciar tags`,id,'subtle')}
        </div>
-       <div class="crm-lead-tags-list">
-        ${tags.length?tags.map(t=>{
-         const active=assignedTagIds.has(t.id);
-         return `<button type="button" class="crm-tag-toggle ${active?'is-active':''}" style="--tag-color:${safe(t.color||'#166d59')}" data-action="crmToggleLeadTag" data-id="${safe(id)}" data-tag="${safe(t.id)}"><span class="crm-tag-dot"></span>${safe(t.name)}${active?` ${crmIcon('check',12)}`:''}</button>`;
-        }).join(''):'<span class="crm-muted">Nenhuma tag cadastrada ainda. Clique em "Criar / gerenciar tags" para adicionar etiquetas coloridas.</span>'}
-       </div>
+      </div>
+      <div class="crm-lead-tags-list">
+       ${tags.length?tags.map(t=>{
+        const active=assignedTagIds.has(t.id);
+        return `<button type="button" class="crm-tag-toggle ${active?'is-active':''}" style="--tag-color:${safe(t.color||'#166d59')}" data-action="crmToggleLeadTag" data-id="${safe(id)}" data-tag="${safe(t.id)}"><span class="crm-tag-dot"></span>${safe(t.name)}${active?` ${crmIcon('check',12)}`:''}</button>`;
+       }).join(''):'<span class="crm-muted">Nenhuma tag cadastrada ainda. Clique em "Criar / gerenciar tags" para adicionar etiquetas coloridas.</span>'}
       </div>
      </section>
     </div>
@@ -479,7 +478,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
       <div class="crm-attendance-hero-actions">
        ${btn('crmContact',`${crmIcon('phone',14)} Registrar contato`,id,'primary')}
        ${btn('crmNote',`${crmIcon('note',14)} Adicionar anotação / comentário`,id,'subtle')}
-       ${wa?`<a class="crm-btn subtle" href="${wa}" target="_blank" rel="noopener noreferrer">${crmIcon('whatsapp',14)} Abrir WhatsApp</a>`:''}
+       ${wa?`<a class="crm-btn crm-btn-whatsapp" href="${wa}" target="_blank" rel="noopener noreferrer" title="Conversar no WhatsApp" aria-label="Conversar no WhatsApp">${crmIcon('whatsapp',16)}</a>`:''}
       </div>
      </div>
 

@@ -109,12 +109,28 @@ assert.ok(
 );
 console.log('  -> CSS das abas validado com sucesso.');
 
-// 7. Verificando versão de cache no index.html
-console.log('7. Verificando versionamento de cache...');
+// 7. Verificando refinamento visual dos dados e tags (container separado, botão whatsapp verde e edição em lápis)
+console.log('7. Verificando refinamento visual do container de dados e tags...');
 assert.ok(
-  indexHtml.includes('crm.css?v=8.0.6'),
-  'O index.html deve conter crm.css?v=8.0.6'
+  crmJs.includes('crm-lead-tags-section') && !crmJs.includes('Informações básicas de contato, interesse e canal de captação.'),
+  'As tags devem estar em um container separado (.crm-lead-tags-section) e o subtítulo prolixo removido'
 );
-console.log('  -> Cache version v=8.0.6 validado.');
+assert.ok(
+  crmJs.includes('crm-btn-whatsapp') && crmCss.includes('.crm-btn-whatsapp') && crmCss.includes('#25D366'),
+  'O botão do WhatsApp deve ser apenas ícone estilizado em verde (#25D366)'
+);
+assert.ok(
+  crmJs.includes('crm-btn-icon-only') && crmCss.includes('.crm-btn-icon-only'),
+  'O botão de edição deve ser apenas o ícone do lápis (.crm-btn-icon-only)'
+);
+console.log('  -> Refinamento visual de dados, tags e botões validado com sucesso.');
 
-console.log('\n=== Todos os 7 testes V8.0 de Abas do Lead passaram com 100% de sucesso! ===');
+// 8. Verificando versão de cache no index.html
+console.log('8. Verificando versionamento de cache...');
+assert.ok(
+  indexHtml.includes('crm.css?v=8.0.7'),
+  'O index.html deve conter crm.css?v=8.0.7'
+);
+console.log('  -> Cache version v=8.0.7 validado.');
+
+console.log('\n=== Todos os 8 testes V8.0 de Abas e Refinamento do Lead passaram com 100% de sucesso! ===');
