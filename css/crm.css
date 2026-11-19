@@ -737,20 +737,49 @@
   color: var(--primary);
 }
 
-/* 7. Lead Detail Drawer & Configuration Modals */
+/* 7. Lead Detail Drawer (Fixed Header + Scrollable Tab Body) */
+dialog#modal.crm-lead-drawer,
+dialog#modal:has(.crm-detail) {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+dialog#modal.crm-lead-drawer > .close,
+dialog#modal:has(.crm-detail) > .close {
+  position: static !important;
+  flex-shrink: 0 !important;
+  margin: 16px 0 4px 24px !important;
+}
+
+dialog#modal.crm-lead-drawer > #modal-body,
+dialog#modal:has(.crm-detail) > #modal-body {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
 .crm-detail {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  gap: 0;
 }
 
 .crm-detail-sticky-head {
+  flex-shrink: 0;
   position: sticky;
-  top: -8px;
+  top: 0;
   z-index: 15;
   background: #F7F8FA;
-  margin: -8px -26px 8px -26px;
-  padding: 8px 26px 0 26px;
+  margin: 0;
+  padding: 4px 26px 0 26px;
   border-bottom: 1px solid var(--border);
   box-shadow: 0 4px 14px rgba(29, 41, 57, 0.05);
 }
@@ -897,6 +926,11 @@
 }
 
 .crm-detail-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 26px 32px 26px;
   display: flex;
   flex-direction: column;
   gap: 14px;

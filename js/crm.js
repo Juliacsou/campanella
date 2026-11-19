@@ -684,6 +684,8 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     </div>
    </div>
   </div>`);
+  const m=document.getElementById('modal');
+  if(m)m.classList.add('crm-lead-drawer');
  }
 
  function pipelineConfigModal(editColId=null){
@@ -1122,6 +1124,8 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
       pane.hidden=!isActive;
       pane.classList.toggle('is-active',isActive);
      });
+     const b=modal.querySelector('.crm-detail-body');
+     if(b)b.scrollTop=0;
     }
     return;
    }

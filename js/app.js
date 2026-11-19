@@ -2,7 +2,7 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
-import {createCRM} from './crm.js?v=8.1.0';
+import {createCRM} from './crm.js?v=8.1.1';
 import {createCalendar} from './calendar-v6.js?v=7.1.1';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
@@ -410,8 +410,8 @@ function toast(msg,bad=false){
 }
 function lockModalScroll(){document.body.classList.add('modal-open');document.documentElement.classList.add('modal-open');}
 function unlockModalScroll(){if(!document.querySelector('dialog[open]')){document.body.classList.remove('modal-open');document.documentElement.classList.remove('modal-open');}}
-function showModal(content){const m=$('#modal');$('#modal-body').innerHTML=content;lockModalScroll();if(!m.open)m.showModal();m.scrollTop=0;}
-function closeModal(){const m=$('#modal');const t=$('#toast');if(t&&t.parentElement&&t.parentElement!==document.body&&document.body)document.body.appendChild(t);if(m&&m.open)m.close();unlockModalScroll();}
+function showModal(content){const m=$('#modal');if(m)m.classList.remove('crm-lead-drawer');$('#modal-body').innerHTML=content;lockModalScroll();if(!m.open)m.showModal();m.scrollTop=0;}
+function closeModal(){const m=$('#modal');if(m)m.classList.remove('crm-lead-drawer');const t=$('#toast');if(t&&t.parentElement&&t.parentElement!==document.body&&document.body)document.body.appendChild(t);if(m&&m.open)m.close();unlockModalScroll();}
 function escapeHtmlText(v){return safe(v==null?'':String(v)).replace(/\n/g,'<br>');}
 function toModalMessage(message){return Array.isArray(message)?message.join('\n'):String(message||'');}
 function independentDialog(body,buttons){
