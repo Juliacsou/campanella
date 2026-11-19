@@ -41,8 +41,8 @@ console.log('  -> Estruturação visual das colunas validada.');
 // 3. Verificando métricas no estilo glass sem stroke de borda (Dark & Light)
 console.log('3. Verificando métricas de KPI em estilo Glass sem borda/stroke (Dark & Light)...');
 const metricSectionIndex = css.indexOf('/* 34.7 CRM Metric Cards');
-const section35Index = css.indexOf('/* ==========================================================================\n   35.');
-const metricSectionBlock = css.slice(metricSectionIndex, section35Index);
+const section34_8Index = css.indexOf('/* ==========================================================================\n   34.8');
+const metricSectionBlock = css.slice(metricSectionIndex, section34_8Index);
 
 assert.ok(
   !metricSectionBlock.includes('border-top: 2px solid'),
@@ -90,9 +90,31 @@ console.log('  -> Estilo Glass sem stroke das métricas validado com sucesso em 
 console.log('4. Verificando elevação da área de trabalho (.crm-workspace)...');
 assert.ok(
   css.includes('#0E1119'),
-  'A área de trabalho deve ter tonalidade própria (#0E1119) com borda sutil para não se misturar com o fundo geral'
+  'A área de trabalho deve ter tonalidade própria (#0E1119) com borda sutil para não se misturar com o fundo geral no Dark Mode'
 );
 console.log('  -> Elevação da área de trabalho validada.');
+
+// 5. Verificando Paridade Total do CRM em Light Mode (Seção 34.8)
+console.log('5. Verificando Paridade Total do CRM em Light Mode (Seção 34.8)...');
+assert.ok(
+  css.includes('34.8 CRM LIGHT THEME TOTAL HARMONY'),
+  'Deve conter a Seção 34.8 dedicada à paridade e contraste total do CRM em Light Mode'
+);
+assert.ok(
+  css.includes('[data-theme="light"] .crm-board-col') && css.includes('#F1EFEA'),
+  'A coluna da pipeline no Light Mode deve possuir trilha contrastante (#F1EFEA) para destacar os cards'
+);
+assert.ok(
+  css.includes('[data-theme="light"] .crm-tabs button[data-tab="won"] span') &&
+  css.includes('[data-theme="light"] .crm-tabs button[data-tab="lost"] span'),
+  'As abas no Light Mode devem conter badges coloridas específicas para won (verde) e lost (vermelho)'
+);
+assert.ok(
+  css.includes('[data-theme="light"] .crm-lead-card:hover') &&
+  css.includes('rgba(234, 88, 12, 0.45)'),
+  'Os cards de lead no Light Mode devem possuir hover com brilho sutil âmbar/laranja'
+);
+console.log('  -> Paridade total do CRM em Light Mode validada com sucesso.');
 
 console.log('\n======================================================');
 console.log('TODOS OS TESTES DO NOVO LAYOUT DO CRM PASSARAM! 🎉');

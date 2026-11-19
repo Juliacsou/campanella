@@ -11392,16 +11392,12 @@ body,
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.18) !important;
 }
 
-/* 34.5 CRM Pipeline Columns (Float seamlessly within 3D Glass Workspace) */
+/* 34.5 CRM Pipeline Columns (Distinct Structural Tracks on Light & Dark) */
 [data-theme="light"] .crm-board-col {
-  background: rgba(255, 255, 255, 0.65) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: none !important;
-  border-radius: 18px !important;
-  box-shadow: 
-    0 6px 18px rgba(0, 0, 0, 0.04),
-    inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
+  background: #F1EFEA !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
 }
 
 :root:not([data-theme="light"]) .crm-board-col,
@@ -11704,6 +11700,451 @@ body,
 }
 [data-theme="light"] .crm-metric.hot strong {
   color: #EA580C !important;
+}
+
+/* ==========================================================================
+   34.8 CRM LIGHT THEME TOTAL HARMONY (Full Parity with Dark Mode Elegance)
+   ========================================================================== */
+
+/* 1. Header & Actions */
+[data-theme="light"] .crm-head h1 {
+  color: #0F172A !important;
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+}
+
+[data-theme="light"] .crm-head-actions .crm-btn.primary {
+  background: linear-gradient(135deg, #EA580C 0%, #F97316 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35) !important;
+  border-radius: 12px !important;
+  font-weight: 750 !important;
+}
+
+[data-theme="light"] .crm-head-actions .crm-btn.subtle {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: #334155 !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+  border-radius: 12px !important;
+  font-weight: 650 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+[data-theme="light"] .crm-head-actions .crm-btn.subtle:hover {
+  background: #FFFFFF !important;
+  color: #EA580C !important;
+  border-color: rgba(234, 88, 12, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.12) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+/* 2. Elevated Workspace Canvas */
+[data-theme="light"] .crm-workspace {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  border-radius: 20px !important;
+  box-shadow: 
+    0 20px 48px -12px rgba(15, 23, 42, 0.08),
+    0 4px 16px rgba(15, 23, 42, 0.03) !important;
+  overflow: hidden !important;
+}
+
+/* 3. Unified Tabs Navigation & Thematic Badges */
+[data-theme="light"] .crm-tabs {
+  background: #F8FAFC !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07) !important;
+  padding: 8px 18px 0 !important;
+}
+
+[data-theme="light"] .crm-tabs button {
+  color: #64748B !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  padding: 12px 18px 14px !important;
+  border-radius: 12px 12px 0 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-theme="light"] .crm-tabs button:hover {
+  color: #0F172A !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme="light"] .crm-tabs button.active {
+  color: #EA580C !important;
+  font-weight: 800 !important;
+}
+
+[data-theme="light"] .crm-tabs button.active::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 12px !important;
+  right: 12px !important;
+  height: 3px !important;
+  border-radius: 3px 3px 0 0 !important;
+  background: linear-gradient(90deg, #EA580C 0%, #F97316 100%) !important;
+  box-shadow: 0 0 8px rgba(234, 88, 12, 0.4) !important;
+}
+
+[data-theme="light"] .crm-tabs button span {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #475569 !important;
+  border-radius: 20px !important;
+  padding: 2px 7px !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+}
+
+[data-theme="light"] .crm-tabs button.active span,
+[data-theme="light"] .crm-tabs button[data-tab="open"] span {
+  background: rgba(234, 88, 12, 0.12) !important;
+  color: #C2410C !important;
+  border: 1px solid rgba(234, 88, 12, 0.22) !important;
+}
+
+[data-theme="light"] .crm-tabs button[data-tab="won"] span {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #047857 !important;
+  border: 1px solid rgba(16, 185, 129, 0.22) !important;
+}
+
+[data-theme="light"] .crm-tabs button[data-tab="lost"] span {
+  background: rgba(239, 68, 68, 0.10) !important;
+  color: #B91C1C !important;
+  border: 1px solid rgba(239, 68, 68, 0.20) !important;
+}
+
+/* 4. Streamlined Filters Bar, Inputs & Toggles */
+[data-theme="light"] .crm-workspace-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  background: #FAFAF9 !important;
+}
+
+[data-theme="light"] .crm-filters-bar {
+  background: transparent !important;
+  padding: 16px 22px !important;
+}
+
+[data-theme="light"] .crm-filters-bar .crm-search input {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), inset 0 1px 1px #FFFFFF !important;
+}
+
+[data-theme="light"] .crm-filters-bar .crm-search input:focus {
+  border-color: #EA580C !important;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.18) !important;
+}
+
+[data-theme="light"] .crm-search-icon {
+  color: #94A3B8 !important;
+}
+
+[data-theme="light"] .crm-filter-tag-wrap select {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
+[data-theme="light"] .crm-filter-tag-wrap select:focus {
+  border-color: #EA580C !important;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.18) !important;
+}
+
+[data-theme="light"] .crm-filters-toggle-btn {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  color: #334155 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
+[data-theme="light"] .crm-filters-toggle-btn.is-active {
+  background: rgba(234, 88, 12, 0.10) !important;
+  border-color: rgba(234, 88, 12, 0.3) !important;
+  color: #EA580C !important;
+}
+
+[data-theme="light"] .crm-toggle {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-radius: 12px !important;
+  padding: 3px !important;
+  display: flex !important;
+  gap: 3px !important;
+}
+
+[data-theme="light"] .crm-toggle button {
+  background: transparent !important;
+  color: #64748B !important;
+  border-radius: 9px !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  border: none !important;
+  transition: all 0.18s ease !important;
+}
+
+[data-theme="light"] .crm-toggle button.active {
+  background: #FFFFFF !important;
+  color: #EA580C !important;
+  font-weight: 800 !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.07) !important;
+}
+
+[data-theme="light"] .crm-advanced-filters {
+  background: #F8FAFC !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .crm-advanced-grid label {
+  color: #64748B !important;
+}
+
+[data-theme="light"] .crm-advanced-grid select {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  border-radius: 10px !important;
+}
+
+[data-theme="light"] .crm-list-controls {
+  color: #64748B !important;
+}
+
+[data-theme="light"] .crm-list-controls b {
+  color: #0F172A !important;
+}
+
+/* 5. Board & Pipeline Track Columns */
+[data-theme="light"] .crm-board {
+  scrollbar-color: rgba(234, 88, 12, 0.35) transparent !important;
+}
+
+[data-theme="light"] .crm-board-col {
+  background: #F1EFEA !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-theme="light"] .crm-board-col-head {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .crm-board-col-title span {
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  color: #0F172A !important;
+  letter-spacing: -0.01em !important;
+}
+
+[data-theme="light"] .crm-board-col-title b {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: #334155 !important;
+  border-radius: 9999px !important;
+  padding: 1px 8px !important;
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .crm-col-trigger {
+  background: rgba(234, 88, 12, 0.12) !important;
+  border: 1px solid rgba(234, 88, 12, 0.25) !important;
+  color: #C2410C !important;
+  border-radius: 6px !important;
+  font-size: 10.5px !important;
+  font-weight: 750 !important;
+}
+
+[data-theme="light"] .crm-column-empty {
+  color: #64748B !important;
+  border: 1px dashed rgba(0, 0, 0, 0.14) !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.45) !important;
+}
+
+[data-theme="light"] .crm-board-col.is-drag-over {
+  border-color: #EA580C !important;
+  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.3) !important;
+  background: #EAE6DD !important;
+}
+
+/* 6. Lead Cards — Crisp Elevated Floating Surfaces */
+[data-theme="light"] .crm-lead-card {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  outline: none !important;
+  border-radius: 14px !important;
+  padding: 13px 15px !important;
+  box-shadow: 
+    0 2px 6px -1px rgba(15, 23, 42, 0.06),
+    0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  cursor: grab !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+[data-theme="light"] .crm-lead-card:hover,
+[data-theme="light"] .crm-lead-card:focus-visible {
+  transform: translateY(-2.5px) !important;
+  background: #FFFFFF !important;
+  border-color: rgba(234, 88, 12, 0.45) !important;
+  box-shadow: 
+    0 10px 24px -4px rgba(15, 23, 42, 0.12),
+    0 0 14px rgba(234, 88, 12, 0.14) !important;
+  outline: none !important;
+}
+
+[data-theme="light"] .crm-lead-card.is-dragging {
+  opacity: 0.8 !important;
+  transform: scale(0.98) rotate(1deg) !important;
+  border-color: #EA580C !important;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.2), 0 0 18px rgba(234, 88, 12, 0.25) !important;
+  cursor: grabbing !important;
+}
+
+[data-theme="light"] .crm-lead-top strong {
+  color: #0F172A !important;
+  font-size: 13.5px !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.2px !important;
+}
+
+[data-theme="light"] .crm-lead-card .crm-muted {
+  color: #64748B !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+[data-theme="light"] .crm-card-foot,
+[data-theme="light"] .crm-mini-date {
+  color: #94A3B8 !important;
+  font-size: 11px !important;
+  font-weight: 550 !important;
+}
+
+[data-theme="light"] .crm-card-interview {
+  background: rgba(234, 88, 12, 0.10) !important;
+  border: 1px solid rgba(234, 88, 12, 0.24) !important;
+  color: #C2410C !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  margin-top: 8px !important;
+  font-weight: 650 !important;
+  font-size: 11px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+[data-theme="light"] .crm-card-interview svg {
+  color: #EA580C !important;
+  stroke: #EA580C !important;
+}
+
+[data-theme="light"] .crm-card-interview.is-done {
+  background: rgba(16, 185, 129, 0.10) !important;
+  border: 1px solid rgba(16, 185, 129, 0.24) !important;
+  color: #047857 !important;
+}
+
+[data-theme="light"] .crm-card-interview.is-done svg {
+  color: #047857 !important;
+  stroke: #047857 !important;
+}
+
+/* 7. List View Table */
+[data-theme="light"] .crm-table th {
+  background: #F8FAFC !important;
+  color: #475569 !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.6px !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  padding: 13px 17px !important;
+}
+
+[data-theme="light"] .crm-table td {
+  border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+  color: #334155 !important;
+  padding: 14px 17px !important;
+}
+
+[data-theme="light"] .crm-table tr:hover td {
+  background: rgba(254, 243, 199, 0.3) !important;
+}
+
+[data-theme="light"] .crm-table td strong {
+  color: #0F172A !important;
+  font-size: 13.5px !important;
+}
+
+[data-theme="light"] .crm-table td small {
+  color: #64748B !important;
+  font-size: 11px !important;
+}
+
+/* 8. Upcoming Interviews Panel */
+[data-theme="light"] .crm-due-panel {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 16px 40px -10px rgba(15, 23, 42, 0.07) !important;
+  margin-top: 24px !important;
+  overflow: hidden !important;
+}
+
+[data-theme="light"] .crm-due-head {
+  padding: 20px 24px !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  background: #FAFAF9 !important;
+}
+
+[data-theme="light"] .crm-due-head h2 {
+  color: #0F172A !important;
+  font-size: 18px !important;
+  font-weight: 750 !important;
+}
+
+[data-theme="light"] .crm-due-list {
+  padding: 8px 24px 20px !important;
+}
+
+[data-theme="light"] .crm-due-item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  padding: 14px 0 !important;
+}
+
+[data-theme="light"] .crm-due-item b {
+  color: #0F172A !important;
+  font-size: 14px !important;
+}
+
+[data-theme="light"] .crm-due-item p {
+  color: #64748B !important;
+  font-size: 12px !important;
+}
+
+[data-theme="light"] .crm-due-icon {
+  background: rgba(234, 88, 12, 0.12) !important;
+  color: #EA580C !important;
+  border-radius: 10px !important;
+}
+
+[data-theme="light"] .crm-due-date {
+  color: #334155 !important;
+  font-weight: 700 !important;
 }
 
 /* ==========================================================================
