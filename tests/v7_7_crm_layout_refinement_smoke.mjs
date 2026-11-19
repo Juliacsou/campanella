@@ -36,8 +36,8 @@ console.log('  -> Barra unificada do CRM validada.');
 // 3. Verificando colunas da pipeline e cards de lead no Light Mode
 console.log('3. Verificando colunas da pipeline e cards de lead em Light Mode...');
 assert.ok(
-  crmCss.includes('.crm-board-col') && crmCss.includes('#F1F5F9'),
-  'As colunas da pipeline devem ter fundo claro contrastante (#F1F5F9)'
+  crmCss.includes('.crm-board-col') && crmCss.includes('#EEF2F6'),
+  'As colunas da pipeline devem ter fundo claro contrastante (#EEF2F6)'
 );
 assert.ok(
   crmCss.includes('.crm-lead-card') && crmCss.includes('#FFFFFF'),
@@ -49,17 +49,17 @@ assert.ok(
 );
 console.log('  -> Colunas e cards validados.');
 
-// 4. Verificando métricas horizontais compactas do CRM
-console.log('4. Verificando métricas compactas (.crm-metrics)...');
+// 4. Verificando métricas horizontais compactas do CRM e tokens helloPTO
+console.log('4. Verificando métricas compactas (.crm-metrics) e tokens helloPTO...');
 assert.ok(
   crmCss.includes('.crm-metrics') && crmCss.includes('.crm-metric'),
   'Deve conter estilização dedicada para a faixa compacta de métricas de KPI em Light Mode'
 );
 assert.ok(
-  styleCss.includes('--bg-app: #F8FAFC'),
-  'O tema base deve ser exclusivamente claro (--bg-app: #F8FAFC)'
+  styleCss.includes('--bg-app: #F2F2F2') && styleCss.includes('--primary: #5082E5'),
+  'O tema base deve utilizar a paleta helloPTO (--bg-app: #F2F2F2, --primary: #5082E5)'
 );
-console.log('  -> Métricas compactas e tema claro validados.');
+console.log('  -> Métricas compactas e paleta helloPTO validados.');
 
 console.log('\n======================================================');
 console.log('TODOS OS TESTES DO NOVO LAYOUT DO CRM PASSARAM! 🎉');

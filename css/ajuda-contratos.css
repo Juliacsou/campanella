@@ -1,5 +1,6 @@
 /* ==========================================================================
-   Campanella Contract Guide (ajuda-contratos.html) — Clean Light Design System
+   Campanella Contract Guide (ajuda-contratos.html) — helloPTO Design System
+   Palette: Brand Blue #5082E5 | Brand Dark #1D2939 | Background Grey #F2F2F2
    ========================================================================== */
 
 .guide-body {
@@ -12,10 +13,10 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  height: 56px;
+  height: 60px;
   padding: 0 24px;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--primary);
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -25,15 +26,16 @@
 .guide-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .guide-brand-logo {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-sm);
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: #FFFFFF;
   flex-shrink: 0;
 }
 
@@ -44,14 +46,14 @@
 }
 
 .guide-brand-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
-  color: var(--text);
+  color: #FFFFFF;
 }
 
 .guide-brand-sub {
-  font-size: 11.5px;
-  color: var(--text-muted);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .guide-topbar-actions {
@@ -63,7 +65,7 @@
 .guide-shell {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 20px 24px 48px;
+  padding: 24px 24px 48px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -72,8 +74,8 @@
 .guide-hero {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr);
   gap: 20px;
@@ -85,24 +87,23 @@
   align-items: center;
   padding: 3px 10px;
   border-radius: 999px;
-  background: var(--primary-soft);
-  color: var(--primary);
-  border: 1px solid var(--primary-border);
+  background: var(--info-bg);
+  color: var(--info);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 8px;
 }
 
 .guide-hero h1 {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   margin-bottom: 8px;
 }
 
 .guide-hero p {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text-muted);
   line-height: 1.55;
 }
@@ -118,12 +119,12 @@
 .guide-hero-card {
   background: var(--bg-muted);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   padding: 14px 16px;
 }
 
 .guide-hero-card-title {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text);
   margin-bottom: 8px;
@@ -134,7 +135,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-muted);
 }
 
@@ -150,8 +151,8 @@
   top: 76px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px;
+  border-radius: var(--radius-lg);
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -161,22 +162,22 @@
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--text-subtle);
   padding: 4px 8px 6px;
 }
 
 .guide-toc a {
-  padding: 6px 8px;
+  padding: 7px 10px;
   border-radius: var(--radius-sm);
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--text-muted);
   font-weight: 500;
 }
 
 .guide-toc a:hover {
   background: var(--bg-hover);
-  color: var(--text);
+  color: var(--primary);
 }
 
 .guide-main {
@@ -188,8 +189,8 @@
 .guide-section {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -197,20 +198,20 @@
 }
 
 .guide-section h2 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
 }
 
 .guide-section h3 {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text);
 }
 
 .guide-section p,
 .guide-section li {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text-muted);
   line-height: 1.55;
 }
@@ -224,8 +225,8 @@
 .guide-step {
   background: var(--bg-muted);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
 }
 
 .guide-callout {
@@ -233,14 +234,14 @@
   border: 1px solid var(--info-border);
   color: var(--info-text);
   border-radius: var(--radius-sm);
-  padding: 10px 14px;
-  font-size: 12.5px;
+  padding: 12px 14px;
+  font-size: 13px;
 }
 
 .guide-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
 }
 
 .guide-table {
@@ -250,16 +251,16 @@
 
 .guide-table th,
 .guide-table td {
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border-subtle);
   text-align: left;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .guide-table th {
   background: var(--bg-muted);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
 }

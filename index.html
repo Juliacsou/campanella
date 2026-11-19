@@ -8,11 +8,11 @@
  <link rel="apple-touch-icon" href="./assets/img/logo-icon-color.png">
  <link rel="preconnect" href="https://fonts.googleapis.com">
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
- <link rel="stylesheet" href="./css/style.css?v=8.0.0">
- <link rel="stylesheet" href="./css/crm.css?v=8.0.0">
- <link rel="stylesheet" href="./css/calendar-v6.css?v=8.0.0">
- <link rel="stylesheet" href="./css/onboarding-v67.css?v=8.0.0">
+ <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;700;900&display=swap" rel="stylesheet">
+ <link rel="stylesheet" href="./css/style.css?v=8.0.1">
+ <link rel="stylesheet" href="./css/crm.css?v=8.0.1">
+ <link rel="stylesheet" href="./css/calendar-v6.css?v=8.0.1">
+ <link rel="stylesheet" href="./css/onboarding-v67.css?v=8.0.1">
  <script defer src="https://unpkg.com/pizzip@3.2.0/dist/pizzip.js"></script>
  <script defer src="https://unpkg.com/docxtemplater@3.71.0/build/docxtemplater.js"></script>
  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
@@ -22,14 +22,14 @@
    if (app && app.querySelector('.boot')) {
     console.error('Falha de inicialização detectada:', event.error || event.message);
     var msg = event.message || (event.error && event.error.message) || 'Erro ao processar scripts da plataforma.';
-    app.innerHTML = '<div class="boot" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:#f8fafc;">' +
-     '<div style="max-width:420px;width:100%;background:#ffffff;border:1px solid #fecaca;border-radius:10px;padding:24px;text-align:center;box-shadow:0 4px 12px rgba(15,23,42,0.06);color:#0f172a;font-family:Inter,sans-serif;">' +
-      '<div style="font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#dc2626;margin-bottom:6px;">Falha no carregamento</div>' +
-      '<h2 style="font-size:16px;margin:0 0 8px 0;font-weight:600;">Não foi possível iniciar o painel</h2>' +
-      '<p style="font-size:13px;color:#475569;margin:0 0 18px 0;line-height:1.5;">' + msg + '</p>' +
+    app.innerHTML = '<div class="boot" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:#F2F2F2;">' +
+     '<div style="max-width:420px;width:100%;background:#ffffff;border:1px solid #EAECF0;border-radius:16px;padding:28px;text-align:center;box-shadow:0 8px 24px rgba(29,41,57,0.08);color:#1D2939;font-family:Lato,sans-serif;">' +
+      '<div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#EB5757;margin-bottom:8px;">Falha no carregamento</div>' +
+      '<h2 style="font-size:18px;margin:0 0 8px 0;font-weight:700;">Não foi possível iniciar o painel</h2>' +
+      '<p style="font-size:14px;color:#475467;margin:0 0 20px 0;line-height:1.4;">' + msg + '</p>' +
       '<div style="display:flex;flex-direction:column;gap:8px;">' +
-       '<button onclick="location.reload()" style="background:#ea580c;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;">Recarregar página</button>' +
-       '<button onclick="localStorage.clear();sessionStorage.clear();location.reload(true)" style="background:#ffffff;color:#475569;border:1px solid #e2e8f0;padding:8px 14px;border-radius:6px;font-size:12px;cursor:pointer;">Limpar cache local e recarregar</button>' +
+       '<button onclick="location.reload()" style="background:#5082E5;color:#fff;border:none;padding:10px 16px;border-radius:6px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer;">Recarregar página</button>' +
+       '<button onclick="localStorage.clear();sessionStorage.clear();location.reload(true)" style="background:#ffffff;color:#1D2939;border:1px solid #D0D5DD;padding:10px 16px;border-radius:6px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer;">Limpar cache local e recarregar</button>' +
       '</div>' +
      '</div>' +
     '</div>';
