@@ -2071,7 +2071,7 @@ dialog#modal > .close {
   position: sticky;
   top: 16px;
   left: 24px;
-  z-index: 20;
+  z-index: 30;
   width: 30px;
   height: 30px;
   margin: 16px 0 0 22px;

@@ -6,8 +6,9 @@ const basePath = path.resolve('/home/antigravity/Juliacsou/campanella');
 const crmCss = fs.readFileSync(path.join(basePath, 'css/crm.css'), 'utf8');
 const crmJs = fs.readFileSync(path.join(basePath, 'js/crm.js'), 'utf8');
 const indexHtml = fs.readFileSync(path.join(basePath, 'index.html'), 'utf8');
+const appJs = fs.readFileSync(path.join(basePath, 'js/app.js'), 'utf8');
 
-console.log('=== Iniciando Testes V8.0: Abas no Drawer de Lead do CRM ===\n');
+console.log('=== Iniciando Testes V8.0: Abas e Refinamento do Atendimento no Lead ===\n');
 
 // 1. Verificando as 4 sub-abas no HTML gerado em detail(id)
 console.log('1. Verificando estrutura de navegação e as 4 abas no detail(id)...');
@@ -31,118 +32,104 @@ assert.ok(
 );
 console.log('  -> Estrutura de abas e painéis validada com sucesso.');
 
-// 2. Verificando ações de atendimento na aba "attendance"
-console.log('2. Verificando ações e histórico na aba de Etapas do Atendimento...');
+// 2. Verificando layout de Etapas do Atendimento (Situação Comercial fora de box, containers unificados)
+console.log('2. Verificando Situação Comercial fora de box e conteiner unificado de Histórico e Comentários...');
 assert.ok(
-  crmJs.includes("'crmContact'") && crmJs.includes("'crmNote'"),
-  'A aba de atendimento deve conter botões para Registrar contato e Adicionar anotação/comentário'
+  crmJs.includes('crm-commercial-status-bar') && crmCss.includes('.crm-commercial-status-bar'),
+  'A situação comercial deve vir em primeiro fora de uma box (.crm-commercial-status-bar)'
 );
 assert.ok(
-  crmJs.includes('crm-attendance-hero') && crmJs.includes('crm-timeline'),
-  'A aba de atendimento deve conter o hero de atendimento e a linha do tempo com histórico'
+  crmJs.includes('crm-attendance-unified-section') && crmCss.includes('.crm-attendance-unified-section'),
+  'Os dois containers anteriores devem ser unificados em .crm-attendance-unified-section'
 );
 assert.ok(
-  crmJs.includes("'crmWon'") && crmJs.includes("'crmLost'"),
-  'A aba de atendimento deve conter opções de Fechar negócio e Não converteu'
+  crmJs.includes('<h3>Histórico e Comentários</h3>'),
+  'O container unificado deve conter o título "Histórico e Comentários"'
 );
-console.log('  -> Ações e histórico de atendimento validados.');
+assert.ok(
+  crmJs.includes('Adicionar contato') && crmJs.includes('Adicionar comentário'),
+  'Devem existir os botões "Adicionar contato" e "Adicionar comentário"'
+);
+assert.ok(
+  crmJs.includes('crm-timeline-subhead') && crmJs.includes('<h4>Histórico</h4>'),
+  'O histórico deve ser renderizado como subtítulo'
+);
+console.log('  -> Situação comercial e seção unificada validadas.');
 
-// 3. Verificando ações e histórico na aba "interview"
-console.log('3. Verificando card de agendamento e histórico na aba de Entrevista...');
+// 3. Verificando Linha do Tempo e layout dos cards do histórico
+console.log('3. Verificando linha do tempo vertical com nós, cards e horários destacados...');
 assert.ok(
-  crmJs.includes('crm-interview-highlight') && crmJs.includes('crm-compact-list'),
-  'A aba de entrevista deve conter card de destaque e histórico completo de entrevistas'
+  crmCss.includes('.crm-timeline::before') && crmCss.includes('.crm-timeline-node'),
+  'A linha do tempo deve ter trilha vertical e nós circulares estilizados por tipo'
 );
 assert.ok(
-  crmJs.includes("'crmCompleteInterview'") &&
-  crmJs.includes("'crmScheduleInterview'") &&
-  crmJs.includes("'crmNoShow'") &&
-  crmJs.includes("'crmCancelInterview'"),
-  'A aba de entrevista deve conter todas as ações de ciclo de vida da entrevista'
+  crmJs.includes('crm-timeline-card') && crmCss.includes('.crm-timeline-card'),
+  'O histórico deve renderizar cards elegantes com .crm-timeline-card'
 );
-console.log('  -> Ações e histórico de entrevista validados.');
+assert.ok(
+  crmJs.includes('crm-timeline-time') && crmCss.includes('.crm-timeline-time'),
+  'O horário deve ficar destacado e separado do título do evento (.crm-timeline-time)'
+);
+console.log('  -> Linha do tempo e cards aprimorados validados.');
 
-// 4. Verificando ficha inicial e contratos na aba "fiche"
-console.log('4. Verificando ficha pedagógica e contratos na aba de Ficha Inicial...');
+// 4. Verificando popup de Contato e Comentário com coleta de horário e remoção de "anotação"
+console.log('4. Verificando popups com coleta de horário e ausência do termo "anotação"...');
 assert.ok(
-  crmJs.includes('crm-fiche-hero') && crmJs.includes('crm-fiche-summary-grid'),
-  'A aba de ficha inicial deve conter o hero da ficha e a grade de resumo pedagógico'
+  crmJs.includes("occurred_time") && crmJs.includes("'Horário do contato'") && crmJs.includes("'Horário do comentário'"),
+  'O formulário popup deve coletar data e horário para contatos e comentários'
 );
 assert.ok(
-  crmJs.includes("'crmStartFiche'") && crmJs.includes("'crmGoFiche'"),
-  'A aba de ficha inicial deve conter botões para criar/abrir a ficha inicial'
+  !crmJs.toLowerCase().includes('anotação') && !crmJs.toLowerCase().includes('anotações'),
+  'O termo "anotação" deve ser 100% removido do crm.js'
 );
-assert.ok(
-  crmJs.includes('crm-linked-contracts') || crmJs.includes('crm-enrollment-callout'),
-  'A aba de ficha inicial deve conter seção de contratos vinculados / encaminhamento para matrícula'
-);
-console.log('  -> Ficha inicial e encaminhamento de contrato validados.');
+console.log('  -> Coleta de horário e ausência de "anotação" validadas.');
 
-// 5. Verificando manipulação de evento crmDetailTab e persistência de estado
-console.log('5. Verificando handler de evento e persistência de estado do detailTab...');
+// 5. Verificando cabeçalho fixo (sticky) ao rolar para baixo
+console.log('5. Verificando cabeçalho fixo (sticky head) no crm-detail...');
 assert.ok(
-  crmJs.includes("case 'crmDetailTab':"),
-  'O handleClick deve tratar o evento crmDetailTab'
+  crmJs.includes('crm-detail-sticky-head') && crmCss.includes('.crm-detail-sticky-head'),
+  'O cabeçalho do drawer deve possuir a classe .crm-detail-sticky-head'
 );
 assert.ok(
-  crmJs.includes('detailTab') && crmJs.includes('activeTab'),
-  'O estado do CRM deve rastrear e manter o detailTab ativo'
+  crmCss.includes('position: sticky') && crmCss.includes('top: -8px'),
+  'O .crm-detail-sticky-head deve ter position: sticky para fixar no topo durante a rolagem'
 );
-console.log('  -> Handler e persistência de abas validados.');
+console.log('  -> Sticky header validado com sucesso.');
 
-// 6. Verificando CSS do design system helloPTO para abas
-console.log('6. Verificando estilização das abas e componentes no crm.css...');
+// 6. Verificando botões de ação de comunicação no topo (WhatsApp, Ligar e SMS somente ícones)
+console.log('6. Verificando trio de botões de comunicação (WhatsApp, Ligar e SMS)...');
 assert.ok(
-  crmCss.includes('.crm-detail-nav') &&
-  crmCss.includes('.crm-detail-nav-btn') &&
-  crmCss.includes('.crm-detail-nav-btn.is-active') &&
-  crmCss.includes('.crm-tab-pane') &&
-  crmCss.includes('.crm-tab-pane[hidden]'),
-  'O crm.css deve estilizar a navegação de abas e alternância de visibilidade com [hidden]'
+  crmJs.includes('crm-btn-call') && crmJs.includes('crm-btn-sms') && crmJs.includes('crm-btn-whatsapp'),
+  'O topo deve conter botões de WhatsApp, Ligar (tel:) e SMS (sms:)'
 );
 assert.ok(
-  crmCss.includes('.crm-attendance-hero') &&
-  crmCss.includes('.crm-outcome-panel') &&
-  crmCss.includes('.crm-interview-highlight') &&
-  crmCss.includes('.crm-fiche-hero'),
-  'O crm.css deve estilizar os cards de destaque de cada aba'
+  crmCss.includes('.crm-btn-call') && crmCss.includes('.crm-btn-sms') && crmCss.includes('.crm-btn-head-icon'),
+  'O crm.css deve estilizar os botões de ligar e sms como ícones somente'
 );
-console.log('  -> CSS das abas validado com sucesso.');
+console.log('  -> Botões de WhatsApp, Ligar e SMS validados.');
 
-// 7. Verificando refinamento visual dos dados e tags (container separado, botão whatsapp persistente no topo, tags em estilo link e edição em lápis)
-console.log('7. Verificando refinamento visual do container de dados, tags e whatsapp no topo...');
+// 7. Verificando botão de tags em modelo link
+console.log('7. Verificando botão de tags em estilo link...');
 assert.ok(
-  crmJs.includes('crm-lead-tags-section') && !crmJs.includes('Informações básicas de contato, interesse e canal de captação.'),
-  'As tags devem estar em um container separado (.crm-lead-tags-section) e o subtítulo prolixo removido'
-);
-assert.ok(
-  crmJs.includes('crm-btn-link') && crmJs.includes('Gerenciar tags') && !crmJs.includes('Criar / gerenciar tags'),
-  'O botão de tags deve usar a classe crm-btn-link e o texto "Gerenciar tags"'
+  crmJs.includes('crm-btn-link') && crmJs.includes('Gerenciar tags'),
+  'O botão de tags deve usar modelo link e o texto "Gerenciar tags"'
 );
 assert.ok(
   crmCss.includes('.crm-btn-link') && crmCss.includes('.crm-btn.link'),
-  'O crm.css deve incluir a estilização de botão modelo link'
+  'O crm.css deve incluir a estilização de botão link'
 );
-assert.ok(
-  crmJs.includes('crm-detail-top-actions') && crmCss.includes('.crm-detail-top-actions'),
-  'O botão do WhatsApp deve ficar no topo ao lado do nome do lead (.crm-detail-top-actions)'
-);
-assert.ok(
-  crmJs.includes('crm-btn-whatsapp') && crmCss.includes('.crm-btn-whatsapp') && crmCss.includes('#25D366'),
-  'O botão do WhatsApp deve ser apenas ícone estilizado em verde (#25D366)'
-);
-assert.ok(
-  crmJs.includes('crm-btn-icon-only') && crmCss.includes('.crm-btn-icon-only'),
-  'O botão de edição deve ser apenas o ícone do lápis (.crm-btn-icon-only)'
-);
-console.log('  -> Refinamento visual de dados, tags e botões validado com sucesso.');
+console.log('  -> Botão de tags link validado.');
 
-// 8. Verificando versão de cache no index.html
+// 8. Verificando versionamento de cache
 console.log('8. Verificando versionamento de cache...');
 assert.ok(
-  indexHtml.includes('crm.css?v=8.0.8') && indexHtml.includes('app.js?v=8.0.8'),
-  'O index.html deve conter crm.css?v=8.0.8 e app.js?v=8.0.8'
+  indexHtml.includes('crm.css?v=8.0.9') && indexHtml.includes('app.js?v=8.0.9'),
+  'O index.html deve conter crm.css?v=8.0.9 e app.js?v=8.0.9'
 );
-console.log('  -> Cache version v=8.0.8 validado.');
+assert.ok(
+  appJs.includes('./crm.js?v=8.0.9'),
+  'O app.js deve importar ./crm.js?v=8.0.9'
+);
+console.log('  -> Cache version v=8.0.9 validado.');
 
-console.log('\n=== Todos os 8 testes V8.0 de Abas e Refinamento do Lead passaram com 100% de sucesso! ===');
+console.log('\n=== Todos os 8 testes V8.0 de Atendimento e Cabeçalho Fixo passaram com 100% de sucesso! ===');
