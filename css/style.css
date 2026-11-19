@@ -1440,6 +1440,43 @@ img, svg {
   border-color: var(--danger-hover);
 }
 
+.btn.link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: auto;
+  min-height: 28px;
+  padding: 4px 6px !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--primary) !important;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  box-shadow: none !important;
+  transition: color 0.14s ease, background 0.14s ease;
+}
+
+.btn.link:hover:not(:disabled) {
+  background: var(--primary-soft, rgba(80, 130, 229, 0.08)) !important;
+  color: var(--primary-hover) !important;
+  text-decoration: underline;
+  box-shadow: none !important;
+}
+
+.btn.link svg {
+  stroke: currentColor;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
 .btn.mini {
   height: 28px;
   padding: 0 12px;

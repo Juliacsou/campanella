@@ -109,11 +109,23 @@ assert.ok(
 );
 console.log('  -> CSS das abas validado com sucesso.');
 
-// 7. Verificando refinamento visual dos dados e tags (container separado, botão whatsapp verde e edição em lápis)
-console.log('7. Verificando refinamento visual do container de dados e tags...');
+// 7. Verificando refinamento visual dos dados e tags (container separado, botão whatsapp persistente no topo, tags em estilo link e edição em lápis)
+console.log('7. Verificando refinamento visual do container de dados, tags e whatsapp no topo...');
 assert.ok(
   crmJs.includes('crm-lead-tags-section') && !crmJs.includes('Informações básicas de contato, interesse e canal de captação.'),
   'As tags devem estar em um container separado (.crm-lead-tags-section) e o subtítulo prolixo removido'
+);
+assert.ok(
+  crmJs.includes('crm-btn-link') && crmJs.includes('Gerenciar tags') && !crmJs.includes('Criar / gerenciar tags'),
+  'O botão de tags deve usar a classe crm-btn-link e o texto "Gerenciar tags"'
+);
+assert.ok(
+  crmCss.includes('.crm-btn-link') && crmCss.includes('.crm-btn.link'),
+  'O crm.css deve incluir a estilização de botão modelo link'
+);
+assert.ok(
+  crmJs.includes('crm-detail-top-actions') && crmCss.includes('.crm-detail-top-actions'),
+  'O botão do WhatsApp deve ficar no topo ao lado do nome do lead (.crm-detail-top-actions)'
 );
 assert.ok(
   crmJs.includes('crm-btn-whatsapp') && crmCss.includes('.crm-btn-whatsapp') && crmCss.includes('#25D366'),
@@ -128,9 +140,9 @@ console.log('  -> Refinamento visual de dados, tags e botões validado com suces
 // 8. Verificando versão de cache no index.html
 console.log('8. Verificando versionamento de cache...');
 assert.ok(
-  indexHtml.includes('crm.css?v=8.0.7'),
-  'O index.html deve conter crm.css?v=8.0.7'
+  indexHtml.includes('crm.css?v=8.0.8') && indexHtml.includes('app.js?v=8.0.8'),
+  'O index.html deve conter crm.css?v=8.0.8 e app.js?v=8.0.8'
 );
-console.log('  -> Cache version v=8.0.7 validado.');
+console.log('  -> Cache version v=8.0.8 validado.');
 
 console.log('\n=== Todos os 8 testes V8.0 de Abas e Refinamento do Lead passaram com 100% de sucesso! ===');

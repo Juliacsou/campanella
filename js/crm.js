@@ -36,7 +36,7 @@ const CRM_ICONS={
  edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
  note:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
  phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0 1 22 16.92z"/>',
- whatsapp:'<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+ whatsapp:'<path fill="currentColor" stroke="none" d="M19.05 4.91A9.816 9.816 0 0 0 12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01zm-7.01 15.24c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.264 8.264 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.02 4.54-3.68 8.23-8.22 8.23zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.79.97-.14.17-.29.19-.54.07-.25-.12-1.05-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43s.17-.25.25-.42c.08-.17.04-.31-.02-.43s-.56-1.34-.76-1.84c-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.84-.86 2.06 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.53.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.1-.22-.16-.47-.28z"/>',
  move:'<polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>',
  archive:'<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>',
  arrowRight:'<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
@@ -395,6 +395,13 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
        ${leadTags(l).map(renderTagBadge).join('')}
       </div>
      </div>
+     ${wa?`
+      <div class="crm-detail-top-actions">
+       <a class="crm-btn-whatsapp" href="${wa}" target="_blank" rel="noopener noreferrer" title="Conversar no WhatsApp (${safe(l.phone||'')})" aria-label="Conversar no WhatsApp">
+        ${crmIcon('whatsapp',20)}
+       </a>
+      </div>
+     `:''}
     </div>
    </div>
 
@@ -429,7 +436,6 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
       <div class="crm-section-title">
        <h3>Dados cadastrais do lead</h3>
        <div class="crm-section-title-actions">
-        ${wa?`<a class="crm-btn crm-btn-whatsapp" href="${wa}" target="_blank" rel="noopener noreferrer" title="Conversar no WhatsApp" aria-label="Conversar no WhatsApp">${crmIcon('whatsapp',16)}</a>`:''}
         ${btn('crmEdit',crmIcon('edit',15),id,'subtle crm-btn-icon-only','title="Editar dados do lead" aria-label="Editar dados do lead"')}
        </div>
       </div>
@@ -455,14 +461,14 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
         <p class="crm-section-sub">Clique em uma tag para vincular ou desvincular deste lead.</p>
        </div>
        <div class="crm-section-title-actions">
-        ${btn('crmTagsModal',`${crmIcon('tag',13)} Criar / gerenciar tags`,id,'subtle')}
+        <button type="button" class="crm-btn-link" data-action="crmTagsModal" data-id="${safe(id)}">${crmIcon('tag',13)} <span>Gerenciar tags</span></button>
        </div>
       </div>
       <div class="crm-lead-tags-list">
        ${tags.length?tags.map(t=>{
         const active=assignedTagIds.has(t.id);
         return `<button type="button" class="crm-tag-toggle ${active?'is-active':''}" style="--tag-color:${safe(t.color||'#166d59')}" data-action="crmToggleLeadTag" data-id="${safe(id)}" data-tag="${safe(t.id)}"><span class="crm-tag-dot"></span>${safe(t.name)}${active?` ${crmIcon('check',12)}`:''}</button>`;
-       }).join(''):'<span class="crm-muted">Nenhuma tag cadastrada ainda. Clique em "Criar / gerenciar tags" para adicionar etiquetas coloridas.</span>'}
+       }).join(''):'<span class="crm-muted">Nenhuma tag cadastrada ainda. Clique em "Gerenciar tags" para adicionar etiquetas coloridas.</span>'}
       </div>
      </section>
     </div>
