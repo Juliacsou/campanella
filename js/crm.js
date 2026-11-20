@@ -135,7 +135,7 @@ export function decodeBudgetData(str){
  }
 }
 
-export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,createInterviewInviteLink,startBusy,finishBusy,isBusy,saveInterview,getCalendar}){
+export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,createInterviewInviteLink,startBusy,finishBusy,isBusy,saveInterview,getCalendar,resolveSchoolAdminsList}){
  const state={tab:'open',mode:'board',search:'',column:'all',tag:'all',source:'all',service:'all',region:'all',interview:'all',period:'all',sort:'activity',lead:null,detailTab:'data',editingFicheLeadId:null,ficheKind:null,importRows:[],editingColId:null,editingTagId:null,dragLeadId:null,filtersOpen:false};
  const currentSchoolName=()=>(ui.schools||[]).find(s=>s.id===ui.schoolId)?.name||ui.schoolName||'CAMPANELLA';
 
@@ -232,7 +232,9 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
  const internalCreateInviteLink=async(leadId,teacherId)=>{
   if(typeof createInterviewInviteLink==='function')return await createInterviewInviteLink(leadId,teacherId);
   if(!lookup('leads',leadId))throw new Error('Lead não encontrado.');
-  if(!lookup('teachers',teacherId)?.active)throw new Error('Selecione um professor ativo.');
+  const isValidTeacher=!!lookup('teachers',teacherId)?.active;
+  const isValidAdmin=schoolAdminsList().some(a=>a.user_id===teacherId||a.id===teacherId);
+  if(!isValidTeacher&&!isValidAdmin)throw new Error('Selecione um entrevistador válido (administrador ou professor ativo).');
   const {error:revokeError}=await sb.from('interview_invites').update({revoked_at:new Date().toISOString()}).eq('school_id',ui.schoolId).eq('lead_id',leadId).is('used_at',null).is('revoked_at',null);
   if(revokeError)throw revokeError;
   const token=randomToken(),digest=await sha256(token),expires=new Date(Date.now()+14*86400000).toISOString();
@@ -247,6 +249,64 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
  const hasFiche=l=>!!l?.ficha_iniciada_at||(db.interviews||[]).some(i=>i.lead_id===l?.id);
  const filledFiche=l=>(db.interviews||[]).find(i=>i.lead_id===l?.id);
  const teacherName=id=>lookup('teachers',id)?.name||'Professor não definido';
+ const schoolAdminsList=()=>{
+  if(typeof resolveSchoolAdminsList==='function'){
+   try{
+    const res=resolveSchoolAdminsList();
+    if(Array.isArray(res)&&res.length)return res.map(a=>({id:a.user_id||a.id,user_id:a.user_id||a.id,name:a.full_name||a.name||a.email?.split('@')[0]||'Administrador',email:a.email||'',is_admin:true,is_super:!!a.is_super,teacher_id:a.teacher_id||null}));
+   }catch(e){}
+  }
+  const s=(ui.schools||[]).find(x=>x.id===ui.schoolId)||{};
+  if(ui.schoolAdmins?.school_id===s?.id&&Array.isArray(ui.schoolAdmins?.admins)&&ui.schoolAdmins.admins.length){
+   return ui.schoolAdmins.admins.map(a=>({id:a.user_id,user_id:a.user_id,name:a.full_name||a.email?.split('@')[0]||'Administrador',email:a.email||'',is_admin:true,is_super:!!a.is_super,teacher_id:a.teacher_id||null}));
+  }
+  const members=(ui.schoolMembers||[]).filter(m=>m.role==='admin');
+  const ids=[...new Set([s?.admin_user_id,...members.map(m=>m.user_id),ui.user?.id].filter(Boolean))];
+  return ids.map(uid=>{
+   const prof=(db.profiles||[]).find(p=>p.id===uid)||(uid===ui.user?.id?{id:uid,email:ui.user.email}:null);
+   const email=String(prof?.email||(uid===ui.user?.id?ui.user?.email:'')||'').trim().toLowerCase();
+   const fullName=(uid===ui.user?.id&&ui.user?.user_metadata?.full_name)||prof?.full_name||email.split('@')[0]||'Administrador';
+   const teacher=(db.teachers||[]).find(t=>email&&t.email?.trim().toLowerCase()===email);
+   return {id:uid,user_id:uid,name:fullName,email:email||'—',is_admin:true,is_super:uid===s?.admin_user_id,teacher_id:teacher?.id||null};
+  });
+ };
+ const adminName=id=>{
+  if(!id)return '';
+  const adm=schoolAdminsList().find(a=>a.user_id===id||a.id===id);
+  if(adm?.name||adm?.full_name)return adm.name||adm.full_name;
+  const prof=(db.profiles||[]).find(p=>p.id===id);
+  if(prof?.full_name)return prof.full_name;
+  if(id===ui.user?.id)return ui.user?.user_metadata?.full_name||ui.user?.email?.split('@')[0]||'Administrador';
+  return '';
+ };
+ const interviewerName=id=>{
+  if(!id)return 'Entrevistador não definido';
+  const a=adminName(id);
+  if(a)return a;
+  const t=lookup('teachers',id);
+  if(t?.name)return t.name;
+  return 'Entrevistador não definido';
+ };
+ const interviewerOptions=(selectedId='')=>{
+  const admins=schoolAdminsList();
+  const activeTeachers=(db.teachers||[]).filter(t=>t.active!==false);
+  let html='';
+  if(admins.length){
+   html+=`<optgroup label="Administradores">`;
+   html+=admins.map(a=>`<option value="${safe(a.user_id)}" ${String(a.user_id)===String(selectedId)?'selected':''}>${safe(a.name)}${a.is_super?' (Super)':''}</option>`).join('');
+   html+=`</optgroup>`;
+  }
+  if(activeTeachers.length){
+   html+=`<optgroup label="Professores">`;
+   html+=activeTeachers.map(t=>`<option value="${safe(t.id)}" ${String(t.id)===String(selectedId)?'selected':''}>${safe(t.name)}</option>`).join('');
+   html+=`</optgroup>`;
+  }
+  if(selectedId && !admins.some(a=>String(a.user_id)===String(selectedId)) && !activeTeachers.some(t=>String(t.id)===String(selectedId))){
+   const other=interviewerName(selectedId);
+   html=`<option value="${safe(selectedId)}" selected>${safe(other)}</option>`+html;
+  }
+  return html;
+ };
  const allLeadStates=()=>leads().map(l=>({...l,crm_outcome:l.status==='convertido'?'won':l.crm_outcome||'open'}));
  const todayISO=()=>today();
 
@@ -287,9 +347,9 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
 
  const interviewText=l=>{
   const a=nextInterview(l.id);
-  if(a)return `<span class="crm-next-date">${dateTime(a.scheduled_at)}</span><span class="crm-tiny">${safe(teacherName(a.teacher_id))}</span>`;
+  if(a)return `<span class="crm-next-date">${dateTime(a.scheduled_at)}</span><span class="crm-tiny">${safe(interviewerName(a.teacher_id))}</span>`;
   const last=appts(l.id)[0];
-  if(last?.state==='completed')return `<span class="crm-badge crm-green">Realizada</span><span class="crm-tiny">${safe(teacherName(last.teacher_id))}</span>`;
+  if(last?.state==='completed')return `<span class="crm-badge crm-green">Realizada</span><span class="crm-tiny">${safe(interviewerName(last.teacher_id))}</span>`;
   return '<span class="crm-muted">Sem agendamento</span>';
  };
  const ficheText=l=>{
@@ -444,7 +504,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    ${tags.length?`<div class="crm-card-tags">${tags.map(renderTagBadge).join('')}</div>`:''}
    ${l.crm_service||l.phone?`<div class="crm-muted">${safe([l.crm_service,l.phone].filter(Boolean).join(' · '))}</div>`:''}
    ${l.crm_last_contact_on?`<div class="crm-card-foot"><span class="crm-mini-date">Último contato: ${shortDate(l.crm_last_contact_on)}</span></div>`:''}
-   ${appt?`<div class="crm-card-interview">${crmIcon('calendar',13)} <span>${dateTime(appt.scheduled_at)} · ${safe(teacherName(appt.teacher_id))}</span></div>`:lastAppt?.state==='completed'?`<div class="crm-card-interview is-done">${crmIcon('checkCircle',13)} <span>Entrevista realizada · ${safe(teacherName(lastAppt.teacher_id))}</span></div>`:''}
+   ${appt?`<div class="crm-card-interview">${crmIcon('calendar',13)} <span>${dateTime(appt.scheduled_at)} · ${safe(interviewerName(appt.teacher_id))}</span></div>`:lastAppt?.state==='completed'?`<div class="crm-card-interview is-done">${crmIcon('checkCircle',13)} <span>Entrevista realizada · ${safe(interviewerName(lastAppt.teacher_id))}</span></div>`:''}
   </article>`;
  }
 
@@ -487,7 +547,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
  function upcomingInterviews(){
   const open=allLeadStates().filter(l=>l.crm_outcome==='open');
   const upcomingList=(db.crm_appointments||[]).filter(a=>a.state==='scheduled'&&open.some(l=>l.id===a.lead_id)).sort((a,b)=>String(a.scheduled_at).localeCompare(String(b.scheduled_at))).slice(0,8);
-  return `<section class="crm-due-panel"><div class="crm-due-head"><div><div class="eyebrow">Calendário comercial & docente</div><h2>Próximas entrevistas agendadas</h2></div></div><div class="crm-due-list">${upcomingList.length?upcomingList.map(a=>`<div class="crm-due-item"><span class="crm-due-icon">${crmIcon('calendar',16)}</span><div><b>${safe(lookup('leads',a.lead_id)?.name||'Lead')}</b><p>Professor: ${safe(teacherName(a.teacher_id))} · ${Number(a.duration_minutes||30)} min${a.note?' · '+safe(a.note):''}</p></div><span class="crm-due-date">${dateTime(a.scheduled_at)}</span>${btn('crmDetail',`${crmIcon('eye',14)} <span>Abrir</span>`,a.lead_id,'table-action-btn subtle')}</div>`).join(''):'<p class="crm-muted">Nenhuma entrevista agendada no momento.</p>'}</div></section>`;
+  return `<section class="crm-due-panel"><div class="crm-due-head"><div><div class="eyebrow">Calendário comercial & docente</div><h2>Próximas entrevistas agendadas</h2></div></div><div class="crm-due-list">${upcomingList.length?upcomingList.map(a=>`<div class="crm-due-item"><span class="crm-due-icon">${crmIcon('calendar',16)}</span><div><b>${safe(lookup('leads',a.lead_id)?.name||'Lead')}</b><p>Entrevistador: ${safe(interviewerName(a.teacher_id))} · ${Number(a.duration_minutes||30)} min${a.note?' · '+safe(a.note):''}</p></div><span class="crm-due-date">${dateTime(a.scheduled_at)}</span>${btn('crmDetail',`${crmIcon('eye',14)} <span>Abrir</span>`,a.lead_id,'table-action-btn subtle')}</div>`).join(''):'<p class="crm-muted">Nenhuma entrevista agendada no momento.</p>'}</div></section>`;
  }
 
  function clean(phone){return onlyDigits(phone||'');}
@@ -539,7 +599,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
 
   const activeTeachers=(db.teachers||[]).filter(t=>t.active!==false);
   const scheduledTeacher=a?.teacher_id||'';
-  const interviewerTeacher=fiche?.interviewer_teacher_id||scheduledTeacher||fiche?.teacher_id||(activeTeachers[0]?.id||'');
+  const interviewerTeacher=fiche?.interviewer_teacher_id||fiche?.interviewer_id||scheduledTeacher||fiche?.teacher_id||(schoolAdminsList()[0]?.user_id||activeTeachers[0]?.id||'');
   const lessonTeacher=fiche?.teacher_id||scheduledTeacher||(activeTeachers[0]?.id||'');
   const isDuoFiche=state.ficheKind?state.ficheKind==='dupla':(fiche?.kind==='dupla'||(!fiche&&(l.kind==='dupla'||!!l.student2_name)));
   const activePackages=(db.packages||[]).filter(p=>p.active!==false);
@@ -710,7 +770,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
       </div>
       <div class="crm-interview-highlight-body">
        ${a?`
-        <h4>Entrevista com <b>${safe(teacherName(a.teacher_id))}</b></h4>
+        <h4>Entrevista com <b>${safe(interviewerName(a.teacher_id))}</b></h4>
         <p>Integrada diretamente à agenda docente. ${a.note?`<br><span class="crm-muted">Observação: ${safe(a.note)}</span>`:''}</p>
         <div class="crm-box-actions" style="margin-top:14px">
          ${btn('crmCompleteInterview',`${crmIcon('check',14)} Marcar como realizada`,a.id,'primary')}
@@ -720,13 +780,13 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
         </div>
        `:lastAppt?.state==='completed'?`
         <h4>Entrevista realizada</h4>
-        <p>Realizada com <b>${safe(teacherName(lastAppt.teacher_id))}</b> em ${dateTime(lastAppt.scheduled_at)}.</p>
+        <p>Realizada com <b>${safe(interviewerName(lastAppt.teacher_id))}</b> em ${dateTime(lastAppt.scheduled_at)}.</p>
         <div class="crm-box-actions" style="margin-top:14px">
          ${l.crm_outcome==='open'?btn('crmScheduleInterview',`${crmIcon('calendar',14)} Agendar nova entrevista`,id,'primary'):''}
         </div>
        `:`
         <h4>Sem entrevista agendada</h4>
-        <p>Agende em qualquer horário livre do calendário do professor designado (sem aulas e sem bloqueios).</p>
+        <p>Agende em qualquer horário livre do calendário do entrevistador designado (sem aulas e sem bloqueios).</p>
         <div class="crm-box-actions" style="margin-top:14px">
          ${l.crm_outcome==='open'?btn('crmScheduleInterview',`${crmIcon('calendar',14)} Agendar entrevista`,id,'primary'):''}
         </div>
@@ -747,7 +807,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
         <div class="crm-interview-row">
          <div>
           <b>${dateTime(z.scheduled_at)}</b>
-          <span>Professor: ${safe(teacherName(z.teacher_id))} (${Number(z.duration_minutes||30)} min)</span>
+          <span>Entrevistador: ${safe(interviewerName(z.teacher_id))} (${Number(z.duration_minutes||30)} min)</span>
           ${z.cancellation_reason?`<small class="crm-text-danger">Motivo cancelamento: ${safe(z.cancellation_reason)}</small>`:z.note?`<small>${safe(z.note)}</small>`:''}
          </div>
          <div>
@@ -808,10 +868,10 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
          </label>
 
          <label class="field">
-          <span>Professor entrevistador *</span>
+          <span>Entrevistador *</span>
           <select name="interviewer_teacher_id" required>
-           <option value="">Selecione o professor</option>
-           ${activeTeachers.map(t=>`<option value="${safe(t.id)}" ${t.id===interviewerTeacher?'selected':''}>${safe(t.name)}</option>`).join('')}
+           <option value="">Selecione o entrevistador</option>
+           ${interviewerOptions(interviewerTeacher)}
           </select>
          </label>
 
@@ -936,7 +996,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
 
        <div class="crm-fiche-summary-grid">
         <div class="crm-data-item"><span>Curso / Programa</span><strong>${safe(fiche.course||'Inglês')}</strong></div>
-        <div class="crm-data-item"><span>Professor Entrevistador</span><strong>${safe(teacherName(fiche.interviewer_teacher_id||fiche.teacher_id))}</strong></div>
+        <div class="crm-data-item"><span>Entrevistador</span><strong>${safe(interviewerName(fiche.interviewer_teacher_id||fiche.interviewer_id||fiche.teacher_id))}</strong></div>
         <div class="crm-data-item"><span>Professor das Aulas</span><strong>${safe(teacherName(fiche.teacher_id))}</strong></div>
         <div class="crm-data-item"><span>Modalidade</span><strong>${fiche.kind==='dupla'?'Dupla (2 alunos)':'Individual'}</strong></div>
         <div class="crm-data-item"><span>1º Aluno</span><strong>${safe(l.name)}</strong></div>
@@ -1272,14 +1332,14 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   const duration=Number(form.elements.duration_minutes?.value||30);
   const currentApptId=form.dataset.id||'';
   if(!teacherId){
-   host.innerHTML='<div class="crm-mini-week-empty">Selecione o professor designado acima para visualizar a semana dele no calendário.</div>';
+   host.innerHTML='<div class="crm-mini-week-empty">Selecione o entrevistador designado acima para visualizar a semana dele no calendário.</div>';
    return;
   }
   const weekStart=startOfWeekISO(date);
   const weekEnd=addDay(weekStart,6);
   const cacheKey=`${teacherId}:${weekStart}`;
   if(forceReload||state.apptWeekKey!==cacheKey||!state.apptWeekSnap){
-   host.innerHTML='<div class="crm-mini-week-empty">Carregando calendário semanal do professor…</div>';
+   host.innerHTML='<div class="crm-mini-week-empty">Carregando calendário semanal do entrevistador…</div>';
    try{
     const {data:snap,error}=await sb.rpc('calendar_overview',{p_school:ui.schoolId,p_from:weekStart,p_to:weekEnd,p_teacher:teacherId});
     if(error)throw error;
@@ -1341,7 +1401,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    <div class="crm-mini-week-bar">
     <div class="crm-mini-week-nav">
      <button type="button" class="crm-btn subtle" data-action="crmApptWeekNav" data-step="-7">${crmIcon('arrowLeft',13)}</button>
-     <strong>Semana de ${dateBR(weekStart)} a ${dateBR(weekEnd)} · ${safe(teacherName(teacherId))}</strong>
+     <strong>Semana de ${dateBR(weekStart)} a ${dateBR(weekEnd)} · ${safe(interviewerName(teacherId))}</strong>
      <button type="button" class="crm-btn subtle" data-action="crmApptWeekNav" data-step="7">${crmIcon('arrowRight',13)}</button>
     </div>
     <div class="crm-mini-week-legend">
@@ -1372,13 +1432,14 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
  function appointmentForm(id){
   const l=lookup('leads',id),a=nextInterview(id),f=filledFiche(l);
   const parts=fmtDateParts(a?.scheduled_at);
+  const admins=schoolAdminsList();
   const activeTeachers=(db.teachers||[]).filter(t=>t.active!==false);
-  const defaultTeacher=a?.teacher_id||f?.interviewer_teacher_id||f?.teacher_id||(activeTeachers.length===1?activeTeachers[0].id:'');
+  const defaultTeacher=a?.teacher_id||f?.interviewer_teacher_id||f?.interviewer_id||f?.teacher_id||(admins[0]?.user_id||activeTeachers[0]?.id||'');
   const duration=String(a?.duration_minutes||30);
-  showModal(`<div class="eyebrow">Agenda comercial & docente</div><h2>${a?'Remarcar entrevista':'Agendar entrevista'}</h2><p class="modal-intro"><strong>${safe(l?.name)}</strong> · a entrevista ficará agendada diretamente no calendário do professor designado, em qualquer horário livre (sem aula e sem bloqueio).</p>
+  showModal(`<div class="eyebrow">Agenda comercial & docente</div><h2>${a?'Remarcar entrevista':'Agendar entrevista'}</h2><p class="modal-intro"><strong>${safe(l?.name)}</strong> · a entrevista ficará agendada diretamente no calendário do entrevistador designado, em qualquer horário livre (sem aula e sem bloqueio).</p>
   <form id="crmAppointmentForm" data-lead="${id}" data-id="${a?.id||''}">
    <div class="form-grid">
-    ${sel('teacher_id','Professor designado para a entrevista',[['','Selecione o professor'],...activeTeachers.map(t=>[t.id,t.name])],defaultTeacher,true)}
+    <label class="field"><span>Entrevistador designado *</span><select name="teacher_id" required><option value="">Selecione o entrevistador</option>${interviewerOptions(defaultTeacher)}</select></label>
     ${sel('duration_minutes','Duração da entrevista',[['30','30 minutos'],['45','45 minutos'],['60','60 minutos']],duration,true)}
     ${fi('interview_date','Data da entrevista',parts.date,'date',true,`min="${todayISO()}"`)}
     ${fi('interview_time','Horário de início',parts.time,'time',true)}
@@ -1393,7 +1454,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
 
  function cancelInterviewForm(id){
   const a=(db.crm_appointments||[]).find(x=>x.id===id);if(!a)return;
-  showModal(`<div class="eyebrow">Agenda comercial & docente</div><h2>Cancelar entrevista</h2><p class="modal-intro">Agendada para ${dateTime(a.scheduled_at)} com ${safe(teacherName(a.teacher_id))}. O horário será liberado imediatamente no calendário do professor.</p><form id="crmCancelAppointmentForm" data-id="${id}"><div class="form-grid">${textarea('reason','Motivo do cancelamento')}</div>${formFooter('Confirmar cancelamento')}</form>`);
+  showModal(`<div class="eyebrow">Agenda comercial & docente</div><h2>Cancelar entrevista</h2><p class="modal-intro">Agendada para ${dateTime(a.scheduled_at)} com ${safe(interviewerName(a.teacher_id))}. O horário será liberado imediatamente no calendário do entrevistador.</p><form id="crmCancelAppointmentForm" data-id="${id}"><div class="form-grid">${textarea('reason','Motivo do cancelamento')}</div>${formFooter('Confirmar cancelamento')}</form>`);
  }
 
  function completeInterviewForm(id){
@@ -1491,10 +1552,13 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   if(!l)return;
   if(l.status==='convertido')throw new Error('Aluno já matriculado.');
 
+  const admins=schoolAdminsList();
   const activeTeachers=(db.teachers||[]).filter(t=>t.active!==false);
   const scheduledTeacher=(db.crm_appointments||[]).find(a=>a.lead_id===id&&a.state==='scheduled')?.teacher_id||'';
-  const existingInterviewTeacher=(db.interviews||[]).find(i=>i.lead_id===id)?.teacher_id||'';
-  const defaultTeacher=scheduledTeacher||existingInterviewTeacher||(activeTeachers[0]?.id||'');
+  const existingInterview=(db.interviews||[]).find(i=>i.lead_id===id);
+  const existingInterviewer=existingInterview?.interviewer_teacher_id||existingInterview?.interviewer_id||existingInterview?.teacher_id||'';
+  const defaultTeacher=scheduledTeacher||existingInterviewer||(admins[0]?.user_id||activeTeachers[0]?.id||'');
+  const hasInterviewers=admins.length>0||activeTeachers.length>0;
 
   const d=document.createElement('dialog');
   d.className='crm-popup-dialog';
@@ -1503,21 +1567,21 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     <div class="crm-popup-badge-icon">${crmIcon('link',20)}</div>
     <div class="crm-popup-headings">
      <h3>Gerar link do orçamento</h3>
-     <p class="crm-popup-sub">Selecione o professor entrevistador para gerar o link de preenchimento para <b>${safe(l.name)}</b>.</p>
+     <p class="crm-popup-sub">Selecione o entrevistador (administrador ou professor) para gerar o link de preenchimento para <b>${safe(l.name)}</b>.</p>
     </div>
    </div>
    <form id="crmBudgetInvitePopupForm" class="crm-popup-form" data-lead="${safe(id)}">
     <label class="crm-popup-field">
-     <span>Professor entrevistador *</span>
-     <select name="teacher_id" required ${activeTeachers.length?'':'disabled'}>
-      <option value="">Selecione o professor</option>
-      ${activeTeachers.map(t=>`<option value="${safe(t.id)}" ${t.id===defaultTeacher?'selected':''}>${safe(t.name)}</option>`).join('')}
+     <span>Entrevistador *</span>
+     <select name="teacher_id" required ${hasInterviewers?'':'disabled'}>
+      <option value="">Selecione o entrevistador</option>
+      ${interviewerOptions(defaultTeacher)}
      </select>
     </label>
-    ${!activeTeachers.length?`<p class="crm-popup-note" style="color:var(--danger,#b91c1c);font-size:12px;margin:4px 0 0 0;">Cadastre ao menos um professor ativo antes de gerar o link.</p>`:''}
+    ${!hasInterviewers?`<p class="crm-popup-note" style="color:var(--danger,#b91c1c);font-size:12px;margin:4px 0 0 0;">Nenhum administrador ou professor disponível para conduzir a entrevista.</p>`:''}
     <div class="crm-popup-footer">
      <button type="button" class="crm-popup-btn crm-popup-btn-cancel" data-action="crmClosePopup">CANCELAR</button>
-     <button type="submit" class="crm-popup-btn crm-popup-btn-submit" ${activeTeachers.length?'':'disabled'}>GERAR LINK</button>
+     <button type="submit" class="crm-popup-btn crm-popup-btn-submit" ${hasInterviewers?'':'disabled'}>GERAR LINK</button>
     </div>
    </form>
   </div>`;
@@ -1937,10 +2001,13 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     }
     if(finalEndDate&&f.elements.end_date)f.elements.end_date.value=finalEndDate;
 
+    const selectedInterviewer=d.interviewer_teacher_id||d.teacher_id;
+    const isAdminInterviewer=schoolAdminsList().some(a=>a.user_id===selectedInterviewer);
     const interviewPayload={
      lead_id:id,
      course:d.course.trim(),
-     interviewer_teacher_id:d.interviewer_teacher_id||d.teacher_id,
+     interviewer_teacher_id:selectedInterviewer,
+     interviewer_id:isAdminInterviewer?selectedInterviewer:(ui.user?.id||null),
      teacher_id:d.teacher_id,
      enrollment_mode:mode,
      package_id:(mode==='package'&&d.package_id)?d.package_id:null,
@@ -2006,7 +2073,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    }
    if(f.id==='crmAppointmentForm'){
     const d=formData(f),id=f.dataset.lead,old=f.dataset.id,prev=old?(db.crm_appointments||[]).find(x=>x.id===old):null;
-    if(!d.teacher_id)throw new Error('Selecione o professor designado para a entrevista.');
+    if(!d.teacher_id)throw new Error('Selecione o entrevistador designado para a entrevista.');
     if(!d.interview_date||!d.interview_time)throw new Error('Informe a data e o horário da entrevista.');
     const duration=Number(d.duration_minutes||30);
     const stamp=new Date(`${d.interview_date}T${String(d.interview_time).slice(0,5)}:00-03:00`).toISOString();
@@ -2023,16 +2090,16 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     if(existingInterview&&existingInterview.interviewer_teacher_id!==d.teacher_id){
      await save('interviews',{interviewer_teacher_id:d.teacher_id},existingInterview.id);
     }
-    const tName=teacherName(d.teacher_id);
-    await log(id,'appointment',old?'Entrevista remarcada no calendário':'Entrevista agendada no calendário',`${old?dateTime(prev.scheduled_at)+' → ':''}${dateTime(stamp)} (${duration} min) · Professor: ${tName}${d.note?'\n'+d.note:''}`);
+    const tName=interviewerName(d.teacher_id);
+    await log(id,'appointment',old?'Entrevista remarcada no calendário':'Entrevista agendada no calendário',`${old?dateTime(prev.scheduled_at)+' → ':''}${dateTime(stamp)} (${duration} min) · Entrevistador: ${tName}${d.note?'\n'+d.note:''}`);
     const schedCol=columnForTrigger('interview_scheduled');
     await save('leads',{crm_stage:'entrevista_agendada',...(schedCol?{crm_column_id:schedCol.id}:{})},id);
-    closeModal();await reloadReopen(id);toast(`Entrevista agendada no calendário de ${tName}.`);return;
+    closeModal();await reloadReopen(id);toast(`Entrevista agendada com ${tName}.`);return;
    }
    if(f.id==='crmCancelAppointmentForm'){
     const d=formData(f),old=(db.crm_appointments||[]).find(x=>x.id===f.dataset.id);if(!old)throw new Error('Agendamento não encontrado');
     await save('crm_appointments',{state:'canceled',cancellation_reason:d.reason.trim()||'Não informado',finished_at:new Date().toISOString()},old.id);
-    await log(old.lead_id,'appointment','Entrevista cancelada (removida do calendário)',`${dateTime(old.scheduled_at)} · ${teacherName(old.teacher_id)} · ${d.reason||'Motivo não informado'}`);
+    await log(old.lead_id,'appointment','Entrevista cancelada (removida do calendário)',`${dateTime(old.scheduled_at)} · ${interviewerName(old.teacher_id)} · ${d.reason||'Motivo não informado'}`);
     const cancelCol=columnForTrigger('interview_canceled');
     await save('leads',{crm_stage:'marcar_entrevista',...(cancelCol?{crm_column_id:cancelCol.id}:{})},old.lead_id);
     closeModal();await reloadReopen(old.lead_id);toast('Entrevista cancelada e horário liberado no calendário.');return;

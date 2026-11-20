@@ -440,7 +440,45 @@ const card=(title,body,extra='')=>`<section class="panel">${title||extra?`<div c
 const empty=text=>`<div class="empty"><span class="empty-symbol">○</span><span>${safe(text)}</span></div>`;
 const row=(columns)=>`<tr>${columns.map(c=>`<td>${c}</td>`).join('')}</tr>`;
 function table(headers,rows,placeholder='Nenhum registro encontrado'){return `<div class="table-wrap">${rows.length?`<table class="data-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`:empty(placeholder)}</div>`;}
-const crm=createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,createInterviewInviteLink,startBusy,finishBusy,isBusy:()=>appBusy,saveInterview,getCalendar:()=>calendar});
+function adminName(id){
+ if(!id)return '';
+ const admins=resolveSchoolAdminsList();
+ const adm=admins.find(a=>a.user_id===id||a.id===id);
+ if(adm?.full_name||adm?.name)return adm.full_name||adm.name;
+ const prof=(db.profiles||[]).find(p=>p.id===id);
+ if(prof?.full_name)return prof.full_name;
+ if(id===ui.user?.id)return ui.user?.user_metadata?.full_name||ui.user?.email?.split('@')[0]||'Administrador';
+ return '';
+}
+function interviewerName(id){
+ if(!id)return '—';
+ const aName=adminName(id);
+ if(aName)return aName;
+ const t=lookup('teachers',id);
+ if(t?.name)return t.name;
+ return '—';
+}
+function interviewerOptions(selectedId=''){
+ const admins=resolveSchoolAdminsList();
+ const activeTeachers=(db.teachers||[]).filter(t=>t.active!==false);
+ let html='';
+ if(admins.length){
+  html+=`<optgroup label="Administradores">`;
+  html+=admins.map(a=>`<option value="${safe(a.user_id)}" ${String(a.user_id)===String(selectedId)?'selected':''}>${safe(a.full_name||a.name||a.email)}${a.is_super?' (Super)':''}</option>`).join('');
+  html+=`</optgroup>`;
+ }
+ if(activeTeachers.length){
+  html+=`<optgroup label="Professores">`;
+  html+=activeTeachers.map(t=>`<option value="${safe(t.id)}" ${String(t.id)===String(selectedId)?'selected':''}>${safe(t.name)}</option>`).join('');
+  html+=`</optgroup>`;
+ }
+ if(selectedId && !admins.some(a=>String(a.user_id)===String(selectedId)) && !activeTeachers.some(t=>String(t.id)===String(selectedId))){
+  const otherName=interviewerName(selectedId);
+  html=`<option value="${safe(selectedId)}" selected>${safe(otherName)}</option>`+html;
+ }
+ return html;
+}
+const crm=createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,createInterviewInviteLink,startBusy,finishBusy,isBusy:()=>appBusy,saveInterview,getCalendar:()=>calendar,resolveSchoolAdminsList});
 const calendar=createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg:(name,size)=>ico(name,size),openLead:(id)=>{closeModal();ui.page='leads';render();crm.openLead(id);}});
 initWeeklyPicker();
 // SVGs internos: nao dependem de fontes de icones ou CDNs adicionais.
@@ -1107,7 +1145,7 @@ function interviewsView(){
   const isDuo=(i?.kind==='dupla'||(!i?.kind&&(l.kind==='dupla'||!!l.student2_name)));
   const s2Name=i?.student2_name||l.student2_name;
   const nameLabel=isDuo&&s2Name?`<b>${safe(l.name)} & ${safe(s2Name)}</b> <span class="pill pill-signed" style="margin-left:4px">Dupla</span>`:`<b>${safe(l.name)}</b>`;
-  return row([`${nameLabel}<div class="muted">${safe(l.phone)}</div>`,safe(lookup('teachers',i?.teacher_id)?.name||lookup('teachers',invite?.teacher_id)?.name||'—')+(i?.interviewer_teacher_id&&i.interviewer_teacher_id!==i.teacher_id?`<div class="small muted">Entrevistador: ${safe(lookup('teachers',i.interviewer_teacher_id)?.name||'—')}</div>`:''),i?`${safe(i.course||'Inglês')}<div class="small muted">${safe(lookup('packages',i.package_id)?.name||'')}</div>`:'<span class="muted">—</span>',i?'<span class="pill pill-signed">Preenchida</span>':'<span class="pill pill-sent">A preencher</span>',ct?contractTag(ct):'<span class="pill">Não gerado</span>',`<div class="actions actions-right"><details class="contract-actions-dropdown interview-actions-menu"><summary class="table-action-btn"><span>Ações</span> ${ico('chevron',11)}</summary><div class="contract-actions-popover" role="menu">${st==='open'&&i&&!ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="newContract" data-id="${safe(l.id)}">Matricular</button>`:''}${st==='open'&&(!i||!ct)?`<button class="contract-menu-item" type="button" role="menuitem" data-action="inviteInterview" data-id="${safe(l.id)}">Link do entrevistador</button>`:''}<button class="contract-menu-item" type="button" role="menuitem" data-action="editInterview" data-id="${safe(l.id)}">${i?'Editar ficha':'Preencher ficha'}</button>${ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="openInterviewContract" data-id="${safe(ct.id)}">Abrir contrato</button>`:''}${st==='lost'||st==='archived'?`<button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="open">Retomar ficha</button>`:`<button class="contract-menu-item danger" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="lost">Registrar desistência</button><button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="archived">Arquivar ficha</button>`}</div></details></div>`]);
+  return row([`${nameLabel}<div class="muted">${safe(l.phone)}</div>`,safe(lookup('teachers',i?.teacher_id)?.name||lookup('teachers',invite?.teacher_id)?.name||'—')+(i?.interviewer_teacher_id&&i.interviewer_teacher_id!==i.teacher_id?`<div class="small muted">Entrevistador: ${safe(interviewerName(i.interviewer_teacher_id))}</div>`:''),i?`${safe(i.course||'Inglês')}<div class="small muted">${safe(lookup('packages',i.package_id)?.name||'')}</div>`:'<span class="muted">—</span>',i?'<span class="pill pill-signed">Preenchida</span>':'<span class="pill pill-sent">A preencher</span>',ct?contractTag(ct):'<span class="pill">Não gerado</span>',`<div class="actions actions-right"><details class="contract-actions-dropdown interview-actions-menu"><summary class="table-action-btn"><span>Ações</span> ${ico('chevron',11)}</summary><div class="contract-actions-popover" role="menu">${st==='open'&&i&&!ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="newContract" data-id="${safe(l.id)}">Matricular</button>`:''}${st==='open'&&(!i||!ct)?`<button class="contract-menu-item" type="button" role="menuitem" data-action="inviteInterview" data-id="${safe(l.id)}">Link do entrevistador</button>`:''}<button class="contract-menu-item" type="button" role="menuitem" data-action="editInterview" data-id="${safe(l.id)}">${i?'Editar ficha':'Preencher ficha'}</button>${ct?`<button class="contract-menu-item" type="button" role="menuitem" data-action="openInterviewContract" data-id="${safe(ct.id)}">Abrir contrato</button>`:''}${st==='lost'||st==='archived'?`<button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="open">Retomar ficha</button>`:`<button class="contract-menu-item danger" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="lost">Registrar desistência</button><button class="contract-menu-item" type="button" role="menuitem" data-action="interviewStage" data-id="${safe(l.id)}" data-stage="archived">Arquivar ficha</button>`}</div></details></div>`]);
  }),'Nenhuma ficha nesta aba.')}</section>`;
 }
 
@@ -1116,7 +1154,7 @@ function ficheCreatedPopup(leadId){
  const isDuo=l.kind==='dupla'||!!l.student2_name;
  const displayName=isDuo&&l.student2_name?`${safe(l.name)} & ${safe(l.student2_name)}`:safe(l.name);
  const teachers=db.teachers.filter(t=>t.active!==false);const scheduledTeacher=(db.crm_appointments||[]).find(a=>a.lead_id===leadId&&a.state==='scheduled')?.teacher_id||'';
- showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">✓</div><div class="eyebrow">Etapa criada</div><h2>Orçamento preparado</h2><p class="modal-intro"><strong>${displayName}</strong> está com o orçamento em aberto. Você pode preenchê-lo diretamente ou gerar o link para o professor/entrevistador.</p><div class="fiche-choice-grid"><div class="fiche-choice"><span class="fiche-choice-icon">▤</span><h3>Preencher agora</h3><p>Abra o formulário de orçamento e informe o curso, horários e condições financeiras.</p><button type="button" class="btn" data-action="editInterview" data-id="${leadId}">Abrir orçamento →</button></div><form id="quickInterviewInviteForm" class="fiche-choice" data-lead="${leadId}"><span class="fiche-choice-icon">↗</span><h3>Enviar ao entrevistador</h3><p>Escolha quem vai preencher. O link é individual e pode ser usado direto pelo professor.</p><label class="field"><span>Professor entrevistador</span><select name="teacher_id" required><option value="">Selecione o professor</option>${options(teachers,scheduledTeacher)}</select></label><button class="btn light" type="submit" ${teachers.length?'':'disabled'}>Gerar link →</button>${teachers.length?'':'<p class="small muted">Cadastre um professor antes de gerar o link.</p>'}</form></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Concluir depois</button></div></div>`);
+ showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">✓</div><div class="eyebrow">Etapa criada</div><h2>Orçamento preparado</h2><p class="modal-intro"><strong>${displayName}</strong> está com o orçamento em aberto. Você pode preenchê-lo diretamente ou gerar o link para o professor/entrevistador.</p><div class="fiche-choice-grid"><div class="fiche-choice"><span class="fiche-choice-icon">▤</span><h3>Preencher agora</h3><p>Abra o formulário de orçamento e informe o curso, horários e condições financeiras.</p><button type="button" class="btn" data-action="editInterview" data-id="${leadId}">Abrir orçamento →</button></div><form id="quickInterviewInviteForm" class="fiche-choice" data-lead="${leadId}"><span class="fiche-choice-icon">↗</span><h3>Enviar ao entrevistador</h3><p>Escolha quem vai preencher. O link é individual e pode ser usado direto pelo professor/administrador.</p><label class="field"><span>Entrevistador</span><select name="teacher_id" required><option value="">Selecione o entrevistador</option>${interviewerOptions(scheduledTeacher)}</select></label><button class="btn light" type="submit">Gerar link →</button></form></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Concluir depois</button></div></div>`);
 }
 function normalSchedule(schedule,weeklyDays=[],lessonTime='18:00'){
  const src=Array.isArray(schedule)&&schedule.length?schedule:(weeklyDays||[]).map(day=>({day:Number(day),time:String(lessonTime||'18:00').slice(0,5)}));
@@ -1272,7 +1310,7 @@ function interviewForm(leadId){
   ${input('Nome do responsável legal (se houver menor)','guardian_name',l.guardian_name||'','text',false)}
  </div>
  <label class="field wide"><span>Formato do plano</span><select name="enrollment_mode" id="interviewEnrollmentMode"><option value="package" ${currentMode==='package'?'selected':''}>Pacote cadastrado</option><option value="custom" ${currentMode==='custom'?'selected':''}>Pacote personalizado (saldo de aulas restantes)</option><option value="recurrence" ${currentMode==='recurrence'?'selected':''}>Recorrência até o fim do contrato</option></select></label>
- <label class="field"><span>Professor entrevistador</span><select name="interviewer_teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active!==false||t.id===interviewer),interviewer)}</select></label>
+ <label class="field"><span>Entrevistador</span><select name="interviewer_teacher_id" required><option value="">Selecione</option>${interviewerOptions(interviewer)}</select></label>
  <label class="field"><span>Professor responsável pelas aulas</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active!==false||t.id===responsible),responsible)}</select></label>
  ${input('Curso','course',i.course||'Inglês')}
  <label class="field wide" id="interviewPackageField" style="${currentMode==='package'?'':'display:none'}"><span>Pacote escolhido</span><select name="package_id" id="interviewPackage">${packageOptions(isDuo)}</select></label>
@@ -1943,7 +1981,9 @@ function teachersView(){
 function teacherForm(id){const t=lookup('teachers',id)||{};showModal(`<div class="eyebrow">Equipe e ensino</div><h2>${id?'Editar professor':'Novo professor'}</h2><p class="modal-intro">O e-mail será utilizado para enviar um convite de acesso exclusivo ao calendário do professor.</p><form id="teacherForm" data-id="${safe(id||'')}"><div class="form-grid">${input('Nome completo','name',t.name)}${input('E-mail profissional','email',t.email||'','email')}<label class="field wide"><span>Situação</span><select name="active"><option value="true" ${t.active!==false?'selected':''}>Ativo</option><option value="false" ${t.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar professor</button></div></form>`);}
 async function createInterviewInviteLink(leadId,teacherId){
  if(!lookup('leads',leadId))throw new Error('Lead não encontrado.');
- if(!lookup('teachers',teacherId)?.active)throw new Error('Selecione um professor ativo.');
+ const isTeacher=!!lookup('teachers',teacherId)?.active;
+ const isAdmin=resolveSchoolAdminsList().some(a=>a.user_id===teacherId);
+ if(!isTeacher&&!isAdmin)throw new Error('Selecione um entrevistador válido (administrador ou professor ativo).');
  const {error:revokeError}=await sb.from('interview_invites').update({revoked_at:new Date().toISOString()}).eq('school_id',ui.schoolId).eq('lead_id',leadId).is('used_at',null).is('revoked_at',null);
  if(revokeError)throw revokeError;
  const token=randomToken(),digest=await sha256(token),expires=new Date(Date.now()+14*86400000).toISOString();
@@ -1956,7 +1996,8 @@ function interviewInviteReady(link,leadId){
  showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">↗</div><div class="eyebrow">Convite gerado</div><h2>Link para o entrevistador</h2><p class="modal-intro">Envie este link para preencher a ficha de <b>${safe(lead?.name||'lead')}</b>.</p><div class="link-field" id="generatedLink">${safe(link)}</div><p class="form-note">O convite é individual, válido por 14 dias e pode ser usado uma única vez.</p><div class="form-footer"><button class="btn ghost" type="button" data-action="close">Fechar</button><button class="btn" type="button" data-action="copyInterviewLink">Copiar link</button></div></div>`);
 }
 async function inviteInterview(leadId){const l=lookup('leads',leadId),i=db.interviews.find(x=>x.lead_id===leadId);if(!l)return;
- showModal(`<h2>Link para entrevistador</h2><p class="modal-intro">Ficha exclusiva para ${safe(l.name)}.</p><form id="inviteInterviewForm" data-lead="${leadId}"><label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active),i?.teacher_id)}</select></label><p class="notice">Link válido por 14 dias, só para este lead; pode ser usado uma vez para enviar a ficha.</p><div class="form-footer"><button class="btn">Gerar link da entrevista</button></div></form>`);
+ const interviewer=i?.interviewer_teacher_id||i?.teacher_id;
+ showModal(`<h2>Link para entrevistador</h2><p class="modal-intro">Ficha exclusiva para ${safe(l.name)}.</p><form id="inviteInterviewForm" data-lead="${leadId}"><label class="field"><span>Entrevistador</span><select name="teacher_id" required><option value="">Selecione</option>${interviewerOptions(interviewer)}</select></label><p class="notice">Link válido por 14 dias, só para este lead; pode ser usado uma vez para enviar a ficha.</p><div class="form-footer"><button class="btn">Gerar link da entrevista</button></div></form>`);
 }
 
 function studentCategory(s){const cs=db.contracts.filter(c=>c.student_id===s.id);if(cs.some(c=>enrollmentState(c)==='active'))return 'active';if(cs.some(c=>enrollmentState(c)==='expired'))return 'expired';if(cs.some(c=>enrollmentState(c)==='closed'))return 'closed';return 'none';}
