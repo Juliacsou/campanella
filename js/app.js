@@ -3,7 +3,7 @@ import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
 import {createCRM, decodeBudgetData} from './crm.js?v=8.1.5';
-import {createCalendar} from './calendar-v6.js?v=8.1.3';
+import {createCalendar} from './calendar-v6.js?v=8.1.4';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
 import {createOnboarding} from './onboarding-v67.js?v=6.10.0';
