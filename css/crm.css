@@ -744,6 +744,7 @@ dialog#modal:not([open]) {
 
 dialog#modal[open].crm-lead-drawer,
 dialog#modal[open]:has(.crm-detail) {
+  width: min(740px, calc(100vw - 24px)) !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
@@ -1981,6 +1982,38 @@ dialog.crm-popup-dialog::backdrop {
 
 .crm-fiche-form-grid .wide {
   grid-column: 1 / -1;
+}
+
+#calPickerHost {
+  margin: 4px 0 8px 0;
+}
+
+#calPickerHost .cal-picker-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+#calPickerHost .cal-picker-title h3.form-section {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary, #101828);
+}
+
+#calPickerHost .cal-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+#calPickerHost .cal-preview [data-cal-result] {
+  font-size: 12.5px;
+  color: var(--primary, #047857);
+  font-weight: 600;
 }
 
 .crm-fiche-financial-box {

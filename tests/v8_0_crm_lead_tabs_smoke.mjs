@@ -7,6 +7,7 @@ const crmCss = fs.readFileSync(path.join(basePath, 'css/crm.css'), 'utf8');
 const crmJs = fs.readFileSync(path.join(basePath, 'js/crm.js'), 'utf8');
 const indexHtml = fs.readFileSync(path.join(basePath, 'index.html'), 'utf8');
 const appJs = fs.readFileSync(path.join(basePath, 'js/app.js'), 'utf8');
+const calJs = fs.readFileSync(path.join(basePath, 'js/calendar-v6.js'), 'utf8');
 
 console.log('=== Iniciando Testes V8.0: Abas e Refinamento do Atendimento no Lead ===\n');
 
@@ -131,14 +132,14 @@ console.log('  -> Botão de tags link validado.');
 // 8. Verificando versionamento de cache
 console.log('8. Verificando versionamento de cache...');
 assert.ok(
-  indexHtml.includes('crm.css?v=8.1.4') && indexHtml.includes('app.js?v=8.1.4'),
-  'O index.html deve conter crm.css?v=8.1.4 e app.js?v=8.1.4'
+  indexHtml.includes('crm.css?v=8.1.5') && indexHtml.includes('app.js?v=8.1.5'),
+  'O index.html deve conter crm.css?v=8.1.5 e app.js?v=8.1.5'
 );
 assert.ok(
-  appJs.includes('./crm.js?v=8.1.4'),
-  'O app.js deve importar ./crm.js?v=8.1.4'
+  appJs.includes('./crm.js?v=8.1.5'),
+  'O app.js deve importar ./crm.js?v=8.1.5'
 );
-console.log('  -> Cache version v=8.1.4 validado.');
+console.log('  -> Cache version v=8.1.5 validado.');
 
 // 9. Verificando correção do bug de congelamento do modal / drawer e fechamento
 console.log('9. Verificando proteção contra congelamento de modal / drawer...');
@@ -223,4 +224,28 @@ assert.ok(
 );
 console.log('  -> Rota pública do aluno #orcamento/<token> validada.');
 
-console.log('\n=== Todos os 12 testes de Orçamento, Cancelamento da Edição, Popup Direto de Professor e Link Público passaram com 100% de sucesso! ===');
+// 13. Verificando reintegração do calendário de disponibilidades do professor no formulário de orçamento
+console.log('13. Verificando calendário de disponibilidades do professor no formulário de orçamento...');
+assert.ok(
+  crmJs.includes('id="calPickerHost"') && crmJs.includes('getCalendar().getFormPicker'),
+  'O formulário crmLeadFicheForm deve renderizar #calPickerHost com getCalendar().getFormPicker'
+);
+assert.ok(
+  crmJs.includes('calendar_slot_ids') && crmJs.includes('applyTerms'),
+  'O salvamento do orçamento deve calcular termos com applyTerms e persistir calendar_slot_ids'
+);
+assert.ok(
+  appJs.includes('getCalendar:()=>calendar') || appJs.includes('getCalendar: () => calendar'),
+  'O app.js deve passar getCalendar ao createCRM'
+);
+assert.ok(
+  calJs.includes("crmLeadFicheForm") && calJs.includes("updateWeeklyPickerIndicators"),
+  'O calendar-v6.js deve suportar crmLeadFicheForm em updateFormPicker e change'
+);
+assert.ok(
+  crmCss.includes('#calPickerHost') && crmCss.includes('.cal-picker-title'),
+  'O crm.css deve estilizar #calPickerHost e .cal-picker-title'
+);
+console.log('  -> Calendário de disponibilidades no orçamento validado com sucesso.');
+
+console.log('\n=== Todos os 13 testes de Orçamento, Calendário de Disponibilidades, Cancelamento e Link Público passaram com 100% de sucesso! ===\n');

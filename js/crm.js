@@ -135,7 +135,7 @@ export function decodeBudgetData(str){
  }
 }
 
-export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,createInterviewInviteLink,startBusy,finishBusy,isBusy,saveInterview}){
+export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,createInterviewInviteLink,startBusy,finishBusy,isBusy,saveInterview,getCalendar}){
  const state={tab:'open',mode:'board',search:'',column:'all',tag:'all',source:'all',service:'all',region:'all',interview:'all',period:'all',sort:'activity',lead:null,detailTab:'data',editingFicheLeadId:null,ficheKind:null,importRows:[],editingColId:null,editingTagId:null,dragLeadId:null,filtersOpen:false};
  const currentSchoolName=()=>(ui.schools||[]).find(s=>s.id===ui.schoolId)?.name||ui.schoolName||'CAMPANELLA';
 
@@ -856,7 +856,11 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
           <input type="date" name="end_date" id="crmFicheEndDate" value="${safe(fiche?.end_date||'')}">
          </label>
 
-         <label class="field wide">
+         <div class="wide" id="calPickerHost">
+          ${getCalendar?.()?.getFormPicker ? getCalendar().getFormPicker(lessonTeacher, fiche?.start_date||todayISO(), false, fiche?.calendar_slot_ids||[], true) : ''}
+         </div>
+
+         <label class="field wide" style="display:none">
           <span>Horários combinados / Grade pretendida</span>
           <input type="text" name="preferred_schedule" placeholder="Ex: Segundas e Quartas às 14:00" value="${safe(fiche?.preferred_schedule||'')}">
          </label>
@@ -1781,7 +1785,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     return;
    }
    case 'crmCloseDrawer':return closeModal();
-   case 'crmEditFicheInTab':state.detailTab='fiche';state.editingFicheLeadId=id;return detail(id);
+   case 'crmEditFicheInTab':state.detailTab='fiche';state.editingFicheLeadId=id;detail(id);setTimeout(()=>{const form=document.getElementById('crmLeadFicheForm');if(form)getCalendar?.()?.autoPreview?.(form);},60);return;
    case 'crmCancelFicheEdit':{
     const targetId=id||state.editingFicheLeadId||state.lead;
     state.editingFicheLeadId=null;
@@ -1878,21 +1882,80 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     const lessonsCount=Number(d.lessons_count||0);
     const weeklyFreq=Number(d.weekly_frequency||1);
 
+    const cal=getCalendar?.();
+    const mode=d.enrollment_mode||'package';
+    const selected=[...f.querySelectorAll('input[name="cal_slot"]:checked')].map(x=>x.value);
+    const hasEnrollmentHost=!!f.querySelector('.cal-enrollment');
+    const hasNoSlots=!!f.querySelector('.cal-enrollment[data-no-slots="1"]');
+
+    if(hasEnrollmentHost&&!hasNoSlots){
+     if(mode!=='recurrence'&&selected.length!==weeklyFreq){
+      throw new Error(`Selecione exatamente ${weeklyFreq} horário(s) da agenda do professor.`);
+     }
+     if(mode==='recurrence'&&!selected.length){
+      throw new Error('Selecione pelo menos um horário da agenda do professor.');
+     }
+    }
+
+    let finalEndDate=d.end_date||null;
+    let finalLessonsCount=lessonsCount||null;
+    let schedules=[];
+    let weeklyDays=[];
+    let lessonTime=null;
+    let formattedSchedule=d.preferred_schedule?.trim()||null;
+
+    if(cal?.applyTerms && selected.length>0){
+     const planned=await cal.applyTerms(f,{
+      teacher_id:d.teacher_id,
+      lessons_count:lessonsCount,
+      start_date:d.start_date||todayISO(),
+      enrollment_mode:mode,
+      end_date:d.end_date
+     });
+     if(planned){
+      finalEndDate=planned.end_date||finalEndDate;
+      finalLessonsCount=planned.lessons_count||finalLessonsCount;
+      weeklyDays=planned.weekly_days||[];
+      lessonTime=planned.lesson_time||null;
+      schedules=(planned.lesson_schedule||[]).map(x=>({
+       ...x,
+       slot_id:cal.slotIdForSchedule?cal.slotIdForSchedule(x,selected):(x.slot_id||null)
+      }));
+      const fullDaysCap=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+      formattedSchedule=schedules.map(x=>`${fullDaysCap[x.day]} às ${x.time}`).join(' e ');
+     }
+    }else if(selected.length>0){
+     const dbSlots=(cal?.data?cal.data().slots:(db.calendar_slots||[]));
+     const chosenSlots=selected.map(sid=>dbSlots.find(s=>s.id===sid)).filter(Boolean).sort((a,b)=>(a.weekday-b.weekday)||String(a.time).localeCompare(String(b.time)));
+     if(chosenSlots.length){
+      const fullDaysCap=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+      weeklyDays=chosenSlots.map(s=>s.weekday);
+      lessonTime=chosenSlots[0].time;
+      schedules=chosenSlots.map(s=>({day:s.weekday,time:s.time,duration_minutes:s.duration||60,slot_id:s.id}));
+      formattedSchedule=chosenSlots.map(x=>`${fullDaysCap[x.weekday]} às ${x.time}`).join(' e ');
+     }
+    }
+    if(finalEndDate&&f.elements.end_date)f.elements.end_date.value=finalEndDate;
+
     const interviewPayload={
      lead_id:id,
      course:d.course.trim(),
      interviewer_teacher_id:d.interviewer_teacher_id||d.teacher_id,
      teacher_id:d.teacher_id,
-     enrollment_mode:d.enrollment_mode||'package',
-     package_id:(d.enrollment_mode==='package'&&d.package_id)?d.package_id:null,
+     enrollment_mode:mode,
+     package_id:(mode==='package'&&d.package_id)?d.package_id:null,
      kind:isDuo?'dupla':'individual',
      student2_name:isDuo?(d.student2_name?.trim()||null):null,
      guardian_name:d.guardian_name?.trim()||null,
-     lessons_count:lessonsCount||null,
-     weekly_frequency:weeklyFreq||1,
+     lessons_count:finalLessonsCount,
+     weekly_frequency:weeklyFreq||(selected.length||1),
      start_date:d.start_date||todayISO(),
-     end_date:d.end_date||null,
-     preferred_schedule:d.preferred_schedule?.trim()||null,
+     end_date:finalEndDate,
+     calendar_slot_ids:selected,
+     lesson_schedule:schedules,
+     weekly_days:weeklyDays,
+     lesson_time:lessonTime,
+     preferred_schedule:formattedSchedule,
      total_amount:total,
      installments:inst,
      installment_amount:Math.round(instAmt*100)/100,
@@ -2061,7 +2124,17 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
      const partInp=f.querySelector('#crmFicheInstallmentAmount');
      if(partInp) partInp.value=(Number(opt.dataset.total)/inst).toFixed(2);
     }
+    getCalendar?.()?.autoPreview?.(f);
    }
+   return;
+  }
+  if(t.name==='teacher_id'&&t.form?.id==='crmLeadFicheForm'){
+   getCalendar?.()?.updateFormPicker?.(t.form);
+   getCalendar?.()?.autoPreview?.(t.form);
+   return;
+  }
+  if(t.name==='start_date'&&t.form?.id==='crmLeadFicheForm'){
+   getCalendar?.()?.autoPreview?.(t.form);
    return;
   }
   if(t.form?.id==='crmAppointmentForm'&&['teacher_id','interview_date','interview_time','duration_minutes'].includes(t.name)){

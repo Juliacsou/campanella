@@ -18,8 +18,8 @@ assert.match(
 );
 assert.match(
   html,
-  /style\.css\?v=8\.0\.\d+/,
-  'O arquivo index.html deve apontar para a versão 8.0.x do style.css'
+  /style\.css\?v=8\.[0-9]+\.\d+/,
+  'O arquivo index.html deve apontar para a versão 8.x do style.css'
 );
 assert.ok(
   !html.includes('vision-theme.css'),

@@ -347,8 +347,9 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const host=form.querySelector('#calPickerHost');if(!host)return;
   const id=form.elements.teacher_id?.value||form.querySelector('.cal-enrollment')?.dataset.teacher;
   const start=form.elements.start_date?.value||form.elements.cal_start_date?.value||today();
-  const isCompact=form.id==='interviewForm'||form.id==='manualEnrollmentForm';
+  const isCompact=form.id==='interviewForm'||form.id==='manualEnrollmentForm'||form.id==='crmLeadFicheForm';
   host.innerHTML=getFormPicker(id,start,false,[],isCompact);
+  updateWeeklyPickerIndicators(form);
   if(form.elements.enrollment_mode?.value==='recurrence'){
    const btn=host.querySelector('[data-action="calPreview"]');if(btn)btn.textContent='Calcular total de aulas';
    const out=host.querySelector('[data-cal-result]');if(out)out.textContent='Selecione os horários semanais e defina a data final do contrato.';
@@ -838,7 +839,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
    return;
   }
   if(['cal_has_until_date','cal_from_date','cal_until_date','cal_student_slot'].includes(element.name)&&element.form?.id==='calStudentSlotsForm'){updateStudentScheduleModeUI(element.form);return;}
-  if(element.name==='teacher_id'&&element.form?.id==='manualEnrollmentForm'){updateFormPicker(element.form);return autoPreview(element.form);}
+  if(element.name==='teacher_id'&&(element.form?.id==='manualEnrollmentForm'||element.form?.id==='crmLeadFicheForm')){updateFormPicker(element.form);return autoPreview(element.form);}
   if(element.name==='start_date'&&element.form?.elements.cal_start_date){element.form.elements.cal_start_date.value=element.value;return autoPreview(element.form);}
   if(['cal_slot','cal_start_date','lessons_count'].includes(element.name)){
    if(element.name==='cal_slot'&&element.form?.elements.enrollment_mode?.value==='recurrence'){
