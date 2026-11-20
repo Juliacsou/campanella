@@ -3,7 +3,7 @@ import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
 import {createCRM} from './crm.js?v=8.1.2';
-import {createCalendar} from './calendar-v6.js?v=7.1.1';
+import {createCalendar} from './calendar-v6.js?v=8.1.3';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
 import {createOnboarding} from './onboarding-v67.js?v=6.10.0';
@@ -2947,6 +2947,7 @@ document.addEventListener('input',e=>{
  if(e.target.name==='end_date'&&e.target.form?.id==='externalInterviewForm'&&e.target.form.elements.enrollment_mode?.value==='recurrence'){
   if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value))externalPreview().catch(errors);
  }
+ if(e.target.form?.id==='calBulkSlotForm'){try{calendar.change(e.target);}catch(err){}}
 });
 document.addEventListener('change',async e=>{
  if(e.target.id==='leadKindSelect'||(e.target.name==='kind'&&e.target.form?.id==='leadForm')){
@@ -3035,7 +3036,7 @@ document.addEventListener('change',async e=>{
   renderContractExtra();
   return;
  }
- if(e.target.id==='calTeacherFilter'||e.target.form?.id==='calStudentSlotsForm'||e.target.name==='cal_student_teacher'||['end_date','cal_manual_end','cal_slot','cal_start_date'].includes(e.target.name)||(['start_date','lessons_count'].includes(e.target.name)&&e.target.form?.querySelector('.cal-enrollment'))||(e.target.name==='teacher_id'&&e.target.form?.id==='manualEnrollmentForm')){try{await calendar.change(e.target);}catch(err){errors(err);}return;}
+ if(e.target.id==='calTeacherFilter'||e.target.form?.id==='calStudentSlotsForm'||e.target.form?.id==='calBulkSlotForm'||e.target.name==='cal_student_teacher'||['end_date','cal_manual_end','cal_slot','cal_start_date'].includes(e.target.name)||(['start_date','lessons_count'].includes(e.target.name)&&e.target.form?.querySelector('.cal-enrollment'))||(e.target.name==='teacher_id'&&e.target.form?.id==='manualEnrollmentForm')){try{await calendar.change(e.target);}catch(err){errors(err);}return;}
  if(e.target.name==='docx_file'&&e.target.form?.id==='typeForm'){
   const file=e.target.files?.[0];if(!file){renderDocxReport(null);return;}
   const report=$('#docxValidation');if(report)report.textContent='Analisando campos e marcadores do DOCX…';

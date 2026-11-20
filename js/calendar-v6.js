@@ -13,7 +13,18 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  const monthLabel=(s)=>parse(s).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
  const teacherMode=()=>ui.role==='teacher';
  const school=()=>ui.schoolId;
- const selectedTeacher=()=>teacherMode()?ui.teacherId:state.teacher==='all'?null:state.teacher;
+ const selectedTeacher=()=>{
+  if(teacherMode())return ui.teacherId;
+  const active=(state.snapshot?.teachers||[]).filter(t=>t.active!==false);
+  if(state.teacher&&state.teacher!=='all'){
+   if(!active.length||active.some(t=>t.id===state.teacher))return state.teacher;
+  }
+  if(state.page==='slots'&&active.length){
+   state.teacher=active[0].id;
+   return state.teacher;
+  }
+  return null;
+ };
  const teacherPages={agenda:'Minha agenda',reschedules:'Reagendamentos',students:'Alunos',slots:'Horários',blocks:'Bloqueios',settings:'Configurações','student-profile':'Perfil do aluno'};
  const blockReasons=['Férias','Recesso','Feriado','Formação','Ausência','Outro'];
  const isFullDayBlock=(b)=>!b.start_time&&!b.end_time;
@@ -249,7 +260,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  function slotsView(){
   const teacher=selectedTeacher();
   const recurring=data().slots.filter(s=>s.active&&s.slot_date===null&&(!teacher||s.teacher_id===teacher));
-  return `<section class="panel cal-section cal-editor-panel"><div class="panel-head"><div><h2>Grade semanal</h2><p class="cal-editor-caption">Clique em um espaço da semana para adicionar um horário fixo.</p></div>${control('calNewWeeklySlot',`${navIcon('plus')} Criar horário`,'','')}</div>${weeklySlotEditor()}<div class="cal-editor-foot">${recurring.length} horário(s) semanal(is) · Horários avulsos são criados na Agenda.</div></section>`;
+  return `<section class="panel cal-section cal-editor-panel"><div class="panel-head"><div><h2>Grade semanal</h2><p class="cal-editor-caption">Configure a grade de horários do professor.</p></div><div class="cal-editor-head-actions">${control('calNewBulkSlots',`${navIcon('plus')} Cadastrar horários em lote`,'','')}${control('calNewWeeklySlot',`${navIcon('plus')} Horário individual`,'','light')}</div></div>${weeklySlotEditor()}<div class="cal-editor-foot">${recurring.length} horário(s) semanal(is) · Horários avulsos são criados na Agenda.</div></section>`;
  }
  function slotDetail(id){
   const slot=data().slots.find(s=>s.id===id&&s.active);
@@ -274,7 +285,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const teacher=selectedTeacher(),blocks=data().blocks.filter(b=>!teacher||!b.teacher_id||b.teacher_id===teacher);
   return `<section class="panel cal-section"><div class="panel-head"><h2>Bloqueios</h2>${control('calNewBlock','+ Bloquear período','','')}</div>${blocks.length?blocks.map(b=>`<div class="cal-block-row"><span class="cal-nav-icon">${navIcon('lock')}</span><div><strong>${safe(b.reason)}</strong><small>${escapeDate(b.from)} a ${escapeDate(b.to)} · ${b.teacher_id?safe(teacherName(b.teacher_id)):'Toda a escola'}${b.start_time?' · '+niceTime(b.start_time)+'–'+niceTime(b.end_time):' · Dia inteiro'}</small></div>${control('calCancelBlock','Cancelar',`data-id="${b.id}"`,'ghost')}</div>`).join(''):'<p class="muted">Nenhum bloqueio no período visualizado.</p>'}</section>`;
  }
- function teacherSelect(){return teacherMode()?'':`<label class="cal-teacher-picker">Professor <select id="calTeacherFilter">${state.page==='slots'?'':'<option value="all">Todos</option>'}${data().teachers.filter(t=>t.active).map(t=>`<option value="${t.id}" ${state.teacher===t.id?'selected':''}>${safe(t.name)}</option>`).join('')}</select></label>`;}
+ function teacherSelect(){const cur=selectedTeacher()||state.teacher;return teacherMode()?'':`<label class="cal-teacher-picker">Professor <select id="calTeacherFilter">${state.page==='slots'?'':'<option value="all">Todos</option>'}${data().teachers.filter(t=>t.active).map(t=>`<option value="${t.id}" ${cur===t.id?'selected':''}>${safe(t.name)}</option>`).join('')}</select></label>`;}
  function view(){
   if(!state.snapshot)return `<header class="page-head"><div><h1>Calendário de aulas</h1><p class="leadline">Execute a migração incremental <code>sql/14_upgrade_calendario_v6.sql</code> e atualize o painel.</p></div></header>`;
   const teacher=selectedTeacher(),upcoming=data().lessons.filter(l=>l.status==='scheduled'&&l.date===today()&&(!teacher||l.teacher_id===teacher)).length;
@@ -442,7 +453,91 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const date=preset.date||state.selected||today();
   const dayField=single?`<label class="field"><span>Data do horário avulso</span><input name="slot_date" type="date" value="${safeAttr(date)}" required></label>`:
    `<label class="field"><span>Dia da semana</span><select name="weekday">${weekNames.map((x,i)=>`<option value="${i}" ${i===weekday?'selected':''}>${x}</option>`).join('')}</select></label>`;
-  showModal(`<div class="eyebrow">${single?'Agenda · horário avulso':'Horários · grade semanal'}</div><h2>${single?'Criar horário avulso':'Adicionar horário fixo'}</h2><form id="calSlotForm" data-kind="${single?'single':'weekly'}"><div class="form-grid"><label class="field"><span>Professor</span><select name="teacher_id" ${teacherMode()?'disabled':''}>${teacherOptions()}</select></label>${dayField}<label class="field"><span>Início</span><input name="start_time" type="time" value="${safeAttr(preset.time||'09:00')}" required></label><label class="field"><span>Duração (minutos)</span><input name="duration" type="number" min="15" max="240" step="5" value="60" required></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Criar horário</button></div></form>`);
+  const bulkBanner=!single?`<div class="cal-bulk-banner"><div><strong>Quer cadastrar vários horários de uma vez?</strong><span>Defina primeiro e último horário, dias da semana e intervalos automaticamente.</span></div><button type="button" class="btn mini light" data-action="calNewBulkSlots">Cadastrar em lote →</button></div>`:'';
+  showModal(`<div class="eyebrow">${single?'Agenda · horário avulso':'Horários · grade semanal'}</div><h2>${single?'Criar horário avulso':'Adicionar horário fixo'}</h2>${bulkBanner}<form id="calSlotForm" data-kind="${single?'single':'weekly'}"><div class="form-grid"><label class="field"><span>Professor</span><select name="teacher_id" ${teacherMode()?'disabled':''}>${teacherOptions()}</select></label>${dayField}<label class="field"><span>Início</span><input name="start_time" type="time" value="${safeAttr(preset.time||'09:00')}" required></label><label class="field"><span>Duração (minutos)</span><input name="duration" type="number" min="15" max="240" step="5" value="60" required></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Criar horário</button></div></form>`);
+ }
+ function computeBulkSlotPlan({teacherId,firstTime,lastTime,duration,interval,weekdays}){
+  if(!teacherId)return {error:'Selecione um professor para cadastrar os horários.',times:[],toCreate:[],skipped:[],weekdays:[]};
+  const cleanDays=[...new Set((Array.isArray(weekdays)?weekdays:[]).map(Number).filter(d=>Number.isInteger(d)&&d>=0&&d<=6))];
+  if(!cleanDays.length)return {error:'Selecione pelo menos um dia da semana disponível.',times:[],toCreate:[],skipped:[],weekdays:[]};
+  const startMin=asMinutes(firstTime),endMin=asMinutes(lastTime);
+  if(startMin==null||endMin==null||Number.isNaN(startMin)||Number.isNaN(endMin))return {error:'Informe o primeiro e o último horário.',times:[],toCreate:[],skipped:[],weekdays:cleanDays};
+  const dur=Number(duration),gap=Number(interval??0);
+  if(!Number.isFinite(dur)||dur<15||dur>240)return {error:'O tempo de aula deve ter entre 15 e 240 minutos.',times:[],toCreate:[],skipped:[],weekdays:cleanDays};
+  if(!Number.isFinite(gap)||gap<0||gap>240)return {error:'O intervalo entre aulas deve ter entre 0 e 240 minutos.',times:[],toCreate:[],skipped:[],weekdays:cleanDays};
+  if(endMin<startMin)return {error:'O último horário deve ser igual ou posterior ao primeiro horário.',times:[],toCreate:[],skipped:[],weekdays:cleanDays};
+  const step=dur+gap,times=[];
+  for(let t=startMin;t<=endMin&&t+dur<=24*60;t+=step){
+   const hh=String(Math.floor(t/60)).padStart(2,'0'),mm=String(t%60).padStart(2,'0');
+   const endT=t+dur,endHH=String(Math.floor(endT/60)).padStart(2,'0'),endMM=String(endT%60).padStart(2,'0');
+   times.push({startMin:t,endMin:endT,time:`${hh}:${mm}`,endTime:`${endHH}:${endMM}`});
+  }
+  if(!times.length)return {error:'Nenhum horário pôde ser gerado dentro desse período.',times:[],toCreate:[],skipped:[],weekdays:cleanDays};
+  const existing=data().slots.filter(s=>s.active&&s.slot_date===null&&s.teacher_id===teacherId);
+  const toCreate=[],skipped=[];
+  for(const day of cleanDays){
+   for(const slot of times){
+    const conflict=existing.some(s=>{
+     if(Number(s.weekday)!==day)return false;
+     const sStart=asMinutes(s.time),sEnd=sStart+Number(s.duration||60);
+     return sStart<slot.endMin&&slot.startMin<sEnd;
+    });
+    if(conflict)skipped.push({weekday:day,...slot,duration:dur});
+    else toCreate.push({weekday:day,...slot,duration:dur});
+   }
+  }
+  return {error:null,times,toCreate,skipped,weekdays:cleanDays,duration:dur,interval:gap};
+ }
+ function bulkSlotPreviewMarkup(plan){
+  if(plan.error)return `<div class="cal-bulk-preview is-warning"><span>${safe(plan.error)}</span></div>`;
+  const pills=plan.times.map(t=>`<span class="cal-bulk-time-pill">${safe(t.time)}–${safe(t.endTime)}</span>`).join('');
+  if(!plan.toCreate.length){
+   return `<div class="cal-bulk-preview is-warning"><div class="cal-bulk-time-list">${pills}</div><p class="cal-bulk-summary">Todos os <strong>${plan.skipped.length} horário(s)</strong> deste intervalo já estão cadastrados ou conflitam com horários existentes.</p></div>`;
+  }
+  return `<div class="cal-bulk-preview"><div class="cal-bulk-preview-head"><strong>Horários por dia (${plan.times.length})</strong><span>${plan.duration} min de aula${plan.interval?` · ${plan.interval} min de intervalo`:' · sem intervalo'}</span></div><div class="cal-bulk-time-list">${pills}</div><p class="cal-bulk-summary">Serão cadastrados <strong>${plan.toCreate.length} horário(s)</strong> (${plan.times.length} por dia × ${plan.weekdays.length} dia(s) da semana)${plan.skipped.length?` · <span class="muted">${plan.skipped.length} já existente(s) não serão duplicados</span>`:''}.</p></div>`;
+ }
+ function extractBulkFormValues(f){
+  const v=f?.elements||{};
+  const teacherId=teacherMode()?ui.teacherId:(v.teacher_id?.value||selectedTeacher()||data().teachers.find(t=>t.active)?.id);
+  let weekdays=[];
+  if(typeof f?.querySelectorAll==='function'){
+   weekdays=[...f.querySelectorAll('input[name="bulk_weekday"]:checked')].map(el=>Number(el.value));
+  }else if(Array.isArray(f?.weekdays)){
+   weekdays=f.weekdays.map(Number);
+  }else if(Array.isArray(v.bulk_weekday)){
+   weekdays=v.bulk_weekday.filter(el=>el.checked!==false).map(el=>Number(el.value??el));
+  }
+  return {
+   teacherId,
+   firstTime:v.first_time?.value||'',
+   lastTime:v.last_time?.value||'',
+   duration:Number(v.duration?.value||0),
+   interval:Number(v.interval?.value??0),
+   weekdays
+  };
+ }
+ function updateBulkSlotPreview(f){
+  if(!f||f.id!=='calBulkSlotForm')return;
+  const plan=computeBulkSlotPlan(extractBulkFormValues(f));
+  const host=f.querySelector?.('#calBulkPreview');
+  if(host)host.innerHTML=bulkSlotPreviewMarkup(plan);
+  const submitBtn=f.querySelector?.('button[type="submit"]');
+  if(submitBtn){
+   submitBtn.disabled=!!plan.error||!plan.toCreate.length;
+   submitBtn.textContent=plan.toCreate.length?`Cadastrar ${plan.toCreate.length} horário(s)`:'Cadastrar horários';
+  }
+ }
+ function newBulkSlots(preset={}){
+  if(!data().teachers.length)throw new Error('Cadastre um professor antes de definir horários.');
+  const defaultTeacher=teacherMode()?ui.teacherId:(selectedTeacher()||data().teachers.find(t=>t.active)?.id);
+  const firstTime=preset.first_time||'08:00';
+  const lastTime=preset.last_time||'18:00';
+  const duration=Number(preset.duration||60);
+  const interval=Number(preset.interval??0);
+  const defaultDays=Array.isArray(preset.weekdays)&&preset.weekdays.length?preset.weekdays.map(Number):[1,2,3,4,5];
+  const order=[1,2,3,4,5,6,0];
+  const initialPlan=computeBulkSlotPlan({teacherId:defaultTeacher,firstTime,lastTime,duration,interval,weekdays:defaultDays});
+  showModal(`<div class="eyebrow">Horários · grade semanal</div><h2>Cadastrar horários em lote</h2><p class="modal-intro">Preencha o primeiro e o último horário do dia, os dias disponíveis, o tempo de aula e o intervalo entre aulas para gerar toda a grade de uma só vez.</p><form id="calBulkSlotForm"><div class="form-grid"><label class="field wide"><span>Professor</span><select name="teacher_id" ${teacherMode()?'disabled':''}>${teacherOptions()}</select></label><label class="field"><span>Primeiro horário</span><input name="first_time" type="time" value="${safeAttr(firstTime)}" required></label><label class="field"><span>Último horário</span><input name="last_time" type="time" value="${safeAttr(lastTime)}" required></label><label class="field"><span>Tempo de aula (minutos)</span><input name="duration" type="number" min="15" max="240" step="5" value="${duration}" required></label><label class="field"><span>Intervalo entre aulas (minutos)</span><input name="interval" type="number" min="0" max="240" step="5" value="${interval}" required></label><div class="field wide"><div class="cal-bulk-days-header"><span>Dias da semana disponíveis</span><div class="cal-bulk-days-quick"><button type="button" class="btn mini ghost" data-action="calBulkSelectAllDays">Todos</button><button type="button" class="btn mini ghost" data-action="calBulkSelectWorkDays">Seg–Sex</button><button type="button" class="btn mini ghost" data-action="calBulkClearDays">Limpar</button></div></div><div class="cal-bulk-weekdays" role="group" aria-label="Dias da semana disponíveis">${order.map(day=>`<label class="cal-bulk-day-chip"><input type="checkbox" name="bulk_weekday" value="${day}" ${defaultDays.includes(day)?'checked':''}><span>${safe(weekNames[day])}</span></label>`).join('')}</div></div></div><div id="calBulkPreview">${bulkSlotPreviewMarkup(initialPlan)}</div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit" ${initialPlan.error||!initialPlan.toCreate.length?'disabled':''}>${initialPlan.toCreate.length?`Cadastrar ${initialPlan.toCreate.length} horário(s)`:'Cadastrar horários'}</button></div></form>`);
  }
  function newBlock(){
   showModal(`<div class="eyebrow">Agenda V6</div><h2>Novo bloqueio</h2><form id="calBlockForm"><div class="form-grid"><label class="field wide"><span>Quem será afetado?</span><select name="teacher_id" ${teacherMode()?'disabled':''}>${teacherOptions(!teacherMode())}</select></label><label class="field"><span>Início</span><input name="from" type="date" value="${today()}" required></label><label class="field"><span>Fim</span><input name="to" type="date" value="${today()}" required></label><label class="field"><span>Hora inicial (opcional)</span><input name="start_time" type="time"></label><label class="field"><span>Hora final (opcional)</span><input name="end_time" type="time"></label><label class="field wide"><span>Motivo</span><select name="reason_preset">${blockReasons.map(x=>`<option value="${x}">${x}</option>`).join('')}</select></label><label class="field wide" data-custom-reason style="display:none"><span>Descreva o motivo</span><input name="reason_custom" maxlength="140" placeholder="Ex.: reunião pedagógica"></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Ver impacto e bloquear</button></div></form>`);
@@ -673,6 +768,22 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(name==='calEditStudentSlots')return editStudentSlots(id);
   if(name==='calSwitchTeacherSchool')return switchTeacherSchool(id);
   if(name==='calNewSlot'||name==='calNewWeeklySlot')return newSlot({kind:'weekly'});
+  if(name==='calNewBulkSlots')return newBulkSlots();
+  if(name==='calBulkSelectAllDays'){
+   const form=element.closest('form');
+   if(form){form.querySelectorAll('input[name="bulk_weekday"]').forEach(i=>i.checked=true);updateBulkSlotPreview(form);}
+   return;
+  }
+  if(name==='calBulkSelectWorkDays'){
+   const form=element.closest('form');
+   if(form){form.querySelectorAll('input[name="bulk_weekday"]').forEach(i=>{const v=Number(i.value);i.checked=v>=1&&v<=5;});updateBulkSlotPreview(form);}
+   return;
+  }
+  if(name==='calBulkClearDays'){
+   const form=element.closest('form');
+   if(form){form.querySelectorAll('input[name="bulk_weekday"]').forEach(i=>i.checked=false);updateBulkSlotPreview(form);}
+   return;
+  }
   if(name==='calNewOneOff')return newSlot({kind:'single',date:state.selected});
   if(name==='calSlotDetails')return slotDetail(id);
   if(name==='calCreateWeeklyAt'){
@@ -719,6 +830,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  }
  async function change(element){
   if(element.id==='calTeacherFilter'){state.teacher=element.value;return renderCalendar();}
+  if(element.form?.id==='calBulkSlotForm'){updateBulkSlotPreview(element.form);return;}
   if(element.name==='cal_student_teacher'&&element.form?.id==='calStudentSlotsForm'){
    const host=element.form.querySelector('#calStudentSlotChoices');
    if(host)host.innerHTML=studentSlotChoices(element.value,element.value===element.form.dataset.teacher?(state.studentProfile?.slot_ids||[]):[]);
@@ -839,6 +951,26 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
     p_weekday:f.dataset.kind==='single'?null:Number(v.weekday.value),p_start:v.start_time.value,
     p_duration:Number(v.duration.value),p_date:f.dataset.kind==='single'?v.slot_date.value:null});closeModal();toast('Horário criado.');return reload();
   }
+  if(f.id==='calBulkSlotForm'){
+   const vals=extractBulkFormValues(f);
+   const plan=computeBulkSlotPlan(vals);
+   if(plan.error)throw new Error(plan.error);
+   if(!plan.toCreate.length)throw new Error('Todos os horários desse intervalo já estão cadastrados ou conflitam com horários existentes.');
+   for(const item of plan.toCreate){
+    await call('calendar_add_slot',{
+     p_school:school(),
+     p_teacher:vals.teacherId,
+     p_weekday:item.weekday,
+     p_start:item.time,
+     p_duration:item.duration,
+     p_date:null
+    });
+   }
+   closeModal();
+   const skippedNote=plan.skipped.length?` (${plan.skipped.length} já existente(s) ignorado(s))`:'';
+   toast(`${plan.toCreate.length} horário(s) cadastrado(s) com sucesso${skippedNote}.`);
+   return reload();
+  }
   if(f.id==='calBlockForm'){
    const v=f.elements,teacher=teacherMode()?ui.teacherId:(v.teacher_id.value||null);
    const args={p_school:school(),p_teacher:teacher,p_from:v.from.value,p_to:v.to.value,
@@ -866,7 +998,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  }
  return {load,loadSafe,view,teacherShell,renderCalendar,getTeacherAccess,processPendingInvite,enterTeacherIfApplicable,
   inviteLanding,getFormPicker,updateFormPicker,slotIdForSchedule,autoPreview,applyTerms,hasAccess,action,change,submit,refresh:reload,adminNav,
-  getOnboardingSnapshot:()=>state.snapshot,studentSchedulePicker,studentSlotChoices,
+  getOnboardingSnapshot:()=>state.snapshot,studentSchedulePicker,studentSlotChoices,computeBulkSlotPlan,
   studentSummaryFor,studentForContract,classSummaryFor,scheduleForContract,openStudent,studentProfileView,ensureEnrollmentDates,
   async updateTeacherProfile(name){const n=String(name||'').trim();if(n.length<2||n.length>120)throw new Error('Informe um nome válido.');await call('calendar_update_my_teacher_name',{p_school:school(),p_name:n});await load();}};
 }
