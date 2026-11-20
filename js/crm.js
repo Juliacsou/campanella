@@ -17,7 +17,7 @@ export const PIPELINE_TRIGGERS=[
  ['interview_scheduled','Depois que teve entrevista agendada (ou arrastado manualmente)'],
  ['interview_completed','Depois que teve entrevista realizada — identificado automaticamente (ou arrastado manualmente)'],
  ['interview_canceled','Depois que teve entrevista cancelada / não compareceu (ou arrastado manualmente)'],
- ['fiche_created','Depois que teve ficha inicial criada (ou arrastado manualmente)'],
+ ['fiche_created','Depois que teve orçamento criado (ou arrastado manualmente)'],
  ['contract_created','Depois que teve contrato gerado (ou arrastado manualmente)']
 ];
 
@@ -49,6 +49,9 @@ const CRM_ICONS={
  user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
  messageSquare:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
  sms:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="14" y2="13"/>',
+ link:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+ copy:'<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+ send:'<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
  x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
 };
 const crmIcon=(name,size=15)=>`<svg class="crm-ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${CRM_ICONS[name]||CRM_ICONS.check}</svg>`;
@@ -59,7 +62,7 @@ const TRIGGER_BADGES={
  interview_scheduled:'Entrevista agendada',
  interview_completed:'Entrevista realizada',
  interview_canceled:'Entrevista cancelada',
- fiche_created:'Ficha inicial',
+ fiche_created:'Orçamento criado',
  contract_created:'Contrato gerado'
 };
 
@@ -69,7 +72,7 @@ const TRIGGER_DESCRIPTIONS={
  interview_scheduled:'Lead vai para esta coluna depois que teve entrevista agendada ou arrastado manualmente.',
  interview_completed:'Lead vai para esta coluna depois que teve entrevista realizada (automático pelo horário ou manual) ou arrastado manualmente.',
  interview_canceled:'Lead vai para esta coluna depois que teve entrevista cancelada ou arrastado manualmente.',
- fiche_created:'Lead vai para esta coluna depois que teve ficha inicial criada ou arrastado manualmente.',
+ fiche_created:'Lead vai para esta coluna depois que teve orçamento criado ou arrastado manualmente.',
  contract_created:'Lead vai para esta coluna depois que teve contrato gerado ou arrastado manualmente.'
 };
 
@@ -110,8 +113,110 @@ const textarea=(name,title,val='',extra='')=>`<label class="field wide"><span>${
 const formFooter=(label='Salvar')=>`<div class="form-footer"><button type="button" class="btn ghost" data-action="crmCancel">Cancelar</button><button class="btn" type="submit">${safe(label)}</button></div>`;
 const formatWhats=s=>{let raw=onlyDigits(s);if(!raw)return '';if(raw.length===10||raw.length===11)raw='55'+raw;return /^[0-9]{11,15}$/.test(raw)?`https://wa.me/${raw}`:''};
 
+export function encodeBudgetData(data){
+ const jsonStr=JSON.stringify(data);
+ const bytes=new TextEncoder().encode(jsonStr);
+ let bin='';
+ for(let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+ return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+export function decodeBudgetData(str){
+ try{
+  let b64=str.replace(/-/g,'+').replace(/_/g,'/');
+  while(b64.length%4) b64+='=';
+  const bin=atob(b64);
+  const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  const jsonStr=new TextDecoder().decode(bytes);
+  return JSON.parse(jsonStr);
+ }catch(e){
+  return null;
+ }
+}
+
 export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy,saveInterview}){
  const state={tab:'open',mode:'board',search:'',column:'all',tag:'all',source:'all',service:'all',region:'all',interview:'all',period:'all',sort:'activity',lead:null,detailTab:'data',editingFicheLeadId:null,ficheKind:null,importRows:[],editingColId:null,editingTagId:null,dragLeadId:null,filtersOpen:false};
+ const currentSchoolName=()=>(ui.schools||[]).find(s=>s.id===ui.schoolId)?.name||ui.schoolName||'CAMPANELLA';
+
+ async function copyToClipboard(text){
+  try{
+   if(navigator.clipboard&&window.isSecureContext){
+    await navigator.clipboard.writeText(text);
+    return true;
+   }
+  }catch(e){}
+  const ta=document.createElement('textarea');
+  ta.value=text;
+  ta.style.position='fixed';
+  ta.style.left='-9999px';
+  ta.style.top='0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try{
+   document.execCommand('copy');
+   ta.remove();
+   return true;
+  }catch(e){
+   ta.remove();
+   return false;
+  }
+ }
+
+ function budgetPublicUrl(lead,fiche){
+  const payload={
+   v:1,
+   school_name:currentSchoolName(),
+   school_phone:(db.schools||[]).find(s=>s.id===ui.schoolId)?.contact_phone||null,
+   lead_id:lead.id,
+   lead_name:lead.name,
+   student2_name:(fiche.kind==='dupla'?(fiche.student2_name||lead.student2_name):null),
+   is_duo:(fiche.kind==='dupla'||!!fiche.student2_name||lead.kind==='dupla'),
+   guardian_name:fiche.guardian_name||lead.guardian_name||null,
+   course:fiche.course||lead.crm_service||'Aulas de Idiomas',
+   teacher_name:teacherName(fiche.teacher_id),
+   lessons_count:fiche.lessons_count||null,
+   weekly_frequency:fiche.weekly_frequency||1,
+   start_date:fiche.start_date||null,
+   end_date:fiche.end_date||null,
+   preferred_schedule:fiche.preferred_schedule||null,
+   total_amount:Number(fiche.total_amount||0),
+   installments:Number(fiche.installments||1),
+   installment_amount:Number(fiche.installment_amount||0),
+   first_due_date:fiche.first_due_date||null,
+   payment_method:fiche.payment_method||'Boleto / PIX',
+   pedagogical_notes:fiche.pedagogical_notes||fiche.notes||null,
+   phone:lead.phone||null
+  };
+  const token=encodeBudgetData(payload);
+  const baseUrl=location.href.split('#')[0];
+  return `${baseUrl}#orcamento/${token}`;
+ }
+
+ function budgetWhatsAppUrl(lead,fiche){
+  const link=budgetPublicUrl(lead,fiche);
+  const cleanDigits=String(lead.phone||'').replace(/\D/g,'');
+  const phone=cleanDigits?(cleanDigits.startsWith('55')?cleanDigits:('55'+cleanDigits)):'';
+  const isDuo=fiche.kind==='dupla'||!!fiche.student2_name;
+  const name=lead.name||'Aluno';
+  const course=fiche.course||'Inglês';
+  const total=Number(fiche.total_amount||0).toFixed(2);
+  const installments=fiche.installments||1;
+  const part=Number(fiche.installment_amount||0).toFixed(2);
+
+  const msg=`Olá, ${name}! Tudo bem?\n\nPreparamos o seu orçamento para as aulas de *${course}*${isDuo?' (Dupla)':''}.\n\n`+
+   `📋 *Resumo da proposta:*\n`+
+   `• Curso: ${course}\n`+
+   (fiche.lessons_count?`• Carga horária: ${fiche.lessons_count} aulas (${fiche.weekly_frequency||1}x por semana)\n`:'')+
+   (fiche.preferred_schedule?`• Horários combinados: ${fiche.preferred_schedule}\n`:'')+
+   `• Investimento: ${installments}x de R$ ${part} (Total: R$ ${total})\n\n`+
+   `🔗 *Confira a proposta completa com todos os detalhes no link abaixo:*\n${link}\n\n`+
+   `Qualquer dúvida ou para confirmar sua vaga, é só nos responder por aqui!`;
+
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+ }
+
  const internalSaveInterview=async(payload,id)=>{
   if(typeof saveInterview==='function')return await saveInterview(payload,id);
   try{return await save('interviews',payload,id);}
@@ -178,9 +283,9 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
  };
  const ficheText=l=>{
   const f=filledFiche(l);
-  if(f)return `<span class="crm-badge crm-green">Preenchida</span><span class="crm-tiny">${safe(f.course||'Inglês')}</span>`;
-  if(hasFiche(l))return `<span class="crm-badge crm-warm">Criada · a preencher</span>`;
-  return '<span class="crm-muted">Não iniciada</span>';
+  if(f)return `<span class="crm-badge crm-green">Preenchido</span><span class="crm-tiny">${safe(f.course||'Inglês')}</span>`;
+  if(hasFiche(l))return `<span class="crm-badge crm-warm">Em aberto</span>`;
+  return '<span class="crm-muted">Sem orçamento</span>';
  };
 
  const stats=()=>{
@@ -237,7 +342,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   return `<div class="crm-metrics">
    <div class="crm-metric"><span>Oportunidades abertas</span><strong>${s.open}</strong><small>Leads em acompanhamento</small></div>
    <div class="crm-metric"><span>Entrevistas agendadas</span><strong>${s.interviews}</strong><small>Integradas ao calendário</small></div>
-   <div class="crm-metric"><span>Fichas iniciais ativas</span><strong>${s.withFiche}</strong><small>Preparadas para entrevista</small></div>
+   <div class="crm-metric"><span>Orçamentos ativos</span><strong>${s.withFiche}</strong><small>Com proposta comercial</small></div>
    <div class="crm-metric"><span>Negócios fechados</span><strong>${s.won}</strong><small>Oportunidades convertidas</small></div>
   </div>`;
  }
@@ -324,7 +429,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   const isDuo=l.kind==='dupla'||!!l.student2_name;
   const displayName=isDuo?`${l.name} & ${l.student2_name||'2º Aluno'}`:l.name;
   return `<article class="crm-lead-card" draggable="true" data-action="crmDetail" data-id="${l.id}" role="button" tabindex="0">
-   <div class="crm-lead-top"><strong>${safe(displayName)}</strong>${(isDuo||fiche)?`<div class="crm-lead-badges">${isDuo?pill('Dupla','signed'):''}${fiche?pill('Ficha inicial','green'):''}</div>`:''}</div>
+   <div class="crm-lead-top"><strong>${safe(displayName)}</strong>${(isDuo||fiche)?`<div class="crm-lead-badges">${isDuo?pill('Dupla','signed'):''}${fiche?pill('Orçamento','green'):''}</div>`:''}</div>
    ${tags.length?`<div class="crm-card-tags">${tags.map(renderTagBadge).join('')}</div>`:''}
    ${l.crm_service||l.phone?`<div class="crm-muted">${safe([l.crm_service,l.phone].filter(Boolean).join(' · '))}</div>`:''}
    ${l.crm_last_contact_on?`<div class="crm-card-foot"><span class="crm-mini-date">Último contato: ${shortDate(l.crm_last_contact_on)}</span></div>`:''}
@@ -358,7 +463,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
  }
 
  function listing(rows){
-  return `<div class="crm-table-scroll"><table class="crm-table"><thead><tr><th>Lead</th><th>Coluna / Situação</th><th>Tags</th><th>Origem / serviço</th><th>Entrevista</th><th>Ficha inicial</th><th>Ação</th></tr></thead><tbody>${rows.map(l=>{
+  return `<div class="crm-table-scroll"><table class="crm-table"><thead><tr><th>Lead</th><th>Coluna / Situação</th><th>Tags</th><th>Origem / serviço</th><th>Entrevista</th><th>Orçamento</th><th>Ação</th></tr></thead><tbody>${rows.map(l=>{
    const col=resolveColumnForLead(l);
    const tags=leadTags(l);
    const statusLabel=l.crm_outcome==='lost'?(l.crm_loss_reason||'Não convertido'):l.crm_outcome==='won'?'Fechado':(col?.name||'Sem coluna');
@@ -431,20 +536,20 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   const currentPkgId=fiche?.package_id||(availablePackages[0]?.id||'');
   const currentPkg=lookup('packages',currentPkgId);
   const currentMode=fiche?.enrollment_mode||(currentPkgId?'package':'custom');
-  const isEditingFiche=!fiche||state.editingFicheLeadId===id;
+  const isEditingFiche=state.editingFicheLeadId===id;
 
   showModal(`<div class="crm-detail">
    <div class="crm-detail-sticky-head">
     <div class="crm-detail-top">
      <div class="crm-detail-top-head">
       <div>
-       <div class="eyebrow">Ficha do Lead ${isDuo?'· Dupla':''}</div>
+       <div class="eyebrow">Lead ${isDuo?'· Dupla':''}</div>
        <h2>${safe(displayName)}</h2>
        <div class="crm-detail-meta">
         ${isDuo?pill('Dupla (2 alunos)','signed'):''}
         ${currentCol?pill('Coluna: '+currentCol.name,'soft'):''}
         ${pill(l.crm_outcome==='won'?'Negócio fechado':l.crm_outcome==='lost'?'Não convertido':'Em andamento',l.crm_outcome==='open'?'green':'neutral')}
-        ${ficheStarted?pill(fiche?'Ficha preenchida':'Ficha inicial criada','green'):''}
+        ${ficheStarted?pill(fiche?'Orçamento preenchido':'Orçamento em aberto','green'):'' }
         ${leadTags(l).map(renderTagBadge).join('')}
        </div>
       </div>
@@ -487,8 +592,8 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
       </button>
       <button type="button" role="tab" class="crm-detail-nav-btn ${activeTab==='fiche'?'is-active':''}" data-action="crmDetailTab" data-tab="fiche" aria-selected="${activeTab==='fiche'}">
        ${crmIcon('fileText',14)}
-       <span>Ficha Inicial</span>
-       ${fiche?`<span class="crm-nav-badge is-done">Preenchida</span>`:ficheStarted?`<span class="crm-nav-badge is-pending">Criada</span>`:''}
+       <span>Orçamento</span>
+       ${fiche?`<span class="crm-nav-badge is-done">Preenchido</span>`:ficheStarted?`<span class="crm-nav-badge is-pending">Em aberto</span>`:''}
       </button>
      </nav>
     </div>
@@ -643,23 +748,21 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
      </section>
     </div>
 
-    <!-- ABA 4: FICHA INICIAL -->
+    <!-- ABA 4: ORÇAMENTO -->
     <div class="crm-tab-pane ${activeTab==='fiche'?'is-active':''}" data-pane="fiche" ${activeTab==='fiche'?'':'hidden'}>
      ${isEditingFiche?`
       <div class="crm-fiche-hero ${fiche?'is-filled':'is-started'}">
        <div class="crm-fiche-hero-head">
         <div>
-         <span class="crm-interview-badge ${fiche?'is-completed':'is-scheduled'}">${fiche?'Editando Ficha Inicial':'Preencher Ficha Inicial'}</span>
-         <h4>${fiche?`Editar ficha pedagógica · ${safe(fiche.course||'Inglês')}`:`Ficha inicial · ${safe(displayName)}`}</h4>
+         <span class="crm-interview-badge ${fiche?'is-completed':'is-scheduled'}">${fiche?'Editando Orçamento':'Preencher Orçamento'}</span>
+         <h4>${fiche?`Editar orçamento · ${safe(fiche.course||'Inglês')}`:`Novo orçamento · ${safe(displayName)}`}</h4>
         </div>
-        ${fiche?`
-         <div class="crm-fiche-hero-actions">
-          <button type="button" class="crm-btn subtle" data-action="crmCancelFicheEdit">Cancelar edição</button>
-         </div>
-        `:''}
+        <div class="crm-fiche-hero-actions">
+         <button type="button" class="crm-btn subtle" data-action="crmCancelFicheEdit">Cancelar</button>
+        </div>
        </div>
        <p style="margin:8px 0 0 0;color:var(--text-secondary,#52606d);font-size:12.5px">
-        ${fiche?'Atualize as informações pedagógicas e financeiras do aluno diretamente nesta aba.':'Preencha os dados pedagógicos, horários e valores combinados. Ao salvar, as informações ficarão registradas para conferência e geração da matrícula / contrato.'}
+        ${fiche?'Atualize as condições pedagógicas e financeiras do aluno diretamente nesta aba.':'Preencha os dados pedagógicos, horários e valores combinados. Ao salvar, as informações ficarão registradas para conferência e geração do link de orçamento / matrícula.'}
        </p>
 
        <form id="crmLeadFicheForm" class="crm-lead-fiche-form" data-lead="${safe(id)}" data-fiche-id="${safe(fiche?.id||'')}">
@@ -779,28 +882,42 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
         </div>
 
         <div class="crm-fiche-form-footer">
-         ${fiche?`<button type="button" class="crm-btn subtle" data-action="crmCancelFicheEdit">Cancelar edição</button>`:''}
-         <button type="submit" class="crm-btn primary">${crmIcon('check',14)} ${fiche?'Salvar alterações da ficha':'Salvar ficha inicial'}</button>
+         <button type="button" class="crm-btn subtle" data-action="crmCancelFicheEdit">Cancelar</button>
+         <button type="submit" class="crm-btn primary">${crmIcon('check',14)} ${fiche?'Salvar alterações do orçamento':'Salvar orçamento'}</button>
         </div>
        </form>
       </div>
-     `:`
+     `:fiche?`
       <div class="crm-fiche-hero is-filled">
        <div class="crm-fiche-hero-head">
         <div>
-         <span class="crm-interview-badge is-completed">Ficha preenchida</span>
-         <h4>Ficha pedagógica preenchida · ${safe(fiche.course||'Inglês')}</h4>
+         <span class="crm-interview-badge is-completed">Orçamento preenchido</span>
+         <h4>Orçamento comercial · ${safe(fiche.course||'Inglês')}</h4>
         </div>
         <div class="crm-fiche-hero-actions">
-         ${l.status!=='convertido'?`
-          ${btn('crmEditFicheInTab',`${crmIcon('edit',14)} Editar ficha`,id,'primary')}
-          ${btn('crmStartFiche','Link do entrevistador / opções',id,'subtle')}
-         `:''}
+         <a href="${budgetWhatsAppUrl(l,fiche)}" target="_blank" rel="noopener noreferrer" class="crm-btn crm-btn-whatsapp-full" title="Enviar proposta para o aluno no WhatsApp">
+          ${crmIcon('whatsapp',15)} <span>Enviar no WhatsApp</span>
+         </a>
+         <button type="button" class="crm-btn primary" data-action="crmCopyBudgetLink" data-id="${safe(id)}" title="Copiar link para o aluno">
+          ${crmIcon('copy',14)} <span>Copiar link</span>
+         </button>
+         ${btn('crmEditFicheInTab',`${crmIcon('edit',14)} Editar orçamento`,id,'subtle')}
         </div>
        </div>
        <p style="margin:8px 0 0 0;color:var(--text-secondary,#52606d);font-size:12.5px">
-        Os dados pedagógicos foram preenchidos durante a entrevista e estão disponíveis para conferência e geração de matrícula / contrato.
+        As condições comerciais e pedagógicas foram definidas e estão prontas para envio ao aluno.
        </p>
+
+       <div class="crm-budget-link-box">
+        <div class="crm-budget-link-label">
+         <span>${crmIcon('link',13)} Link da página de orçamento para o aluno:</span>
+         <a href="${budgetPublicUrl(l,fiche)}" target="_blank" rel="noopener noreferrer" class="crm-link-open">Abrir página ↗</a>
+        </div>
+        <div class="crm-budget-link-input-group">
+         <input type="text" class="crm-budget-link-text" readonly value="${safe(budgetPublicUrl(l,fiche))}" onclick="this.select()">
+         <button type="button" class="crm-btn subtle" data-action="crmCopyBudgetLink" data-id="${safe(id)}" title="Copiar link">${crmIcon('copy',13)} <span>Copiar</span></button>
+        </div>
+       </div>
 
        <div class="crm-fiche-summary-grid">
         <div class="crm-data-item"><span>Curso / Programa</span><strong>${safe(fiche.course||'Inglês')}</strong></div>
@@ -816,6 +933,50 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
         ${fiche.preferred_schedule?`<div class="crm-data-item wide"><span>Horários combinados / Grade</span><strong>${safe(fiche.preferred_schedule)}</strong></div>`:''}
         <div class="crm-data-item wide"><span>Condições financeiras</span><strong>${safe(fiche.installments||1)}x de R$ ${Number(fiche.installment_amount||0).toFixed(2)} (Total: R$ ${Number(fiche.total_amount||0).toFixed(2)}) · ${safe(fiche.payment_method||'Boleto')}</strong></div>
         ${fiche.pedagogical_notes||fiche.notes?`<div class="crm-data-item wide"><span>Observações pedagógicas</span><p>${safe(fiche.pedagogical_notes||fiche.notes||'')}</p></div>`:''}
+       </div>
+      </div>
+     `:`
+      <div class="crm-fiche-hero ${ficheStarted?'is-started':''}">
+       <div class="crm-fiche-hero-head">
+        <div>
+         <span class="crm-interview-badge ${ficheStarted?'is-completed':'is-scheduled'}">${ficheStarted?'Orçamento em aberto':'Sem orçamento'}</span>
+         <h4>Orçamento comercial · ${safe(displayName)}</h4>
+        </div>
+       </div>
+       <p style="margin:8px 0 0 0;color:var(--text-secondary,#52606d);font-size:12.5px">
+        Defina as condições pedagógicas, horários e valores combinados para o aluno. Escolha como prefere prosseguir:
+       </p>
+
+       <div class="crm-budget-options-grid">
+        <div class="crm-budget-option-box">
+         <div class="crm-budget-option-head">
+          <div class="crm-budget-option-icon">${crmIcon('edit',20)}</div>
+          <div>
+           <h5>Preencher orçamento aqui</h5>
+           <p>Lance o curso, professor, grade de aulas e condições financeiras diretamente nesta aba.</p>
+          </div>
+         </div>
+         <div class="crm-budget-option-action">
+          <button type="button" class="crm-btn primary" data-action="crmEditFicheInTab" data-id="${safe(id)}">
+           ${crmIcon('edit',14)} <span>Preencher orçamento aqui</span>
+          </button>
+         </div>
+        </div>
+
+        <div class="crm-budget-option-box">
+         <div class="crm-budget-option-head">
+          <div class="crm-budget-option-icon">${crmIcon('link',20)}</div>
+          <div>
+           <h5>Gerar link do orçamento</h5>
+           <p>Gere um link para o entrevistador preencher as condições ou envie o formulário de levantamento.</p>
+          </div>
+         </div>
+         <div class="crm-budget-option-action">
+          <button type="button" class="crm-btn subtle" data-action="crmStartFiche" data-id="${safe(id)}">
+           ${crmIcon('link',14)} <span>Gerar link do orçamento</span>
+          </button>
+         </div>
+        </div>
        </div>
       </div>
      `}
@@ -847,7 +1008,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
        <div class="crm-enrollment-callout">
         <div class="crm-enrollment-callout-text">
          <strong>Pronto para matricular?</strong>
-         <p>Quando o lead aceitar as condições, finalize o fechamento comercial para gerar o contrato com base nos dados cadastrais e da ficha inicial.</p>
+         <p>Quando o lead aceitar as condições, finalize o fechamento comercial para gerar o contrato com base nos dados cadastrais e do orçamento.</p>
         </div>
         <div class="crm-enrollment-callout-action">
          ${l.crm_outcome==='open'?btn('crmWon',`${crmIcon('checkCircle',14)} Fechar negócio`,id,'primary'):''}
@@ -1505,8 +1666,16 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     if(Object.keys(patch).length)await save('leads',patch,id);
     await refresh();return ficheCreatedPopup(id);
    }
+   case 'crmCopyBudgetLink':{
+    const l=lookup('leads',id),f=filledFiche(l);
+    if(!l||!f)return;
+    const link=budgetPublicUrl(l,f);
+    await copyToClipboard(link);
+    toast('Link do orçamento copiado para a área de transferência!');
+    return;
+   }
    case 'crmGoFiche':{
-    state.detailTab='fiche';state.editingFicheLeadId=id;return detail(id);
+    state.detailTab='fiche';state.editingFicheLeadId=null;return detail(id);
    }
    case 'crmImport':return importHelp();
    case 'crmConfirmImport':return await importRows();
@@ -1624,13 +1793,13 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     };
     await save('leads',leadPatch,id);
 
-    await log(id,'fiche',ficheId?'Ficha inicial atualizada':'Ficha inicial preenchida',`${d.course.trim()} · ${lessonsCount?lessonsCount+' aulas · ':''}Total: R$ ${total.toFixed(2)} (${inst}x de R$ ${Math.round(instAmt*100)/100})`);
+    await log(id,'fiche',ficheId?'Orçamento atualizado':'Orçamento preenchido',`${d.course.trim()} · ${lessonsCount?lessonsCount+' aulas · ':''}Total: R$ ${total.toFixed(2)} (${inst}x de R$ ${Math.round(instAmt*100)/100})`);
 
     state.editingFicheLeadId=null;
     state.detailTab='fiche';
     await refresh();
     detail(id);
-    toast(ficheId?'Ficha inicial atualizada com sucesso!':'Ficha inicial preenchida com sucesso!');
+    toast(ficheId?'Orçamento atualizado com sucesso!':'Orçamento salvo com sucesso!');
     return;
    }
    if(f.id==='crmNoteForm'){

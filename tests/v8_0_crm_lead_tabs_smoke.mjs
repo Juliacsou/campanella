@@ -131,14 +131,14 @@ console.log('  -> Botão de tags link validado.');
 // 8. Verificando versionamento de cache
 console.log('8. Verificando versionamento de cache...');
 assert.ok(
-  indexHtml.includes('crm.css?v=8.1.2') && /app\.js\?v=8\.1\.[23]/.test(indexHtml),
-  'O index.html deve conter crm.css?v=8.1.2 e app.js?v=8.1.2 ou superior'
+  indexHtml.includes('crm.css?v=8.1.3') && indexHtml.includes('app.js?v=8.1.3'),
+  'O index.html deve conter crm.css?v=8.1.3 e app.js?v=8.1.3'
 );
 assert.ok(
-  appJs.includes('./crm.js?v=8.1.2'),
-  'O app.js deve importar ./crm.js?v=8.1.2'
+  appJs.includes('./crm.js?v=8.1.3'),
+  'O app.js deve importar ./crm.js?v=8.1.3'
 );
-console.log('  -> Cache version v=8.1.2 validado.');
+console.log('  -> Cache version v=8.1.3 validado.');
 
 // 9. Verificando correção do bug de congelamento do modal / drawer e fechamento
 console.log('9. Verificando proteção contra congelamento de modal / drawer...');
@@ -156,20 +156,60 @@ assert.ok(
 );
 console.log('  -> Proteção de fechamento e popup de arquivamento validados.');
 
-// 10. Verificando Ficha Inicial embutida diretamente na aba do lead
-console.log('10. Verificando Ficha Inicial interativa na Aba 4...');
+// 10. Verificando Ficha Inicial renomeada para Orçamento e tela de escolha (preencher ou gerar link)
+console.log('10. Verificando nomenclatura Orçamento e opções de preenchimento / gerar link na Aba 4...');
 assert.ok(
-  crmJs.includes('id="crmLeadFicheForm"') && crmJs.includes('crm-lead-fiche-form'),
-  'A Aba 4 do lead deve embutir o formulário #crmLeadFicheForm para preenchimento direto'
+  crmJs.includes('<span>Orçamento</span>') && crmJs.includes('Orçamento preenchido'),
+  'A Aba 4 e o status devem utilizar a nomenclatura Orçamento'
 );
 assert.ok(
-  crmJs.includes('crmEditFicheInTab') && crmJs.includes('crmCancelFicheEdit'),
-  'A ficha preenchida deve oferecer botão para editar diretamente na aba sem sair do lead'
+  crmJs.includes('Orçamentos ativos') && crmJs.includes('Sem orçamento'),
+  'Métricas e listagem devem utilizar Orçamentos ativos e Sem orçamento'
 );
 assert.ok(
-  crmCss.includes('.crm-lead-fiche-form') && crmCss.includes('.crm-fiche-financial-box'),
-  'O crm.css deve estilizar o formulário da ficha e a caixa financeira'
+  crmJs.includes('crm-budget-options-grid') && crmJs.includes('Preencher orçamento aqui') && crmJs.includes('Gerar link do orçamento'),
+  'A tela inicial da Aba 4 sem orçamento deve exibir as duas opções: preencher aqui ou gerar link'
 );
-console.log('  -> Ficha inicial embutida na aba validada com sucesso.');
+assert.ok(
+  crmJs.includes('crmEditFicheInTab') && crmJs.includes('crmStartFiche'),
+  'As opções devem disparar crmEditFicheInTab e crmStartFiche'
+);
+console.log('  -> Nomenclatura Orçamento e tela inicial de opções validadas.');
 
-console.log('\n=== Todos os 10 testes V8.0/V8.1/V8.1.2 de Atendimento, Micro-Modal, Fechamento e Ficha em Aba passaram com 100% de sucesso! ===');
+// 11. Verificando botões de ação após orçamento preenchido (WhatsApp, Copiar link e Editar)
+console.log('11. Verificando ações pós-orçamento (WhatsApp, Copiar link, Editar)...');
+assert.ok(
+  crmJs.includes('crm-btn-whatsapp-full') && crmJs.includes('Enviar no WhatsApp'),
+  'O orçamento preenchido deve conter botão verde para enviar proposta no WhatsApp'
+);
+assert.ok(
+  crmJs.includes('crmCopyBudgetLink') && crmJs.includes('Copiar link'),
+  'Deve conter botão para copiar link da proposta'
+);
+assert.ok(
+  crmJs.includes('crm-budget-link-box') && crmCss.includes('.crm-budget-link-box'),
+  'Deve conter box com link da proposta pública do aluno'
+);
+assert.ok(
+  crmJs.includes('Editar orçamento'),
+  'Deve conter botão para editar orçamento'
+);
+console.log('  -> Ações do orçamento preenchido validadas.');
+
+// 12. Verificando rota pública do aluno #orcamento/<token> e decodificação
+console.log('12. Verificando rota pública do aluno #orcamento/<token> e decodificação...');
+assert.ok(
+  appJs.includes('#orcamento/') && appJs.includes('publicOrcamentoStart'),
+  'O roteador no app.js deve reconhecer #orcamento/ e chamar publicOrcamentoStart'
+);
+assert.ok(
+  appJs.includes('renderPublicOrcamento'),
+  'O app.js deve renderizar a página do aluno em renderPublicOrcamento'
+);
+assert.ok(
+  crmJs.includes('encodeBudgetData') && crmJs.includes('decodeBudgetData'),
+  'O crm.js deve exportar encodeBudgetData e decodeBudgetData'
+);
+console.log('  -> Rota pública do aluno #orcamento/<token> validada.');
+
+console.log('\n=== Todos os 12 testes de Orçamento, Escolha Inicial, Link Público e WhatsApp passaram com 100% de sucesso! ===');

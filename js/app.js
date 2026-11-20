@@ -2,7 +2,7 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
-import {createCRM} from './crm.js?v=8.1.2';
+import {createCRM, decodeBudgetData} from './crm.js?v=8.1.3';
 import {createCalendar} from './calendar-v6.js?v=8.1.3';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
@@ -907,6 +907,7 @@ async function resolveInviteAndEmailCallback(){
  return {profToken,adminToken,isEmailConfirm};
 }
 async function initialize(){
+ if(location.hash.startsWith('#orcamento/'))return publicOrcamentoStart(location.hash.slice(11));
  if(location.hash.startsWith('#pre-matricula/'))return publicStart(location.hash.slice(15));
  if(location.hash.startsWith('#assinar/'))return publicStart(location.hash.slice(9));
  if(location.hash.startsWith('#entrevista/'))return externalStart(location.hash.slice('#entrevista/'.length));
@@ -1115,7 +1116,7 @@ function ficheCreatedPopup(leadId){
  const isDuo=l.kind==='dupla'||!!l.student2_name;
  const displayName=isDuo&&l.student2_name?`${safe(l.name)} & ${safe(l.student2_name)}`:safe(l.name);
  const teachers=db.teachers.filter(t=>t.active!==false);const scheduledTeacher=(db.crm_appointments||[]).find(a=>a.lead_id===leadId&&a.state==='scheduled')?.teacher_id||'';
- showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">✓</div><div class="eyebrow">Etapa criada</div><h2>Ficha inicial preparada</h2><p class="modal-intro"><strong>${displayName}</strong> agora aparece em Fichas iniciais com o status <strong>A preencher</strong>. Você pode preencher ou enviar o link para o entrevistador.</p><div class="fiche-choice-grid"><div class="fiche-choice"><span class="fiche-choice-icon">▤</span><h3>Preencher agora</h3><p>Abra a ficha neste sistema e informe o curso e as condições da matrícula.</p><button type="button" class="btn" data-action="editInterview" data-id="${leadId}">Abrir ficha →</button></div><form id="quickInterviewInviteForm" class="fiche-choice" data-lead="${leadId}"><span class="fiche-choice-icon">↗</span><h3>Enviar ao entrevistador</h3><p>Escolha quem vai preencher. O link é individual e pode ser usado direto pelo professor.</p><label class="field"><span>Professor entrevistador</span><select name="teacher_id" required><option value="">Selecione o professor</option>${options(teachers,scheduledTeacher)}</select></label><button class="btn light" type="submit" ${teachers.length?'':'disabled'}>Gerar link →</button>${teachers.length?'':'<p class="small muted">Cadastre um professor antes de gerar o link.</p>'}</form></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Concluir depois</button></div></div>`);
+ showModal(`<div class="fiche-popup"><div class="fiche-popup-symbol" aria-hidden="true">✓</div><div class="eyebrow">Etapa criada</div><h2>Orçamento preparado</h2><p class="modal-intro"><strong>${displayName}</strong> está com o orçamento em aberto. Você pode preenchê-lo diretamente ou gerar o link para o professor/entrevistador.</p><div class="fiche-choice-grid"><div class="fiche-choice"><span class="fiche-choice-icon">▤</span><h3>Preencher agora</h3><p>Abra o formulário de orçamento e informe o curso, horários e condições financeiras.</p><button type="button" class="btn" data-action="editInterview" data-id="${leadId}">Abrir orçamento →</button></div><form id="quickInterviewInviteForm" class="fiche-choice" data-lead="${leadId}"><span class="fiche-choice-icon">↗</span><h3>Enviar ao entrevistador</h3><p>Escolha quem vai preencher. O link é individual e pode ser usado direto pelo professor.</p><label class="field"><span>Professor entrevistador</span><select name="teacher_id" required><option value="">Selecione o professor</option>${options(teachers,scheduledTeacher)}</select></label><button class="btn light" type="submit" ${teachers.length?'':'disabled'}>Gerar link →</button>${teachers.length?'':'<p class="small muted">Cadastre um professor antes de gerar o link.</p>'}</form></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Concluir depois</button></div></div>`);
 }
 function normalSchedule(schedule,weeklyDays=[],lessonTime='18:00'){
  const src=Array.isArray(schedule)&&schedule.length?schedule:(weeklyDays||[]).map(day=>({day:Number(day),time:String(lessonTime||'18:00').slice(0,5)}));
@@ -3581,6 +3582,164 @@ async function externalSave(f){
  $('.sign-main').innerHTML='<section class="sign-panel"><h1>Ficha salva!</h1><p class="muted">As informações da entrevista foram registradas com sucesso.</p></section>';
 }
 
+function publicOrcamentoStart(token){
+ ui.user=null;
+ const data=decodeBudgetData(token);
+ if(!data){
+  $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Orçamento</div></div></div>${themeToggleMarkup()}</header><main class="sign-main"><section class="sign-panel"><h2>Orçamento indisponível</h2><p class="muted">O link do orçamento está inválido ou expirou. Solicite um novo link à escola.</p></section></main></div>`;
+  return;
+ }
+ renderPublicOrcamento(data);
+}
+
+function renderPublicOrcamento(data){
+ const schoolName=data.school_name||'Escola de Idiomas';
+ const isDuo=!!data.is_duo;
+ const studentNames=isDuo&&data.student2_name?`${data.lead_name} & ${data.student2_name}`:data.lead_name;
+ const course=data.course||'Inglês';
+ const total=Number(data.total_amount||0);
+ const installments=Number(data.installments||1);
+ const installmentAmount=Number(data.installment_amount||0);
+ const schedule=data.preferred_schedule||'A combinar com a coordenação';
+ const weeklyFreq=data.weekly_frequency||1;
+ const lessonsCount=data.lessons_count;
+ const teacher=data.teacher_name||'A definir';
+ const method=data.payment_method||'Boleto / PIX';
+ const notes=data.pedagogical_notes;
+ const firstDue=data.first_due_date?dateBR(data.first_due_date):'No ato da matrícula';
+ const validityText=data.start_date?(data.end_date?`${dateBR(data.start_date)} a ${dateBR(data.end_date)}`:`A partir de ${dateBR(data.start_date)}`):'A combinar';
+
+ const cleanSchoolPhone=String(data.school_phone||'').replace(/\D/g,'');
+ const schoolWaNumber=cleanSchoolPhone?(cleanSchoolPhone.startsWith('55')?cleanSchoolPhone:('55'+cleanSchoolPhone)):'';
+ const waMsg=`Olá! Recebi o orçamento para as aulas de *${course}* (${studentNames}) e gostaria de confirmar minha matrícula / tirar dúvidas!`;
+ const waLink=schoolWaNumber?`https://wa.me/${schoolWaNumber}?text=${encodeURIComponent(waMsg)}`:`https://wa.me/?text=${encodeURIComponent(waMsg)}`;
+
+ $('#app').innerHTML=`<div class="sign-page">
+  <header class="sign-top">
+   <div class="brand">
+    <span class="mark">${safe((schoolName[0]||'C').toUpperCase())}</span>
+    <div>
+     <div class="brand-title">${safe(schoolName.toUpperCase())}</div>
+     <div class="brand-sub">Orçamento de Aulas</div>
+    </div>
+   </div>
+   ${themeToggleMarkup()}
+  </header>
+
+  <main class="sign-main">
+   <div class="eyebrow">Proposta Comercial & Pedagógica</div>
+   <h1>Proposta de Aulas · ${safe(course)}</h1>
+   <p class="leadline">
+    Olá, <strong>${safe(studentNames)}</strong>! Preparamos esta proposta personalizada para suas aulas de <strong>${safe(course)}</strong>. Confira abaixo todas as informações pedagógicas, horários e condições de investimento.
+   </p>
+
+   <div class="sign-lead-hero">
+    <div class="sign-lead-item">
+     <span>Aluno(a) ${isDuo?'(Dupla)':''}</span>
+     <strong>${safe(studentNames)}</strong>
+     ${data.guardian_name?`<small>Responsável: ${safe(data.guardian_name)}</small>`:''}
+    </div>
+    <div class="sign-lead-item">
+     <span>Curso / Programa</span>
+     <strong>${safe(course)}</strong>
+     <small>${isDuo?'Aulas em Dupla':'Aulas Individuais'}</small>
+    </div>
+    <div class="sign-lead-item">
+     <span>Professor(a) das aulas</span>
+     <strong>${safe(teacher)}</strong>
+     <small>Responsável pedagógico</small>
+    </div>
+   </div>
+
+   <section class="sign-panel">
+    <div class="sign-step">Plano Pedagógico</div>
+    <h2>Grade de Aulas & Carga Horária</h2>
+    <p class="muted">Estrutura de encontros planejada para o seu ritmo de aprendizado.</p>
+
+    <div class="detail-grid">
+     <div class="detail-item">
+      <span>Modalidade</span>
+      <strong>${isDuo?'Dupla (2 alunos)':'Individual'}</strong>
+     </div>
+     ${lessonsCount?`
+      <div class="detail-item">
+       <span>Carga horária</span>
+       <strong>${safe(lessonsCount)} aulas</strong>
+      </div>
+     `:''}
+     <div class="detail-item">
+      <span>Frequência semanal</span>
+      <strong>${safe(weeklyFreq)}x por semana</strong>
+     </div>
+     <div class="detail-item">
+      <span>Período previsto</span>
+      <strong>${safe(validityText)}</strong>
+     </div>
+     <div class="detail-item" style="grid-column: 1 / -1;">
+      <span>Horários combinados / Grade</span>
+      <strong style="color:var(--primary);font-size:15px">${safe(schedule)}</strong>
+     </div>
+    </div>
+
+    ${notes?`
+     <div style="margin-top:16px;padding:14px;background:var(--bg-subtle);border-radius:var(--radius-md);border-left:3px solid var(--primary);">
+      <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);display:block;margin-bottom:4px;">Observações Pedagógicas</span>
+      <p style="margin:0;font-size:13px;line-height:1.5;color:var(--text-main);white-space:pre-wrap;">${safe(notes)}</p>
+     </div>
+    `:''}
+   </section>
+
+   <section class="sign-panel">
+    <div class="sign-step">Condições Financeiras</div>
+    <h2>Investimento & Formas de Pagamento</h2>
+    <p class="muted">Condições especiais reservadas para este orçamento.</p>
+
+    <div style="background:var(--primary-soft, rgba(22,109,89,0.06));border:1px solid rgba(22,109,89,0.2);border-radius:var(--radius-md);padding:20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;">
+     <div>
+      <span style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--primary);display:block;margin-bottom:4px;">Investimento Total</span>
+      <div style="font-size:28px;font-weight:800;color:var(--primary);line-height:1.1;">R$ ${total.toFixed(2)}</div>
+     </div>
+     <div style="text-align:right;">
+      <span style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);display:block;margin-bottom:4px;">Parcelamento</span>
+      <div style="font-size:20px;font-weight:800;color:var(--text-main);line-height:1.1;">${installments}x de R$ ${installmentAmount.toFixed(2)}</div>
+     </div>
+    </div>
+
+    <div class="detail-grid">
+     <div class="detail-item">
+      <span>Forma de pagamento</span>
+      <strong>${safe(method)}</strong>
+     </div>
+     <div class="detail-item">
+      <span>1º Vencimento</span>
+      <strong>${safe(firstDue)}</strong>
+     </div>
+     <div class="detail-item">
+      <span>Número de parcelas</span>
+      <strong>${safe(installments)} ${installments===1?'parcela única':'parcelas'}</strong>
+     </div>
+    </div>
+   </section>
+
+   <section class="sign-panel" style="text-align:center;padding:32px 24px;">
+    <h2 style="margin-bottom:6px;">Pronto para iniciar suas aulas?</h2>
+    <p class="muted" style="max-width:520px;margin:0 auto 20px auto;">
+     Confirme sua vaga diretamente com a equipe da <strong>${safe(schoolName)}</strong> pelo WhatsApp para darmos início à preparação do seu contrato e materiais.
+    </p>
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;">
+     <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="btn" style="background:#25D366;color:#ffffff;border:none;font-weight:700;padding:12px 24px;font-size:14px;border-radius:8px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;box-shadow:0 2px 8px rgba(37,211,102,0.25);">
+      <span>Falar no WhatsApp e Confirmar Vaga</span>
+     </a>
+     <button type="button" class="btn ghost" onclick="window.print()" style="padding:12px 20px;font-size:13.5px;">
+      <span>Imprimir / Salvar PDF</span>
+     </button>
+    </div>
+   </section>
+  </main>
+ </div>`;
+}
+
 let publicToken='',publicData=null;
 async function publicAPI(body){const response=await fetch(`${SUPA_URL}/functions/v1/matricula-v5`,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({token:publicToken,...body})});const json=await response.json().catch(()=>({error:'Resposta inválida do servidor'}));if(!response.ok)throw new Error(json.error||'Serviço indisponível');return json;}
 async function publicStart(token){
@@ -3675,7 +3834,7 @@ async function completePreEnrollment(f){
   throw err;
  }
 }
-window.addEventListener('hashchange',()=>{if(location.hash.includes('access_token=')||location.hash.includes('error='))return;if(location.hash.startsWith('#assinar/')||location.hash.startsWith('#pre-matricula/')||location.hash.startsWith('#entrevista/')||location.hash.startsWith('#professor/')||location.hash.startsWith('#admin/'))location.reload()});
+window.addEventListener('hashchange',()=>{if(location.hash.includes('access_token=')||location.hash.includes('error='))return;if(location.hash.startsWith('#assinar/')||location.hash.startsWith('#pre-matricula/')||location.hash.startsWith('#entrevista/')||location.hash.startsWith('#orcamento/')||location.hash.startsWith('#professor/')||location.hash.startsWith('#admin/'))location.reload()});
 sb.auth.onAuthStateChange((event)=>{
  if(event==='PASSWORD_RECOVERY'){
   history.replaceState({},'',location.pathname+'?recuperar=1');
