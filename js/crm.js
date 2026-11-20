@@ -136,7 +136,7 @@ export function decodeBudgetData(str){
 }
 
 export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,createInterviewInviteLink,startBusy,finishBusy,isBusy,saveInterview,getCalendar,resolveSchoolAdminsList}){
- const state={tab:'open',mode:'board',search:'',column:'all',tag:'all',source:'all',service:'all',region:'all',interview:'all',period:'all',sort:'activity',lead:null,detailTab:'data',editingFicheLeadId:null,ficheKind:null,importRows:[],editingColId:null,editingTagId:null,dragLeadId:null,filtersOpen:false};
+ const state={tab:'open',mode:'board',search:'',column:'all',tag:'all',source:'all',service:'all',region:'all',interview:'all',period:'all',sort:'activity',lead:null,detailTab:'data',editingFicheLeadId:null,ficheKind:null,showBudgetLinkForLeadId:null,importRows:[],editingColId:null,editingTagId:null,dragLeadId:null,filtersOpen:false};
  const currentSchoolName=()=>(ui.schools||[]).find(s=>s.id===ui.schoolId)?.name||ui.schoolName||'CAMPANELLA';
 
  async function copyToClipboard(text){
@@ -218,15 +218,28 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
  }
 
  const internalSaveInterview=async(payload,id)=>{
-  if(typeof saveInterview==='function')return await saveInterview(payload,id);
+  if(typeof saveInterview==='function'){
+   try{return await saveInterview(payload,id);}
+   catch(e){console.warn('saveInterview delegation failed, falling back:',e);}
+  }
   try{return await save('interviews',payload,id);}
   catch(err){
    const copy={...payload};
+   delete copy.guardian_name;
    delete copy.second_due_date;
    delete copy.has_custom_first_installment;
    delete copy.demais_parcelas;
    delete copy.enrollment_mode;
-   return await save('interviews',copy,id);
+   try{
+    return await save('interviews',copy,id);
+   }catch(err2){
+    const msg2=String(err2?.message||'')+String(err2?.details||'');
+    if((msg2.includes('fk_interviews_interviewer_teacher')||msg2.includes('violates foreign key constraint')||err2?.code==='23503') && copy.teacher_id){
+     copy.interviewer_teacher_id=copy.teacher_id;
+     return await save('interviews',copy,id);
+    }
+    throw err2;
+   }
   }
  };
  const internalCreateInviteLink=async(leadId,teacherId)=>{
@@ -586,6 +599,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    state.detailTab='data';
    state.editingFicheLeadId=null;
    state.ficheKind=null;
+   state.showBudgetLinkForLeadId=null;
   }
   const activeTab=state.detailTab||'data';
   const a=nextInterview(id),lastAppt=appts(id)[0],history=acts(id).filter(x=>x.kind!=='followup'),appointments=appts(id);
@@ -962,7 +976,9 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
         </div>
        </form>
       </div>
-     `:fiche?`
+     `:fiche?(()=>{
+      const showBudgetLink=state.showBudgetLinkForLeadId===id;
+      return `
       <div class="crm-fiche-hero is-filled">
        <div class="crm-fiche-hero-head">
         <div>
@@ -970,19 +986,25 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
          <h4>Orçamento comercial · ${safe(fiche.course||'Inglês')}</h4>
         </div>
         <div class="crm-fiche-hero-actions">
-         <a href="${budgetWhatsAppUrl(l,fiche)}" target="_blank" rel="noopener noreferrer" class="crm-btn crm-btn-whatsapp-full" title="Enviar proposta para o aluno no WhatsApp">
-          ${crmIcon('whatsapp',15)} <span>Enviar no WhatsApp</span>
-         </a>
-         <button type="button" class="crm-btn primary" data-action="crmCopyBudgetLink" data-id="${safe(id)}" title="Copiar link para o aluno">
-          ${crmIcon('copy',14)} <span>Copiar link</span>
+         ${showBudgetLink?`
+          <a href="${budgetWhatsAppUrl(l,fiche)}" target="_blank" rel="noopener noreferrer" class="crm-btn crm-btn-whatsapp-full" title="Enviar proposta para o aluno no WhatsApp">
+           ${crmIcon('whatsapp',15)} <span>Enviar no WhatsApp</span>
+          </a>
+          <button type="button" class="crm-btn primary" data-action="crmCopyBudgetLink" data-id="${safe(id)}" title="Copiar link para o aluno">
+           ${crmIcon('copy',14)} <span>Copiar link</span>
+          </button>
+         `:''}
+         <button type="button" class="crm-btn ${showBudgetLink?'subtle':'primary'}" data-action="crmToggleBudgetLink" data-id="${safe(id)}" title="Gerar ou alternar link de visualização da proposta">
+          ${crmIcon('link',14)} <span>${showBudgetLink?'Ocultar link da proposta':'Gerar link da proposta (opcional)'}</span>
          </button>
          ${btn('crmEditFicheInTab',`${crmIcon('edit',14)} Editar orçamento`,id,'subtle')}
         </div>
        </div>
        <p style="margin:8px 0 0 0;color:var(--text-secondary,#52606d);font-size:12.5px">
-        As condições comerciais e pedagógicas foram definidas e estão prontas para envio ao aluno.
+        ${showBudgetLink?'As condições comerciais foram definidas e o link da proposta está disponível abaixo para envio ao aluno.':'As condições comerciais e pedagógicas foram salvas no sistema.'}
        </p>
 
+       ${showBudgetLink?`
        <div class="crm-budget-link-box">
         <div class="crm-budget-link-label">
          <span>${crmIcon('link',13)} Link da página de orçamento para o aluno:</span>
@@ -993,6 +1015,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
          <button type="button" class="crm-btn subtle" data-action="crmCopyBudgetLink" data-id="${safe(id)}" title="Copiar link">${crmIcon('copy',13)} <span>Copiar</span></button>
         </div>
        </div>
+       `:''}
 
        <div class="crm-fiche-summary-grid">
         <div class="crm-data-item"><span>Curso / Programa</span><strong>${safe(fiche.course||'Inglês')}</strong></div>
@@ -1001,7 +1024,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
         <div class="crm-data-item"><span>Modalidade</span><strong>${fiche.kind==='dupla'?'Dupla (2 alunos)':'Individual'}</strong></div>
         <div class="crm-data-item"><span>1º Aluno</span><strong>${safe(l.name)}</strong></div>
         ${fiche.kind==='dupla'||fiche.student2_name?`<div class="crm-data-item"><span>2º Aluno</span><strong>${safe(fiche.student2_name||l.student2_name||'—')}</strong></div>`:''}
-        ${fiche.guardian_name?`<div class="crm-data-item"><span>Responsável legal</span><strong>${safe(fiche.guardian_name)}</strong></div>`:''}
+        ${(fiche.guardian_name||l.guardian_name)?`<div class="crm-data-item"><span>Responsável legal</span><strong>${safe(fiche.guardian_name||l.guardian_name)}</strong></div>`:''}
         <div class="crm-data-item"><span>Pacote de Aulas</span><strong>${safe(fiche.package_id?(lookup('packages',fiche.package_id)?.name||'Pacote'):(fiche.package||'Personalizado'))}</strong></div>
         <div class="crm-data-item"><span>Aulas & Frequência</span><strong>${safe(fiche.lessons_count||'—')} aulas · ${safe(fiche.weekly_frequency||1)}x/semana</strong></div>
         <div class="crm-data-item"><span>Vigência</span><strong>${shortDate(fiche.start_date)} a ${shortDate(fiche.end_date)}</strong></div>
@@ -1010,6 +1033,8 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
         ${fiche.pedagogical_notes||fiche.notes?`<div class="crm-data-item wide"><span>Observações pedagógicas</span><p>${safe(fiche.pedagogical_notes||fiche.notes||'')}</p></div>`:''}
        </div>
       </div>
+      `;
+     })():
      `:`
       <div class="crm-fiche-hero ${ficheStarted?'is-started':''}">
        <div class="crm-fiche-hero-head">
@@ -1859,13 +1884,18 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    case 'crmLost':return openArchivePopup(id,'lost');
    case 'crmReopen':if(!await window.campanellaConfirm('Reabrir este lead e retorná-lo à pipeline principal?'))return;return updateLead(id,{crm_outcome:'open',crm_archived_at:null,crm_loss_reason:null,status:'novo'},'Oportunidade reaberta');
    case 'crmStartFiche':return openBudgetInvitePopup(id);
+   case 'crmToggleBudgetLink':{
+    state.showBudgetLinkForLeadId=(state.showBudgetLinkForLeadId===id?null:id);
+    return detail(id);
+   }
    case 'crmCopyBudgetLink':{
     const l=lookup('leads',id),f=filledFiche(l);
     if(!l||!f)return;
+    state.showBudgetLinkForLeadId=id;
     const link=budgetPublicUrl(l,f);
     await copyToClipboard(link);
     toast('Link do orçamento copiado para a área de transferência!');
-    return;
+    return detail(id);
    }
    case 'crmGoFiche':{
     state.detailTab='fiche';state.editingFicheLeadId=null;return detail(id);
@@ -2013,7 +2043,6 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
      package_id:(mode==='package'&&d.package_id)?d.package_id:null,
      kind:isDuo?'dupla':'individual',
      student2_name:isDuo?(d.student2_name?.trim()||null):null,
-     guardian_name:d.guardian_name?.trim()||null,
      lessons_count:finalLessonsCount,
      weekly_frequency:weeklyFreq||(selected.length||1),
      start_date:d.start_date||todayISO(),
@@ -2051,6 +2080,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     await log(id,'fiche',ficheId?'Orçamento atualizado':'Orçamento preenchido',`${d.course.trim()} · ${lessonsCount?lessonsCount+' aulas · ':''}Total: R$ ${total.toFixed(2)} (${inst}x de R$ ${Math.round(instAmt*100)/100})`);
 
     state.editingFicheLeadId=null;
+    state.showBudgetLinkForLeadId=null;
     state.detailTab='fiche';
     await refresh();
     detail(id);

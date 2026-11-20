@@ -2389,10 +2389,25 @@ async function saveInterview(payload,id){
   const msg=String(err?.message||'')+String(err?.details||'');
   if(msg.includes('column')||err?.code==='PGRST204'||err?.code==='42703'){
    const copy={...payload};
+   delete copy.guardian_name;
    delete copy.second_due_date;
    delete copy.has_custom_first_installment;
    delete copy.demais_parcelas;
    delete copy.enrollment_mode;
+   try{
+    return await save('interviews',copy,id);
+   }catch(err2){
+    const msg2=String(err2?.message||'')+String(err2?.details||'');
+    if((msg2.includes('fk_interviews_interviewer_teacher')||msg2.includes('violates foreign key constraint')||err2?.code==='23503') && copy.teacher_id){
+     copy.interviewer_teacher_id=copy.teacher_id;
+     return await save('interviews',copy,id);
+    }
+    throw err2;
+   }
+  }
+  if((msg.includes('fk_interviews_interviewer_teacher')||msg.includes('violates foreign key constraint')||err?.code==='23503') && payload.teacher_id){
+   const copy={...payload};
+   copy.interviewer_teacher_id=copy.teacher_id;
    return await save('interviews',copy,id);
   }
   throw err;
