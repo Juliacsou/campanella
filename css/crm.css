@@ -738,23 +738,27 @@
 }
 
 /* 7. Lead Detail Drawer (Fixed Header + Scrollable Tab Body) */
-dialog#modal.crm-lead-drawer,
-dialog#modal:has(.crm-detail) {
+dialog#modal:not([open]) {
+  display: none !important;
+}
+
+dialog#modal[open].crm-lead-drawer,
+dialog#modal[open]:has(.crm-detail) {
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
   padding: 0 !important;
 }
 
-dialog#modal.crm-lead-drawer > .close,
-dialog#modal:has(.crm-detail) > .close {
+dialog#modal[open].crm-lead-drawer > .close,
+dialog#modal[open]:has(.crm-detail) > .close {
   position: static !important;
   flex-shrink: 0 !important;
   margin: 16px 0 4px 24px !important;
 }
 
-dialog#modal.crm-lead-drawer > #modal-body,
-dialog#modal:has(.crm-detail) > #modal-body {
+dialog#modal[open].crm-lead-drawer > #modal-body,
+dialog#modal[open]:has(.crm-detail) > #modal-body {
   flex: 1 !important;
   display: flex !important;
   flex-direction: column !important;
@@ -1930,4 +1934,84 @@ dialog.crm-popup-dialog::backdrop {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Popup Dialog Outcome Variants */
+.crm-popup-badge-icon.is-won {
+  background: #E8F5E9;
+  color: #166D59;
+}
+
+.crm-popup-badge-icon.is-lost {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.crm-popup-btn-submit.is-danger {
+  background: #DC2626;
+  border-color: #DC2626;
+}
+
+.crm-popup-btn-submit.is-danger:hover {
+  background: #B91C1C;
+  border-color: #B91C1C;
+}
+
+/* Close Drawer Icon Button in Sticky Head */
+.crm-btn-head-icon.crm-btn-close-drawer {
+  background: #F2F4F7;
+  color: #475467;
+  border: 1px solid #D0D5DD;
+}
+
+.crm-btn-head-icon.crm-btn-close-drawer:hover {
+  background: #EAECF0;
+  color: #101828;
+}
+
+/* In-Tab Ficha Form */
+.crm-lead-fiche-form {
+  margin-top: 14px;
+}
+
+.crm-fiche-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.crm-fiche-form-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.crm-fiche-financial-box {
+  background: #FFFFFF;
+  border: 1px dashed #CBD5E1;
+  border-radius: var(--radius-sm, 6px);
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.crm-fiche-financial-box .field.wide {
+  grid-column: 1 / -1;
+}
+
+.crm-fiche-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .crm-fiche-form-grid,
+  .crm-fiche-financial-box {
+    grid-template-columns: 1fr;
+  }
+}
+
 

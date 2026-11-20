@@ -131,13 +131,45 @@ console.log('  -> Botão de tags link validado.');
 // 8. Verificando versionamento de cache
 console.log('8. Verificando versionamento de cache...');
 assert.ok(
-  indexHtml.includes('crm.css?v=8.1.1') && indexHtml.includes('app.js?v=8.1.1'),
-  'O index.html deve conter crm.css?v=8.1.1 e app.js?v=8.1.1'
+  indexHtml.includes('crm.css?v=8.1.2') && indexHtml.includes('app.js?v=8.1.2'),
+  'O index.html deve conter crm.css?v=8.1.2 e app.js?v=8.1.2'
 );
 assert.ok(
-  appJs.includes('./crm.js?v=8.1.1'),
-  'O app.js deve importar ./crm.js?v=8.1.1'
+  appJs.includes('./crm.js?v=8.1.2'),
+  'O app.js deve importar ./crm.js?v=8.1.2'
 );
-console.log('  -> Cache version v=8.1.1 validado.');
+console.log('  -> Cache version v=8.1.2 validado.');
 
-console.log('\n=== Todos os 8 testes V8.0/V8.1 de Atendimento, Micro-Modal e Cabeçalho Fixo passaram com 100% de sucesso! ===');
+// 9. Verificando correção do bug de congelamento do modal / drawer e fechamento
+console.log('9. Verificando proteção contra congelamento de modal / drawer...');
+assert.ok(
+  crmCss.includes('dialog#modal:not([open])') && crmCss.includes('display: none !important'),
+  'O crm.css deve garantir display: none !important quando o dialog não estiver open'
+);
+assert.ok(
+  crmJs.includes('crmCloseDrawer') && crmJs.includes('crm-btn-close-drawer'),
+  'O topo do lead drawer deve ter o botão crmCloseDrawer (.crm-btn-close-drawer)'
+);
+assert.ok(
+  crmJs.includes("openArchivePopup") && crmJs.includes("crmWon") && crmJs.includes("crmLost"),
+  'Fechar negócio e Não converteu devem abrir popup flutuante sem destruir o drawer'
+);
+console.log('  -> Proteção de fechamento e popup de arquivamento validados.');
+
+// 10. Verificando Ficha Inicial embutida diretamente na aba do lead
+console.log('10. Verificando Ficha Inicial interativa na Aba 4...');
+assert.ok(
+  crmJs.includes('id="crmLeadFicheForm"') && crmJs.includes('crm-lead-fiche-form'),
+  'A Aba 4 do lead deve embutir o formulário #crmLeadFicheForm para preenchimento direto'
+);
+assert.ok(
+  crmJs.includes('crmEditFicheInTab') && crmJs.includes('crmCancelFicheEdit'),
+  'A ficha preenchida deve oferecer botão para editar diretamente na aba sem sair do lead'
+);
+assert.ok(
+  crmCss.includes('.crm-lead-fiche-form') && crmCss.includes('.crm-fiche-financial-box'),
+  'O crm.css deve estilizar o formulário da ficha e a caixa financeira'
+);
+console.log('  -> Ficha inicial embutida na aba validada com sucesso.');
+
+console.log('\n=== Todos os 10 testes V8.0/V8.1/V8.1.2 de Atendimento, Micro-Modal, Fechamento e Ficha em Aba passaram com 100% de sucesso! ===');

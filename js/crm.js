@@ -110,8 +110,20 @@ const textarea=(name,title,val='',extra='')=>`<label class="field wide"><span>${
 const formFooter=(label='Salvar')=>`<div class="form-footer"><button type="button" class="btn ghost" data-action="crmCancel">Cancelar</button><button class="btn" type="submit">${safe(label)}</button></div>`;
 const formatWhats=s=>{let raw=onlyDigits(s);if(!raw)return '';if(raw.length===10||raw.length===11)raw='55'+raw;return /^[0-9]{11,15}$/.test(raw)?`https://wa.me/${raw}`:''};
 
-export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy}){
- const state={tab:'open',mode:'board',search:'',column:'all',tag:'all',source:'all',service:'all',region:'all',interview:'all',period:'all',sort:'activity',lead:null,detailTab:'data',importRows:[],editingColId:null,editingTagId:null,dragLeadId:null,filtersOpen:false};
+export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy,saveInterview}){
+ const state={tab:'open',mode:'board',search:'',column:'all',tag:'all',source:'all',service:'all',region:'all',interview:'all',period:'all',sort:'activity',lead:null,detailTab:'data',editingFicheLeadId:null,ficheKind:null,importRows:[],editingColId:null,editingTagId:null,dragLeadId:null,filtersOpen:false};
+ const internalSaveInterview=async(payload,id)=>{
+  if(typeof saveInterview==='function')return await saveInterview(payload,id);
+  try{return await save('interviews',payload,id);}
+  catch(err){
+   const copy={...payload};
+   delete copy.second_due_date;
+   delete copy.has_custom_first_installment;
+   delete copy.demais_parcelas;
+   delete copy.enrollment_mode;
+   return await save('interviews',copy,id);
+  }
+ };
  const leads=()=>db.leads||[];
  const appts=id=>(db.crm_appointments||[]).filter(x=>x.lead_id===id).sort((a,b)=>String(b.scheduled_at).localeCompare(String(a.scheduled_at)));
  const acts=id=>(db.crm_activities||[]).filter(x=>x.lead_id===id).sort((a,b)=>String(b.occurred_at).localeCompare(String(a.occurred_at)));
@@ -396,6 +408,8 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   if(state.lead!==id){
    state.lead=id;
    state.detailTab='data';
+   state.editingFicheLeadId=null;
+   state.ficheKind=null;
   }
   const activeTab=state.detailTab||'data';
   const a=nextInterview(id),lastAppt=appts(id)[0],history=acts(id).filter(x=>x.kind!=='followup'),appointments=appts(id);
@@ -406,6 +420,18 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   const tags=allTags(),assignedTagIds=new Set(Array.isArray(l.crm_tag_ids)?l.crm_tag_ids:[]);
   const isDuo=l.kind==='dupla'||!!l.student2_name;
   const displayName=isDuo?`${l.name} & ${l.student2_name||'2º Aluno'}`:l.name;
+
+  const activeTeachers=(db.teachers||[]).filter(t=>t.active!==false);
+  const scheduledTeacher=a?.teacher_id||'';
+  const interviewerTeacher=fiche?.interviewer_teacher_id||scheduledTeacher||fiche?.teacher_id||(activeTeachers[0]?.id||'');
+  const lessonTeacher=fiche?.teacher_id||scheduledTeacher||(activeTeachers[0]?.id||'');
+  const isDuoFiche=state.ficheKind?state.ficheKind==='dupla':(fiche?.kind==='dupla'||(!fiche&&(l.kind==='dupla'||!!l.student2_name)));
+  const activePackages=(db.packages||[]).filter(p=>p.active!==false);
+  const availablePackages=activePackages.filter(p=>isDuoFiche?p.kind==='dupla':p.kind!=='dupla');
+  const currentPkgId=fiche?.package_id||(availablePackages[0]?.id||'');
+  const currentPkg=lookup('packages',currentPkgId);
+  const currentMode=fiche?.enrollment_mode||(currentPkgId?'package':'custom');
+  const isEditingFiche=!fiche||state.editingFicheLeadId===id;
 
   showModal(`<div class="crm-detail">
    <div class="crm-detail-sticky-head">
@@ -422,8 +448,8 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
         ${leadTags(l).map(renderTagBadge).join('')}
        </div>
       </div>
-      ${cleanPhone?`
-       <div class="crm-detail-top-actions">
+      <div class="crm-detail-top-actions">
+       ${cleanPhone?`
         ${wa?`
          <a class="crm-btn-head-icon crm-btn-whatsapp" href="${wa}" target="_blank" rel="noopener noreferrer" title="Conversar no WhatsApp (${safe(l.phone||'')})" aria-label="Conversar no WhatsApp">
           ${crmIcon('whatsapp',19)}
@@ -435,8 +461,11 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
         <a class="crm-btn-head-icon crm-btn-sms" href="sms:${cleanPhone}" title="Enviar SMS para (${safe(l.phone||'')})" aria-label="Enviar SMS para o lead">
          ${crmIcon('sms',16)}
         </a>
-       </div>
-      `:''}
+       `:''}
+       <button type="button" class="crm-btn-head-icon crm-btn-close-drawer" data-action="crmCloseDrawer" title="Fechar aba do lead" aria-label="Fechar aba do lead">
+        ${crmIcon('x',18)}
+       </button>
+      </div>
      </div>
     </div>
 
@@ -616,35 +645,180 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
 
     <!-- ABA 4: FICHA INICIAL -->
     <div class="crm-tab-pane ${activeTab==='fiche'?'is-active':''}" data-pane="fiche" ${activeTab==='fiche'?'':'hidden'}>
-     <div class="crm-fiche-hero ${fiche?'is-filled':ficheStarted?'is-started':''}">
-      <div class="crm-fiche-hero-head">
-       <div>
-        <span class="crm-interview-badge ${fiche?'is-completed':ficheStarted?'is-scheduled':''}">${fiche?'Ficha preenchida':ficheStarted?'Ficha inicial criada':'Ainda não criada'}</span>
-        <h4>${fiche?`Ficha pedagógica preenchida · ${safe(fiche.course||'Inglês')}`:ficheStarted?'Ficha inicial aguardando preenchimento':'Ficha inicial do lead'}</h4>
+     ${isEditingFiche?`
+      <div class="crm-fiche-hero ${fiche?'is-filled':'is-started'}">
+       <div class="crm-fiche-hero-head">
+        <div>
+         <span class="crm-interview-badge ${fiche?'is-completed':'is-scheduled'}">${fiche?'Editando Ficha Inicial':'Preencher Ficha Inicial'}</span>
+         <h4>${fiche?`Editar ficha pedagógica · ${safe(fiche.course||'Inglês')}`:`Ficha inicial · ${safe(displayName)}`}</h4>
+        </div>
+        ${fiche?`
+         <div class="crm-fiche-hero-actions">
+          <button type="button" class="crm-btn subtle" data-action="crmCancelFicheEdit">Cancelar edição</button>
+         </div>
+        `:''}
        </div>
-       <div class="crm-fiche-hero-actions">
-        ${l.status!=='convertido'?(ficheStarted?`
-         ${btn('crmGoFiche',`Abrir ficha inicial ${crmIcon('arrowRight',14)}`,id,'primary')}
-         ${btn('crmStartFiche','Link do entrevistador / opções',id,'subtle')}
-        `:btn('crmStartFiche',`${crmIcon('fileText',14)} Criar ficha inicial`,id,'primary')):''}
-       </div>
-      </div>
-      <p style="margin:8px 0 0 0;color:var(--text-secondary,#52606d);font-size:12.5px">
-       ${fiche?'Os dados pedagógicos foram preenchidos durante a entrevista e estão disponíveis para conferência e geração de matrícula / contrato.':ficheStarted?'A ficha inicial foi criada. O professor entrevistador pode preenchê-la diretamente na aba de entrevistas ou pelo link compartilhado.':'Prepare a ficha inicial para ser utilizada durante a entrevista pedagógica com o professor.'}
-      </p>
+       <p style="margin:8px 0 0 0;color:var(--text-secondary,#52606d);font-size:12.5px">
+        ${fiche?'Atualize as informações pedagógicas e financeiras do aluno diretamente nesta aba.':'Preencha os dados pedagógicos, horários e valores combinados. Ao salvar, as informações ficarão registradas para conferência e geração da matrícula / contrato.'}
+       </p>
 
-      ${fiche?`
+       <form id="crmLeadFicheForm" class="crm-lead-fiche-form" data-lead="${safe(id)}" data-fiche-id="${safe(fiche?.id||'')}">
+        <div class="crm-fiche-form-grid">
+         <label class="field wide">
+          <span>Modalidade da aula</span>
+          <select name="kind" id="crmFicheKindSelect">
+           <option value="individual" ${!isDuoFiche?'selected':''}>Individual (1 aluno)</option>
+           <option value="dupla" ${isDuoFiche?'selected':''}>Dupla (2 alunos no mesmo horário)</option>
+          </select>
+         </label>
+         <label class="field">
+          <span>Nome do 1º aluno / lead *</span>
+          <input type="text" name="lead_name" value="${safe(l.name)}" required>
+         </label>
+         <label class="field" id="crmFicheStudent2Field" style="${isDuoFiche?'':'display:none;'}">
+          <span>Nome do 2º aluno (dupla) *</span>
+          <input type="text" name="student2_name" value="${safe(fiche?.student2_name||l.student2_name||'')}" ${isDuoFiche?'required':''}>
+         </label>
+         <label class="field ${isDuoFiche?'':'wide'}">
+          <span>Nome do responsável legal (se houver menor)</span>
+          <input type="text" name="guardian_name" value="${safe(fiche?.guardian_name||l.guardian_name||'')}">
+         </label>
+
+         <label class="field wide">
+          <span>Formato do plano</span>
+          <select name="enrollment_mode" id="crmFicheModeSelect">
+           <option value="package" ${currentMode==='package'?'selected':''}>Pacote cadastrado</option>
+           <option value="custom" ${currentMode==='custom'?'selected':''}>Pacote personalizado (saldo de aulas restantes)</option>
+           <option value="recurrence" ${currentMode==='recurrence'?'selected':''}>Recorrência até o fim do contrato</option>
+          </select>
+         </label>
+
+         <label class="field">
+          <span>Professor entrevistador *</span>
+          <select name="interviewer_teacher_id" required>
+           <option value="">Selecione o professor</option>
+           ${activeTeachers.map(t=>`<option value="${safe(t.id)}" ${t.id===interviewerTeacher?'selected':''}>${safe(t.name)}</option>`).join('')}
+          </select>
+         </label>
+
+         <label class="field">
+          <span>Professor responsável pelas aulas *</span>
+          <select name="teacher_id" required>
+           <option value="">Selecione o professor</option>
+           ${activeTeachers.map(t=>`<option value="${safe(t.id)}" ${t.id===lessonTeacher?'selected':''}>${safe(t.name)}</option>`).join('')}
+          </select>
+         </label>
+
+         <label class="field">
+          <span>Curso / Programa *</span>
+          <input type="text" name="course" value="${safe(fiche?.course||l.crm_service||'Inglês')}" required>
+         </label>
+
+         <label class="field" id="crmFichePackageField" style="${currentMode==='package'?'':'display:none;'}">
+          <span>Pacote escolhido</span>
+          <select name="package_id" id="crmFichePackageSelect">
+           <option value="">Selecione o pacote</option>
+           ${availablePackages.map(pkg=>`<option value="${safe(pkg.id)}" data-lessons="${pkg.lessons_count||''}" data-freq="${pkg.weekly_frequency||''}" data-total="${pkg.default_total||''}" ${pkg.id===currentPkgId?'selected':''}>${safe(pkg.name)} (${pkg.lessons_count||'?'} aulas · R$ ${Number(pkg.default_total||0).toFixed(2)})</option>`).join('')}
+          </select>
+         </label>
+
+         <label class="field">
+          <span>Quantidade de aulas</span>
+          <input type="number" name="lessons_count" id="crmFicheLessonsCount" value="${safe(fiche?.lessons_count||currentPkg?.lessons_count||'')}" min="1" max="500" ${currentMode==='package'?'readonly':''}>
+         </label>
+
+         <label class="field">
+          <span>Aulas por semana</span>
+          <input type="number" name="weekly_frequency" id="crmFicheWeeklyFreq" value="${safe(fiche?.weekly_frequency||currentPkg?.weekly_frequency||'2')}" min="1" max="7" ${currentMode==='package'?'readonly':''}>
+         </label>
+
+         <label class="field">
+          <span>Data de início</span>
+          <input type="date" name="start_date" id="crmFicheStartDate" value="${safe(fiche?.start_date||todayISO())}">
+         </label>
+
+         <label class="field">
+          <span>Data de término</span>
+          <input type="date" name="end_date" id="crmFicheEndDate" value="${safe(fiche?.end_date||'')}">
+         </label>
+
+         <label class="field wide">
+          <span>Horários combinados / Grade pretendida</span>
+          <input type="text" name="preferred_schedule" placeholder="Ex: Segundas e Quartas às 14:00" value="${safe(fiche?.preferred_schedule||'')}">
+         </label>
+
+         <div class="wide crm-fiche-financial-box">
+          <label class="field">
+           <span>Valor total (R$) *</span>
+           <input type="number" name="total_amount" id="crmFicheTotalAmount" step="0.01" min="0" value="${safe(fiche?.total_amount!=null?Number(fiche.total_amount).toFixed(2):(currentPkg?.default_total!=null?Number(currentPkg.default_total).toFixed(2):''))}" required>
+          </label>
+          <label class="field">
+           <span>Número de parcelas</span>
+           <input type="number" name="installments" id="crmFicheInstallments" min="1" max="48" value="${safe(fiche?.installments||'6')}" required>
+          </label>
+          <label class="field">
+           <span>Valor da parcela (R$)</span>
+           <input type="number" name="installment_amount" id="crmFicheInstallmentAmount" step="0.01" min="0" value="${safe(fiche?.installment_amount!=null?Number(fiche.installment_amount).toFixed(2):'')}">
+          </label>
+          <label class="field">
+           <span>Primeiro vencimento</span>
+           <input type="date" name="first_due_date" value="${safe(fiche?.first_due_date||fiche?.start_date||todayISO())}">
+          </label>
+          <label class="field wide">
+           <span>Forma de pagamento</span>
+           <select name="payment_method">
+            ${['Boleto','PIX','Transferência','Cartão'].map(m=>`<option value="${safe(m)}" ${(fiche?.payment_method||'Boleto')===m?'selected':''}>${safe(m)}</option>`).join('')}
+           </select>
+          </label>
+         </div>
+
+         <label class="field wide">
+          <span>Observações pedagógicas / internas</span>
+          <textarea name="pedagogical_notes" rows="3" placeholder="Informações do nível de conhecimento, objetivos do aluno, metodologia indicada…">${safe(fiche?.pedagogical_notes||fiche?.notes||'')}</textarea>
+         </label>
+        </div>
+
+        <div class="crm-fiche-form-footer">
+         ${fiche?`<button type="button" class="crm-btn subtle" data-action="crmCancelFicheEdit">Cancelar edição</button>`:''}
+         <button type="submit" class="crm-btn primary">${crmIcon('check',14)} ${fiche?'Salvar alterações da ficha':'Salvar ficha inicial'}</button>
+        </div>
+       </form>
+      </div>
+     `:`
+      <div class="crm-fiche-hero is-filled">
+       <div class="crm-fiche-hero-head">
+        <div>
+         <span class="crm-interview-badge is-completed">Ficha preenchida</span>
+         <h4>Ficha pedagógica preenchida · ${safe(fiche.course||'Inglês')}</h4>
+        </div>
+        <div class="crm-fiche-hero-actions">
+         ${l.status!=='convertido'?`
+          ${btn('crmEditFicheInTab',`${crmIcon('edit',14)} Editar ficha`,id,'primary')}
+          ${btn('crmStartFiche','Link do entrevistador / opções',id,'subtle')}
+         `:''}
+        </div>
+       </div>
+       <p style="margin:8px 0 0 0;color:var(--text-secondary,#52606d);font-size:12.5px">
+        Os dados pedagógicos foram preenchidos durante a entrevista e estão disponíveis para conferência e geração de matrícula / contrato.
+       </p>
+
        <div class="crm-fiche-summary-grid">
         <div class="crm-data-item"><span>Curso / Programa</span><strong>${safe(fiche.course||'Inglês')}</strong></div>
         <div class="crm-data-item"><span>Professor Entrevistador</span><strong>${safe(teacherName(fiche.interviewer_teacher_id||fiche.teacher_id))}</strong></div>
-        <div class="crm-data-item"><span>Modalidade</span><strong>${safe(fiche.modality||fiche.format||'Presencial')}</strong></div>
-        <div class="crm-data-item"><span>Pacote de Aulas</span><strong>${safe(fiche.package||fiche.lessons_per_week||'Padrão')}</strong></div>
-        ${fiche.preferred_schedule?`<div class="crm-data-item"><span>Horário pretendido</span><strong>${safe(fiche.preferred_schedule)}</strong></div>`:''}
-        ${fiche.financial_notes?`<div class="crm-data-item"><span>Condições financeiras</span><strong>${safe(fiche.financial_notes)}</strong></div>`:''}
-        ${fiche.pedagogical_notes?`<div class="crm-data-item wide"><span>Observações pedagógicas</span><p>${safe(fiche.pedagogical_notes)}</p></div>`:''}
+        <div class="crm-data-item"><span>Professor das Aulas</span><strong>${safe(teacherName(fiche.teacher_id))}</strong></div>
+        <div class="crm-data-item"><span>Modalidade</span><strong>${fiche.kind==='dupla'?'Dupla (2 alunos)':'Individual'}</strong></div>
+        <div class="crm-data-item"><span>1º Aluno</span><strong>${safe(l.name)}</strong></div>
+        ${fiche.kind==='dupla'||fiche.student2_name?`<div class="crm-data-item"><span>2º Aluno</span><strong>${safe(fiche.student2_name||l.student2_name||'—')}</strong></div>`:''}
+        ${fiche.guardian_name?`<div class="crm-data-item"><span>Responsável legal</span><strong>${safe(fiche.guardian_name)}</strong></div>`:''}
+        <div class="crm-data-item"><span>Pacote de Aulas</span><strong>${safe(fiche.package_id?(lookup('packages',fiche.package_id)?.name||'Pacote'):(fiche.package||'Personalizado'))}</strong></div>
+        <div class="crm-data-item"><span>Aulas & Frequência</span><strong>${safe(fiche.lessons_count||'—')} aulas · ${safe(fiche.weekly_frequency||1)}x/semana</strong></div>
+        <div class="crm-data-item"><span>Vigência</span><strong>${shortDate(fiche.start_date)} a ${shortDate(fiche.end_date)}</strong></div>
+        ${fiche.preferred_schedule?`<div class="crm-data-item wide"><span>Horários combinados / Grade</span><strong>${safe(fiche.preferred_schedule)}</strong></div>`:''}
+        <div class="crm-data-item wide"><span>Condições financeiras</span><strong>${safe(fiche.installments||1)}x de R$ ${Number(fiche.installment_amount||0).toFixed(2)} (Total: R$ ${Number(fiche.total_amount||0).toFixed(2)}) · ${safe(fiche.payment_method||'Boleto')}</strong></div>
+        ${fiche.pedagogical_notes||fiche.notes?`<div class="crm-data-item wide"><span>Observações pedagógicas</span><p>${safe(fiche.pedagogical_notes||fiche.notes||'')}</p></div>`:''}
        </div>
-      `:''}
-     </div>
+      </div>
+     `}
 
      <section class="crm-section">
       <div class="crm-section-title">
@@ -1051,9 +1225,89 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   showModal(`<div class="eyebrow">Entrevista comercial</div><h2>Registrar entrevista realizada</h2><form id="crmCompleteAppointmentForm" data-id="${id}"><div class="form-grid">${fi('finished_on','Data da entrevista',todayISO(),'date',true)}${textarea('details','Resumo / próximos passos')}</div>${formFooter('Marcar realizada')}</form>`);
  }
 
- function archiveForm(id,outcome){
+ function openArchivePopup(id,outcome){
   const l=lookup('leads',id);
-  showModal(`<div class="eyebrow">Fechamento comercial</div><h2>${outcome==='won'?'Fechar negócio':'Encerrar oportunidade'}</h2><p class="modal-intro">${safe(l?.name)} será movido para a aba <strong>${outcome==='won'?'Fechados':'Não convertidos'}</strong>.</p><form id="crmArchiveForm" data-lead="${id}" data-outcome="${outcome}"><div class="form-grid">${outcome==='lost'?sel('reason','Motivo da não conversão',[['','Selecione'],...NON_LOSS.map(x=>[x,x])],''):''}${textarea('details','Observação do fechamento')}</div>${formFooter(outcome==='won'?'Confirmar negócio fechado':'Encerrar oportunidade')}</form>`);
+  const isWon=outcome==='won';
+  const d=document.createElement('dialog');
+  d.className='crm-popup-dialog';
+  d.innerHTML=`<div class="crm-popup-content">
+   <div class="crm-popup-header">
+    <div class="crm-popup-badge-icon ${isWon?'is-won':'is-lost'}">${crmIcon(isWon?'checkCircle':'archive',20)}</div>
+    <div class="crm-popup-headings">
+     <h3>${isWon?'Fechar negócio':'Não converteu'}</h3>
+     <p class="crm-popup-sub">${isWon?`Confirme o fechamento comercial de <b>${safe(l?.name||'Lead')}</b> e registre observações finais.`:`Registre o encerramento da oportunidade de <b>${safe(l?.name||'Lead')}</b> e o motivo do não fechamento.`}</p>
+    </div>
+   </div>
+   <form id="crmArchivePopupForm" class="crm-popup-form" data-lead="${safe(id)}" data-outcome="${safe(outcome)}">
+    ${!isWon?`
+     <label class="crm-popup-field">
+      <span>Motivo do não fechamento *</span>
+      <select name="reason" required>
+       <option value="">Selecione o motivo</option>
+       ${NON_LOSS.map(r=>`<option value="${safe(r)}">${safe(r)}</option>`).join('')}
+      </select>
+     </label>
+    `:''}
+    <label class="crm-popup-field">
+     <span>${isWon?'Observações do fechamento comercial':'Comentário / Detalhes'}</span>
+     <textarea name="details" rows="3" placeholder="${isWon?'Ex: Aluno matriculado no plano semestral…':'Observações sobre o motivo ou próximos passos…'}"></textarea>
+    </label>
+    <div class="crm-popup-footer">
+     <button type="button" class="crm-popup-btn crm-popup-btn-cancel" data-action="crmClosePopup">CANCELAR</button>
+     <button type="submit" class="crm-popup-btn crm-popup-btn-submit ${isWon?'':'is-danger'}">${isWon?'FECHAR NEGÓCIO':'NÃO CONVERTEU'}</button>
+    </div>
+   </form>
+  </div>`;
+
+  const closeDialog=()=>{
+   if(d.open)d.close();
+   d.remove();
+  };
+
+  d.addEventListener('click',e=>{if(e.target===d)closeDialog();});
+  d.addEventListener('cancel',()=>closeDialog());
+  d.querySelector('[data-action="crmClosePopup"]')?.addEventListener('click',()=>closeDialog());
+
+  const form=d.querySelector('#crmArchivePopupForm');
+  form?.addEventListener('submit',async ev=>{
+   ev.preventDefault();
+   ev.stopImmediatePropagation();
+   if(isBusy())return;
+   const submitBtn=form.querySelector('button[type="submit"]');
+   if(submitBtn)submitBtn.disabled=true;
+   startBusy();
+   try{
+    const fd=formData(form);
+    if(!isWon&&!fd.reason)throw new Error('Selecione um motivo de não fechamento.');
+    if(!isWon){
+     const activeAppt=nextInterview(id);
+     if(activeAppt)await save('crm_appointments',{state:'canceled',cancellation_reason:'Oportunidade encerrada',finished_at:new Date().toISOString()},activeAppt.id);
+    }
+    await save('leads',{
+     crm_outcome:outcome,
+     crm_loss_reason:!isWon?fd.reason:null,
+     crm_archived_at:new Date().toISOString()
+    },id);
+    await log(id,'archive',isWon?'Negócio fechado':'Oportunidade encerrada',`${fd.reason?'Motivo: '+fd.reason+'\n':''}${fd.details||''}`.trim());
+    closeDialog();
+    state.tab=outcome;
+    await refresh();
+    detail(id);
+    toast(isWon?'Negócio fechado com sucesso!':'Oportunidade arquivada.');
+   }catch(err){
+    errors(err);
+   }finally{
+    finishBusy();
+    if(submitBtn)submitBtn.disabled=false;
+   }
+  });
+
+  document.body.appendChild(d);
+  d.showModal();
+ }
+
+ function archiveForm(id,outcome){
+  return openArchivePopup(id,outcome);
  }
 
  async function log(id,kind,title,details='',at){await save('crm_activities',{lead_id:id,kind,title,details:details||null,actor_id:ui.user.id,...(at?{occurred_at:at}:{})});}
@@ -1238,8 +1492,11 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     toast('Não comparecimento registrado.');
     return;
    }
-   case 'crmWon':return archiveForm(id,'won');
-   case 'crmLost':return archiveForm(id,'lost');
+   case 'crmCloseDrawer':return closeModal();
+   case 'crmEditFicheInTab':state.detailTab='fiche';state.editingFicheLeadId=id;return detail(id);
+   case 'crmCancelFicheEdit':state.editingFicheLeadId=null;return detail(id);
+   case 'crmWon':return openArchivePopup(id,'won');
+   case 'crmLost':return openArchivePopup(id,'lost');
    case 'crmReopen':if(!await window.campanellaConfirm('Reabrir este lead e retorná-lo à pipeline principal?'))return;return updateLead(id,{crm_outcome:'open',crm_archived_at:null,crm_loss_reason:null,status:'novo'},'Oportunidade reaberta');
    case 'crmStartFiche':{
     const l=lookup('leads',id);if(l?.status==='convertido')throw new Error('Aluno já matriculado');
@@ -1249,7 +1506,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
     await refresh();return ficheCreatedPopup(id);
    }
    case 'crmGoFiche':{
-    const l=lookup('leads',id);closeModal();ui.page='interviews';ui.search=l.name.toLowerCase();return refresh();
+    state.detailTab='fiche';state.editingFicheLeadId=id;return detail(id);
    }
    case 'crmImport':return importHelp();
    case 'crmConfirmImport':return await importRows();
@@ -1311,6 +1568,70 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
      await log(record.id,'stage','Coluna da pipeline alterada',`${oldColName} → ${newColName}`);
     }
     closeModal();await refresh();detail(record.id);toast('Lead salvo no CRM.');return;
+   }
+   if(f.id==='crmLeadFicheForm'){
+    const d=formData(f),id=f.dataset.lead,ficheId=f.dataset.ficheId||undefined;
+    const l=lookup('leads',id);
+    if(!l)throw new Error('Lead não encontrado.');
+    if(!d.lead_name?.trim())throw new Error('Informe o nome do aluno.');
+    const isDuo=d.kind==='dupla';
+    if(isDuo&&!d.student2_name?.trim())throw new Error('Informe o nome do 2º aluno da dupla.');
+    if(!d.course?.trim())throw new Error('Informe o curso / programa.');
+    if(!d.teacher_id)throw new Error('Selecione o professor das aulas.');
+    const total=Number(d.total_amount||0);
+    const inst=Math.max(1,Number(d.installments||1));
+    const instAmt=Number(d.installment_amount||(inst?total/inst:total));
+    const lessonsCount=Number(d.lessons_count||0);
+    const weeklyFreq=Number(d.weekly_frequency||1);
+
+    const interviewPayload={
+     lead_id:id,
+     course:d.course.trim(),
+     interviewer_teacher_id:d.interviewer_teacher_id||d.teacher_id,
+     teacher_id:d.teacher_id,
+     enrollment_mode:d.enrollment_mode||'package',
+     package_id:(d.enrollment_mode==='package'&&d.package_id)?d.package_id:null,
+     kind:isDuo?'dupla':'individual',
+     student2_name:isDuo?(d.student2_name?.trim()||null):null,
+     guardian_name:d.guardian_name?.trim()||null,
+     lessons_count:lessonsCount||null,
+     weekly_frequency:weeklyFreq||1,
+     start_date:d.start_date||todayISO(),
+     end_date:d.end_date||null,
+     preferred_schedule:d.preferred_schedule?.trim()||null,
+     total_amount:total,
+     installments:inst,
+     installment_amount:Math.round(instAmt*100)/100,
+     first_due_date:d.first_due_date||d.start_date||todayISO(),
+     payment_method:d.payment_method||'Boleto',
+     pedagogical_notes:d.pedagogical_notes?.trim()||null,
+     notes:d.pedagogical_notes?.trim()||null,
+     pipeline_status:'open',
+     archived_at:null
+    };
+
+    await internalSaveInterview(interviewPayload,ficheId||undefined);
+
+    const ficheCol=columnForTrigger('fiche_created');
+    const leadPatch={
+     name:d.lead_name.trim(),
+     student2_name:isDuo?(d.student2_name?.trim()||null):null,
+     guardian_name:d.guardian_name?.trim()||null,
+     kind:isDuo?'dupla':'individual',
+     ficha_status:'open',
+     ...(!l.ficha_iniciada_at?{ficha_iniciada_at:new Date().toISOString()}:{}),
+     ...(ficheCol&&!l.crm_column_id?{crm_column_id:ficheCol.id}:{})
+    };
+    await save('leads',leadPatch,id);
+
+    await log(id,'fiche',ficheId?'Ficha inicial atualizada':'Ficha inicial preenchida',`${d.course.trim()} · ${lessonsCount?lessonsCount+' aulas · ':''}Total: R$ ${total.toFixed(2)} (${inst}x de R$ ${Math.round(instAmt*100)/100})`);
+
+    state.editingFicheLeadId=null;
+    state.detailTab='fiche';
+    await refresh();
+    detail(id);
+    toast(ficheId?'Ficha inicial atualizada com sucesso!':'Ficha inicial preenchida com sucesso!');
+    return;
    }
    if(f.id==='crmNoteForm'){
     const d=formData(f),id=f.dataset.lead,contact=f.dataset.kind==='contact';
@@ -1403,6 +1724,52 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    if(lbl1) lbl1.textContent=duo?'Nome do 1º aluno *':'Nome completo *';
    return;
   }
+  if(t.id==='crmFicheKindSelect'||(t.name==='kind'&&t.form?.id==='crmLeadFicheForm')){
+   const isDuo=t.value==='dupla';
+   state.ficheKind=t.value;
+   const f=t.form||document.getElementById('crmLeadFicheForm');
+   const f2=f?.querySelector('#crmFicheStudent2Field');
+   if(f2){
+    f2.style.display=isDuo?'':'none';
+    const inp2=f2.querySelector('input');
+    if(inp2) inp2.required=isDuo;
+   }
+   return;
+  }
+  if(t.id==='crmFicheModeSelect'||(t.name==='enrollment_mode'&&t.form?.id==='crmLeadFicheForm')){
+   const isPkg=t.value==='package';
+   const f=t.form||document.getElementById('crmLeadFicheForm');
+   const pkgField=f?.querySelector('#crmFichePackageField');
+   if(pkgField) pkgField.style.display=isPkg?'':'none';
+   const lessonsInp=f?.querySelector('#crmFicheLessonsCount');
+   const freqInp=f?.querySelector('#crmFicheWeeklyFreq');
+   if(lessonsInp) lessonsInp.readOnly=isPkg;
+   if(freqInp) freqInp.readOnly=isPkg;
+   return;
+  }
+  if(t.id==='crmFichePackageSelect'||(t.name==='package_id'&&t.form?.id==='crmLeadFicheForm')){
+   const f=t.form||document.getElementById('crmLeadFicheForm');
+   const opt=t.selectedOptions?.[0];
+   if(opt&&f){
+    if(opt.dataset.lessons){
+     const lessonsInp=f.querySelector('#crmFicheLessonsCount');
+     if(lessonsInp) lessonsInp.value=opt.dataset.lessons;
+    }
+    if(opt.dataset.freq){
+     const freqInp=f.querySelector('#crmFicheWeeklyFreq');
+     if(freqInp) freqInp.value=opt.dataset.freq;
+    }
+    if(opt.dataset.total){
+     const totalInp=f.querySelector('#crmFicheTotalAmount');
+     if(totalInp) totalInp.value=Number(opt.dataset.total).toFixed(2);
+     const instInp=f.querySelector('#crmFicheInstallments');
+     const inst=Math.max(1,Number(instInp?.value||6));
+     const partInp=f.querySelector('#crmFicheInstallmentAmount');
+     if(partInp) partInp.value=(Number(opt.dataset.total)/inst).toFixed(2);
+    }
+   }
+   return;
+  }
   if(t.form?.id==='crmAppointmentForm'&&['teacher_id','interview_date','interview_time','duration_minutes'].includes(t.name)){
    updateTeacherDayAvailability(t.form);return;
   }
@@ -1424,6 +1791,17 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   if(e.target.id==='crmSearch'){
    state.search=e.target.value;const pos=e.target.selectionStart;refreshView();
    const t=document.getElementById('crmSearch');if(t){t.focus();t.setSelectionRange(pos,pos);}
+   return;
+  }
+  if(['crmFicheTotalAmount','crmFicheInstallments'].includes(e.target.id)&&e.target.form?.id==='crmLeadFicheForm'){
+   const f=e.target.form;
+   const total=Number(f.querySelector('#crmFicheTotalAmount')?.value||0);
+   const inst=Math.max(1,Number(f.querySelector('#crmFicheInstallments')?.value||1));
+   const partInp=f.querySelector('#crmFicheInstallmentAmount');
+   if(partInp&&total>0){
+    partInp.value=(total/inst).toFixed(2);
+   }
+   return;
   }
  });
  document.addEventListener('keydown',e=>{

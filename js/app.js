@@ -2,7 +2,7 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
-import {createCRM} from './crm.js?v=8.1.1';
+import {createCRM} from './crm.js?v=8.1.2';
 import {createCalendar} from './calendar-v6.js?v=7.1.1';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
@@ -411,7 +411,8 @@ function toast(msg,bad=false){
 function lockModalScroll(){document.body.classList.add('modal-open');document.documentElement.classList.add('modal-open');}
 function unlockModalScroll(){if(!document.querySelector('dialog[open]')){document.body.classList.remove('modal-open');document.documentElement.classList.remove('modal-open');}}
 function showModal(content){const m=$('#modal');if(m)m.classList.remove('crm-lead-drawer');$('#modal-body').innerHTML=content;lockModalScroll();if(!m.open)m.showModal();m.scrollTop=0;}
-function closeModal(){const m=$('#modal');if(m)m.classList.remove('crm-lead-drawer');const t=$('#toast');if(t&&t.parentElement&&t.parentElement!==document.body&&document.body)document.body.appendChild(t);if(m&&m.open)m.close();unlockModalScroll();}
+function closeModal(){const m=$('#modal');if(m){m.classList.remove('crm-lead-drawer');if(m.open)m.close();const b=$('#modal-body');if(b)b.innerHTML='';}const t=$('#toast');if(t&&t.parentElement&&t.parentElement!==document.body&&document.body)document.body.appendChild(t);unlockModalScroll();}
+document.addEventListener('click',e=>{const m=$('#modal');if(e.target===m)closeModal();});
 function escapeHtmlText(v){return safe(v==null?'':String(v)).replace(/\n/g,'<br>');}
 function toModalMessage(message){return Array.isArray(message)?message.join('\n'):String(message||'');}
 function independentDialog(body,buttons){
@@ -439,7 +440,7 @@ const card=(title,body,extra='')=>`<section class="panel">${title||extra?`<div c
 const empty=text=>`<div class="empty"><span class="empty-symbol">○</span><span>${safe(text)}</span></div>`;
 const row=(columns)=>`<tr>${columns.map(c=>`<td>${c}</td>`).join('')}</tr>`;
 function table(headers,rows,placeholder='Nenhum registro encontrado'){return `<div class="table-wrap">${rows.length?`<table class="data-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`:empty(placeholder)}</div>`;}
-const crm=createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy:()=>appBusy});
+const crm=createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy:()=>appBusy,saveInterview});
 const calendar=createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg:(name,size)=>ico(name,size),openLead:(id)=>{closeModal();ui.page='leads';render();crm.openLead(id);}});
 initWeeklyPicker();
 // SVGs internos: nao dependem de fontes de icones ou CDNs adicionais.

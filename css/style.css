@@ -2044,6 +2044,10 @@ td:has(.contract-actions-dropdown[open]),
    14. Slide-Over Right Drawer (dialog#modal) & Centered Micro-Modals
    ========================================================================== */
 
+dialog#modal:not([open]) {
+  display: none !important;
+}
+
 dialog#modal {
   position: fixed;
   inset: 0 0 0 auto;
