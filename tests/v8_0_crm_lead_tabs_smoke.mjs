@@ -131,14 +131,14 @@ console.log('  -> Botão de tags link validado.');
 // 8. Verificando versionamento de cache
 console.log('8. Verificando versionamento de cache...');
 assert.ok(
-  indexHtml.includes('crm.css?v=8.1.3') && indexHtml.includes('app.js?v=8.1.3'),
-  'O index.html deve conter crm.css?v=8.1.3 e app.js?v=8.1.3'
+  indexHtml.includes('crm.css?v=8.1.4') && indexHtml.includes('app.js?v=8.1.4'),
+  'O index.html deve conter crm.css?v=8.1.4 e app.js?v=8.1.4'
 );
 assert.ok(
-  appJs.includes('./crm.js?v=8.1.3'),
-  'O app.js deve importar ./crm.js?v=8.1.3'
+  appJs.includes('./crm.js?v=8.1.4'),
+  'O app.js deve importar ./crm.js?v=8.1.4'
 );
-console.log('  -> Cache version v=8.1.3 validado.');
+console.log('  -> Cache version v=8.1.4 validado.');
 
 // 9. Verificando correção do bug de congelamento do modal / drawer e fechamento
 console.log('9. Verificando proteção contra congelamento de modal / drawer...');
@@ -174,7 +174,18 @@ assert.ok(
   crmJs.includes('crmEditFicheInTab') && crmJs.includes('crmStartFiche'),
   'As opções devem disparar crmEditFicheInTab e crmStartFiche'
 );
-console.log('  -> Nomenclatura Orçamento e tela inicial de opções validadas.');
+assert.ok(
+  crmJs.includes('data-action="crmCancelFicheEdit" data-id="${safe(id)}"') &&
+  crmJs.includes('targetId=id||state.editingFicheLeadId||state.lead'),
+  'O botão cancelar edição do orçamento deve conter data-id e recuperar targetId para cancelar com sucesso'
+);
+assert.ok(
+  crmJs.includes('openBudgetInvitePopup') &&
+  crmJs.includes('crmBudgetInvitePopupForm') &&
+  crmJs.includes('case \'crmStartFiche\':return openBudgetInvitePopup(id);'),
+  'Ao clicar em gerar link do orçamento, deve abrir diretamente o micro-modal openBudgetInvitePopup com seleção de professor'
+);
+console.log('  -> Nomenclatura Orçamento, cancelamento funcional e popup direto de professor validados.');
 
 // 11. Verificando botões de ação após orçamento preenchido (WhatsApp, Copiar link e Editar)
 console.log('11. Verificando ações pós-orçamento (WhatsApp, Copiar link, Editar)...');
@@ -212,4 +223,4 @@ assert.ok(
 );
 console.log('  -> Rota pública do aluno #orcamento/<token> validada.');
 
-console.log('\n=== Todos os 12 testes de Orçamento, Escolha Inicial, Link Público e WhatsApp passaram com 100% de sucesso! ===');
+console.log('\n=== Todos os 12 testes de Orçamento, Cancelamento da Edição, Popup Direto de Professor e Link Público passaram com 100% de sucesso! ===');

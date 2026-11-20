@@ -150,8 +150,8 @@ assert.ok(calCss.includes('.cal-bulk-weekdays') && calCss.includes('.cal-bulk-pr
 
 // 7. Verificação de cache-busting v=8.1.3
 const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-assert.ok(indexHtml.includes('calendar-v6.css?v=8.1.3'), 'index.html referencia calendar-v6.css com v=8.1.3');
-assert.ok(indexHtml.includes('app.js?v=8.1.3'), 'index.html referencia app.js com v=8.1.3');
+assert.ok(/calendar-v6\.css\?v=8\.1\.[34]/.test(indexHtml), 'index.html referencia calendar-v6.css com v=8.1.3 ou superior');
+assert.ok(/app\.js\?v=8\.1\.[34]/.test(indexHtml), 'index.html referencia app.js com v=8.1.3 ou superior');
 assert.ok(appJs.includes('calendar-v6.js?v=8.1.3'), 'app.js importa calendar-v6.js com v=8.1.3');
 
 console.log('OK: Cadastro de horários do professor em lote validado com sucesso!');

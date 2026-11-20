@@ -1,5 +1,5 @@
 // CAMPANELLA V2 | CRM & Pipeline Personalizável + Tags Coloridas + Agenda Docente.
-import {$,$$,safe,today,dateBR,onlyDigits,formData} from './utils.js';
+import {$,$$,safe,today,dateBR,onlyDigits,formData,randomToken,sha256} from './utils.js';
 
 // Mantido apenas para compatibilidade caso algum script externo importe CRM_STAGES
 export const CRM_STAGES={
@@ -135,7 +135,7 @@ export function decodeBudgetData(str){
  }
 }
 
-export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,startBusy,finishBusy,isBusy,saveInterview}){
+export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,errors,lookup,ficheCreatedPopup,createInterviewInviteLink,startBusy,finishBusy,isBusy,saveInterview}){
  const state={tab:'open',mode:'board',search:'',column:'all',tag:'all',source:'all',service:'all',region:'all',interview:'all',period:'all',sort:'activity',lead:null,detailTab:'data',editingFicheLeadId:null,ficheKind:null,importRows:[],editingColId:null,editingTagId:null,dragLeadId:null,filtersOpen:false};
  const currentSchoolName=()=>(ui.schools||[]).find(s=>s.id===ui.schoolId)?.name||ui.schoolName||'CAMPANELLA';
 
@@ -228,6 +228,17 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    delete copy.enrollment_mode;
    return await save('interviews',copy,id);
   }
+ };
+ const internalCreateInviteLink=async(leadId,teacherId)=>{
+  if(typeof createInterviewInviteLink==='function')return await createInterviewInviteLink(leadId,teacherId);
+  if(!lookup('leads',leadId))throw new Error('Lead não encontrado.');
+  if(!lookup('teachers',teacherId)?.active)throw new Error('Selecione um professor ativo.');
+  const {error:revokeError}=await sb.from('interview_invites').update({revoked_at:new Date().toISOString()}).eq('school_id',ui.schoolId).eq('lead_id',leadId).is('used_at',null).is('revoked_at',null);
+  if(revokeError)throw revokeError;
+  const token=randomToken(),digest=await sha256(token),expires=new Date(Date.now()+14*86400000).toISOString();
+  const {error}=await sb.from('interview_invites').insert({school_id:ui.schoolId,lead_id:leadId,teacher_id:teacherId,token_hash:digest,expires_at:expires,created_by:ui.user?.id});
+  if(error)throw error;
+  return location.href.split('#')[0]+'#entrevista/'+token;
  };
  const leads=()=>db.leads||[];
  const appts=id=>(db.crm_appointments||[]).filter(x=>x.lead_id===id).sort((a,b)=>String(b.scheduled_at).localeCompare(String(a.scheduled_at)));
@@ -758,7 +769,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
          <h4>${fiche?`Editar orçamento · ${safe(fiche.course||'Inglês')}`:`Novo orçamento · ${safe(displayName)}`}</h4>
         </div>
         <div class="crm-fiche-hero-actions">
-         <button type="button" class="crm-btn subtle" data-action="crmCancelFicheEdit">Cancelar</button>
+         <button type="button" class="crm-btn subtle" data-action="crmCancelFicheEdit" data-id="${safe(id)}">Cancelar</button>
         </div>
        </div>
        <p style="margin:8px 0 0 0;color:var(--text-secondary,#52606d);font-size:12.5px">
@@ -882,7 +893,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
         </div>
 
         <div class="crm-fiche-form-footer">
-         <button type="button" class="crm-btn subtle" data-action="crmCancelFicheEdit">Cancelar</button>
+         <button type="button" class="crm-btn subtle" data-action="crmCancelFicheEdit" data-id="${safe(id)}">Cancelar</button>
          <button type="submit" class="crm-btn primary">${crmIcon('check',14)} ${fiche?'Salvar alterações do orçamento':'Salvar orçamento'}</button>
         </div>
        </form>
@@ -1471,6 +1482,122 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   return openArchivePopup(id,outcome);
  }
 
+ function openBudgetInvitePopup(id){
+  const l=lookup('leads',id);
+  if(!l)return;
+  if(l.status==='convertido')throw new Error('Aluno já matriculado.');
+
+  const activeTeachers=(db.teachers||[]).filter(t=>t.active!==false);
+  const scheduledTeacher=(db.crm_appointments||[]).find(a=>a.lead_id===id&&a.state==='scheduled')?.teacher_id||'';
+  const existingInterviewTeacher=(db.interviews||[]).find(i=>i.lead_id===id)?.teacher_id||'';
+  const defaultTeacher=scheduledTeacher||existingInterviewTeacher||(activeTeachers[0]?.id||'');
+
+  const d=document.createElement('dialog');
+  d.className='crm-popup-dialog';
+  d.innerHTML=`<div class="crm-popup-content">
+   <div class="crm-popup-header">
+    <div class="crm-popup-badge-icon">${crmIcon('link',20)}</div>
+    <div class="crm-popup-headings">
+     <h3>Gerar link do orçamento</h3>
+     <p class="crm-popup-sub">Selecione o professor entrevistador para gerar o link de preenchimento para <b>${safe(l.name)}</b>.</p>
+    </div>
+   </div>
+   <form id="crmBudgetInvitePopupForm" class="crm-popup-form" data-lead="${safe(id)}">
+    <label class="crm-popup-field">
+     <span>Professor entrevistador *</span>
+     <select name="teacher_id" required ${activeTeachers.length?'':'disabled'}>
+      <option value="">Selecione o professor</option>
+      ${activeTeachers.map(t=>`<option value="${safe(t.id)}" ${t.id===defaultTeacher?'selected':''}>${safe(t.name)}</option>`).join('')}
+     </select>
+    </label>
+    ${!activeTeachers.length?`<p class="crm-popup-note" style="color:var(--danger,#b91c1c);font-size:12px;margin:4px 0 0 0;">Cadastre ao menos um professor ativo antes de gerar o link.</p>`:''}
+    <div class="crm-popup-footer">
+     <button type="button" class="crm-popup-btn crm-popup-btn-cancel" data-action="crmClosePopup">CANCELAR</button>
+     <button type="submit" class="crm-popup-btn crm-popup-btn-submit" ${activeTeachers.length?'':'disabled'}>GERAR LINK</button>
+    </div>
+   </form>
+  </div>`;
+
+  const closeDialog=()=>{
+   if(d.open)d.close();
+   d.remove();
+  };
+
+  d.addEventListener('click',e=>{if(e.target===d)closeDialog();});
+  d.addEventListener('cancel',()=>closeDialog());
+  d.querySelector('[data-action="crmClosePopup"]')?.addEventListener('click',()=>closeDialog());
+
+  const form=d.querySelector('#crmBudgetInvitePopupForm');
+  form?.addEventListener('submit',async ev=>{
+   ev.preventDefault();
+   ev.stopImmediatePropagation();
+   if(isBusy())return;
+   const teacherId=form.elements.teacher_id?.value;
+   if(!teacherId){
+    errors(new Error('Selecione um professor entrevistador.'));
+    return;
+   }
+   const submitBtn=form.querySelector('button[type="submit"]');
+   if(submitBtn)submitBtn.disabled=true;
+   startBusy();
+   try{
+    const link=await internalCreateInviteLink(id,teacherId);
+    const ficheCol=columnForTrigger('fiche_created');
+    const patch={
+     ...(!l.ficha_iniciada_at?{ficha_iniciada_at:new Date().toISOString(),ficha_status:'open'}:{}),
+     ...(ficheCol&&!l.crm_column_id?{crm_column_id:ficheCol.id}:{})
+    };
+    if(Object.keys(patch).length)await save('leads',patch,id);
+    await refresh();
+    detail(id);
+
+    const chosenTeacher=lookup('teachers',teacherId);
+    const content=d.querySelector('.crm-popup-content');
+    if(content){
+     content.innerHTML=`
+      <div class="crm-popup-header">
+       <div class="crm-popup-badge-icon is-won">${crmIcon('checkCircle',20)}</div>
+       <div class="crm-popup-headings">
+        <h3>Link do entrevistador pronto!</h3>
+        <p class="crm-popup-sub">Envie este link para <b>${safe(chosenTeacher?.name||'o professor')}</b> preencher o orçamento de <b>${safe(l.name)}</b>.</p>
+       </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin:14px 0;">
+       <div class="crm-budget-link-input-group">
+        <input type="text" class="crm-budget-link-text" readonly value="${safe(link)}" onclick="this.select()">
+        <button type="button" class="crm-popup-btn crm-popup-btn-submit" id="crmCopyGeneratedLinkBtn" style="height:32px;padding:0 14px;font-size:12px;">COPIAR</button>
+       </div>
+       <p style="font-size:12px;color:var(--text-muted,#64748b);margin:0;line-height:1.45;">
+        O convite é individual, válido por 14 dias e pode ser usado uma única vez pelo professor.
+       </p>
+      </div>
+      <div class="crm-popup-footer">
+       <button type="button" class="crm-popup-btn crm-popup-btn-cancel" data-action="crmClosePopup">FECHAR</button>
+      </div>
+     `;
+     content.querySelector('[data-action="crmClosePopup"]')?.addEventListener('click',()=>closeDialog());
+     const copyBtn=content.querySelector('#crmCopyGeneratedLinkBtn');
+     copyBtn?.addEventListener('click',async()=>{
+      await copyToClipboard(link);
+      toast('Link copiado para a área de transferência!');
+      copyBtn.textContent='COPIADO!';
+     });
+    }
+
+    await copyToClipboard(link).catch(()=>{});
+    toast('Link do orçamento gerado e copiado!');
+   }catch(err){
+    errors(err);
+    if(submitBtn)submitBtn.disabled=false;
+   }finally{
+    finishBusy();
+   }
+  });
+
+  document.body.appendChild(d);
+  d.showModal();
+ }
+
  async function log(id,kind,title,details='',at){await save('crm_activities',{lead_id:id,kind,title,details:details||null,actor_id:ui.user.id,...(at?{occurred_at:at}:{})});}
  async function reloadReopen(id){await refresh();detail(id);}
  async function updateLead(id,data,title='',detailText=''){await save('leads',data,id);if(title)await log(id,'stage',title,detailText);await refresh();detail(id);}
@@ -1655,17 +1782,15 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    }
    case 'crmCloseDrawer':return closeModal();
    case 'crmEditFicheInTab':state.detailTab='fiche';state.editingFicheLeadId=id;return detail(id);
-   case 'crmCancelFicheEdit':state.editingFicheLeadId=null;return detail(id);
+   case 'crmCancelFicheEdit':{
+    const targetId=id||state.editingFicheLeadId||state.lead;
+    state.editingFicheLeadId=null;
+    return detail(targetId);
+   }
    case 'crmWon':return openArchivePopup(id,'won');
    case 'crmLost':return openArchivePopup(id,'lost');
    case 'crmReopen':if(!await window.campanellaConfirm('Reabrir este lead e retorná-lo à pipeline principal?'))return;return updateLead(id,{crm_outcome:'open',crm_archived_at:null,crm_loss_reason:null,status:'novo'},'Oportunidade reaberta');
-   case 'crmStartFiche':{
-    const l=lookup('leads',id);if(l?.status==='convertido')throw new Error('Aluno já matriculado');
-    const ficheCol=columnForTrigger('fiche_created');
-    const patch={...(!l.ficha_iniciada_at?{ficha_iniciada_at:new Date().toISOString(),ficha_status:'open'}:{}),...(ficheCol?{crm_column_id:ficheCol.id}:{})};
-    if(Object.keys(patch).length)await save('leads',patch,id);
-    await refresh();return ficheCreatedPopup(id);
-   }
+   case 'crmStartFiche':return openBudgetInvitePopup(id);
    case 'crmCopyBudgetLink':{
     const l=lookup('leads',id),f=filledFiche(l);
     if(!l||!f)return;
