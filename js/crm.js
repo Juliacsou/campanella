@@ -1034,8 +1034,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
        </div>
       </div>
       `;
-     })():
-     `:`
+     })():`
       <div class="crm-fiche-hero ${ficheStarted?'is-started':''}">
        <div class="crm-fiche-hero-head">
         <div>
