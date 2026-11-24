@@ -1,7 +1,9 @@
 .env
 .env.*
 !*.env.example
+.zapi.json
 node_modules/
 .supabase/
 .DS_Store
 supabase/.temp/
+
