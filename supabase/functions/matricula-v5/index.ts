@@ -84,6 +84,17 @@ Deno.serve(async(req)=>{
  try{
   if(Number(req.headers.get('content-length')||0)>300_000)return json(req,{error:'Dados acima do limite permitido'},413);
   const body=await req.json(),action=String(body.action||''),token=String(body.token||'');
+  if(action==='submit_budget'){
+   const lead_id=body.lead_id;
+   if(!lead_id||typeof lead_id!=='string')return json(req,{error:'ID do lead invalido'},400);
+   const {data:res,error:rpcErr}=await service.rpc('submit_budget_pre_enrollment',{
+    p_lead_id:lead_id,
+    p_student:body.student,
+    p_terms:body.terms||{}
+   });
+   if(rpcErr)throw rpcErr;
+   return json(req,res||{ok:true,pre_enrolled:true});
+  }
   if(!/^[a-f0-9]{64}$/.test(token)||!['lookup','submit'].includes(action))return json(req,{error:'Link de pre-matricula invalido'},400);
   const tokenHash=await hashToken(token),now=new Date().toISOString();
   const {data:c,error:err}=await service.from('contracts')

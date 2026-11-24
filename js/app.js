@@ -2,7 +2,7 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
-import {createCRM, decodeBudgetData} from './crm.js?v=8.1.5';
+import {createCRM, decodeBudgetData} from './crm.js?v=8.1.6';
 import {createCalendar} from './calendar-v6.js?v=8.1.4';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
@@ -3055,10 +3055,10 @@ document.addEventListener('change',async e=>{
   updateDuoEnrollmentView(e.target.form);
   return;
  }
- if(e.target.id==='preSignerSelect'||e.target.id==='adminPreSignerSelect'){
+ if(e.target.id==='preSignerSelect'||e.target.id==='adminPreSignerSelect'||e.target.id==='budgetSignerSelect'){
   const form=e.target.form;
   const isG=e.target.value==='guardian';
-  const gSec=form?.querySelector('#preGuardianSection, #adminPreGuardianSection');
+  const gSec=form?.querySelector('#preGuardianSection, #adminPreGuardianSection, #budgetGuardianSection');
   if(gSec){
    gSec.style.display=isG?'':'none';
    gSec.querySelectorAll('input').forEach(inp=>{
@@ -3066,6 +3066,31 @@ document.addEventListener('change',async e=>{
    });
   }
   return;
+ }
+ if(e.target.id==='budgetMinorToggle'){
+  const form=e.target.form;
+  const gSec=form?.querySelector('#budgetGuardianSection');
+  if(gSec){
+   gSec.style.display=e.target.checked?'':'none';
+   gSec.querySelectorAll('input').forEach(inp=>{
+    inp.required=e.target.checked;
+   });
+  }
+  return;
+ }
+ if(e.target.name==='birth_date'&&e.target.form?.id==='budgetPreEnrollmentForm'){
+  const val=e.target.value;
+  if(val&&/^\d{4}-\d{2}-\d{2}$/.test(val)){
+   const bYear=Number(val.slice(0,4));
+   const nowYear=new Date().getFullYear();
+   const isMinor=(nowYear-bYear)<18;
+   const toggle=e.target.form.querySelector('#budgetMinorToggle');
+   const gSec=e.target.form.querySelector('#budgetGuardianSection');
+   if(isMinor&&toggle&&gSec){
+    toggle.checked=true;
+    gSec.style.display='';
+   }
+  }
  }
  if(e.target.name==='has_custom_first_installment'){
   toggleCustomFirstInstallment(e.target.form);
@@ -3522,6 +3547,7 @@ document.addEventListener('submit',async event=>{
  }
  else if(f.id==='adminPreEnrollmentForm'){await completeAdminPreEnrollment(f);return;}
  else if(f.id==='preEnrollmentForm'){await completePreEnrollment(f);return;}
+ else if(f.id==='budgetPreEnrollmentForm'){await completeBudgetPreEnrollment(f);return;}
  else return;
  closeModal();await refresh();
  }catch(error){errors(error)}finally{finishBusy();if(btn)btn.disabled=false;}
@@ -3638,6 +3664,7 @@ async function externalSave(f){
  $('.sign-main').innerHTML='<section class="sign-panel"><h1>Ficha salva!</h1><p class="muted">As informações da entrevista foram registradas com sucesso.</p></section>';
 }
 
+let publicBudgetData=null;
 function publicOrcamentoStart(token){
  ui.user=null;
  const data=decodeBudgetData(token);
@@ -3645,6 +3672,7 @@ function publicOrcamentoStart(token){
   $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Orçamento</div></div></div>${themeToggleMarkup()}</header><main class="sign-main"><section class="sign-panel"><h2>Orçamento indisponível</h2><p class="muted">O link do orçamento está inválido ou expirou. Solicite um novo link à escola.</p></section></main></div>`;
   return;
  }
+ publicBudgetData=data;
  renderPublicOrcamento(data);
 }
 
@@ -3667,7 +3695,7 @@ function renderPublicOrcamento(data){
 
  const cleanSchoolPhone=String(data.school_phone||'').replace(/\D/g,'');
  const schoolWaNumber=cleanSchoolPhone?(cleanSchoolPhone.startsWith('55')?cleanSchoolPhone:('55'+cleanSchoolPhone)):'';
- const waMsg=`Olá! Recebi o orçamento para as aulas de *${course}* (${studentNames}) e gostaria de confirmar minha matrícula / tirar dúvidas!`;
+ const waMsg=`Olá! Recebi o orçamento para as aulas de *${course}* (${studentNames}) e gostaria de tirar dúvidas / confirmar minha matrícula!`;
  const waLink=schoolWaNumber?`https://wa.me/${schoolWaNumber}?text=${encodeURIComponent(waMsg)}`:`https://wa.me/?text=${encodeURIComponent(waMsg)}`;
 
  $('#app').innerHTML=`<div class="sign-page">
@@ -3676,7 +3704,7 @@ function renderPublicOrcamento(data){
     <span class="mark">${safe((schoolName[0]||'C').toUpperCase())}</span>
     <div>
      <div class="brand-title">${safe(schoolName.toUpperCase())}</div>
-     <div class="brand-sub">Orçamento de Aulas</div>
+     <div class="brand-sub">Orçamento & Pré-matrícula</div>
     </div>
    </div>
    ${themeToggleMarkup()}
@@ -3777,23 +3805,338 @@ function renderPublicOrcamento(data){
     </div>
    </section>
 
-   <section class="sign-panel" style="text-align:center;padding:32px 24px;">
-    <h2 style="margin-bottom:6px;">Pronto para iniciar suas aulas?</h2>
-    <p class="muted" style="max-width:520px;margin:0 auto 20px auto;">
-     Confirme sua vaga diretamente com a equipe da <strong>${safe(schoolName)}</strong> pelo WhatsApp para darmos início à preparação do seu contrato e materiais.
-    </p>
+   <form id="budgetPreEnrollmentForm" novalidate>
+    <section class="sign-panel">
+     <div class="sign-step">Confirmação & Cadastro</div>
+     <h2>Faça sua Pré-Matrícula</h2>
+     <p class="muted">Preencha seus dados cadastrais abaixo para confirmar seu interesse nas aulas. A administração da escola elaborará o contrato a partir dessas informações.</p>
 
-    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;">
-     <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="btn" style="background:#25D366;color:#ffffff;border:none;font-weight:700;padding:12px 24px;font-size:14px;border-radius:8px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;box-shadow:0 2px 8px rgba(37,211,102,0.25);">
-      <span>Falar no WhatsApp e Confirmar Vaga</span>
-     </a>
-     <button type="button" class="btn ghost" onclick="window.print()" style="padding:12px 20px;font-size:13.5px;">
-      <span>Imprimir / Salvar PDF</span>
-     </button>
-    </div>
-   </section>
+     ${isDuo?`
+      <div class="sign-step" style="margin-top:20px;">Dados do Aluno 1</div>
+      <div class="form-grid">
+       ${input('Nome completo do 1º aluno','s1_full_name',data.lead_name||'')}
+       ${input('CPF do 1º aluno','s1_cpf','','text',false)}
+       ${input('E-mail do 1º aluno','s1_email',data.email||'','email',false)}
+       ${input('Data de nascimento do 1º aluno','s1_birth_date','','date',false)}
+       ${input('Telefone do 1º aluno','s1_phone',data.phone||'','tel',false)}
+       ${input('CEP do 1º aluno','s1_cep','','text',false)}
+       <div class="wide">${input('Endereço completo do 1º aluno','s1_address','','text',false)}</div>
+      </div>
+
+      <div class="sign-step" style="margin-top:24px;">Dados do Aluno 2</div>
+      <div class="form-grid">
+       ${input('Nome completo do 2º aluno','s2_full_name',data.student2_name||'')}
+       ${input('CPF do 2º aluno','s2_cpf','','text',false)}
+       ${input('E-mail do 2º aluno','s2_email','','email',false)}
+       ${input('Data de nascimento do 2º aluno','s2_birth_date','','date',false)}
+       ${input('Telefone do 2º aluno','s2_phone','','tel',false)}
+       ${input('CEP do 2º aluno','s2_cep','','text',false)}
+       <div class="wide">${input('Endereço completo do 2º aluno','s2_address','','text',false)}</div>
+      </div>
+
+      <h3 class="form-section" style="margin-top:24px;">Contratante e Assinatura</h3>
+      <p class="muted">Defina quem assina o contrato com a escola:</p>
+      <label class="field wide"><span>Quem assina o contrato</span>
+       <select name="signer_student_index" id="budgetSignerSelect">
+        <option value="1">Aluno 1 assina como contratante</option>
+        <option value="2">Aluno 2 assina como contratante</option>
+        <option value="guardian">Responsável legal externo (obrigatório se ambos forem menores de idade)</option>
+       </select>
+      </label>
+
+      <div id="budgetGuardianSection" style="display:none;margin-top:16px;">
+       <h3 class="form-section">Responsável Legal</h3>
+       <p class="muted">Preencha os dados do responsável legal caso ambos os alunos sejam menores de idade.</p>
+       <div class="form-grid">
+        ${input('Nome do responsável legal','guardian_name',data.guardian_name||'','text',false)}
+        ${input('Nascimento do responsável','guardian_birth_date','','date',false)}
+        ${input('CPF do responsável','guardian_cpf','','text',false)}
+        ${input('Telefone do responsável','guardian_phone','','tel',false)}
+        ${input('E-mail do responsável','guardian_email','','email',false)}
+        ${input('CEP do responsável','guardian_cep','','text',false)}
+        <div class="wide">${input('Endereço do responsável','guardian_address','','text',false)}</div>
+       </div>
+      </div>
+     `:`
+      <div class="form-grid">
+       ${input('Nome completo do aluno','full_name',data.lead_name||'')}
+       ${input('CPF do aluno','cpf','','text',false)}
+       ${input('E-mail do aluno','email',data.email||'','email',false)}
+       ${input('Data de nascimento','birth_date','','date',false)}
+       ${input('Telefone / WhatsApp','phone',data.phone||'','tel',false)}
+       ${input('CEP','cep','','text',false)}
+       <div class="wide">${input('Endereço completo','address','','text',false)}</div>
+      </div>
+
+      <label class="form-checkbox" style="display:flex;align-items:center;gap:8px;margin:16px 0;cursor:pointer;">
+       <input type="checkbox" id="budgetMinorToggle" name="is_minor" ${data.guardian_name?'checked':''} style="cursor:pointer;">
+       <span>O aluno é menor de 18 anos ou haverá um responsável legal</span>
+      </label>
+
+      <div id="budgetGuardianSection" style="${data.guardian_name?'':'display:none;'};margin-top:12px;">
+       <h3 class="form-section">Responsável Legal</h3>
+       <p class="muted">Os dados do responsável são necessários para emissão e assinatura do contrato.</p>
+       <div class="form-grid">
+        ${input('Nome completo do responsável','guardian_name',data.guardian_name||'','text',false)}
+        ${input('Nascimento do responsável','guardian_birth_date','','date',false)}
+        ${input('CPF do responsável','guardian_cpf','','text',false)}
+        ${input('Telefone do responsável','guardian_phone','','tel',false)}
+        ${input('E-mail do responsável','guardian_email','','email',false)}
+        ${input('CEP do responsável','guardian_cep','','text',false)}
+        <div class="wide">${input('Endereço completo do responsável','guardian_address','','text',false)}</div>
+       </div>
+      </div>
+     `}
+
+     <div id="budgetPreEnrollmentError" class="notice error-notice" style="display:none;background:#fde8e8;color:#9b1c1c;border:1px solid #f87171;padding:12px 16px;border-radius:8px;margin-top:16px;font-weight:600;"></div>
+
+     <label class="form-checkbox" style="display:flex;align-items:flex-start;gap:10px;margin:20px 0 10px 0;cursor:pointer;">
+      <input type="checkbox" name="agree_terms" required checked style="margin-top:3px;cursor:pointer;">
+      <span><strong>Concordo com os termos do orçamento:</strong> Revisei as informações pedagógicas e de investimento e autorizo o envio dos dados para que a escola elabore o contrato a ser firmado.</span>
+     </label>
+     <p class="form-note">Seus dados serão enviados à escola. Nenhum pagamento é cobrado neste momento e nenhum contrato digital definitivo é assinado aqui.</p>
+
+     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:20px;">
+      <button class="btn sign-button" type="submit" style="flex:1;min-width:220px;padding:14px 24px;font-size:15px;font-weight:700;">Concluir Pré-Matrícula →</button>
+      <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="btn" style="background:#25D366;color:#ffffff;border:none;font-weight:700;padding:14px 20px;font-size:14px;border-radius:8px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;">
+       <span>Tirar dúvidas no WhatsApp</span>
+      </a>
+      <button type="button" class="btn ghost" onclick="window.print()" style="padding:14px 18px;font-size:13.5px;">
+       <span>Imprimir / Salvar PDF</span>
+      </button>
+     </div>
+    </section>
+   </form>
   </main>
  </div>`;
+}
+
+async function completeBudgetPreEnrollment(f){
+ const data=publicBudgetData;
+ if(!data)throw new Error('Dados do orçamento indisponíveis.');
+ const errBox=$('#budgetPreEnrollmentError');
+ if(errBox){errBox.style.display='none';errBox.textContent='';}
+ try{
+  const d=formData(f);
+  if(!f.elements.agree_terms?.checked)throw new Error('É necessário declarar que concorda com os termos para concluir a pré-matrícula.');
+
+  let payload;
+  if(data.is_duo){
+   if(!d.s1_full_name?.trim())throw new Error('Informe o nome completo do 1º aluno.');
+   if(!d.s2_full_name?.trim())throw new Error('Informe o nome completo do 2º aluno.');
+   if(!cpfValid(d.s1_cpf))throw new Error('CPF do Aluno 1 inválido.');
+   if(!cpfValid(d.s2_cpf))throw new Error('CPF do Aluno 2 inválido.');
+   const s1={full_name:d.s1_full_name.trim(),cpf:onlyDigits(d.s1_cpf),email:d.s1_email?.trim()||'',birth_date:d.s1_birth_date||null,phone:onlyDigits(d.s1_phone),cep:onlyDigits(d.s1_cep),address:d.s1_address?.trim()||'',custom_fields:formDataExtras(f)};
+   const s2={full_name:d.s2_full_name.trim(),cpf:onlyDigits(d.s2_cpf),email:d.s2_email?.trim()||'',birth_date:d.s2_birth_date||null,phone:onlyDigits(d.s2_phone),cep:onlyDigits(d.s2_cep),address:d.s2_address?.trim()||'',custom_fields:{}};
+   const isGuardian=d.signer_student_index==='guardian';
+   let signerIdx=isGuardian?1:Number(d.signer_student_index||1);
+   if(![1,2].includes(signerIdx))signerIdx=1;
+   if(isGuardian){
+    if(!d.guardian_name?.trim())throw new Error('Informe o nome do responsável legal.');
+    if(!cpfValid(d.guardian_cpf))throw new Error('CPF do responsável legal inválido.');
+   }
+   payload={
+    student1:s1,
+    student2:s2,
+    signer_student_index:signerIdx,
+    guardian_name:isGuardian?(d.guardian_name?.trim()||null):null,
+    guardian_birth_date:isGuardian?d.guardian_birth_date:null,
+    guardian_cpf:isGuardian?onlyDigits(d.guardian_cpf):null,
+    guardian_phone:isGuardian?onlyDigits(d.guardian_phone):null,
+    guardian_email:isGuardian?d.guardian_email?.trim():null,
+    guardian_address:isGuardian?d.guardian_address?.trim():null,
+    guardian_cep:isGuardian?onlyDigits(d.guardian_cep):null
+   };
+  }else{
+   if(!d.full_name?.trim())throw new Error('Informe o nome completo do aluno.');
+   if(!cpfValid(d.cpf))throw new Error('CPF do aluno inválido.');
+   const isMinor=f.elements.is_minor?.checked||!!(d.guardian_name?.trim());
+   if(isMinor){
+    if(!d.guardian_name?.trim())throw new Error('Informe o nome do responsável legal.');
+    if(!cpfValid(d.guardian_cpf))throw new Error('CPF do responsável inválido.');
+   }
+   payload={
+    full_name:d.full_name.trim(),
+    cpf:onlyDigits(d.cpf),
+    email:d.email?.trim()||'',
+    birth_date:d.birth_date||null,
+    phone:onlyDigits(d.phone),
+    cep:onlyDigits(d.cep),
+    address:d.address?.trim()||'',
+    guardian_name:isMinor?(d.guardian_name?.trim()||null):null,
+    guardian_birth_date:isMinor?d.guardian_birth_date:null,
+    guardian_cpf:isMinor?onlyDigits(d.guardian_cpf):null,
+    guardian_phone:isMinor?onlyDigits(d.guardian_phone):null,
+    guardian_email:isMinor?d.guardian_email?.trim():null,
+    guardian_address:isMinor?d.guardian_address?.trim():null,
+    guardian_cep:isMinor?onlyDigits(d.guardian_cep):null,
+    custom_fields:formDataExtras(f)
+   };
+  }
+
+  startBusy('Enviando sua pré-matrícula...');
+
+  const termsPayload={
+   package_name:data.course?`Aulas de ${data.course}`:'Pacote de Aulas',
+   course:data.course||'Inglês',
+   lessons_count:data.lessons_count||null,
+   weekly_frequency:data.weekly_frequency||1,
+   start_date:data.start_date||null,
+   end_date:data.end_date||null,
+   installment_amount:data.installment_amount||0,
+   installments:data.installments||1,
+   total_amount:data.total_amount||0,
+   payment_method:data.payment_method||'Boleto / PIX',
+   preferred_schedule:data.preferred_schedule||null,
+   lesson_schedule:data.preferred_schedule||null,
+   teacher_name:data.teacher_name||null,
+   teacher_id:data.teacher_id||null,
+   interview_id:data.interview_id||null,
+   package_id:data.package_id||null,
+   is_duo:!!data.is_duo,
+   kind:data.is_duo?'dupla':(payload.guardian_name?'menor':'individual')
+  };
+
+  let result=null;
+  // 1. PostgREST RPC submit_budget_pre_enrollment
+  try{
+   const {data:rpcRes,error:rpcErr}=await sb.rpc('submit_budget_pre_enrollment',{
+    p_lead_id:data.lead_id,
+    p_student:payload,
+    p_terms:termsPayload
+   });
+   if(!rpcErr&&rpcRes?.pre_enrolled){
+    result=rpcRes;
+   }else if(rpcErr){
+    console.warn('RPC submit_budget_pre_enrollment aviso:',rpcErr);
+   }
+  }catch(e){
+   console.warn('RPC submit_budget_pre_enrollment falhou:',e);
+  }
+
+  // 2. Edge Function matricula-v5 action: 'submit_budget'
+  if(!result){
+   try{
+    const resp=await fetch(`${SUPA_URL}/functions/v1/matricula-v5`,{
+     method:'POST',
+     headers:{'Content-Type':'application/json','apikey':KEY},
+     body:JSON.stringify({
+      action:'submit_budget',
+      lead_id:data.lead_id,
+      student:payload,
+      terms:termsPayload
+     })
+    });
+    const json=await resp.json().catch(()=>({}));
+    if(resp.ok&&json.pre_enrolled){
+     result=json;
+    }
+   }catch(e){
+    console.warn('Edge function submit_budget aviso:',e);
+   }
+  }
+
+  // 3. Fallback administrativo (sessão ativa)
+  if(!result){
+   const {data:{session}}=await sb.auth.getSession().catch(()=>({data:{session:null}}));
+   if(session&&data.lead_id){
+    await sb.from('leads').update({
+     name:data.is_duo?payload.student1?.full_name:payload.full_name,
+     student2_name:data.is_duo?payload.student2?.full_name:null,
+     guardian_name:payload.guardian_name||null,
+     phone:data.is_duo?payload.student1?.phone:payload.phone,
+     email:data.is_duo?payload.student1?.email:payload.email,
+     crm_stage:'pre_matricula_feita',
+     updated_at:new Date().toISOString()
+    }).eq('id',data.lead_id);
+
+    const {data:c}=await sb.from('contracts')
+     .select('id')
+     .eq('lead_id',data.lead_id)
+     .in('status',['draft','sent','pre_enrolled'])
+     .order('created_at',{ascending:false})
+     .limit(1)
+     .maybeSingle();
+
+    if(c){
+     await sb.from('contracts').update({
+      student_snapshot:payload,
+      status:'pre_enrolled',
+      terms:termsPayload,
+      kind:termsPayload.kind,
+      token_hash:null,
+      token_expires_at:null,
+      updated_at:new Date().toISOString()
+     }).eq('id',c.id);
+     result={ok:true,pre_enrolled:true,contract_id:c.id};
+    }else{
+     const {data:inserted}=await sb.from('contracts').insert({
+      school_id:data.school_id,
+      lead_id:data.lead_id,
+      interview_id:data.interview_id||null,
+      kind:termsPayload.kind,
+      status:'pre_enrolled',
+      terms:termsPayload,
+      template_html:'<div class="preexisting-contract-doc"><h2>Contrato de Prestação de Serviços Educacionais</h2><p>Contrato em elaboração pela escola a partir da pré-matrícula aceita pelo aluno.</p></div>',
+      template_version:'budget-pre-enrollment-v1',
+      student_snapshot:payload
+     }).select('id').single();
+     if(inserted)result={ok:true,pre_enrolled:true,contract_id:inserted.id};
+    }
+   }
+  }
+
+  if(!result?.pre_enrolled){
+   throw new Error('Não foi possível registrar a pré-matrícula no servidor. Por favor, tente novamente ou entre em contato diretamente pelo WhatsApp.');
+  }
+
+  history.replaceState({},'',location.pathname+'#pre-matricula-concluida');
+  const schoolName=data.school_name||'Escola de Idiomas';
+  const cleanSchoolPhone=String(data.school_phone||'').replace(/\D/g,'');
+  const schoolWaNumber=cleanSchoolPhone?(cleanSchoolPhone.startsWith('55')?cleanSchoolPhone:('55'+cleanSchoolPhone)):'';
+  const studentNames=data.is_duo&&data.student2_name?`${data.lead_name} & ${data.student2_name}`:data.lead_name;
+  const course=data.course||'Inglês';
+  const successWaMsg=`Olá! Acabei de concluir minha pré-matrícula para as aulas de *${course}* (${studentNames}) através do link do orçamento!`;
+  const successWaLink=schoolWaNumber?`https://wa.me/${schoolWaNumber}?text=${encodeURIComponent(successWaMsg)}`:`https://wa.me/?text=${encodeURIComponent(successWaMsg)}`;
+
+  $('#app').innerHTML=`<div class="sign-page">
+   <header class="sign-top">
+    <div class="brand">
+     <span class="mark">${safe((schoolName[0]||'C').toUpperCase())}</span>
+     <div>
+      <div class="brand-title">${safe(schoolName.toUpperCase())}</div>
+      <div class="brand-sub">Pré-matrícula confirmada</div>
+     </div>
+    </div>
+    ${themeToggleMarkup()}
+   </header>
+   <main class="sign-main">
+    <section class="sign-panel sign-success-card">
+     <div class="sign-success-icon" aria-hidden="true">✓</div>
+     <div class="eyebrow">Cadastro recebido com sucesso</div>
+     <h1>Pré-matrícula concluída!</h1>
+     <p class="leadline">
+      Olá, <strong>${safe(studentNames)}</strong>! Seus dados cadastrais foram enviados com sucesso à administração da <strong>${safe(schoolName)}</strong>.
+     </p>
+     <div class="notice">
+      Nenhum valor foi debitado nesta etapa. A escola entrará em contato para os próximos passos e disponibilização do contrato formal de prestação de serviços.
+     </div>
+     <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;margin-top:24px;">
+      <a href="${successWaLink}" target="_blank" rel="noopener noreferrer" class="btn" style="background:#25D366;color:#ffffff;border:none;font-weight:700;padding:12px 24px;font-size:14px;border-radius:8px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;box-shadow:0 2px 8px rgba(37,211,102,0.25);">
+       <span>Avisar a escola no WhatsApp</span>
+      </a>
+      <button type="button" class="btn ghost" onclick="window.print()" style="padding:12px 20px;font-size:13.5px;">
+       <span>Imprimir comprovante da proposta</span>
+      </button>
+     </div>
+    </section>
+   </main>
+  </div>`;
+ }catch(err){
+  const msg=err.message||String(err);
+  if(errBox){errBox.style.display='block';errBox.textContent=msg;errBox.scrollIntoView({behavior:'smooth',block:'center'});}
+  throw err;
+ }
 }
 
 let publicToken='',publicData=null;

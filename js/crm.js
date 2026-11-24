@@ -167,6 +167,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
  function budgetPublicUrl(lead,fiche){
   const payload={
    v:1,
+   school_id:lead.school_id||ui.schoolId||fiche.school_id||null,
    school_name:currentSchoolName(),
    school_phone:(db.schools||[]).find(s=>s.id===ui.schoolId)?.contact_phone||null,
    lead_id:lead.id,
@@ -176,6 +177,10 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    guardian_name:fiche.guardian_name||lead.guardian_name||null,
    course:fiche.course||lead.crm_service||'Aulas de Idiomas',
    teacher_name:teacherName(fiche.teacher_id),
+   teacher_id:fiche.teacher_id||null,
+   interview_id:fiche.id||null,
+   package_id:fiche.package_id||null,
+   kind:fiche.kind||((fiche.kind==='dupla'||!!fiche.student2_name||lead.kind==='dupla')?'dupla':'individual'),
    lessons_count:fiche.lessons_count||null,
    weekly_frequency:fiche.weekly_frequency||1,
    start_date:fiche.start_date||null,
@@ -187,7 +192,8 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    first_due_date:fiche.first_due_date||null,
    payment_method:fiche.payment_method||'Boleto / PIX',
    pedagogical_notes:fiche.pedagogical_notes||fiche.notes||null,
-   phone:lead.phone||null
+   phone:lead.phone||null,
+   email:lead.email||null
   };
   const token=encodeBudgetData(payload);
   const baseUrl=location.href.split('#')[0];
@@ -211,7 +217,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    (fiche.lessons_count?`• Carga horária: ${fiche.lessons_count} aulas (${fiche.weekly_frequency||1}x por semana)\n`:'')+
    (fiche.preferred_schedule?`• Horários combinados: ${fiche.preferred_schedule}\n`:'')+
    `• Investimento: ${installments}x de R$ ${part} (Total: R$ ${total})\n\n`+
-   `🔗 *Confira a proposta completa com todos os detalhes no link abaixo:*\n${link}\n\n`+
+   `🔗 *Confira a proposta completa e confirme sua pré-matrícula no link abaixo:*\n${link}\n\n`+
    `Qualquer dúvida ou para confirmar sua vaga, é só nos responder por aqui!`;
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
