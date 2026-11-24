@@ -2531,7 +2531,7 @@ async function sendLink(id){if(externalSignatureFor(id))throw new Error('Este co
  await save('contracts',{token_hash,token_expires_at:exp,status:'sent',sent_at:new Date().toISOString()},id);
  const link=location.href.split('#')[0]+'#pre-matricula/'+token;
  const phone=contactWhatsAppNumber(c),publicLink=link.startsWith('https://');
- showModal(`<div class="eyebrow">Matr\u00edcula digital</div><h2>Link de pré-matrícula</h2><p class="modal-intro">O interessado preencherá apenas os dados pessoais. Nenhum contrato será exibido ou assinado nesta etapa. Após o envio, a escola gerará o documento para assinatura manual.</p><div class="link-field" id="generatedLink">${safe(link)}</div><p class="notice">V\u00e1lido por 7 dias. Criar outro link invalida o anterior.</p>${!publicLink?'<p class="form-note">Este link usa 127.0.0.1 e s\u00f3 abre neste computador. O envio pelo WhatsApp estar\u00e1 dispon\u00edvel depois da publica\u00e7\u00e3o em HTTPS.</p>':''}<div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button><button class="btn light" data-action="copyGenerated" data-id="${id}">Copiar link</button><button class="btn" data-action="shareWhatsApp" data-id="${id}" ${phone&&publicLink?'':'disabled title="Requer n\u00famero com DDD e link p\u00fablico HTTPS"'}>Enviar pelo WhatsApp</button><button class="btn" type="button" data-action="fillPreEnrollment" data-id="${id}">Preencher pré-matrícula agora →</button></div>`);
+ showModal(`<div class="eyebrow">Matr\u00edcula digital</div><h2>Link de pré-matrícula</h2><p class="modal-intro">O interessado preencherá apenas os dados pessoais. Nenhum contrato será exibido ou assinado nesta etapa. Após o envio, a escola gerará o documento para assinatura manual.</p><div class="link-field" id="generatedLink"><a href="${safe(link)}" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:underline;word-break:break-all;">${safe(link)}</a></div><p class="notice">V\u00e1lido por 7 dias. Criar outro link invalida o anterior.</p>${!publicLink?'<p class="form-note">Este link usa 127.0.0.1 e s\u00f3 abre neste computador. O envio pelo WhatsApp estar\u00e1 dispon\u00edvel depois da publica\u00e7\u00e3o em HTTPS.</p>':''}<div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button><button class="btn light" data-action="copyGenerated" data-id="${id}">Copiar link</button><button class="btn" data-action="shareWhatsApp" data-id="${id}" ${phone&&publicLink?'':'disabled title="Requer n\u00famero com DDD e link p\u00fablico HTTPS"'}>Enviar pelo WhatsApp</button><button class="btn" type="button" data-action="fillPreEnrollment" data-id="${id}">Preencher pré-matrícula agora →</button></div>`);
 }
 
 function adminPreEnrollmentModal(contractId){
@@ -3797,7 +3797,93 @@ function renderPublicOrcamento(data){
 }
 
 let publicToken='',publicData=null;
-async function publicAPI(body){const response=await fetch(`${SUPA_URL}/functions/v1/matricula-v5`,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({token:publicToken,...body})});const json=await response.json().catch(()=>({error:'Resposta inválida do servidor'}));if(!response.ok)throw new Error(json.error||'Serviço indisponível');return json;}
+async function publicAPI(body){
+ let fetchError=null;
+ try{
+  const response=await fetch(`${SUPA_URL}/functions/v1/matricula-v5`,{
+   method:'POST',
+   headers:{'Content-Type':'application/json','apikey':KEY},
+   body:JSON.stringify({token:publicToken,...body})
+  });
+  const json=await response.json().catch(()=>({error:'Resposta inválida do servidor'}));
+  if(!response.ok)throw new Error(json.error||'Serviço indisponível');
+  return json;
+ }catch(err){
+  fetchError=err;
+ }
+
+ try{
+  const {data:{session}}=await sb.auth.getSession().catch(()=>({data:{session:null}}));
+  if(session){
+   const tokenHash=await sha256(publicToken);
+   const now=new Date().toISOString();
+   const {data:c}=await sb.from('contracts')
+    .select('id,school_id,lead_id,kind,status,student_id,student2_id,terms,template_html,student_snapshot,token_expires_at')
+    .eq('token_hash',tokenHash)
+    .eq('status','sent')
+    .gt('token_expires_at',now)
+    .maybeSingle();
+   if(c){
+    if(body.action==='lookup'){
+     const [{data:lead},{data:school},{data:student1},{data:student2}]=await Promise.all([
+      c.lead_id?sb.from('leads').select('name,guardian_name,student2_name,kind').eq('school_id',c.school_id).eq('id',c.lead_id).maybeSingle():Promise.resolve({data:null}),
+      sb.from('schools').select('name').eq('id',c.school_id).maybeSingle(),
+      c.student_id?sb.from('students').select('full_name,cpf,email,birth_date,phone,address,cep,guardian_name,guardian_birth_date,guardian_cpf,guardian_phone,guardian_email,guardian_address,guardian_cep').eq('school_id',c.school_id).eq('id',c.student_id).maybeSingle():Promise.resolve({data:null}),
+      c.student2_id?sb.from('students').select('full_name,cpf,email,birth_date,phone,address,cep,guardian_name,guardian_birth_date,guardian_cpf,guardian_phone,guardian_email,guardian_address,guardian_cep').eq('school_id',c.school_id).eq('id',c.student2_id).maybeSingle():Promise.resolve({data:null})
+     ]);
+     const leadStudent1Name=lead?.name||'';
+     const leadStudent2Name=lead?.student2_name||c.terms?.student2_name||'';
+     let existingDuo;
+     if(c.kind==='dupla'){
+      const s1=c.student_snapshot?.student1||student1||(leadStudent1Name?{full_name:leadStudent1Name}:null);
+      const s2=c.student_snapshot?.student2||student2||(leadStudent2Name?{full_name:leadStudent2Name}:null);
+      existingDuo={student1:s1,student2:s2,signer_student_index:c.signer_student_index||c.terms?.signer_student_index||1};
+     }else{
+      existingDuo=c.student_snapshot||student1||(leadStudent1Name?{full_name:leadStudent1Name}:null);
+     }
+     return {
+      kind:c.kind,
+      school_name:school?.name||'Escola',
+      terms:{
+       package_name:c.terms?.package_name,
+       course:c.terms?.course,
+       lessons_count:c.terms?.lessons_count,
+       weekly_frequency:c.terms?.weekly_frequency,
+       start_date:c.terms?.start_date,
+       end_date:c.terms?.end_date,
+       installment_amount:c.terms?.installment_amount,
+       installments:c.terms?.installments,
+       total_amount:c.terms?.total_amount,
+       lesson_schedule:c.terms?.lesson_schedule,
+       signer_student_index:c.signer_student_index||c.terms?.signer_student_index||1,
+       custom_field_schema:(c.terms?.custom_field_schema||[]).filter(f=>f.who==='aluno')
+      },
+      lead:{name:lead?.name||'',guardian_name:lead?.guardian_name||'',student2_name:lead?.student2_name||'',kind:lead?.kind||c.kind},
+      existing:existingDuo
+     };
+    }else if(body.action==='submit'){
+     const isPreexisting=!!(c.terms?.is_preexisting_contract||c.template_version==='preexisting');
+     const {error:rpcErr}=await sb.rpc('admin_complete_pre_enrollment',{p_contract_id:c.id,p_student:body.student});
+     if(rpcErr)throw rpcErr;
+     if(isPreexisting){
+      await sb.rpc('activate_preexisting_contract',{p_contract_id:c.id}).catch(()=>{});
+     }
+     return {ok:true,pre_enrolled:true,signed:isPreexisting,message:isPreexisting?'Matrícula preexistente ativada com sucesso.':'Pré-matrícula recebida. A escola entrará em contato sobre o contrato.'};
+    }
+   }
+  }
+ }catch(fallbackErr){
+  console.warn('Fallback admin pre-matricula:',fallbackErr);
+ }
+
+ if(fetchError?.message==='Failed to fetch'||fetchError?.name==='TypeError'){
+  if(location.port&&location.port!=='8000'){
+   throw new Error(`Falha de conexão com o servidor de pré-matrícula (Failed to fetch). No ambiente local, utilize a porta 8000 (http://127.0.0.1:8000) ou faça o deploy da edge function matricula-v5 no Supabase.`);
+  }
+  throw new Error('Não foi possível conectar ao servidor de pré-matrícula. Verifique sua conexão à internet ou realize o deploy da função matricula-v5 no Supabase.');
+ }
+ throw fetchError;
+}
 async function publicStart(token){
  publicToken=token;ui.user=null;
  $('#app').innerHTML=`<div class="sign-page"><header class="sign-top"><div class="brand"><span class="mark">C</span><div><div class="brand-title">CAMPANELLA</div><div class="brand-sub">Pré-matrícula</div></div></div>${themeToggleMarkup()}</header><main class="sign-main"><section class="sign-panel"><div class="busy-wheel" aria-hidden="true"></div><h2>Carregando pré-matrícula…</h2></section></main></div>`;

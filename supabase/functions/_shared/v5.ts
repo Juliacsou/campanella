@@ -9,7 +9,7 @@ export const service = createClient(SUPA_URL,SERVICE_KEY,{auth:{persistSession:f
 const fromAllowed = new Set(['https://crm.profsupport.com.br','https://profsupport.com.br','https://juliacsou.github.io','http://localhost:8000','http://127.0.0.1:8000','http://localhost:8001','http://127.0.0.1:8001']);
 export function cors(req:Request):HeadersInit {
  const origin=req.headers.get('origin')||'';
- return {'Access-Control-Allow-Origin':fromAllowed.has(origin)?origin:'https://crm.profsupport.com.br',
+ return {'Access-Control-Allow-Origin':origin||'*',
    'Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info',
    'Access-Control-Allow-Methods':'GET,POST,OPTIONS','Vary':'Origin','Cache-Control':'no-store'};
 }

@@ -6,7 +6,7 @@ echo ========================================================
 echo   Sincronizando com a versao mais recente do GitHub...
 git pull origin v7 2>nul || git pull origin main 2>nul || git pull 2>nul
 echo.
-echo   Acesse no navegador: http://127.0.0.1:8001
+echo   Acesse no navegador: http://127.0.0.1:8000
 echo ========================================================
-npx.cmd --yes http-server . -p 8001 -a 127.0.0.1 -c-1
+npx.cmd --yes http-server . -p 8000 -a 127.0.0.1 -c-1
 pause

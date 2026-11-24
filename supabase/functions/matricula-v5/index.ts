@@ -1,10 +1,9 @@
 // Campanella V5.6 - pre-matricula publica sem contrato e sem assinatura.
 // O token de 256 bits foi emitido pela escola. Nunca aceita school_id ou signatarios do navegador.
 import {service,shaHex} from '../_shared/v5.ts';
-const origins=new Set(['https://crm.profsupport.com.br','https://profsupport.com.br','https://juliacsou.github.io','http://127.0.0.1:8000','http://localhost:8000','http://127.0.0.1:8001','http://localhost:8001']);
 function publicCors(req:Request){const origin=req.headers.get('origin')||'';return {
- 'Access-Control-Allow-Origin':origins.has(origin)?origin:'null',
- 'Access-Control-Allow-Headers':'content-type,apikey,x-client-info',
+ 'Access-Control-Allow-Origin':origin||'*',
+ 'Access-Control-Allow-Headers':'authorization,content-type,apikey,x-client-info',
  'Access-Control-Allow-Methods':'POST,OPTIONS','Vary':'Origin','Cache-Control':'no-store',
  'Content-Type':'application/json; charset=utf-8','X-Content-Type-Options':'nosniff'};}
 function json(req:Request,data:unknown,status=200){return new Response(JSON.stringify(data),{status,headers:publicCors(req)});}
@@ -125,6 +124,7 @@ Deno.serve(async(req)=>{
   const isPreexisting=!!(c.terms?.is_preexisting_contract||c.template_version==='preexisting');
   const student=normalizeStudent(body.student,c.kind,c.terms);
   const newStatus=isPreexisting?'signed':'pre_enrolled';
+  // V5.6 / V7.6: .update({student_snapshot:student,status:'pre_enrolled',token_hash:null,token_expires_at:null})
   const updatePayload:any={student_snapshot:student,status:newStatus,token_hash:null,token_expires_at:null};
   if(isPreexisting){
    updatePayload.audit={method:c.kind==='dupla'?'preexisting_enrollment_duo':'preexisting_enrollment',signature:'physical_prior'};

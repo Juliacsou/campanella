@@ -79,9 +79,10 @@ Os módulos de assinatura eletrônica (**AssinAPI**) e backup no **Google Drive*
 - Padrão de pacotes ZIP: entregar apenas o código no ZIP e manter arquivos `.sql` de migração separados.
 
 ### Edge Functions (Supabase)
-Para que o link público de ficha/entrevista funcione em conjunto com o frontend atual, mantenha a função `entrevista` atualizada:
+Para que os links públicos de ficha/entrevista e pré-matrícula funcionem em conjunto com o frontend atual, mantenha as funções atualizadas no Supabase:
 ```powershell
 npx supabase functions deploy entrevista --no-verify-jwt
+npx supabase functions deploy matricula-v5 --no-verify-jwt
 ```
 
 ---
@@ -150,7 +151,7 @@ A versão **V7** traz a transformação estética completa do Campanella inspira
 2. **Opção 2 (PowerShell):**
    ```powershell
    cd C:\Users\Julia\Downloads\campanella-v7
-   npx.cmd --yes http-server . -p 8001 -a 127.0.0.1 -c-1
+   npx.cmd --yes http-server . -p 8000 -a 127.0.0.1 -c-1
    ```
    *Nota: O uso de `npx.cmd` evita o bloqueio padrão da política de execução de scripts `.ps1` do PowerShell.*
-   Acesse no navegador: `http://127.0.0.1:8001`.
+   Acesse no navegador: `http://127.0.0.1:8000`.
