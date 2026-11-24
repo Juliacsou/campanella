@@ -2,7 +2,7 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
-import {createCRM, decodeBudgetData} from './crm.js?v=8.1.6';
+import {createCRM, decodeBudgetData} from './crm.js?v=8.1.7';
 import {createCalendar} from './calendar-v6.js?v=8.1.4';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
@@ -2383,17 +2383,21 @@ function downloadHTML(content,filename){const a=document.createElement('a'),url=
 
 async function save(table,payload,id){if(!ui.schoolId)throw new Error('Selecione uma escola.');const record=id?payload:{...payload,school_id:ui.schoolId};let q=id?sb.from(table).update(record).eq('id',id).eq('school_id',ui.schoolId).select():sb.from(table).insert(record).select();const {data,error}=await q;if(error)throw error;if(!data?.length)throw new Error('Operação não autorizada ou não concluída.');return data[0];}
 async function saveInterview(payload,id){
+ const cleanPayload={...payload};
+ if(!cleanPayload.notes&&cleanPayload.pedagogical_notes)cleanPayload.notes=cleanPayload.pedagogical_notes;
+ delete cleanPayload.pedagogical_notes;
  try{
-  return await save('interviews',payload,id);
+  return await save('interviews',cleanPayload,id);
  }catch(err){
   const msg=String(err?.message||'')+String(err?.details||'');
   if(msg.includes('column')||err?.code==='PGRST204'||err?.code==='42703'){
-   const copy={...payload};
+   const copy={...cleanPayload};
    delete copy.guardian_name;
    delete copy.second_due_date;
    delete copy.has_custom_first_installment;
    delete copy.demais_parcelas;
    delete copy.enrollment_mode;
+   delete copy.pedagogical_notes;
    try{
     return await save('interviews',copy,id);
    }catch(err2){

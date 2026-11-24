@@ -224,18 +224,22 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
  }
 
  const internalSaveInterview=async(payload,id)=>{
+  const cleanPayload={...payload};
+  if(!cleanPayload.notes&&cleanPayload.pedagogical_notes)cleanPayload.notes=cleanPayload.pedagogical_notes;
+  delete cleanPayload.pedagogical_notes;
   if(typeof saveInterview==='function'){
-   try{return await saveInterview(payload,id);}
+   try{return await saveInterview(cleanPayload,id);}
    catch(e){console.warn('saveInterview delegation failed, falling back:',e);}
   }
-  try{return await save('interviews',payload,id);}
+  try{return await save('interviews',cleanPayload,id);}
   catch(err){
-   const copy={...payload};
+   const copy={...cleanPayload};
    delete copy.guardian_name;
    delete copy.second_due_date;
    delete copy.has_custom_first_installment;
    delete copy.demais_parcelas;
    delete copy.enrollment_mode;
+   delete copy.pedagogical_notes;
    try{
     return await save('interviews',copy,id);
    }catch(err2){
@@ -2062,7 +2066,6 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
      installment_amount:Math.round(instAmt*100)/100,
      first_due_date:d.first_due_date||d.start_date||todayISO(),
      payment_method:d.payment_method||'Boleto',
-     pedagogical_notes:d.pedagogical_notes?.trim()||null,
      notes:d.pedagogical_notes?.trim()||null,
      pipeline_status:'open',
      archived_at:null
