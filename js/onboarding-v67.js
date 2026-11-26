@@ -7,42 +7,43 @@ const digits=v=>String(v||'').replace(/\D/g,'');
 const csvCell=v=>{let str=String(v??'');if(/^[\s]*[=+@\-\t\r]/.test(str))str="'"+str;return '"'+str.replace(/"/g,'""')+'"';};
 const csvExport=(cols,rows)=>'\uFEFF'+[cols, ...rows.map(r=>cols.map(k=>r[k]??''))].map(row=>row.map(csvCell).join(';')).join('\r\n')+'\r\n';
 const baseFields=['aluno_id','nome_completo','telefone','cpf','email','data_nascimento','cep','endereco','responsavel_nome','responsavel_data_nascimento','responsavel_cpf','responsavel_telefone','responsavel_email','responsavel_cep','responsavel_endereco'];
-const enrollmentFields=['aluno_id','nome_completo','professor','pacote','horarios','data_inicio','data_termino','curso','valor_total','parcelas','primeiro_vencimento','forma_pagamento','modelo'];
+const enrollmentFields=['aluno_id','cpf','email','nome_completo','professor','pacote','horarios','data_inicio','data_termino','curso','valor_total','parcelas','primeiro_vencimento','forma_pagamento','modelo'];
 const aliases={
- aluno_id:['aluno_id','id_aluno','identificador_do_aluno'],
+ aluno_id:['aluno_id','id_aluno','identificador_do_aluno','id'],
  nome_completo:['nome_completo','nome','aluno','nome_do_aluno','nome_aluno','estudante'],
- telefone:['telefone','celular','whatsapp','telefone_aluno','fone','contato','numero_de_telefone'],
- cpf:['cpf','cpf_aluno','documento'],email:['email','e_mail','email_aluno'],
- data_nascimento:['data_nascimento','nascimento','data_de_nascimento','dt_nascimento'],
- cep:['cep','codigo_postal'],endereco:['endereco','endereco_completo','logradouro'],
- responsavel_nome:['responsavel_nome','nome_responsavel','responsavel'],
- responsavel_data_nascimento:['responsavel_data_nascimento','nascimento_responsavel'],
- responsavel_cpf:['responsavel_cpf','cpf_responsavel'],responsavel_telefone:['responsavel_telefone','telefone_responsavel'],
- responsavel_email:['responsavel_email','email_responsavel'],responsavel_cep:['responsavel_cep','cep_responsavel'],
- responsavel_endereco:['responsavel_endereco','endereco_responsavel']
+ telefone:['telefone','celular','whatsapp','telefone_aluno','telefone_do_aluno','fone','contato','numero_de_telefone'],
+ cpf:['cpf','cpf_aluno','cpf_do_aluno','documento'],email:['email','e_mail','email_aluno','email_do_aluno','e_mail_do_aluno'],
+ data_nascimento:['data_nascimento','nascimento','data_de_nascimento','dt_nascimento','data_nascimento_aluno','data_de_nascimento_do_aluno'],
+ cep:['cep','codigo_postal','cep_aluno','cep_do_aluno'],endereco:['endereco','endereco_completo','logradouro','endereco_aluno','endereco_do_aluno'],
+ responsavel_nome:['responsavel_nome','nome_responsavel','nome_do_responsavel','responsavel','responsavel_legal','nome_responsavel_legal','nome_do_responsavel_legal','pai_mae','guardiao'],
+ responsavel_data_nascimento:['responsavel_data_nascimento','nascimento_responsavel','nascimento_do_responsavel','data_nascimento_responsavel','data_de_nascimento_responsavel','data_de_nascimento_do_responsavel','dt_nascimento_responsavel'],
+ responsavel_cpf:['responsavel_cpf','cpf_responsavel','cpf_do_responsavel','cpf_responsavel_legal','documento_responsavel'],
+ responsavel_telefone:['responsavel_telefone','telefone_responsavel','telefone_do_responsavel','celular_responsavel','celular_do_responsavel','whatsapp_responsavel','whatsapp_do_responsavel','fone_responsavel'],
+ responsavel_email:['responsavel_email','email_responsavel','email_do_responsavel','e_mail_responsavel','e_mail_do_responsavel'],
+ responsavel_cep:['responsavel_cep','cep_responsavel','cep_do_responsavel'],
+ responsavel_endereco:['responsavel_endereco','endereco_responsavel','endereco_do_responsavel','endereco_completo_responsavel']
 };
 const weekdayAbbr=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const weekdayNames=['domingo','segunda','terca','quarta','quinta','sexta','sabado'];
 const isoDateFor=v=>{const t=String(v||'').trim();if(!t)return '';if(/^\d{4}-\d{2}-\d{2}$/.test(t))return t;if(/^\d{2}\/\d{2}\/\d{4}$/.test(t))return isoDate(t);return t;};
-const normalPhone=v=>{let n=String(v||'').replace(/\D/g,'');if(n.startsWith('55')&&[12,13].includes(n.length))n=n.slice(2);return n;};
+const normalPhone=v=>{const raw=String(v||'').trim();let n=raw.replace(/\D/g,'');if(!raw.startsWith('+')&&n.startsWith('55')&&[12,13].includes(n.length))n=n.slice(2);return n;};
+const validPhone=v=>{const raw=String(v||'').trim();if(!raw)return true;const d=raw.replace(/\D/g,'');if(raw.startsWith('+'))return d.length>=7&&d.length<=15;const br=d.startsWith('55')&&[12,13].includes(d.length)?d.slice(2):d;return br.length>=8&&br.length<=15;};
 const normalizeMoney=v=>{const text=String(v??'').trim().replace(/R\$/g,'').replace(/\s/g,'');if(!text)return null;const normalized=text.includes(',')?text.replace(/\./g,'').replace(',','.'):text;const amount=Number(normalized);return Number.isFinite(amount)&&amount>=0?Math.round(amount*100)/100:null;};
 
 export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe,ico,today,dateBR,cpfValid,amountWords,confirm,toast}){
  const freshState=()=>({schoolId:ui.schoolId,step:'home',studentsCommitted:false,errorsDownloaded:false,incompleteDownloaded:false,completionLater:false,lastFlowReport:null,studentsFile:[],studentsHeaders:[],fileMode:'import',map:{},studentEdits:{},openedLine:null,deferredLines:new Set(),importedLines:new Set(),serverErrorDismissedLines:new Set(),studentReport:null,completionReport:null,enrollFile:[],enrollPreview:null,enrollReport:null});
  const state=freshState();
- const hasEnrollment=student=>db.contracts.some(c=>c.student_id===student.id&&!['void','closed','superseded'].includes(c.status));
+ const hasEnrollment=student=>db.contracts.some(c=>(c.student_id===student.id||c.student2_id===student.id)&&!['void','closed','superseded'].includes(c.status));
  const notEnrolled=()=>db.students.filter(s=>s.school_id===ui.schoolId&&!hasEnrollment(s));
  const missing=student=>{
   const fields=[];
   if(!cpfValid(student.cpf||''))fields.push('CPF');
   if(!student.email||!/^\S+@\S+\.\S+$/.test(student.email))fields.push('E-mail');
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(student.birth_date||''))fields.push('Nascimento');
   if(!student.address)fields.push('Endereço');
   if(digits(student.cep).length!==8)fields.push('CEP');
-  if(!student.phone)fields.push('Telefone');
-  if(student.is_minor===null||student.is_minor===undefined)fields.push('Nascimento para definir maioridade');
-  if(student.is_minor){
-   for(const [key,label] of [['guardian_name','Nome do responsável'],['guardian_birth_date','Nascimento do responsável'],['guardian_cpf','CPF do responsável'],['guardian_phone','Telefone do responsável'],['guardian_email','E-mail do responsável'],['guardian_cep','CEP do responsável'],['guardian_address','Endereço do responsável']]){
+  const isMinor=Boolean(student.is_minor||student.guardian_name||student.guardian_cpf);
+  if(isMinor){
+   for(const [key,label] of [['guardian_name','Nome do responsável'],['guardian_cpf','CPF do responsável'],['guardian_phone','Telefone do responsável'],['guardian_email','E-mail do responsável'],['guardian_cep','CEP do responsável'],['guardian_address','Endereço do responsável']]){
     if(!student[key]||(key==='guardian_cpf'&&!cpfValid(student[key]))||(key==='guardian_cep'&&digits(student[key]).length!==8))fields.push(label);
    }
   }
@@ -81,7 +82,7 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   if(state.schoolId!==ui.schoolId)Object.assign(state,freshState());
   if(!canAdmin())return '<p>Somente administradores podem importar alunos.</p>';
   const pend=db.students.filter(s=>s.school_id===ui.schoolId&&missing(s).length);
-  const ready=notEnrolled().filter(s=>!missing(s).length);
+  const ready=notEnrolled();
   const head=`<div class="onb-top"><div><p class="eyebrow">Configurações da escola</p><h2>Importação de Alunos e Matrículas</h2></div>${state.step!=='home'?button('onbHome','Voltar às opções'):''}</div>`;
   if(state.step==='home')return `<div class="onb-wizard">${head}${homeStep()}</div>`;
   if(state.step==='complete')return `<div class="onb-wizard">${head}${completeStep(pend)}</div>`;
@@ -98,14 +99,23 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
  function rowRecords(infos,label){return `<div class="onb-records" aria-label="${label}">${infos.map(info=>{
    const r=info.row,tag=info.completed?'Importado':info.deferred?'Pendente':info.issues.length?'Corrigir':info.incomplete?'Incompleto':'Completo';
    const tone=info.issues.length&&!info.deferred?'error':info.completed?'success':info.incomplete||info.deferred?'neutral':'success';
-   return `<div class="onb-record"><div class="onb-record-summary"><span class="onb-record-no">${r.linha}</span><div class="onb-record-main"><b>${safe(r.nome_completo||'Nome não informado')}</b><small>${safe(r.telefone||'Telefone não informado')}${r.cpf?' · CPF '+safe(r.cpf):''}</small>${info.issues.length?`<small class="onb-error">${safe(info.issues.map(x=>x.message).join(' · '))}</small>`:''}</div><span class="onb-record-status ${tone}">${tag}</span>${!info.completed?button('onbOpenRow',state.openedLine===r.linha?'Fechar':'Editar',`data-line="${r.linha}"`):''}</div>
+   return `<div class="onb-record"><div class="onb-record-summary"><span class="onb-record-no">${r.linha}</span><div class="onb-record-main"><b>${safe(r.nome_completo||'Nome não informado')}</b><small>${safe(r.telefone||'Telefone não informado')}${r.cpf?' · CPF '+safe(r.cpf):''}${r.responsavel_nome?' · Resp.: '+safe(r.responsavel_nome):''}</small>${info.issues.length?`<small class="onb-error">${safe(info.issues.map(x=>x.message).join(' · '))}</small>`:''}</div><span class="onb-record-status ${tone}">${tag}</span>${!info.completed?button('onbOpenRow',state.openedLine===r.linha?'Fechar':'Editar',`data-line="${r.linha}"`):''}</div>
    ${state.openedLine===r.linha&&!info.completed?correctionForm(info):''}</div>`;
   }).join('')||'<div class="onb-empty">Nenhum aluno nesta lista.</div>'}</div>`;}
- const fieldLabels={aluno_id:'Identificador do aluno',nome_completo:'Nome completo',telefone:'Telefone com DDD',cpf:'CPF',email:'E-mail',data_nascimento:'Data de nascimento',cep:'CEP',endereco:'Endereço',responsavel_nome:'Nome do responsável',responsavel_data_nascimento:'Nascimento do responsável',responsavel_cpf:'CPF do responsável',responsavel_telefone:'Telefone do responsável',responsavel_email:'E-mail do responsável',responsavel_cep:'CEP do responsável',responsavel_endereco:'Endereço do responsável'};
- const optFields=baseFields.filter(f=>!['aluno_id','nome_completo','telefone'].includes(f));
+ const fieldLabels={aluno_id:'Identificador do aluno',nome_completo:'Nome completo',telefone:'Telefone (DDD ou +DDI)',cpf:'CPF',email:'E-mail',data_nascimento:'Data de nascimento',cep:'CEP',endereco:'Endereço',responsavel_nome:'Nome do responsável',responsavel_data_nascimento:'Nascimento do responsável',responsavel_cpf:'CPF do responsável',responsavel_telefone:'Telefone do responsável',responsavel_email:'E-mail do responsável',responsavel_cep:'CEP do responsável',responsavel_endereco:'Endereço do responsável'};
+ const optFields=baseFields.filter(f=>!['aluno_id','nome_completo'].includes(f));
  const validDate=v=>{const value=isoDateFor(v);if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;const d=new Date(value+'T12:00:00Z');return !Number.isNaN(d.valueOf())&&d.toISOString().slice(0,10)===value&&value>='1900-01-01'&&value<=today();};
  function mappedStudentRow(r){
-  const out={linha:r.line};for(const [key,col] of Object.entries(state.map))out[key]=col?String(r[col]??''):'';
+  const out={linha:r.line};
+  for(const key of baseFields){
+   const col=state.map[key];
+   let val=col?String(r[col]??''):'';
+   if(!val){
+    const fallbackCol=(aliases[key]||[]).find(alias=>r[alias]!==undefined&&r[alias]!=='');
+    if(fallbackCol)val=String(r[fallbackCol]??'');
+   }
+   out[key]=val;
+  }
   Object.assign(out,state.studentEdits[String(r.line)]||{});
   out.data_nascimento=isoDateFor(out.data_nascimento);out.responsavel_data_nascimento=isoDateFor(out.responsavel_data_nascimento);
   return out;
@@ -114,14 +124,14 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
  function issuesFor(r){
   const issues=[];const add=(field,message,required=false)=>issues.push({field,message,required});
   if(String(r.nome_completo||'').trim().length<2||String(r.nome_completo||'').length>180)add('nome_completo','Informe o nome completo.',true);
-  if(![10,11].includes(normalPhone(r.telefone).length))add('telefone','Informe telefone com DDD (10 ou 11 dígitos).',true);
+  if(String(r.telefone||'').trim()&&!validPhone(r.telefone))add('telefone','Informe telefone com DDD (10 ou 11 dígitos) ou +DDI internacional.',true);
   if(r.cpf&&!cpfValid(r.cpf))add('cpf','CPF inválido.');
   if(r.email&&!/^\S+@\S+\.\S+$/.test(r.email))add('email','E-mail inválido.');
   for(const field of ['data_nascimento','responsavel_data_nascimento'])if(r[field]&&!validDate(r[field]))add(field,'Data inválida.');
   for(const field of ['cep','responsavel_cep'])if(r[field]&&digits(r[field]).length!==8)add(field,'Informe um CEP com 8 dígitos.');
   if(r.responsavel_cpf&&!cpfValid(r.responsavel_cpf))add('responsavel_cpf','CPF do responsável inválido.');
   if(r.responsavel_email&&!/^\S+@\S+\.\S+$/.test(r.responsavel_email))add('responsavel_email','E-mail do responsável inválido.');
-  if(r.responsavel_telefone&&![10,11].includes(normalPhone(r.responsavel_telefone).length))add('responsavel_telefone','Telefone do responsável inválido.');
+  if(r.responsavel_telefone&&!validPhone(r.responsavel_telefone))add('responsavel_telefone','Telefone do responsável inválido.');
   if(state.fileMode==='complete'){
    if(!r.aluno_id)add('aluno_id','Arquivo de complementação precisa do identificador do aluno.',true);
    else if(!db.students.some(s=>s.id===r.aluno_id&&s.school_id===ui.schoolId))add('aluno_id','Aluno não encontrado nesta escola.',true);
@@ -141,12 +151,13 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   const completed=state.importedLines.has(r.linha)&&previous?.resultado!=='erro';
   const deferred=state.deferredLines.has(r.linha);
   const enrolled=db.students.find(s=>s.id===r.aluno_id&&s.school_id===ui.schoolId);
-  // Ausencias opcionais nao impedem o cadastro inicial; a etapa seguinte lista o que falta.
+  // Data de nascimento (do aluno e responsável) e RG NÃO são obrigatórios para matrícula.
   const birth=validDate(r.data_nascimento)?isoDateFor(r.data_nascimento):enrolled?.birth_date||'';
   const ageLimit=birth?new Date(birth+'T12:00:00Z'):null;
   if(ageLimit)ageLimit.setUTCFullYear(ageLimit.getUTCFullYear()+18);
-  const minor=ageLimit&&ageLimit.toISOString().slice(0,10)>today();
-  const incomplete=(!r.cpf&&!enrolled?.cpf)||(!r.email&&!enrolled?.email)||(!birth)||(!r.cep&&!enrolled?.cep)||(!r.endereco&&!enrolled?.address)||(minor&&(!r.responsavel_nome&&!enrolled?.guardian_name||!r.responsavel_cpf&&!enrolled?.guardian_cpf||!r.responsavel_telefone&&!enrolled?.guardian_phone||!r.responsavel_email&&!enrolled?.guardian_email||!r.responsavel_data_nascimento&&!enrolled?.guardian_birth_date||!r.responsavel_cep&&!enrolled?.guardian_cep||!r.responsavel_endereco&&!enrolled?.guardian_address));
+  const hasGuardianData=Boolean(r.responsavel_nome||r.responsavel_cpf||enrolled?.guardian_name||enrolled?.guardian_cpf);
+  const minor=ageLimit?(ageLimit.toISOString().slice(0,10)>today()):Boolean(hasGuardianData||enrolled?.is_minor);
+  const incomplete=(!r.cpf&&!enrolled?.cpf)||(!r.email&&!enrolled?.email)||(!r.cep&&!enrolled?.cep)||(!r.endereco&&!enrolled?.address)||(minor&&(!r.responsavel_nome&&!enrolled?.guardian_name||!r.responsavel_cpf&&!enrolled?.guardian_cpf||!r.responsavel_telefone&&!enrolled?.guardian_phone||!r.responsavel_email&&!enrolled?.guardian_email||!r.responsavel_cep&&!enrolled?.guardian_cep||!r.responsavel_endereco&&!enrolled?.guardian_address));
   return {row:r,issues,completed,deferred,incomplete};
  }
  function previewData(){
@@ -244,14 +255,14 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
  }
  function enrollmentsStep(pend,ready,standalone=false){
   const report=state.enrollReport?reportPanel(state.enrollReport):'';
-  const warning=pend.length?`<details class="onb-mapping"><summary>${pend.length} aluno(s) com dados faltantes</summary>${grid(['Aluno','Informações faltantes'],pend.map(s=>row([safe(s.full_name),safe(missing(s).join(', '))])),true)}</details>`:'';
-  return panel(standalone?'Cadastrar matrículas em massa':'5. Matricular alunos',`${note('info','Duas formas de matricular','Escolha Matricular ao lado de um aluno ou prepare vários de uma vez usando a planilha. Alunos incompletos ficam disponíveis para completar depois.')}<div class="onb-metrics">${metric(ready.length,'prontos para matrícula')}${metric(pend.length,'com cadastro incompleto')}</div>
+  const warning=pend.length?`<details class="onb-mapping"><summary>${pend.length} aluno(s) com aviso de cadastro incompleto</summary>${grid(['Aluno','Informações faltantes (aviso)'],pend.map(s=>row([safe(s.full_name),safe(missing(s).join(', '))])),true)}</details>`:'';
+  return panel(standalone?'Cadastrar matrículas em massa':'5. Matricular alunos',`${note('info','Duas formas de matricular','Escolha Matricular ao lado de um aluno ou prepare vários de uma vez usando a planilha. Alunos incompletos podem ser matriculados normalmente (com aviso de dados faltantes).')}<div class="onb-metrics">${metric(ready.length,'prontos para matrícula')}${metric(pend.length,'com aviso de cadastro incompleto')}</div>
    <h3>Alunos prontos para matrícula</h3>
-   <div class="onb-records" aria-label="Alunos prontos para matrícula">${ready.map(s=>`<div class="onb-record"><div class="onb-record-summary"><div class="onb-record-main"><b>${safe(s.full_name)}</b><small>${safe(s.phone||'—')}</small></div>${button('manualEnrollment','Matricular',`data-id="${safe(s.id)}"`)}</div></div>`).join('')||'<div class="onb-empty">Nenhum aluno pronto no momento.</div>'}</div>
+   <div class="onb-records" aria-label="Alunos prontos para matrícula">${ready.map(s=>{const m=missing(s);return `<div class="onb-record"><div class="onb-record-summary"><div class="onb-record-main"><b>${safe(s.full_name)}</b><small>${safe(s.phone||'Sem telefone')}${m.length?` · Aviso: falta ${safe(m.join(', '))}`:''}</small></div>${button('manualEnrollment','Matricular',`data-id="${safe(s.id)}"`)}</div></div>`;}).join('')||'<div class="onb-empty">Nenhum aluno pronto no momento.</div>'}</div>
    ${warning}
-   <div class="onb-section-title"><h3>Matrícula em massa</h3><p>Baixe a planilha modelo. Você pode matricular alunos individuais ou <strong>duplas (2 alunos juntos)</strong>, com modelos DOCX ou com <strong>contratos preexistentes</strong> (sem exigir arquivo DOCX), além de definir matrículas por <strong>recorrência até o fim do contrato</strong> pela coluna <code>data_termino</code>.</p></div><div class="onb-actions">${button('onbDownloadReady','Baixar planilha de matrículas')}${button('onbDownloadDuoTemplate','Baixar modelo de Duplas (CSV)')}${button('onbDownloadSlots','Consultar horários dos professores')}</div>
+   <div class="onb-section-title"><h3>Matrícula em massa</h3><p>Baixe a planilha modelo. Você pode identificar o aluno por <code>aluno_id</code>, <code>cpf</code> ou <code>email</code>, matricular alunos individuais ou <strong>duplas (2 alunos juntos)</strong>, com modelos DOCX ou com <strong>contratos preexistentes</strong> (sem exigir arquivo DOCX), além de definir matrículas por <strong>recorrência até o fim do contrato</strong> pela coluna <code>data_termino</code>.</p></div><div class="onb-actions">${button('onbDownloadReady','Baixar planilha de matrículas')}${button('onbDownloadDuoTemplate','Baixar modelo de Duplas (CSV)')}${button('onbDownloadSlots','Consultar horários dos professores')}</div>
    <form id="onbEnrollmentUpload" class="onb-upload"><label class="field"><span>CSV com as matrículas preenchidas</span><input type="file" name="file" accept=".csv,text/csv" required></label><button class="btn" type="submit">Conferir matrículas</button></form>
-   ${note('warning','Regras da importação de matrículas','• <b>Matrículas em Dupla:</b> baixe o modelo de duplas com as colunas aluno_1_id e aluno_2_id. O sistema detecta a modalidade de dupla automaticamente.<br>• <b>Contratos preexistentes em andamento:</b> preencha a coluna modelo com "preexistente". O contrato será ativado imediatamente e as aulas agendadas sem gerar PDF pendente.<br>• <b>Recorrência até o fim do contrato:</b> preencha a coluna data_termino. As aulas serão calculadas até a data final, pulando bloqueios e feriados sem gerar reposição.<br>• <b>Horários da agenda:</b> informe os horários ativos do professor (ex.: Seg 09:00 | Qua 14:00).')}
+   ${note('warning','Regras da importação de matrículas','• <b>Identificação do aluno:</b> você pode informar <code>aluno_id</code>, <code>cpf</code> ou <code>email</code>.<br>• <b>Matrículas em Dupla:</b> baixe o modelo de duplas com as colunas aluno_1_id (ou CPF/e-mail) e aluno_2_id. O sistema detecta a modalidade de dupla automaticamente.<br>• <b>Contratos preexistentes em andamento:</b> preencha a coluna modelo com "preexistente". O contrato será ativado imediatamente e as aulas agendadas sem gerar PDF pendente.<br>• <b>Recorrência até o fim do contrato:</b> preencha a coluna data_termino. As aulas serão calculadas até a data final, pulando bloqueios e feriados sem gerar reposição.<br>• <b>Horários da agenda do professor:</b> informe os horários ativos do professor (ex.: Seg 09:00 | Qua 14:00).')}
    ${enrollmentPreview()}${report}
    <div class="form-footer">${!standalone?button('onbStep','Voltar','data-step="review"'):''}${button('onbHome','Concluir / importar matrículas depois','','')}</div>`);
  }
@@ -266,16 +277,52 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   if(!state.enrollPreview)return '';
   const preview=state.enrollPreview,bad=preview.filter(x=>x.error),valid=preview.filter(x=>!x.error);
   return `<section class="onb-preview"><div class="onb-section-title"><h3>Prévia das matrículas</h3><p>Confira as linhas abaixo antes de confirmar. Os registros com erro não serão enviados.</p></div><div class="onb-results-count"><strong>${valid.length}</strong> pronta(s) · ${bad.length} com erro(s)</div>
-   ${grid(['Linha','Aluno','Professor','Horários','Validação'],preview.map(x=>row([safe(x.line),safe(x.name),safe(x.teacher||'—'),safe(x.hours||'—'),x.error?`<span class="onb-error">${safe(x.error)}</span>`:'<span class="pill pill-signed">Conferido</span>'])),true)}
+   ${grid(['Linha','Aluno','Professor','Horários','Validação'],preview.map(x=>row([safe(x.line),safe(x.name),safe(x.teacher||'—'),safe(x.hours||'—'),x.error?`<span class="onb-error">${safe(x.error)}</span>`:`<span class="pill pill-signed">Conferido</span>${x.warning?`<div class="small muted">${safe(x.warning)}</div>`:''}`])),true)}
    <div class="form-footer">${button('onbClearEnrollments','Trocar arquivo')}${button('onbDownloadErrors','Baixar erros')}${valid.length?button('onbConfirmEnrollments',`Preparar ${valid.length} matrícula(s)`,'',''):''}</div>
    <p class="muted">Somente as linhas válidas serão preparadas. Confirme após verificar os horários dos professores.</p></section>`;
  }
  function mapStudentRows(){return mappedStudentRows();}
  function download(content,filename){const blob=new Blob([content],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
  function studentCSVRow(s){return {aluno_id:s.id,nome_completo:s.full_name,telefone:s.phone||'',cpf:s.cpf||'',email:s.email||'',data_nascimento:s.birth_date||'',cep:s.cep||'',endereco:s.address||'',responsavel_nome:s.guardian_name||'',responsavel_data_nascimento:s.guardian_birth_date||'',responsavel_cpf:s.guardian_cpf||'',responsavel_telefone:s.guardian_phone||'',responsavel_email:s.guardian_email||'',responsavel_cep:s.guardian_cep||'',responsavel_endereco:s.guardian_address||''};}
- function readyCSVRow(s){return {aluno_id:s.id,nome_completo:s.full_name,professor:db.teachers.find(t=>t.id===s.calendar_teacher_id)?.name||'',pacote:'',horarios:'',data_inicio:today(),data_termino:'',curso:'Inglês',valor_total:'',parcelas:'1',primeiro_vencimento:today(),forma_pagamento:'PIX',modelo:'preexistente'};}
+ function readyCSVRow(s){return {aluno_id:s.id,cpf:s.cpf||'',email:s.email||'',nome_completo:s.full_name,professor:db.teachers.find(t=>t.id===s.calendar_teacher_id)?.name||'',pacote:'',horarios:'',data_inicio:today(),data_termino:'',curso:'Inglês',valor_total:'',parcelas:'1',primeiro_vencimento:today(),forma_pagamento:'PIX',modelo:'preexistente'};}
  function slotCSVRows(){return (slotData().slots||[]).filter(s=>s.active&&s.slot_date===null).map(s=>({professor:db.teachers.find(t=>t.id===s.teacher_id)?.name||'—',professor_id:s.teacher_id,dia:weekdayAbbr[s.weekday],hora:String(s.time).slice(0,5),duracao_minutos:s.duration,horario_id:s.id}));}
  function resolveByName(items,label,what){const id=String(label||'').trim(),normal=normalize(id);if(!id)throw Error(`${what} não informado`);const matches=items.filter(x=>x.id===id||normalize(x.name)===normal);if(!matches.length)throw Error(`${what} não encontrado: ${id}`);if(matches.length>1)throw Error(`${what} ambíguo: use o ID`);return matches[0];}
+ function resolveStudentInSchool(r,prefix=''){
+  const pool=db.students.filter(s=>s.school_id===ui.schoolId);
+  const rawId=String(r[prefix+'id']||(!prefix?r.aluno_id:'')||'').trim();
+  const rawCpf=digits(r[prefix+'cpf']||(!prefix?r.cpf:'')||'');
+  const rawEmail=String(r[prefix+'email']||(!prefix?r.email:'')||'').trim().toLowerCase();
+  const rawName=String(r[prefix+'nome']||(!prefix?r.nome_completo:'')||'').trim();
+  let found=null;
+  if(rawId){
+   found=pool.find(s=>s.id===rawId);
+   if(found){
+    if(rawName&&normalize(rawName)!==normalize(found.full_name))throw Error('Nome diferente do aluno_id: use o CSV atualizado');
+    return found;
+   }
+   const idDigits=digits(rawId);
+   if(idDigits.length===11)found=pool.find(s=>digits(s.cpf)===idDigits);
+   else if(rawId.includes('@'))found=pool.find(s=>String(s.email||'').trim().toLowerCase()===rawId.toLowerCase());
+   if(found)return found;
+   throw Error(`${prefix?prefix+'id':'aluno_id'} não encontrado nesta escola`);
+  }
+  if(rawCpf.length===11){
+   const matches=pool.filter(s=>digits(s.cpf)===rawCpf);
+   if(matches.length===1)return matches[0];
+   if(matches.length>1)throw Error('Mais de um aluno com este CPF; informe o aluno_id');
+  }
+  if(rawEmail){
+   const matches=pool.filter(s=>String(s.email||'').trim().toLowerCase()===rawEmail);
+   if(matches.length===1)return matches[0];
+   if(matches.length>1)throw Error('Mais de um aluno com este e-mail; informe o aluno_id');
+  }
+  if(rawName){
+   const matches=pool.filter(s=>normalize(s.full_name)===normalize(rawName));
+   if(matches.length===1)return matches[0];
+   if(matches.length>1)throw Error(`Mais de um aluno chamado "${rawName}"; informe CPF, e-mail ou aluno_id`);
+  }
+  throw Error('Aluno não encontrado nesta escola (informe aluno_id, CPF ou e-mail)');
+ }
  function resolveSlots(teacher,raw){
   const items=String(raw||'').split('|').map(x=>x.trim()).filter(Boolean);if(!items.length)throw Error('Informe os horários: exemplo Seg 09:00 | Qui 14:00');
   const slots=slotData().slots.filter(s=>s.teacher_id===teacher.id&&s.active&&s.slot_date===null),selected=[];
@@ -294,12 +341,13 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   return selected;
  }
  function prepareEnrollmentRow(r){
-  const row={line:r.line,name:r.nome_completo||'—',teacher:r.professor,hours:r.horarios,error:null,payload:null};
+  const row={line:r.line,name:r.nome_completo||r.email||r.cpf||'—',teacher:r.professor,hours:r.horarios,error:null,warning:null,payload:null};
   try{
-   const s=db.students.find(s=>s.id===r.aluno_id&&s.school_id===ui.schoolId);if(!s)throw Error('aluno_id não encontrado nesta escola');
-   if(normalize(r.nome_completo)!==normalize(s.full_name))throw Error('Nome diferente do aluno_id: use o CSV atualizado');
+   const s=resolveStudentInSchool(r,'');
+   row.name=s.full_name;
    if(hasEnrollment(s))throw Error('Aluno já possui matrícula ou contrato em andamento');
-   const missingFields=missing(s);if(missingFields.length)throw Error(`Cadastro incompleto: ${missingFields.join(', ')}`);
+   const missingFields=missing(s);
+   if(missingFields.length)row.warning=`Aviso: cadastro incompleto (${missingFields.join(', ')})`;
    const t=resolveByName(db.teachers.filter(t=>t.active),r.professor||s.calendar_teacher_id,'Professor');
    row.teacher=t.name;
    const p=resolveByName(db.packages.filter(p=>p.active&&p.kind!=='dupla'),r.pacote,'Pacote');
@@ -308,7 +356,10 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
    let model=null;
    if(!isPreexisting){
     model=resolveByName(db.contract_types.filter(c=>c.active),r.modelo||p.contract_type_id,'Modelo de contrato');
-    const minor=!!s.is_minor;if(model.kind!==(minor?'menor':'individual'))throw Error('Modelo do contrato incompatível com a idade do aluno');
+    if(s.is_minor!==null&&s.is_minor!==undefined){
+     const minor=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
+     if(model.kind!==(minor?'menor':'individual'))throw Error('Modelo do contrato incompatível com a idade do aluno');
+    }
     if(model.fields?.length)throw Error('Modelo com campos personalizados: conclua esta matrícula individualmente');
    }
    const start=isoDateFor(r.data_inicio);if(!/^\d{4}-\d\d-\d\d$/.test(start)||start<today()||Number.isNaN(new Date(start+'T12:00:00Z').valueOf()))throw Error('Data de início inválida ou passada');
@@ -326,12 +377,14 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   return row;
  }
  function prepareDuoEnrollmentRow(r){
-  const row={line:r.line,name:`${r.aluno_1_nome||'Aluno 1'} & ${r.aluno_2_nome||'Aluno 2'}`,teacher:r.professor,hours:r.horarios,error:null,payload:null};
+  const row={line:r.line,name:`${r.aluno_1_nome||'Aluno 1'} & ${r.aluno_2_nome||'Aluno 2'}`,teacher:r.professor,hours:r.horarios,error:null,warning:null,payload:null};
   try{
-   const s1=db.students.find(s=>s.id===r.aluno_1_id&&s.school_id===ui.schoolId);if(!s1)throw Error('aluno_1_id não encontrado nesta escola');
-   const s2=db.students.find(s=>s.id===r.aluno_2_id&&s.school_id===ui.schoolId);if(!s2)throw Error('aluno_2_id não encontrado nesta escola');
+   const s1=resolveStudentInSchool(r,'aluno_1_');
+   const s2=resolveStudentInSchool(r,'aluno_2_');
    if(s1.id===s2.id)throw Error('Uma dupla exige dois alunos diferentes');
    row.name=`${s1.full_name} & ${s2.full_name}`;
+   const m1=missing(s1),m2=missing(s2);
+   if(m1.length||m2.length)row.warning=`Aviso: cadastro incompleto (${[...new Set([...m1,...m2])].join(', ')})`;
    const t=resolveByName(db.teachers.filter(t=>t.active),r.professor||s1.calendar_teacher_id,'Professor');
    row.teacher=t.name;
    const p=resolveByName(db.packages.filter(p=>p.active),r.pacote,'Pacote');
@@ -339,7 +392,7 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
    const isPreexisting=!r.modelo||['preexistente','sem contrato','sem_contrato','contrato preexistente','fisico','externo'].includes(normalize(r.modelo));
    let model=null;
    if(!isPreexisting){
-    model=resolveByName(db.contract_types.filter(c=>c.active&&c.kind==='dupla'),r.modelo||p.contract_type_id,'Modelo de contrato');
+    model=resolveByName(db.contract_types.filter(c=>c.active&&(c.kind==='dupla'||c.kind==='menor')),r.modelo||p.contract_type_id,'Modelo de contrato');
    }
    const start=isoDateFor(r.data_inicio);if(!/^\d{4}-\d\d-\d\d$/.test(start)||start<today()||Number.isNaN(new Date(start+'T12:00:00Z').valueOf()))throw Error('Data de início inválida ou passada');
    const rawEnd=isoDateFor(r.data_termino||r.fim_contrato||'');
@@ -357,9 +410,11 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
  async function validateEnrollmentFile(file){
   const rows=parseCSV(await file.text(),{requiredHeaders:[]});if(!rows.length||rows.length>1000)throw Error('Envie de 1 a 1000 matrículas por arquivo');
   const keys=Object.keys(rows[0]);
-  const isDuo=keys.includes('aluno_1_id')||keys.includes('aluno_2_id');
+  const isDuo=keys.includes('aluno_1_id')||keys.includes('aluno_2_id')||keys.includes('aluno_1_cpf')||keys.includes('aluno_1_email');
   state.isDuoEnrollment=isDuo;
-  const required=isDuo?['aluno_1_id','aluno_2_id','professor','pacote','horarios','data_inicio']:['aluno_id','nome_completo','professor','pacote','horarios','data_inicio'];
+  const hasStudent1Id=isDuo?(keys.includes('aluno_1_id')||keys.includes('aluno_1_cpf')||keys.includes('aluno_1_email')||keys.includes('aluno_1_nome')):(keys.includes('aluno_id')||keys.includes('cpf')||keys.includes('email')||keys.includes('nome_completo'));
+  if(!hasStudent1Id)throw Error('Informe uma coluna para identificar o aluno (aluno_id, cpf, email ou nome_completo)');
+  const required=isDuo?['professor','pacote','horarios','data_inicio']:['professor','pacote','horarios','data_inicio'];
   const absent=required.filter(x=>!keys.includes(x));if(absent.length)throw Error('Colunas ausentes: '+absent.join(', '));
   const result=rows.map(isDuo?prepareDuoEnrollmentRow:prepareEnrollmentRow);
   const taken=new Map(),takenStudents=new Map();for(const r of result.filter(x=>!x.error)){
@@ -415,13 +470,13 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
    const headers=Object.keys(rows[0]).filter(k=>k!=='line');state.fileMode=form.id==='onbCompletionUpload'?'complete':'import';
    state.studentsFile=rows;state.studentsHeaders=headers;state.studentEdits={};state.openedLine=null;state.deferredLines=new Set();state.importedLines=new Set();state.serverErrorDismissedLines=new Set();
    state.map=Object.fromEntries(Object.entries(aliases).map(([field,names])=>[field,names.find(name=>headers.includes(name))||'']));state.errorsDownloaded=false;state.incompleteDownloaded=false;
-   if(state.fileMode==='complete'&&(!state.map.aluno_id||!state.map.nome_completo||!state.map.telefone))throw Error('Para completar cadastros, use o CSV baixado nesta etapa, com aluno_id, nome e telefone.');
+   if(state.fileMode==='complete'&&(!state.map.aluno_id||!state.map.nome_completo))throw Error('Para completar cadastros, use o CSV baixado nesta etapa, com aluno_id e nome.');
    setReportForMode(null);render();return;
   }
   if(form.id==='onbEnrollmentUpload'){await validateEnrollmentFile(file);state.enrollReport=null;render();return;}
  }
  async function commitStudentImport(){
-  if(!state.map.nome_completo||!state.map.telefone)throw Error('Associe nome e telefone antes de importar.');
+  if(!state.map.nome_completo)throw Error('Associe a coluna de nome antes de importar.');
   const rows=previewData().filter(x=>!x.issues.length&&!x.deferred&&!x.completed).map(x=>x.row);
   if(!rows.length)return state.studentReport;
   const merged={criados:0,completados:0,existentes:0,erros:0,linhas:[]};
@@ -446,7 +501,7 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
    if(['errors','incomplete','review'].includes(target)&&!state.studentsFile.length)throw Error('Envie um CSV primeiro.');if(target==='enrollments'&&!state.studentsCommitted)throw Error('Conclua a etapa Cadastro final antes de preparar matrículas.');
    goToStep(target==='students'?'upload':target);return;
   }
-  if(action==='onbNextFromUpload'){if(!state.studentsFile.length)throw Error('Envie o arquivo antes de continuar.');if(!state.map.nome_completo||!state.map.telefone)throw Error('Selecione as colunas de nome e telefone.');goToStep('errors');return;}
+  if(action==='onbNextFromUpload'){if(!state.studentsFile.length)throw Error('Envie o arquivo antes de continuar.');if(!state.map.nome_completo)throw Error('Selecione a coluna de nome.');goToStep('errors');return;}
   if(action==='onbDownloadErrorRows'||action==='onbDownloadBasicRows'){
    const infos=previewData().filter(x=>!x.completed&&(action==='onbDownloadErrorRows'?x.issues.length:!x.issues.length&&x.incomplete&&!x.deferred));
    if(!infos.length)return toast('Não há registros para baixar.');
@@ -484,15 +539,15 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   if(action==='onbDownloadTemplate'){download(csvExport(baseFields,[{nome_completo:'',telefone:''}]),'modelo_alunos_simples.csv');return;}
   if(action==='onbDownloadIncomplete'){const rows=db.students.filter(s=>s.school_id===ui.schoolId&&missing(s).length).map(s=>({...studentCSVRow(s),informacoes_faltantes:missing(s).join(' | ')}));if(!rows.length)return toast('Nenhum cadastro incompleto.');download(csvExport([...baseFields,'informacoes_faltantes'],rows),'alunos_para_completar.csv');return;}
   if(action==='onbDownloadSlots'){const cols=['professor','professor_id','dia','hora','duracao_minutos','horario_id'];download(csvExport(cols,slotCSVRows()),'horarios_professores.csv');return;}
-  if(action==='onbDownloadReady'){const rows=notEnrolled().filter(s=>!missing(s).length).map(readyCSVRow);if(!rows.length)return toast('Nenhum aluno pronto para matrícula.');download(csvExport(enrollmentFields,rows),'alunos_prontos_matricula.csv');return;}
+  if(action==='onbDownloadReady'){const rows=notEnrolled().map(readyCSVRow);if(!rows.length)return toast('Nenhum aluno disponível para matrícula.');download(csvExport(enrollmentFields,rows),'alunos_prontos_matricula.csv');return;}
   if(action==='onbDownloadDuoTemplate'){
-   const headers=['aluno_1_id','aluno_1_nome','aluno_2_id','aluno_2_nome','professor','pacote','horarios','data_inicio','data_termino','curso','valor_total','parcelas','primeiro_vencimento','forma_pagamento','modelo','quem_assina','encerrar_anteriores'];
-   const ready=notEnrolled().filter(s=>!missing(s).length);
+   const headers=['aluno_1_id','aluno_1_cpf','aluno_1_email','aluno_1_nome','aluno_2_id','aluno_2_cpf','aluno_2_email','aluno_2_nome','professor','pacote','horarios','data_inicio','data_termino','curso','valor_total','parcelas','primeiro_vencimento','forma_pagamento','modelo','quem_assina','encerrar_anteriores'];
+   const ready=notEnrolled();
    const sampleRows=[];
    if(ready.length>=2){
     sampleRows.push({
-     aluno_1_id:ready[0].id,aluno_1_nome:ready[0].full_name,
-     aluno_2_id:ready[1].id,aluno_2_nome:ready[1].full_name,
+     aluno_1_id:ready[0].id,aluno_1_cpf:ready[0].cpf||'',aluno_1_email:ready[0].email||'',aluno_1_nome:ready[0].full_name,
+     aluno_2_id:ready[1].id,aluno_2_cpf:ready[1].cpf||'',aluno_2_email:ready[1].email||'',aluno_2_nome:ready[1].full_name,
      professor:db.teachers.find(t=>t.active)?.name||'',
      pacote:db.packages.find(p=>p.kind==='dupla')?.name||'',
      horarios:'',data_inicio:today(),data_termino:'',curso:'Inglês',
@@ -501,8 +556,8 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
     });
    }else{
     sampleRows.push({
-     aluno_1_id:'',aluno_1_nome:'Aluno 1',
-     aluno_2_id:'',aluno_2_nome:'Aluno 2',
+     aluno_1_id:'',aluno_1_cpf:'',aluno_1_email:'',aluno_1_nome:'Aluno 1',
+     aluno_2_id:'',aluno_2_cpf:'',aluno_2_email:'',aluno_2_nome:'Aluno 2',
      professor:'',pacote:'',horarios:'',data_inicio:today(),
      data_termino:'',curso:'Inglês',valor_total:'',parcelas:'1',
      primeiro_vencimento:today(),forma_pagamento:'PIX',modelo:'preexistente',quem_assina:'1',encerrar_anteriores:'sim'

@@ -25,7 +25,7 @@ export function weeklyPickerMarkup(slots,opts={}){
  const limit=Number(opts.limit)||0;
  return `<div class="cal-weekly-picker" data-selection-name="${escapeHTML(name)}" data-limit="${limit}" data-locked="${locked?'1':'0'}"><div class="cal-wpicker-legend"><span><i class="cal-wpicker-dot available"></i> Livre</span><span><i class="cal-wpicker-dot selected"></i> Selecionado</span><span><i class="cal-wpicker-dot occupied"></i> Ocupado</span><strong data-weekly-count>${selected.size}${limit?' de '+limit:''} selecionado(s)</strong></div><div class="cal-wpicker-scroll"><div class="cal-wpicker-inner"><div class="cal-wpicker-header"><span>Horário</span>${order.map(day=>`<strong>${days[day]}</strong>`).join('')}</div><div class="cal-wpicker-body"><div class="cal-wpicker-time" style="height:${height}px">${hours.map(h=>`<span>${String(h/60).padStart(2,'0')}:00</span>`).join('')}</div>${columns}</div></div></div><div class="cal-wpicker-validation" data-weekly-error aria-live="polite"></div></div>`;
 }
-export function getWeeklyLimit(form,picker){return Number(form?.elements?.weekly_frequency?.value||form?.dataset?.weeklyFrequency||picker?.dataset?.limit||0);}
+export function getWeeklyLimit(form,picker){if(form?.elements?.enrollment_mode?.value==='recurrence')return 0;return Number(form?.elements?.weekly_frequency?.value||form?.dataset?.weeklyFrequency||picker?.dataset?.limit||0);}
 export function updateWeeklyPickerIndicators(form){
  if(!form)return;
  for(const picker of form.querySelectorAll('.cal-weekly-picker')){
@@ -50,5 +50,5 @@ export function initWeeklyPicker(){
   updateWeeklyPickerIndicators(form);
   input.dispatchEvent(new Event('change',{bubbles:true}));
  });
- document.addEventListener('change',event=>{if(event.target.name==='weekly_frequency'||event.target.name==='package_id')updateWeeklyPickerIndicators(event.target.form);});
+ document.addEventListener('change',event=>{if(event.target.name==='weekly_frequency'||event.target.name==='package_id'){const f=event.target.form;setTimeout(()=>updateWeeklyPickerIndicators(f),0);}});
 }

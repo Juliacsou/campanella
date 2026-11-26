@@ -47,13 +47,21 @@ export const CONTRACT_BASE_FIELDS = Object.freeze([
  {key:'professor',label:'Professor',who:'contratado'},
  {key:'dias',label:'Dias da semana',who:'contratado'},
  {key:'horario',label:'Horario',who:'contratado'},
- {key:'data_assinatura_extenso',label:'Data da assinatura (texto)',who:'contratado'}
+ {key:'data_assinatura_extenso',label:'Data da assinatura (texto)',who:'contratado'},
+ {key:'contratado_cnpj',label:'CNPJ da escola contratada',who:'contratado'},
+ {key:'contratado_endereco',label:'Endereco da escola contratada',who:'contratado'},
+ {key:'contratado_telefone',label:'Telefone da escola contratada',who:'contratado'},
+ {key:'contratado_email',label:'E-mail da escola contratada',who:'contratado'},
+ {key:'duracao_pacote',label:'Duracao do pacote',who:'contratado'},
+ {key:'desconto_valor',label:'Valor do desconto',who:'contratado'},
+ {key:'desconto_validade',label:'Validade do desconto',who:'contratado'},
+ {key:'desconto_motivo',label:'Motivo ou termo do desconto',who:'contratado'}
 ]);
 export const CONTRACT_MARKER = /<<([a-z][a-z0-9_]{1,39})\/(contratante|contratado)>>/g;
 export const CONTRACT_RESERVED = new Set(CONTRACT_BASE_FIELDS.map(x=>x.key));
 const BASE_MAP=new Map(CONTRACT_BASE_FIELDS.map(x=>[x.key,x]));
 const ALIASES={
- cpf:'contratante_cpf',nome:'contratante_nome',nome_completo:'contratante_nome',email:'contratante_email',cel:'contratante_telefone',telefone:'contratante_telefone',endereco:'contratante_endereco',cep:'contratante_cep',data_de_nascimento:'contratante_data_nascimento',data_nascimento:'contratante_data_nascimento',parcela:'valor_parcela',mensalidade:'valor_parcela',preco:'valor_total',pacote_contratado:'pacote',quantidade_de_aulas:'qtd_aulas',valor_1a_parcela:'valor_primeira_parcela',vencimento_1a_parcela:'vencimento_primeira_parcela',parcelas_demais:'qtd_demais_parcelas',cpf_2:'contratante_2_cpf',nome_2:'contratante_2_nome',email_2:'contratante_2_email'
+ cpf:'contratante_cpf',nome:'contratante_nome',nome_completo:'contratante_nome',email:'contratante_email',cel:'contratante_telefone',telefone:'contratante_telefone',endereco:'contratante_endereco',cep:'contratante_cep',data_de_nascimento:'contratante_data_nascimento',data_nascimento:'contratante_data_nascimento',parcela:'valor_parcela',mensalidade:'valor_parcela',preco:'valor_total',pacote_contratado:'pacote',quantidade_de_aulas:'qtd_aulas',valor_1a_parcela:'valor_primeira_parcela',vencimento_1a_parcela:'vencimento_primeira_parcela',parcelas_demais:'qtd_demais_parcelas',cpf_2:'contratante_2_cpf',nome_2:'contratante_2_nome',email_2:'contratante_2_email',cnpj_escola:'contratado_cnpj',cnpj_contratado:'contratado_cnpj',cnpj_contratada:'contratado_cnpj'
 };
 export const markerFor=(key,who)=>`<<${key}/${who}>>`;
 export function requiredBaseFields(kind='individual'){

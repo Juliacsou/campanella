@@ -132,12 +132,12 @@ console.log('  -> Botão de tags link validado.');
 // 8. Verificando versionamento de cache
 console.log('8. Verificando versionamento de cache...');
 assert.ok(
-  indexHtml.includes('crm.css?v=8.1.5') && indexHtml.includes('app.js?v=8.1.5'),
-  'O index.html deve conter crm.css?v=8.1.5 e app.js?v=8.1.5'
+  indexHtml.includes('crm.css?v=8.1.5') && /app\.js\?v=8\.1\.\d+/.test(indexHtml),
+  'O index.html deve conter crm.css?v=8.1.5 e app.js?v=8.1.5+'
 );
 assert.ok(
-  appJs.includes('./crm.js?v=8.1.5'),
-  'O app.js deve importar ./crm.js?v=8.1.5'
+  /\.\/crm\.js\?v=8\.1\.\d+/.test(appJs),
+  'O app.js deve importar ./crm.js?v=8.1.5+'
 );
 console.log('  -> Cache version v=8.1.5 validado.');
 

@@ -728,7 +728,7 @@ async function loadSchools(preferred){
  const {data:memberships,error:me}=await sb.from('school_members').select('school_id,role').eq('user_id',ui.user.id);
  if(me)throw me;
  const schoolIds=[...new Set((memberships||[]).map(m=>m.school_id))];
- const {data:schools,error:se}=schoolIds.length?await sb.from('schools').select('id,name,admin_user_id,created_at,contact_email,contact_phone,address,deletion_requested_at,deletion_due_at,deletion_started_at').in('id',schoolIds).order('name'):{data:[],error:null};
+ const {data:schools,error:se}=schoolIds.length?await sb.from('schools').select('id,name,admin_user_id,created_at,contact_email,contact_phone,address,cnpj,deletion_requested_at,deletion_due_at,deletion_started_at').in('id',schoolIds).order('name'):{data:[],error:null};
  if(se)throw se;
  ui.schools=(schools||[]).filter(s=>s.admin_user_id===ui.user.id||(memberships||[]).some(m=>m.school_id===s.id&&m.role==='admin'));
  ui.memberships=(memberships||[]).filter(m=>ui.schools.some(s=>s.id===m.school_id));
@@ -803,7 +803,7 @@ function platformOnlyShell(){return `<div class="shell platform-shell"><aside cl
 async function loadPlatformData(){
  if(!ui.isPlatformAdmin)return;
  const [schools,profiles,licenses,keys,events,renewals]=await Promise.all([
-  sb.from('schools').select('id,name,admin_user_id,created_at,contact_email,contact_phone,address,deletion_requested_at,deletion_due_at,deletion_started_at').order('created_at',{ascending:false}),
+  sb.from('schools').select('id,name,admin_user_id,created_at,contact_email,contact_phone,address,cnpj,deletion_requested_at,deletion_due_at,deletion_started_at').order('created_at',{ascending:false}),
   sb.from('profiles').select('id,email'),sb.from('school_licenses').select('*'),
   sb.from('license_keys').select('id,recipient_name,recipient_email,school_name,kind,validity_mode,validity_days,expires_on,created_at,revoked_at,redeemed_at,redeemed_school_id,code_suffix,plan,extra_students_packs,extra_teachers').order('created_at',{ascending:false}).limit(300),
   sb.from('license_events').select('id,school_id,key_id,action,detail,created_at').order('created_at',{ascending:false}).limit(100),
@@ -815,9 +815,12 @@ async function loadPlatformData(){
 }
 async function reloadLicenseState(){
  if(!ui.schoolId){ui.licenseActive=false;return;}
- const {data:license,error:licenseError}=await sb.from('school_licenses').select('*').eq('school_id',ui.schoolId).maybeSingle();
+ const [{data:license,error:licenseError},{data,error}]=await Promise.all([
+  sb.from('school_licenses').select('*').eq('school_id',ui.schoolId).maybeSingle(),
+  sb.rpc('has_active_school_license',{p_school:ui.schoolId})
+ ]);
  if(licenseError)throw licenseError;ui.licenses=ui.licenses.filter(x=>x.school_id!==ui.schoolId);if(license)ui.licenses.push(license);
- const {data,error}=await sb.rpc('has_active_school_license',{p_school:ui.schoolId});if(error)throw error;
+ if(error)throw error;
  ui.licenseActive=!!data;ui.schoolLicense=schoolLicense(ui.schoolId);
 }
 function licenseBlockView(){const pending=!!currentSchool().deletion_requested_at;return `${heading('Licenciamento',pending?'Escola em exclusão':'Acesso temporariamente suspenso',pending?'O prazo de 30 dias para restauração fica disponível nas configurações da escola.':'Esta escola não pode receber novas operações enquanto não houver uma licença válida.')}<section class="panel"><div class="panel-body license-locked"><h2>${pending?'Exclusão programada':ui.schoolLicense?.suspended_at?'Licença suspensa':'Licença vencida'}</h2><p>Escola: <strong>${safe(currentSchool().name)}</strong></p><p>Validade: <strong>${safe(licenseExpiration(ui.schoolLicense))}</strong></p><p>Entre em contato com o responsável pelo Campanella para renovar via Pix. Seus registros permanecem preservados.</p><button class="btn light" data-action="navigate" data-page="settings">Abrir configurações da escola</button></div></section>`;}
@@ -846,6 +849,49 @@ function newPasswordPage(){return authWrap(`<div class="eyebrow">Nova senha</div
 
 let currentAdminInviteToken='';
 const cleanTokenValue=(raw)=>String(raw||'').split(/[#&?]/)[0].trim();
+const PAGE_TO_SLUG={dashboard:'visao-geral',leads:'crm',interviews:'fichas',contracts:'contratos',students:'matriculas',directory:'alunos',teachers:'professores',calendar:'agenda',packages:'pacotes',templates:'modelos',settings:'configuracoes',licenses:'licencas',profile:'perfil',schools:'escolas'};
+const SLUG_TO_PAGE=Object.fromEntries(Object.entries(PAGE_TO_SLUG).map(([k,v])=>[v,k]));
+function syncPanelRoute(){
+ if(typeof history==='undefined'||typeof location==='undefined'||!ui.user)return;
+ const h=location.hash||'';
+ if(h.startsWith('#orcamento/')||h.startsWith('#pre-matricula/')||h.startsWith('#assinar/')||h.startsWith('#entrevista/')||h.startsWith('#professor/')||h.startsWith('#admin/'))return;
+ let target='#/visao-geral';
+ if(ui.page==='student-profile'&&ui.studentId)target=`#/aluno/${ui.studentId}`;
+ else if(PAGE_TO_SLUG[ui.page])target=`#/${PAGE_TO_SLUG[ui.page]}`;
+ else if(ui.page)target=`#/${ui.page}`;
+ if(location.hash!==target){
+  try{history.replaceState({},'',location.pathname+location.search+target);}catch(e){}
+ }
+}
+function applyPanelRouteFromHash(){
+ if(typeof location==='undefined')return;
+ const h=location.hash||'';
+ if(!h.startsWith('#/'))return;
+ const path=h.slice(2).trim();
+ if(!path)return;
+ if(path.startsWith('aluno/')){
+  const sid=path.slice(6).split(/[/?#]/)[0].trim();
+  if(sid){ui.studentId=sid;ui.page='student-profile';}
+  return;
+ }
+ const mapped=SLUG_TO_PAGE[path]||path;
+ if(['dashboard','leads','interviews','contracts','students','directory','teachers','calendar','packages','templates','settings','licenses','profile','schools'].includes(mapped)||mapped.startsWith('settings-')||mapped.startsWith('profile-')){
+  ui.page=mapped;
+ }
+}
+if(typeof window!=='undefined'){
+ window.addEventListener('hashchange',async()=>{
+  if(!ui.user||!location.hash.startsWith('#/'))return;
+  const prevPage=ui.page,prevStudent=ui.studentId;
+  applyPanelRouteFromHash();
+  if(ui.page==='student-profile'&&ui.studentId&&(prevPage!=='student-profile'||prevStudent!==ui.studentId)){
+   try{await calendar.openStudent(ui.studentId,false);}catch(e){}
+   render();
+  }else if(ui.page!==prevPage){
+   render();
+  }
+ });
+}
 async function processPendingAdminInvite(){
  if(!ui.user)return;
  const token=cleanTokenValue(localStorage.getItem('campanella:v7:admin_convite'));
@@ -971,6 +1017,7 @@ async function initialize(){
  const {data:isMaster,error:masterError}=await sb.rpc('is_platform_admin');if(masterError)throw masterError;ui.isPlatformAdmin=!!isMaster;
  await loadSchools();if(ui.isPlatformAdmin)await loadPlatformData();
  if(!ui.schoolId){if(await calendar.enterTeacherIfApplicable()){calendar.renderCalendar();return;}if(ui.isPlatformAdmin){ui.page='licenses';render();}else $('#app').innerHTML=noSchoolPage();return;}
+ applyPanelRouteFromHash();
  await refresh();
  const driveReturn=new URLSearchParams(location.search).get('drive');
  if(driveReturn){toast(driveReturn==='connected'?'Google Drive conectado à escola.':'Não foi possível concluir a conexão com o Google Drive.',driveReturn!=='connected');history.replaceState({},'',location.pathname);}
@@ -980,17 +1027,19 @@ async function refresh(){
  const version=++refreshVersion,schoolId=ui.schoolId;
  if(!schoolId){if(ui.isPlatformAdmin){ui.page='licenses';render();}else $('#app').innerHTML=noSchoolPage();return;}
  await reloadLicenseState();if(!ui.licenseActive){for(const k of Object.keys(db))db[k]=[];render();return;}
- const {data:members,error:memberError}=await sb.from('school_members').select('user_id,role,created_at').eq('school_id',schoolId);
+ const [{data:members,error:memberError}]=await Promise.all([
+  sb.from('school_members').select('user_id,role,created_at').eq('school_id',schoolId),
+  sb.rpc('crm_sync_pipeline',{p_school:schoolId}).catch(e=>console.warn('Sync pipeline:',e?.message))
+ ]);
  if(version!==refreshVersion||ui.schoolId!==schoolId)return;
  if(memberError)throw memberError;
  const schoolMembers=members||[];
  const myMember=schoolMembers.find(m=>m.user_id===ui.user?.id)||((currentSchool().admin_user_id===ui.user?.id)?{user_id:ui.user.id,role:'admin'}:null);
  if(!myMember){await loadSchools();if(!ui.schoolId){$('#app').innerHTML=noSchoolPage();return;}ui.page='dashboard';return refresh();}
- try{await sb.rpc('crm_sync_pipeline',{p_school:schoolId});}catch(e){console.warn('Sync pipeline:',e?.message);}
  const newData={};
- for(const k of Object.keys(db)){
+ await Promise.all(Object.keys(db).map(async k=>{
   const all=[];const pageSize=500;const maxPages=(['leads','students','contracts','interviews'].includes(k)||k.startsWith('crm_'))?20:1;
-  if(k==='profiles'&&!schoolMembers.length){newData[k]=[];continue;}
+  if(k==='profiles'&&!schoolMembers.length){newData[k]=[];return;}
   for(let page=0;page<maxPages;page++){
    let q=sb.from(k).select('*');
    q=k==='profiles'?q.in('id',schoolMembers.map(m=>m.user_id)):q.eq('school_id',schoolId);
@@ -1000,15 +1049,19 @@ async function refresh(){
    all.push(...(data||[]));if(!data||data.length<pageSize)break;
   }
   newData[k]=all;
- }
+ }));
  if(version!==refreshVersion||ui.schoolId!==schoolId)return;
  ui.schoolMembers=schoolMembers;ui.role='admin';
  Object.assign(db,newData);
- try{const {data:admData,error:admErr}=await sb.rpc('school_admin_list',{p_school:schoolId});if(!admErr&&admData)ui.schoolAdmins=admData;else ui.schoolAdmins=null;}catch(e){ui.schoolAdmins=null;}
- try{ui.teacherAccess=await calendar.getTeacherAccess();}catch(e){ui.teacherAccess=[];}
- // Integracao Google preservada no codigo, mas inativa para o produto atual.
  ui.driveConnection=null;
- await calendar.loadSafe();
+ await Promise.all([
+  sb.rpc('school_admin_list',{p_school:schoolId}).then(({data:admData,error:admErr})=>{ui.schoolAdmins=(!admErr&&admData)?admData:null;}).catch(()=>{ui.schoolAdmins=null;}),
+  calendar.getTeacherAccess().then(acc=>{ui.teacherAccess=acc||[];}).catch(()=>{ui.teacherAccess=[];}),
+  calendar.loadSafe()
+ ]);
+ if(ui.page==='student-profile'&&ui.studentId){
+  try{await calendar.openStudent(ui.studentId,false);}catch(e){}
+ }
  render();
 }
 function render(){
@@ -1016,6 +1069,7 @@ function render(){
  if(ui.role==='teacher'){calendar.renderCalendar();return;}
  if(!ui.schoolId&&!ui.isPlatformAdmin){$('#app').innerHTML=noSchoolPage();return;}
  if(!ui.schoolId&&ui.isPlatformAdmin&&!ui.page.startsWith('profile')&&ui.page!=='licenses')ui.page='licenses';
+ syncPanelRoute();
  const globalView=ui.isPlatformAdmin&&(ui.page==='licenses'||!ui.schoolId);
  $('#app').innerHTML=globalView?platformOnlyShell():shell();
  if(ui.page==='licenses'&&ui.isPlatformAdmin){$('#pageContent').innerHTML=licensesView();return;}
@@ -1034,8 +1088,18 @@ function render(){
 }
 function isPreexistingContract(c){return !!(c&&(c.template_version==='preexisting'||c.terms?.is_preexisting_contract||String(c.audit?.method||'').startsWith('preexisting_')));};
 function enrollmentState(c){if(c.status==='closed'||c.status==='superseded')return 'closed';if(c.status!=='signed')return null;if(c.terms?.start_date>today())return 'scheduled';return diffDays(c.terms?.end_date||'')<0?'expired':'active';}
-function enrollmentTag(c){if(isPreexistingContract(c))return '<span class="pill pill-signed">Contrato preexistente</span>';if(c.status==='signed'&&c.audit?.method==='manual_registry')return `<span class="pill pill-signed">${enrollmentState(c)==='expired'?'Expirada · Manual':enrollmentState(c)==='scheduled'?'Agendada · Manual':'Assinado · Manual'}</span>`;const st=enrollmentState(c);return st==='closed'?'<span class="pill">Encerrada</span>':st==='scheduled'?'<span class="pill pill-sent">Agendada</span>':st==='expired'?'<span class="pill pill-sent">Expirada</span>':st==='active'?'<span class="pill pill-signed">Ativa</span>':contractTag(c);}
-function contractTag(c){if(isPreexistingContract(c))return '<span class="pill pill-signed">Contrato preexistente</span>';if(c.status==='pre_enrolled')return '<span class="pill pill-sent">Pré-matrícula feita</span>';if(c.status==='ready_manual')return '<span class="pill pill-sent">Contrato gerado · Assinatura pendente</span>';if(c.status==='sent'&&!externalSignatureFor(c.id))return '<span class="pill pill-sent">Aguardando pré-matrícula</span>';if(c.status==='signed'&&c.audit?.method==='manual_registry')return '<span class="pill pill-signed">Assinado · Registro manual</span>';return c.status==='draft'?'<span class="pill">A enviar</span>':c.status==='sent'?'<span class="pill pill-sent">Enviado</span>':c.status==='signed'?(enrollmentState(c)==='expired'?'<span class="pill pill-sent">Expirado</span>':'<span class="pill pill-signed">Ativo</span>'):c.status==='closed'||c.status==='superseded'?'<span class="pill">Encerrado</span>':c.status==='void'?'<span class="pill pill-void">Cancelado</span>':tag(c.status);}
+function contractExtraBadges(c){
+ let badges='';
+ if(c.status==='signed'&&c.audit?.cancellation_notice?.keep_until_date&&c.audit?.cancellation_notice?.effective_date){
+  badges+=` <span class="pill pill-sent" title="Cancelamento com aviso prévio">Aviso prévio até ${dateBR(c.audit.cancellation_notice.effective_date)}</span>`;
+ }
+ if(Array.isArray(c.audit?.addendums)&&c.audit.addendums.length){
+  badges+=` <span class="pill pill-signed" title="Contrato com aditivo registrado">Aditivo (${c.audit.addendums.length})</span>`;
+ }
+ return badges;
+}
+function enrollmentTag(c){const ext=contractExtraBadges(c);if(isPreexistingContract(c))return '<span class="pill pill-signed">Contrato preexistente</span>'+ext;if(c.status==='signed'&&c.audit?.method==='manual_registry')return `<span class="pill pill-signed">${enrollmentState(c)==='expired'?'Expirada · Manual':enrollmentState(c)==='scheduled'?'Agendada · Manual':'Assinado · Manual'}</span>`+ext;const st=enrollmentState(c);return (st==='closed'?'<span class="pill">Encerrada</span>':st==='scheduled'?'<span class="pill pill-sent">Agendada</span>':st==='expired'?'<span class="pill pill-sent">Expirada</span>':st==='active'?'<span class="pill pill-signed">Ativa</span>':contractTag(c))+ext;}
+function contractTag(c){const ext=contractExtraBadges(c);if(isPreexistingContract(c))return '<span class="pill pill-signed">Contrato preexistente</span>'+ext;if(c.status==='pre_enrolled')return '<span class="pill pill-sent">Pré-matrícula feita</span>';if(c.status==='ready_manual')return '<span class="pill pill-sent">Contrato gerado · Assinatura pendente</span>';if(c.status==='sent'&&!externalSignatureFor(c.id))return '<span class="pill pill-sent">Aguardando pré-matrícula</span>';if(c.status==='signed'&&c.audit?.method==='manual_registry')return '<span class="pill pill-signed">Assinado · Registro manual</span>'+ext;return (c.status==='draft'?'<span class="pill">A enviar</span>':c.status==='sent'?'<span class="pill pill-sent">Enviado</span>':c.status==='signed'?(enrollmentState(c)==='expired'?'<span class="pill pill-sent">Expirado</span>':'<span class="pill pill-signed">Ativo</span>'):c.status==='closed'||c.status==='superseded'?'<span class="pill">Encerrado</span>':c.status==='void'?'<span class="pill pill-void">Cancelado</span>':tag(c.status))+ext;}
 function expiryBadge(c){const d=diffDays(c.terms?.end_date||'');return `<span class="pill ${d<=30?'pill-sent':'pill-signed'}">${d<0?'Expirou há '+(-d)+' dias':d===0?'Expira hoje':d+' dias'}</span>`;}
 function dashboard(){
  const isCrm=isCurrentSchoolCrmOnly();
@@ -1122,8 +1186,21 @@ function leadForm(id){
   updateLeadDuo(e.target.value==='dupla');
  });
 }
-function packagesView(){return `${heading('Serviços e contratos','Pacotes de aulas','Pacotes reutilizáveis ou matrículas personalizadas sem pacote.','<button class="btn" data-action="editPackage">＋ Novo pacote</button>')}${card('Pacotes cadastrados',table(['Pacote','Aulas','Frequência','Modelo vinculado','Valor','Ações'],db.packages.map(p=>row([`<b>${safe(p.name)}</b>`,`${p.lessons_count} aulas`,`${p.weekly_frequency}x/semana`,safe(lookup('contract_types',p.contract_type_id)?.name||'Escolher ao matricular'),money(p.default_total),`<div class="actions actions-right"><button class="table-action-btn edit" data-action="editPackage" data-id="${p.id}">${ico('edit',13)} <span>Editar</span></button><button class="table-action-btn danger" data-action="removePackage" data-id="${p.id}">${ico('trash',13)} <span>Excluir</span></button></div>`])),'Nenhum pacote cadastrado.'),`<span class="muted small">${db.packages.length} pacote(s)</span>`)}<div class="notice">Para um plano especial, selecione <b>Personalizado · sem pacote</b> ao preencher a ficha inicial. Você poderá definir quantidades, valores e horários manualmente.</div>`;}
-function packageForm(id){const p=lookup('packages',id)||{};showModal(`<h2>${id?'Editar pacote':'Novo pacote'}</h2><form id="packageForm" data-id="${id||''}"><div class="form-grid"><div class="wide">${input('Nome do pacote','name',p.name||'')}</div><label class="field"><span>Modalidade</span><select name="kind"><option value="individual" ${p.kind==='individual'?'selected':''}>Individual</option><option value="dupla" ${p.kind==='dupla'?'selected':''}>Dupla</option></select></label>${input('Quantidade de aulas','lessons_count',p.lessons_count||24,'number')}${input('Aulas por semana','weekly_frequency',p.weekly_frequency||2,'number')}${input('Valor padrão (R$)','default_total',p.default_total??1200,'number')}<label class="field wide"><span>Modelo de contrato associado (opcional)</span><select name="contract_type_id"><option value="">Nenhum · escolha na matrícula</option>${options(db.contract_types.filter(t=>t.active&&(p.kind==='dupla'?t.kind==='dupla':t.kind!=='dupla')),p.contract_type_id)}</select></label><label class="field"><span>Situação</span><select name="active"><option value="true" ${p.active!==false?'selected':''}>Ativo</option><option value="false" ${p.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar pacote</button></div></form>`);}
+function formatPackageDuration(p){
+ const labels={mensal:'Mensal (1 mês)',trimestral:'Trimestral (3 meses)',semestral:'Semestral (6 meses)',anual:'Anual (12 meses)',personalizado:p?.duration_months?`${p.duration_months} mês(es)`:'Personalizado'};
+ if(p?.duration_type&&labels[p.duration_type])return labels[p.duration_type];
+ if(p?.duration_months)return `${p.duration_months} mês(es)`;
+ return '—';
+}
+function packagesView(){return `${heading('Serviços e contratos','Pacotes de aulas','Pacotes reutilizáveis ou matrículas personalizadas sem pacote.','<button class="btn" data-action="editPackage">＋ Novo pacote</button>')}${card('Pacotes cadastrados',table(['Pacote','Duração','Aulas','Frequência','Modelo vinculado','Valor','Ações'],db.packages.map(p=>row([`<b>${safe(p.name)}</b>`,safe(formatPackageDuration(p)),`${p.lessons_count} aulas`,`${p.weekly_frequency}x/semana`,safe(lookup('contract_types',p.contract_type_id)?.name||'Escolher ao matricular'),money(p.default_total),`<div class="actions actions-right"><button class="table-action-btn edit" data-action="editPackage" data-id="${p.id}">${ico('edit',13)} <span>Editar</span></button><button class="table-action-btn danger" data-action="removePackage" data-id="${p.id}">${ico('trash',13)} <span>Excluir</span></button></div>`])),'Nenhum pacote cadastrado.'),`<span class="muted small">${db.packages.length} pacote(s)</span>`)}<div class="notice">Para um plano especial, selecione <b>Personalizado · sem pacote</b> ao preencher a ficha inicial. Você poderá definir quantidades, valores e horários manualmente.</div>`;}
+function packageForm(id){const p=lookup('packages',id)||{};const durType=p.duration_type||(p.duration_months===6?'semestral':p.duration_months===12?'anual':p.duration_months===3?'trimestral':p.duration_months===1?'mensal':'');showModal(`<h2>${id?'Editar pacote':'Novo pacote'}</h2><form id="packageForm" data-id="${id||''}"><div class="form-grid"><div class="wide">${input('Nome do pacote','name',p.name||'')}</div><label class="field"><span>Modalidade</span><select name="kind" id="packageKindSelect"><option value="individual" ${p.kind==='individual'?'selected':''}>Individual</option><option value="dupla" ${p.kind==='dupla'?'selected':''}>Dupla</option></select></label><label class="field"><span>Duração do pacote (opcional)</span><select name="duration_type" id="packageDurationType"><option value="" ${!durType?'selected':''}>Não especificada (pelas aulas)</option><option value="semestral" ${durType==='semestral'?'selected':''}>Semestral (6 meses)</option><option value="anual" ${durType==='anual'?'selected':''}>Anual (12 meses)</option><option value="trimestral" ${durType==='trimestral'?'selected':''}>Trimestral (3 meses)</option><option value="mensal" ${durType==='mensal'?'selected':''}>Mensal (1 mês)</option><option value="personalizado" ${durType==='personalizado'?'selected':''}>Personalizado (em meses)</option></select></label>${input('Duração em meses (opcional)','duration_months',p.duration_months||'','number',false)}${input('Quantidade de aulas','lessons_count',p.lessons_count||24,'number')}${input('Aulas por semana','weekly_frequency',p.weekly_frequency||1,'number')}${input('Valor padrão (R$)','default_total',p.default_total??1200,'number')}<label class="field wide"><span>Modelo de contrato associado (opcional)</span><select name="contract_type_id"><option value="">Nenhum · escolha na matrícula</option>${options(db.contract_types.filter(t=>t.active),p.contract_type_id)}</select></label><label class="field"><span>Situação</span><select name="active"><option value="true" ${p.active!==false?'selected':''}>Ativo</option><option value="false" ${p.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar pacote</button></div></form>`);
+ document.getElementById('packageDurationType')?.addEventListener('change',e=>{
+  const mInput=document.querySelector('#packageForm input[name="duration_months"]');
+  if(!mInput)return;
+  const map={mensal:1,trimestral:3,semestral:6,anual:12};
+  if(map[e.target.value])mInput.value=String(map[e.target.value]);
+ });
+}
 function ficheStage(l,i){return i?.pipeline_status||l.ficha_status||'open';}
 function interviewsView(){
  const list=db.leads.filter(l=>l.status!=='convertido'&&(l.ficha_iniciada_at||db.interviews.some(i=>i.lead_id===l.id)))
@@ -1178,7 +1255,7 @@ function dbCalendarSlotId(item,selected){return calendar.slotIdForSchedule(item,
 function scheduleFromRecord(i){return normalSchedule(i?.lesson_schedule||i?.current_schedule,i?.weekly_days||i?.current_weekly_days,i?.lesson_time||i?.current_lesson_time||'18:00')}
 function weeksOrCustom(){return `<option value="">Personalizado · sem pacote</option>`;}
 function contractOptions(kind,pkgId,selected=''){
- const pkg=lookup('packages',pkgId),allowed=kind==='dupla'?['dupla']:['individual','menor'];
+ const pkg=lookup('packages',pkgId),allowed=kind==='dupla'?['dupla','menor']:['individual','menor'];
  const associated=db.contract_types.find(t=>t.id===pkg?.contract_type_id&&t.active&&allowed.includes(t.kind));
  const defaultValue=selected||(associated?`custom:${associated.id}`:'');
  const preexistingOpt=`<option value="preexisting" ${defaultValue==='preexisting'?'selected':''}>★ Contrato preexistente (Sem contrato digital)</option>`;
@@ -1197,11 +1274,14 @@ function onPackageSelection(form,p){
  }
  const type=form.elements.type_option;
  if(type){const kind=form.dataset.kind||'individual';type.innerHTML=contractOptions(kind,p?.id);renderContractExtra();}
+ updateWeeklyPickerIndicators(form);
 }
-function financialSectionHTML({total='', installments='6', installmentAmount='', firstInstallmentAmount='', firstDueDate='', secondDueDate='', hasCustomFirst=false, showExtenso=false, totalExtenso=''}){
+function financialSectionHTML({total='', installments='6', installmentAmount='', firstInstallmentAmount='', firstDueDate='', secondDueDate='', hasCustomFirst=false, showExtenso=false, totalExtenso='', enrollmentMode='package', discountAmount='', discountUntil='', discountReason=''}){
  const firstDue=firstDueDate||today();
  const secondDue=secondDueDate||(firstDue?plusMonth(firstDue):'');
  const firstAmt=firstInstallmentAmount||installmentAmount||'';
+ const hasDiscount=Boolean(discountAmount||discountUntil||discountReason);
+ const instLabel=hasCustomFirst?'Valor das demais parcelas (R$)':(enrollmentMode==='recurrence'?'Valor mensal / da parcela (R$)':'Valor da parcela');
  return `
   ${input('Valor total (R$)','total_amount',total,'number')}
   ${showExtenso?input('Valor por extenso','total_extenso',totalExtenso||amountWords(total||0),'text'):''}
@@ -1214,9 +1294,29 @@ function financialSectionHTML({total='', installments='6', installmentAmount='',
     ${input('Valor da 1ª parcela (R$)','first_installment_amount',firstAmt,'number',false)}
     ${input('Vencimento das demais parcelas','second_due_date',secondDue,'date',false)}
   </div>
-  <label class="field"><span class="installment-amount-label">${hasCustomFirst?'Valor das demais parcelas (R$)':'Valor da parcela'}</span><input name="installment_amount" type="number" step="0.01" value="${safe(installmentAmount)}" required></label>
+  <label class="field"><span class="installment-amount-label">${instLabel}</span><input name="installment_amount" type="number" step="0.01" value="${safe(installmentAmount)}" required></label>
   <label class="field"><span class="first-due-label">${hasCustomFirst?'Vencimento da 1ª parcela':'Primeiro vencimento'}</span><input name="first_due_date" type="date" value="${safe(firstDue)}" required></label>
+  <label class="field wide checkrow" style="margin:4px 0 8px 0">
+    <input type="checkbox" name="has_special_discount" class="toggle-special-discount" ${hasDiscount?'checked':''}>
+    <span>Conceder desconto ou condição especial na matrícula</span>
+  </label>
+  <div class="special-discount-block wide form-grid" style="${hasDiscount?'':'display:none;'}background:var(--bg-muted,rgba(255,255,255,0.03));border:1px dashed var(--border-color,rgba(255,255,255,0.15));border-radius:8px;padding:12px;margin-bottom:12px">
+    ${input('Valor ou percentual do desconto (R$ / %)','discount_amount',discountAmount,'text',false)}
+    ${input('Desconto válido até (opcional)','discount_until',discountUntil,'date',false)}
+    <div class="wide">${input('Motivo / condição do desconto','discount_reason',discountReason,'text',false)}</div>
+  </div>
  `;
+}
+function toggleSpecialDiscount(f){
+ if(!f)return;
+ const checked=!!f.elements.has_special_discount?.checked;
+ const block=f.querySelector('.special-discount-block');
+ if(block)block.style.display=checked?'grid':'none';
+ if(!checked){
+  if(f.elements.discount_amount)f.elements.discount_amount.value='';
+  if(f.elements.discount_until)f.elements.discount_until.value='';
+  if(f.elements.discount_reason)f.elements.discount_reason.value='';
+ }
 }
 function toggleCustomFirstInstallment(f){
  if(!f)return;
@@ -1224,8 +1324,9 @@ function toggleCustomFirstInstallment(f){
  const block=f.querySelector('.custom-first-block');
  const amountLabel=f.querySelector('.installment-amount-label');
  const dueLabel=f.querySelector('.first-due-label');
+ const isRecurrence=f.elements.enrollment_mode?.value==='recurrence';
  if(block)block.style.display=checked?'grid':'none';
- if(amountLabel)amountLabel.textContent=checked?'Valor das demais parcelas (R$)':'Valor da parcela';
+ if(amountLabel)amountLabel.textContent=checked?'Valor das demais parcelas (R$)':(isRecurrence?'Valor mensal / da parcela (R$)':'Valor da parcela');
  if(dueLabel)dueLabel.textContent=checked?'Vencimento da 1ª parcela':'Primeiro vencimento';
  if(checked){
   if(f.elements.first_installment_amount&&!f.elements.first_installment_amount.value){
@@ -1242,14 +1343,17 @@ function toggleCustomFirstInstallment(f){
 }
 function applyEnrollmentModeUI(f,mode){
  if(!f)return;
- const isInterview=['interviewForm','externalInterviewForm'].includes(f.id);
  const isManual=f.id==='manualEnrollmentForm';
- const pkgField=f.querySelector(isManual?'#manualPackageField':(f.id==='interviewForm'?'#interviewPackageField':'#externalPackageField'));
+ const isRenew=f.id==='renewForm';
+ const pkgField=f.querySelector(isManual?'#manualPackageField':isRenew?'#renewPackageField':(f.id==='interviewForm'?'#interviewPackageField':'#externalPackageField'));
  const lessonsCount=f.elements.lessons_count;
  const weeklyFreq=f.elements.weekly_frequency;
  const endDate=f.elements.end_date;
  const calBtn=f.querySelector('[data-action="calPreview"], #externalPreviewBtn');
  const calResult=f.querySelector('[data-cal-result], #externalForecast');
+ const amountLabel=f.querySelector('.installment-amount-label');
+ const hasCustomFirst=!!f.elements.has_custom_first_installment?.checked;
+ if(amountLabel)amountLabel.textContent=hasCustomFirst?'Valor das demais parcelas (R$)':(mode==='recurrence'?'Valor mensal / da parcela (R$)':'Valor da parcela');
  if(mode==='recurrence'){
   if(pkgField)pkgField.style.display='none';
   if(f.elements.package_id){f.elements.package_id.value='';f.elements.package_id.required=false;}
@@ -1267,7 +1371,7 @@ function applyEnrollmentModeUI(f,mode){
   if(pkgField)pkgField.style.display='none';
   if(f.elements.package_id){f.elements.package_id.value='';f.elements.package_id.required=false;}
   if(lessonsCount){lessonsCount.readOnly=false;lessonsCount.placeholder='Ex: 14 aulas';lessonsCount.required=true;}
-  if(weeklyFreq){weeklyFreq.readOnly=false;if(!weeklyFreq.value)weeklyFreq.value='2';}
+  if(weeklyFreq){weeklyFreq.readOnly=false;if(!weeklyFreq.value)weeklyFreq.value='1';}
   if(endDate){endDate.readOnly=true;endDate.required=false;endDate.placeholder='Calculado pelas aulas';}
   if(calBtn)calBtn.textContent='Calcular última aula';
   if(calResult)calResult.textContent='';
@@ -1279,12 +1383,13 @@ function applyEnrollmentModeUI(f,mode){
   if(endDate){endDate.readOnly=true;endDate.required=false;endDate.placeholder='Calculado pelas aulas';}
   if(calBtn)calBtn.textContent='Calcular última aula';
   if(calResult)calResult.textContent='';
-  const pkgSelect=f.querySelector('#manualPackage, #interviewPackage, #externalPackage');
+  const pkgSelect=f.querySelector('#manualPackage, #renewPackage, #interviewPackage, #externalPackage');
   if(pkgSelect?.value){
    const curPkg=f.id==='externalInterviewForm'?(externalData?.packages||[]).find(x=>x.id===pkgSelect.value):lookup('packages',pkgSelect.value);
    if(curPkg)onPackageSelection(f,curPkg);
   }
  }
+ updateWeeklyPickerIndicators(f);
 }
 function interviewForm(leadId){
  const l=lookup('leads',leadId),i=db.interviews.find(x=>x.lead_id===leadId)||{},p=lookup('packages',i.package_id);
@@ -1314,10 +1419,10 @@ function interviewForm(leadId){
  <label class="field"><span>Professor responsável pelas aulas</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active!==false||t.id===responsible),responsible)}</select></label>
  ${input('Curso','course',i.course||'Inglês')}
  <label class="field wide" id="interviewPackageField" style="${currentMode==='package'?'':'display:none'}"><span>Pacote escolhido</span><select name="package_id" id="interviewPackage">${packageOptions(isDuo)}</select></label>
- ${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}
+ ${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'1','number')}
  ${input('Data de início','start_date',i.start_date||today(),'date')}${input('Data de término do contrato','end_date',i.end_date||'','date')}
  <div class="wide" id="calPickerHost">${calendar.getFormPicker(responsible,i.start_date||today(),false,i.calendar_slot_ids||[],true)}</div>
- ${financialSectionHTML({total:i.total_amount??p?.default_total??'',showExtenso:true,totalExtenso:i.total_extenso,installments:i.installments||'6',installmentAmount:i.installment_amount||'',firstInstallmentAmount:i.first_installment_amount||'',firstDueDate:i.first_due_date||today(),secondDueDate:i.second_due_date||'',hasCustomFirst:!!i.has_custom_first_installment})}
+ ${financialSectionHTML({total:i.total_amount??p?.default_total??'',showExtenso:true,totalExtenso:i.total_extenso,installments:i.installments||'6',installmentAmount:i.installment_amount||'',firstInstallmentAmount:i.first_installment_amount||'',firstDueDate:i.first_due_date||today(),secondDueDate:i.second_due_date||'',hasCustomFirst:!!i.has_custom_first_installment,enrollmentMode:currentMode,discountAmount:i.discount_amount||'',discountUntil:i.discount_until||'',discountReason:i.discount_reason||''})}
  <label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${x===i.payment_method?'selected':''}>${x}</option>`).join('')}</select></label>
  <div class="wide"><label class="field"><span>Observações internas</span><textarea name="notes">${safe(i.notes||'')}</textarea></label></div></div>
  
@@ -1353,7 +1458,11 @@ function contractActionsMenu(c){
   if(['draft','sent','pre_enrolled','ready_manual'].includes(c.status))opt('voidContract','Cancelar contrato','danger');
   if(c.status==='signed'&&c.audit?.method!=='manual_registry')opt('proof','Baixar cópia do registro anterior (HTML)');
  }
- if(c.status==='signed')opt('closeEnrollment','Encerrar matrícula','danger');
+ if(c.status==='signed'){
+  opt('contractAddendum','Registrar aditivo contratual');
+  opt('closeEnrollment','Encerrar matrícula','danger');
+ }
+ opt('removeContract','Excluir contrato / matrícula','danger');
  const chevron=typeof ico==='function'?ico('chevron',12):'<span aria-hidden="true">⌄</span>';return `<details class="contract-actions-dropdown"><summary class="table-action-btn" aria-label="Abrir ações do contrato"><span>Ações</span> ${chevron}</summary><div class="contract-actions-popover" role="menu">${a.join('')}</div></details>`;
 }
 function externalSignatureActions(c){if(!EXTERNAL_SIGNATURE_ENABLED)return '';const e=externalSignatureFor(c.id);return e?.status==='completed'?`<span class="pill ${e.backup_status==='saved'?'pill-signed':'pill-sent'}">${safe(e.backup_status==='saved'?'Backup salvo':e.backup_status==='error'?'Falha no backup':e.backup_status==='not_configured'?'Sem Drive':'Backup pendente')}</span>`:'';}
@@ -1387,7 +1496,7 @@ async function externalSend(f){const id=f.dataset.id,c=lookup('contracts',id);if
  if(result.signingUrl)showModal(`<h2>Assinatura enviada</h2><p class="modal-intro">A AssinAPI enviou a solicitação. Este link é individual do primeiro signatário.</p><div class="link-field" id="externalGeneratedLink">${safe(result.signingUrl)}</div><div class="form-footer"><button class="btn ghost" data-action="close">Fechar</button><button class="btn" data-action="externalCopy" data-id="${safe(id)}">Copiar link</button></div>`);
 }
 async function externalDownload(id,type){const data=await v5Request('contract-signing',{action:'download',contractId:id,type});const bytes=Uint8Array.from(atob(data.contentBase64),c=>c.charCodeAt(0));
- const blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;const contract=lookup('contracts',id),person=contract?.student_snapshot?.full_name||lookup('students',contract?.student_id)?.full_name||lookup('leads',contract?.lead_id)?.name||'Aluno';const name=String(person).normalize('NFC').replace(/[\\/:*?"<>|\u0000-\u001f]/g,'-').replace(/\s+/g,' ').trim().slice(0,80)||'Aluno';const date=String(externalSignatureFor(id)?.completed_at||new Date().toISOString()).slice(0,10);link.download=`Contrato - ${name} - ${date} - ${type==='certificate'?'evidencias':'assinado'}.pdf`;link.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
+ const blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;const contract=lookup('contracts',id),person=contract?.student_snapshot?.full_name||lookup('students',contract?.student_id)?.full_name||lookup('leads',contract?.lead_id)?.name||'Aluno';const name=String(person).normalize('NFC').replace(/[\\/:*?"<>|\u0000-\u001f]/g,'-').replace(/\s+/g,' ').trim().slice(0,180)||'Aluno';const date=String(externalSignatureFor(id)?.completed_at||new Date().toISOString()).slice(0,10);link.download=`Contrato - ${name} - ${date} - ${type==='certificate'?'evidencias':'assinado'}.pdf`;link.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
 
 function manualContractHTML(c){
@@ -1416,10 +1525,15 @@ async function downloadManualContract(id){
  const bytes=Uint8Array.from(atob(base64),x=>x.charCodeAt(0));
  if(bytes.length<1000||new TextDecoder().decode(bytes.subarray(0,5))!=='%PDF-')throw new Error('A geração do PDF falhou. Não é possível marcar o contrato como pronto.');
  const blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- const s=c.student_snapshot||lookup('students',c.student_id)||{},label=(s.full_name||'Aluno').replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').trim().slice(0,70);
+ const s=c.student_snapshot||lookup('students',c.student_id)||{},label=(s.full_name||'Aluno').replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').trim().slice(0,180);
  a.href=url;a.download=`Contrato - ${label} - ${today()} - para assinatura.pdf`;a.click();setTimeout(()=>URL.revokeObjectURL(url),5000);
  if(c.status==='pre_enrolled'){
-  const {error}=await sb.rpc('prepare_manual_contract',{p_contract_id:c.id});if(error)throw error;
+  const {error}=await sb.rpc('prepare_manual_contract',{p_contract_id:c.id});
+  if(error){
+   await save('contracts',{status:'ready_manual'},c.id);
+  }
+  c.status='ready_manual';
+  render();
   await refresh();toast('PDF gerado sem assinaturas. O contrato aguarda confirmação manual.');
  }else toast('PDF sem assinaturas baixado.');
 }
@@ -1536,24 +1650,27 @@ function previewContract(id){const c=lookup('contracts',id),s=c.student_snapshot
 
 function docFrame(html){return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html{overflow-wrap:anywhere}body{padding:28px;font:13px/1.6 Georgia,serif;color:#20292a}h2{text-align:center;font-size:17px}h3{text-align:center;font-size:14px;background:#eee;padding:5px;margin-top:25px}p{margin:10px 0;text-align:justify}table{max-width:100%;width:100%;overflow-wrap:anywhere}img{max-width:100%;height:auto}@media(max-width:650px){body{padding:14px;font-size:13px}table{font-size:11px}}.signature-summary{border-top:1px solid #aaa;padding-top:18px;margin-top:25px}.signature-summary img{max-width:300px;max-height:140px}</style></head><body>${html}</body></html>`}
 function studentsView(){
- const list=db.contracts.filter(c=>c.student_id&&enrollmentState(c)&&(ui.enrollmentTab==='closed'?enrollmentState(c)==='closed':enrollmentState(c)!=='closed')).filter(c=>{
+ const list=db.contracts.filter(c=>{
+  if(!c.student_id)return false;
+  const st=enrollmentState(c);
+  const isPendingManual=['pre_enrolled','ready_manual'].includes(c.status);
+  if(ui.enrollmentTab==='closed')return st==='closed';
+  return (st&&st!=='closed')||isPendingManual;
+ }).filter(c=>{
   const s=lookup('students',c.student_id),s2=c.student2_id?lookup('students',c.student2_id):null;
   const text=[s?.full_name,s?.email,s2?.full_name,s2?.email,c.terms?.package_name,c.terms?.course].join(' ').toLowerCase();
   if(ui.search&&!text.includes(ui.search))return false;
-  const remaining=diffDays(c.terms.end_date);return ui.expiry==='all'||ui.expiry==='expired'&&remaining<0||ui.expiry!=='expired'&&remaining>=0&&remaining<=+ui.expiry;
+  const remaining=diffDays(c.terms?.end_date||'');return ui.expiry==='all'||ui.expiry==='expired'&&remaining<0||ui.expiry!=='expired'&&remaining>=0&&remaining<=+ui.expiry;
  });
  return `${heading('Gestão contratual','Matrículas','Acompanhe vigência, vencimento e rematrícula dos alunos.')}
  <section class="panel"><div class="panel-head panel-controls"><div class="tabs"><button class="btn ${ui.enrollmentTab==='current'?'':'light'}" data-action="enrollmentTab" data-tab="current">Ativas e expiradas</button><button class="btn ${ui.enrollmentTab==='closed'?'':'light'}" data-action="enrollmentTab" data-tab="closed">Encerradas</button></div><div class="toolbar"><input id="search" class="search" placeholder="Buscar aluno, pacote ou curso" value="${safe(ui.search)}"><label class="small">Vencimento <select id="expiryFilter"><option value="all">Todos</option>${[7,15,30,60,90].map(n=>`<option value="${n}" ${ui.expiry==n?'selected':''}>Próximos ${n} dias</option>`).join('')}<option value="expired" ${ui.expiry==='expired'?'selected':''}>Expirados</option></select></label></div></div>${table(['Aluno','Pacote','Vigência','Matrícula','Ações'],list.map(c=>{
    const s=lookup('students',c.student_id),s2=c.student2_id?lookup('students',c.student2_id):null;
    const nameLabel=c.kind==='dupla'?`<b>${safe(s?.full_name)} & ${safe(s2?.full_name||'2º Aluno')}</b> <span class="pill pill-signed" style="margin-left:4px">Dupla</span>`:`<b>${safe(s?.full_name)}</b>`;
-   return row([nameLabel,safe(c.terms.package_name),`${dateBR(c.terms.start_date)} — ${dateBR(c.terms.end_date)}`,enrollmentTag(c),`${(()=>{
+   const statusCell=enrollmentState(c)?enrollmentTag(c):contractTag(c);
+   return row([nameLabel,safe(c.terms?.package_name||'Personalizado'),`${dateBR(c.terms?.start_date)} — ${dateBR(c.terms?.end_date)}`,statusCell,`${(()=>{
   const canRenew=['signed','closed','superseded'].includes(c.status);
   const canClose=c.status==='signed';
-  const total=1+(canRenew?1:0)+(canClose?1:0);
-  if(total>2){
-    return `<div class="actions actions-right"><button class="table-action-btn" data-action="studentDetail" data-id="${s?.id}">${ico('profile',13)} <span>Ver perfil</span></button><details class="contract-actions-dropdown"><summary class="table-action-btn" aria-label="Mais ações"><span>Ações</span> ${ico('chevron',11)}</summary><div class="contract-actions-popover" role="menu"><button class="contract-menu-item" type="button" role="menuitem" data-action="renew" data-id="${c.id}">${ico('restore',14)} Rematricular</button><button class="contract-menu-item danger" type="button" role="menuitem" data-action="closeEnrollment" data-id="${c.id}">${ico('trash',14)} Encerrar matrícula</button></div></details></div>`;
-  }
-  return `<div class="actions actions-right"><button class="table-action-btn" data-action="studentDetail" data-id="${s?.id}">${ico('profile',13)} <span>Ver perfil</span></button>${canRenew?`<button class="table-action-btn primary" data-action="renew" data-id="${c.id}">${ico('restore',13)} <span>Rematricular</span></button>`:''}${canClose?`<button class="table-action-btn danger" data-action="closeEnrollment" data-id="${c.id}">${ico('trash',13)} <span>Encerrar</span></button>`:''}</div>`;
+  return `<div class="actions actions-right"><button class="table-action-btn" data-action="studentDetail" data-id="${s?.id}">${ico('profile',13)} <span>Ver perfil</span></button><details class="contract-actions-dropdown"><summary class="table-action-btn" aria-label="Mais ações"><span>Ações</span> ${ico('chevron',11)}</summary><div class="contract-actions-popover" role="menu">${['pre_enrolled','ready_manual'].includes(c.status)?`<button class="contract-menu-item" type="button" role="menuitem" data-action="manualDownload" data-id="${c.id}">Baixar contrato (PDF)</button>`:''}${c.status==='ready_manual'?`<button class="contract-menu-item" type="button" role="menuitem" data-action="manualConfirm" data-id="${c.id}">Marcar como assinado manualmente</button>`:''}${canRenew?`<button class="contract-menu-item" type="button" role="menuitem" data-action="renew" data-id="${c.id}">${ico('restore',14)} Rematricular</button>`:''}${c.status==='signed'?`<button class="contract-menu-item" type="button" role="menuitem" data-action="contractAddendum" data-id="${c.id}">Registrar aditivo</button>`:''}${canClose?`<button class="contract-menu-item danger" type="button" role="menuitem" data-action="closeEnrollment" data-id="${c.id}">${ico('trash',14)} Encerrar matrícula</button>`:''}<button class="contract-menu-item danger" type="button" role="menuitem" data-action="removeContract" data-id="${c.id}">${ico('trash',14)} Excluir contrato / matrícula</button></div></details></div>`;
 })()}`]);}),'Nenhuma matrícula neste filtro.')}</section>`;
 }
 
@@ -1570,32 +1687,115 @@ function studentProfilePage(){
  const all=db.contracts.filter(c=>c.student_id===s.id||c.student2_id===s.id).sort((a,b)=>b.created_at.localeCompare(a.created_at));
  const latest=all.find(c=>c.status==='signed')||all[0];
  const curTeacher=s.calendar_teacher_id||latest?.terms?.teacher_id;
+ const isMinor=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
  const info=(label,value)=>`<div class="detail-item"><span>${safe(label)}</span><strong>${safe(value??'—')}</strong></div>`;
- const registration=`<section class="panel cal-section cal-profile-registration"><div class="panel-head"><h2>Dados cadastrais</h2><div class="actions"><button class="btn mini light" type="button" data-action="editStudent" data-id="${s.id}">${ico('profile',14)} Editar dados</button>${!all.length?`<button class="btn mini danger" type="button" data-action="removeStudent" data-id="${s.id}">${ico('trash',14)} Excluir aluno</button>`:''}</div></div><div class="profile-grid">${info('Aluno',s.full_name)}${info('Professor responsável',lookup('teachers',curTeacher)?.name||'Não definido')}${info('E-mail',s.email)}${info('Telefone',s.phone)}${info('Nascimento',dateBR(s.birth_date))}${info('CPF',s.cpf)}${s.is_minor?info('Responsável',s.guardian_name)+info('Telefone responsável',s.guardian_phone)+info('E-mail responsável',s.guardian_email):''}${info('Endereço',s.address)}</div></section>`;
+ const registration=`<section class="panel cal-section cal-profile-registration"><div class="panel-head"><h2>Dados cadastrais</h2><div class="actions"><button class="btn mini light" type="button" data-action="editStudent" data-id="${s.id}">${ico('profile',14)} Editar dados</button><button class="btn mini danger" type="button" data-action="removeStudent" data-id="${s.id}">${ico('trash',14)} Excluir aluno</button></div></div><div class="profile-grid">${info('Aluno',s.full_name)}${info('Professor responsável',lookup('teachers',curTeacher)?.name||'Não definido')}${info('E-mail',s.email)}${info('Telefone',s.phone)}${info('Nascimento',dateBR(s.birth_date))}${info('CPF',s.cpf)}${isMinor?info('Responsável',s.guardian_name)+info('CPF responsável',s.guardian_cpf)+info('Telefone responsável',s.guardian_phone)+info('E-mail responsável',s.guardian_email):''}${info('Endereço',s.address)}</div></section>`;
  const contracts=all.map(c=>{
   const isPre=isPreexistingContract(c);
   const isDuo=c.kind==='dupla';
   const partnerId=isDuo?(c.student_id===s.id?c.student2_id:c.student_id):null;
   const partner=partnerId?lookup('students',partnerId):null;
   const duoBadge=isDuo?`<span class="pill pill-signed" style="margin-left:6px">Dupla com ${safe(partner?.full_name||'2º Aluno')}</span>`:'';
-  return `<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.terms?.package_name||'Contrato')} · ${safe(c.terms?.course||'Aulas')} ${isPre?'<span class="pill pill-signed" style="margin-left:6px">Contrato preexistente</span>':''}${duoBadge}</strong><small>${dateBR(c.terms?.start_date)} a ${dateBR(c.terms?.end_date)} · ${money(c.terms?.total_amount)} · ${safe(lookup('teachers',c.terms?.teacher_id)?.name||'')}</small></div><div class="cal-lesson-actions">${contractActionsMenu(c)}${c.status==='signed'?`<button class="table-action-btn primary" data-action="renew" data-id="${c.id}">${ico('restore',13)} <span>Rematricular</span></button>`:''}</div></div>`;
+  const addendums=Array.isArray(c.terms?.addendums)?c.terms.addendums:[];
+  const addendumNote=addendums.length?`<div class="small muted" style="margin-top:4px">Aditivo(s): ${addendums.map(a=>`${safe(a.reason||'Alteração contratual')} (${dateBR(a.date)})`).join(' · ')}</div>`:'';
+  const cancelNote=c.terms?.cancellation_reason?`<div class="small muted" style="margin-top:4px">Encerramento: ${safe(c.terms.cancellation_reason)} (${dateBR(c.terms.cancellation_effective_date||c.terms.end_date)})</div>`:'';
+  return `<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.terms?.package_name||'Contrato')} · ${safe(c.terms?.course||'Aulas')} ${isPre?'<span class="pill pill-signed" style="margin-left:6px">Contrato preexistente</span>':''}${duoBadge} ${enrollmentState(c)?enrollmentTag(c):contractTag(c)}</strong><small>${dateBR(c.terms?.start_date)} a ${dateBR(c.terms?.end_date)} · ${money(c.terms?.total_amount)} · ${safe(lookup('teachers',c.terms?.teacher_id)?.name||'')}</small>${addendumNote}${cancelNote}</div><div class="cal-lesson-actions">${contractActionsMenu(c)}${c.status==='signed'?`<button class="table-action-btn primary" data-action="renew" data-id="${c.id}">${ico('restore',13)} <span>Rematricular</span></button>`:''}</div></div>`;
  }).join('')||'<p class="muted">Sem contratos.</p>';
- return calendar.studentProfileView(true,{registration,contractCount:all.length,contracts:contracts+(!all.length?`<div class="form-footer"><button class="btn" data-action="manualEnrollment" data-id="${s.id}">Criar matrícula</button></div>`:'')});
+ return calendar.studentProfileView(true,{registration,contractCount:all.length,contracts:contracts+`<div class="form-footer" style="margin-top:12px"><button class="btn" data-action="manualEnrollment" data-id="${s.id}">Criar matrícula</button></div>`});
 }
 
+function computeNextRenewalStartDate(prevEndDate, schedule=[], slotIds=[]){
+ const base=prevEndDate&&prevEndDate>=today()?addDays(prevEndDate,1):today();
+ const weekdays=new Set();
+ (schedule||[]).forEach(x=>{if(Number.isInteger(Number(x.day)))weekdays.add(Number(x.day));});
+ (slotIds||[]).forEach(id=>{const sl=(calendar.data()?.slots||[]).find(x=>x.id===id);if(sl&&Number.isInteger(Number(sl.weekday)))weekdays.add(Number(sl.weekday));});
+ if(!weekdays.size)return base;
+ for(let offset=0;offset<14;offset++){
+  const cand=addDays(base,offset);
+  const d=new Date(cand+'T12:00:00');
+  if(!Number.isNaN(d.getTime())&&weekdays.has(d.getDay()))return cand;
+ }
+ return base;
+}
+function computeNextRenewalDueDate(prevFirstDueDate, nextStartDate){
+ if(!prevFirstDueDate||!/^\d{4}-\d{2}-\d{2}$/.test(prevFirstDueDate))return nextStartDate;
+ const billingDay=Number(prevFirstDueDate.slice(8,10));
+ if(!billingDay||billingDay<1||billingDay>31)return nextStartDate;
+ const ref=new Date((nextStartDate||today())+'T12:00:00');
+ if(Number.isNaN(ref.getTime()))return nextStartDate;
+ let year=ref.getFullYear(),month=ref.getMonth();
+ const maxDayInMonth=(y,m)=>new Date(y,m+1,0).getDate();
+ let candidate=new Date(year,month,Math.min(billingDay,maxDayInMonth(year,month)),12,0,0);
+ if(candidate<ref){
+  month+=1;
+  if(month>11){month=0;year+=1;}
+  candidate=new Date(year,month,Math.min(billingDay,maxDayInMonth(year,month)),12,0,0);
+ }
+ return candidate.toISOString().slice(0,10);
+}
 function renewForm(id){
  const original=lookup('contracts',id),s=lookup('students',original?.student_id);if(!s)return toast('Aluno não disponível.',true);
- const t=original.terms,start=addDays(t.end_date,1),chosen=s.current_schedule?.length?s.current_schedule:normalSchedule(t.lesson_schedule,t.weekly_days,t.lesson_time);
- showModal(`<h2>Rematrícula · ${safe(s.full_name)}</h2><p class="modal-intro">O administrador preenche todas as informações, inclusive campos adicionais do contratante. O aluno não recebe link: o PDF será baixado para assinatura física.</p><form id="renewForm" data-original="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid">
- <label class="field wide"><span>Pacote (opcional)</span><select name="package_id" id="renewPackage">${weeksOrCustom()}${options(db.packages.filter(p=>p.kind!=='dupla'),t.package_id)}</select></label>
- <label class="field wide"><span>Modelo</span><select name="type_option" id="renewContractType">${contractOptions(s.is_minor?'menor':'individual',t.package_id)}</select></label>
- ${input('Quantidade de aulas','lessons_count',t.lessons_count,'number')}${input('Aulas por semana','weekly_frequency',t.weekly_frequency,'number')}${input('Data de início','start_date',start,'date')}
+ const t=original.terms||{};
+ const isMinor1=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
+ const isOrigDuo=original.kind==='dupla'||Boolean(original.student2_id);
+ const origPartner=original.student2_id?lookup('students',original.student2_id):null;
+ const sched=s.current_schedule?.length?s.current_schedule:normalSchedule(t.lesson_schedule,t.weekly_days,t.lesson_time);
+ const origSlots=Array.isArray(t.calendar_slot_ids)&&t.calendar_slot_ids.length?t.calendar_slot_ids:(s.calendar_slot_ids||[]);
+ const start=computeNextRenewalStartDate(t.end_date,sched,origSlots);
+ const nextFirstDue=computeNextRenewalDueDate(t.first_due_date,start);
+ const nextSecondDue=plusMonth(nextFirstDue);
+ const currentMode=t.enrollment_mode||(t.package_id?'package':(t.lessons_count?'custom':'package'));
+ const curTeacher=t.teacher_id||s.calendar_teacher_id||'';
+ const initialKind=isOrigDuo?'dupla':(isMinor1?'menor':'individual');
+ const otherStudents=db.students.filter(x=>x.id!==s.id);
+ const excludeIds=[s.id,original.student2_id].filter(Boolean);
+ showModal(`<h2>Rematrícula · ${safe(s.full_name)}${origPartner?` & ${safe(origPartner.full_name)}`:''}</h2><p class="modal-intro">Configure o novo ciclo da matrícula (individual ou dupla, pacote, personalizado ou recorrência). O PDF será preparado para assinatura física ou ativado como contrato preexistente.</p><form id="renewForm" data-original="${id}" data-student="${s.id}" data-s1-minor="${isMinor1?'true':'false'}" data-kind="${initialKind}"><div class="form-grid">
+ <label class="field"><span>Modalidade da aula</span><select name="enrollment_modality" id="manualModality"><option value="individual" ${!isOrigDuo?'selected':''}>Individual (1 aluno)</option><option value="dupla" ${isOrigDuo?'selected':''}>Dupla (2 alunos no mesmo horário)</option></select></label>
+ <label class="field"><span>Formato do plano</span><select name="enrollment_mode" id="manualEnrollmentMode"><option value="package" ${currentMode==='package'?'selected':''}>Pacote cadastrado</option><option value="custom" ${currentMode==='custom'?'selected':''}>Pacote personalizado (saldo de aulas)</option><option value="recurrence" ${currentMode==='recurrence'?'selected':''}>Recorrência até o fim do contrato</option></select></label>
+ <div id="duoPartnerContainer" class="wide form-grid" style="${isOrigDuo?'':'display:none;'}background:var(--bg-muted,rgba(255,255,255,0.03));border:1px solid var(--border-color,rgba(255,255,255,0.12));border-radius:10px;padding:14px;margin:4px 0">
+  <div class="wide"><strong style="font-size:0.95rem">2º Integrante da Dupla</strong></div>
+  <label class="field wide"><span>Origem do 2º aluno</span><select name="student2_source" id="student2Source"><option value="existing" ${otherStudents.length?'selected':''}>Selecionar aluno já cadastrado</option><option value="new" ${!otherStudents.length?'selected':''}>Cadastrar novo aluno agora</option></select></label>
+  <label class="field wide" id="student2ExistingField" style="${otherStudents.length?'':'display:none'}"><span>2º Aluno</span><select name="student2_id" id="student2Select"><option value="">Selecione o 2º aluno</option>${otherStudents.map(x=>`<option value="${x.id}" ${x.id===original.student2_id?'selected':''} data-minor="${(x.is_minor||x.guardian_name||x.guardian_cpf)?'true':'false'}" data-guardian="${safe(x.guardian_name||'')}">${safe(x.full_name)}${(x.is_minor||x.guardian_name)?' (Menor)':''}</option>`).join('')}</select></label>
+  <div id="student2NewFields" class="wide form-grid" style="${otherStudents.length?'display:none':''}">
+   ${input('Nome completo do 2º aluno','s2_full_name','','text',false)}
+   ${input('Data de nascimento','s2_birth_date','','date',false)}
+   ${input('Telefone / WhatsApp','s2_phone','','tel',false)}
+   ${input('E-mail','s2_email','','email',false)}
+   ${input('CPF','s2_cpf','','text',false)}
+   ${input('RG','s2_rg','','text',false)}
+   ${input('Profissão','s2_profession','','text',false)}
+   <label class="field"><span>Estado civil</span><select name="s2_marital_status"><option value="">Selecione</option>${['Solteiro(a)','Casado(a)','União estável','Divorciado(a)','Viúvo(a)'].map(x=>`<option>${x}</option>`).join('')}</select></label>
+   ${input('CEP','s2_cep','','text',false)}
+   <div class="wide">${input('Endereço completo','s2_address','','text',false)}</div>
+   <div id="s2NewGuardianFields" class="wide form-grid" style="display:none;border-top:1px dashed rgba(255,255,255,0.15);padding-top:10px;margin-top:6px">
+    <div class="wide"><span class="small muted">Dados do responsável legal (2º aluno menor de idade)</span></div>
+    ${input('Nome do responsável','s2_guardian_name','','text',false)}
+    ${input('CPF do responsável','s2_guardian_cpf','','text',false)}
+    ${input('RG do responsável','s2_guardian_rg','','text',false)}
+    ${input('Data de nascimento do responsável','s2_guardian_birth_date','','date',false)}
+    ${input('E-mail do responsável','s2_guardian_email','','email',false)}
+    ${input('WhatsApp do responsável','s2_guardian_phone','','tel',false)}
+    ${input('CEP do responsável','s2_guardian_cep','','text',false)}
+    <div class="wide">${input('Endereço do responsável','s2_guardian_address','','text',false)}</div>
+   </div>
+  </div>
+  <label class="field wide" id="duoSignerField"><span>Quem assina o contrato? (Contratante)</span><select name="signer_student_index" id="duoSignerSelect"><option value="1">${safe(s.full_name)} (1º aluno)</option></select></label>
+ </div>
+ <label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(x=>x.active!==false||x.id===curTeacher),curTeacher)}</select></label>
+ ${input('Curso','course',t.course||'Inglês')}
+ <label class="field wide" id="renewPackageField" style="${currentMode==='package'?'':'display:none'}"><span>Pacote (opcional)</span><select name="package_id" id="renewPackage">${weeksOrCustom()}${options(db.packages.filter(p=>p.active&&(isOrigDuo?p.kind==='dupla':p.kind!=='dupla')),t.package_id)}</select></label>
+ <label class="field wide"><span>Modelo</span><select name="type_option" id="renewContractType" required>${contractOptions(initialKind,t.package_id,isPreexistingContract(original)?'preexisting':(original.contract_type_id?`custom:${original.contract_type_id}`:''))}</select></label>
+ ${input('Quantidade de aulas','lessons_count',t.lessons_count,'number')}${input('Aulas por semana','weekly_frequency',t.weekly_frequency||1,'number')}${input('Data de início','start_date',start,'date')}
  ${input('Data final','end_date',t.end_date>start?t.end_date:'','date')}
- <div class="wide" id="calPickerHost">${calendar.getFormPicker(t.teacher_id,start)}</div>
- ${financialSectionHTML({total:t.total_amount,showExtenso:true,totalExtenso:t.total_extenso,installments:t.installments,installmentAmount:t.installment_amount,firstInstallmentAmount:t.first_installment_amount||'',firstDueDate:start,secondDueDate:t.second_due_date||'',hasCustomFirst:!!t.has_custom_first_installment})}<label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${t.payment_method===x?'selected':''}>${x}</option>`).join('')}</select></label>
+ <div class="wide" id="calPickerHost">${calendar.getFormPicker(curTeacher,start,false,origSlots,false,excludeIds)}</div>
+ ${financialSectionHTML({total:t.total_amount,showExtenso:true,totalExtenso:t.total_extenso,installments:t.installments,installmentAmount:t.installment_amount,firstInstallmentAmount:t.first_installment_amount||'',firstDueDate:nextFirstDue,secondDueDate:t.has_custom_first_installment?nextSecondDue:'',hasCustomFirst:!!t.has_custom_first_installment,enrollmentMode:currentMode,discountAmount:t.discount_amount||'',discountUntil:t.discount_until||'',discountReason:t.discount_reason||''})}<label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${t.payment_method===x?'selected':''}>${x}</option>`).join('')}</select></label>
  </div><div id="contractExtraFields"></div>
  <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar rematrícula e preparar contrato</button></div></form>`);
- updateInstallment($('#renewForm'));renderContractExtra();calendar.autoPreview($('#renewForm'));
+ const f=$('#renewForm');
+ setupManualDuoHandlers(f,s);
+ if(isOrigDuo)updateDuoEnrollmentView(f);
+ applyEnrollmentModeUI(f,currentMode);
+ updateInstallment(f);renderContractExtra();calendar.autoPreview(f);
 }
 
 
@@ -1683,7 +1883,7 @@ function schoolRemovalNotice(s){if(!s.deletion_requested_at)return '';const canR
 function settingsView(){const s=currentSchool(),l=ui.schoolLicense,section=ui.page;const pending=!!s.deletion_requested_at;
  let main='';
  if(section==='settings-import')main=onboarding.view();
- else if(section==='settings-identity')main=preferencesPanel('Informações da escola','Atualize os dados institucionais da unidade.',`<form id="schoolDetailsForm" class="license-form">${input('Nome da escola','name',s.name)}${input('E-mail institucional','contact_email',s.contact_email||'','email',false)}${input('Telefone / WhatsApp','contact_phone',s.contact_phone||'','text',false)}<label class="field"><span>Endereço da escola</span><textarea name="address" maxlength="500" rows="3">${safe(s.address||'')}</textarea></label><div class="form-footer"><button class="btn" ${pending?'disabled':''}>Salvar informações</button></div></form>`,'school');
+ else if(section==='settings-identity')main=preferencesPanel('Informações da escola','Atualize os dados institucionais da unidade.',`<form id="schoolDetailsForm" class="license-form">${input('Nome da escola','name',s.name)}${input('CNPJ da escola','cnpj',s.cnpj||'','text',false)}${input('E-mail institucional','contact_email',s.contact_email||'','email',false)}${input('Telefone / WhatsApp','contact_phone',s.contact_phone||'','text',false)}<label class="field"><span>Endereço da escola</span><textarea name="address" maxlength="500" rows="3">${safe(s.address||'')}</textarea></label><div class="form-footer"><button class="btn" ${pending?'disabled':''}>Salvar informações</button></div></form>`,'school');
  else if(section==='settings-license'){
   const limits=schoolPlanLimits(l);
   const activeStudents=currentSchoolActiveStudentsCount();
@@ -1978,7 +2178,7 @@ function teachersView(){
   }),'Nenhum professor cadastrado.')}
  </section><p class="form-note">Se houver histórico vinculado, o professor será desativado em vez de apagado. Para habilitar administradores como professores, acesse <b>Configurações da escola → Administradores e permissões</b>.</p>`;
 }
-function teacherForm(id){const t=lookup('teachers',id)||{};showModal(`<div class="eyebrow">Equipe e ensino</div><h2>${id?'Editar professor':'Novo professor'}</h2><p class="modal-intro">O e-mail será utilizado para enviar um convite de acesso exclusivo ao calendário do professor.</p><form id="teacherForm" data-id="${safe(id||'')}"><div class="form-grid">${input('Nome completo','name',t.name)}${input('E-mail profissional','email',t.email||'','email')}<label class="field wide"><span>Situação</span><select name="active"><option value="true" ${t.active!==false?'selected':''}>Ativo</option><option value="false" ${t.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar professor</button></div></form>`);}
+function teacherForm(id){const t=lookup('teachers',id)||{};showModal(`<div class="eyebrow">Equipe e ensino</div><h2>${id?'Editar professor':'Novo professor'}</h2><p class="modal-intro">Ao salvar, o professor fica disponível na escola. O convite por e-mail não é disparado automaticamente no cadastro — para convidá-lo à agenda docente, utilize o menu <b>Ações → Convidar para agenda</b>.</p><form id="teacherForm" data-id="${safe(id||'')}"><div class="form-grid">${input('Nome completo','name',t.name)}${input('E-mail profissional','email',t.email||'','email')}<label class="field wide"><span>Situação</span><select name="active"><option value="true" ${t.active!==false?'selected':''}>Ativo</option><option value="false" ${t.active===false?'selected':''}>Inativo</option></select></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar professor</button></div></form>`);}
 async function createInterviewInviteLink(leadId,teacherId){
  if(!lookup('leads',leadId))throw new Error('Lead não encontrado.');
  const isTeacher=!!lookup('teachers',teacherId)?.active;
@@ -2000,65 +2200,85 @@ async function inviteInterview(leadId){const l=lookup('leads',leadId),i=db.inter
  showModal(`<h2>Link para entrevistador</h2><p class="modal-intro">Ficha exclusiva para ${safe(l.name)}.</p><form id="inviteInterviewForm" data-lead="${leadId}"><label class="field"><span>Entrevistador</span><select name="teacher_id" required><option value="">Selecione</option>${interviewerOptions(interviewer)}</select></label><p class="notice">Link válido por 14 dias, só para este lead; pode ser usado uma vez para enviar a ficha.</p><div class="form-footer"><button class="btn">Gerar link da entrevista</button></div></form>`);
 }
 
-function studentCategory(s){const cs=db.contracts.filter(c=>c.student_id===s.id);if(cs.some(c=>enrollmentState(c)==='active'))return 'active';if(cs.some(c=>enrollmentState(c)==='expired'))return 'expired';if(cs.some(c=>enrollmentState(c)==='closed'))return 'closed';return 'none';}
-function directoryView(){const list=db.students.filter(s=>[s.full_name,s.email,s.phone].join(' ').toLowerCase().includes(ui.search)&&studentCategory(s)===ui.studentTab);return `${heading('Cadastros','Alunos','Alunos ativos, expirados, antigos e sem contrato.',`<div class="actions"><button class="btn light" type="button" data-action="importStudents">${ico('plus',16)} Importar CSV</button><button class="btn" type="button" data-action="editStudent">${ico('plus',16)} Novo aluno</button></div>`)}<section class="panel"><div class="panel-head panel-controls"><div class="tabs">${[['active','Alunos ativos'],['expired','Expirados'],['closed','Alunos antigos'],['none','Sem matrícula']].map(([v,label])=>`<button class="btn ${ui.studentTab===v?'':'light'}" data-action="studentTab" data-tab="${v}">${label} <span class="tab-count">${db.students.filter(s=>studentCategory(s)===v).length}</span></button>`).join('')}</div><div class="toolbar"><input id="search" class="search" placeholder="Buscar nome, telefone ou e-mail" value="${safe(ui.search)}"></div></div>${table(['Nome / contato','Último curso / pacote','Professor','Horário atual','Ações'],list.map(s=>{const c=db.contracts.filter(c=>c.student_id===s.id&&['signed','closed','superseded'].includes(c.status)).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];const hasAnyContract=db.contracts.some(x=>x.student_id===s.id||x.student2_id===s.id);return row([`<b>${safe(s.full_name)}</b><div class="muted">${safe(s.email)} · ${safe(s.phone)}</div>`,c?`${safe(c.terms.course||'Inglês')} · ${safe(c.terms.package_name)}<div class="muted">${c.terms.lessons_count} aulas</div>`:'Sem contrato',safe(lookup('teachers',s.calendar_teacher_id||c?.terms?.teacher_id)?.name||c?.terms?.teacher_name||'—'),safe(formatSchedule(c?.terms?.calendar_v6?calendar.scheduleForContract(c):(s.current_schedule?.length?s.current_schedule:c?.terms?.lesson_schedule),c?.terms?.calendar_v6?[]:(s.current_weekly_days||c?.terms?.weekly_days),c?.terms?.calendar_v6?'':(s.current_lesson_time||c?.terms?.lesson_time))),`<div class="actions"><button class="table-action-btn" data-action="studentDetail" data-id="${s.id}">${ico('profile',14)} <span>Ver perfil</span></button>${!hasAnyContract?`<button class="table-action-btn danger" data-action="removeStudent" data-id="${s.id}" title="Excluir aluno sem contrato">${ico('trash',14)} <span>Excluir</span></button>`:''}</div>`]);}),'Nenhum aluno neste grupo.')}</section>`;}
+function studentCategory(s){
+ const cs=db.contracts.filter(c=>c.student_id===s.id||c.student2_id===s.id);
+ if(cs.some(c=>['active','scheduled'].includes(enrollmentState(c))))return 'active';
+ if(cs.some(c=>enrollmentState(c)==='expired'))return 'expired';
+ if(cs.some(c=>enrollmentState(c)==='closed'))return 'closed';
+ return 'none';
+}
+function directoryView(){const list=db.students.filter(s=>[s.full_name,s.email,s.phone].join(' ').toLowerCase().includes(ui.search)&&studentCategory(s)===ui.studentTab);return `${heading('Cadastros','Alunos','Alunos ativos, expirados, antigos e sem contrato.',`<div class="actions"><button class="btn light" type="button" data-action="exportStudentsCSV">${ico('arrow',16)} Exportar CSV</button><button class="btn light" type="button" data-action="importStudents">${ico('plus',16)} Importar CSV</button><button class="btn" type="button" data-action="editStudent">${ico('plus',16)} Novo aluno</button></div>`)}<section class="panel"><div class="panel-head panel-controls"><div class="tabs">${[['active','Alunos ativos'],['expired','Expirados'],['closed','Alunos antigos'],['none','Sem matrícula']].map(([v,label])=>`<button class="btn ${ui.studentTab===v?'':'light'}" data-action="studentTab" data-tab="${v}">${label} <span class="tab-count">${db.students.filter(s=>studentCategory(s)===v).length}</span></button>`).join('')}</div><div class="toolbar"><input id="search" class="search" placeholder="Buscar nome, telefone ou e-mail" value="${safe(ui.search)}"></div></div>${table(['Nome / contato','Último curso / pacote','Professor','Horário atual','Ações'],list.map(s=>{const c=db.contracts.filter(c=>(c.student_id===s.id||c.student2_id===s.id)&&['signed','closed','superseded'].includes(c.status)).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];return row([`<b>${safe(s.full_name)}</b><div class="muted">${safe(s.email||'—')} · ${safe(s.phone||'Sem telefone')}</div>`,c?`${safe(c.terms.course||'Inglês')} · ${safe(c.terms.package_name)}<div class="muted">${c.terms.lessons_count} aulas</div>`:'Sem contrato',safe(lookup('teachers',s.calendar_teacher_id||c?.terms?.teacher_id)?.name||c?.terms?.teacher_name||'—'),safe(formatSchedule(c?.terms?.calendar_v6?calendar.scheduleForContract(c):(s.current_schedule?.length?s.current_schedule:c?.terms?.lesson_schedule),c?.terms?.calendar_v6?[]:(s.current_weekly_days||c?.terms?.weekly_days),c?.terms?.calendar_v6?'':(s.current_lesson_time||c?.terms?.lesson_time))),`<div class="actions"><button class="table-action-btn" data-action="studentDetail" data-id="${s.id}">${ico('profile',14)} <span>Ver perfil</span></button><button class="table-action-btn danger" data-action="removeStudent" data-id="${s.id}" title="Excluir aluno">${ico('trash',14)} <span>Excluir</span></button></div>`]);}),'Nenhum aluno neste grupo.')}</section>`;}
 function renderStudentScheduleHost(teacherId,selectedSlotIds=[]){
  return calendar.studentSchedulePicker(teacherId,selectedSlotIds);
 }
-function studentForm(id){const s=lookup('students',id)||{},minor=!!s.is_minor;
- const v6Contract=id?db.contracts.find(c=>c.student_id===id&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status)):null;
+function studentForm(id){const s=lookup('students',id)||{},minor=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
+ const v6Contract=id?db.contracts.find(c=>(c.student_id===id||c.student2_id===id)&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status)):null;
  const curTeacher=s.calendar_teacher_id||v6Contract?.terms?.teacher_id||'';
  const editSchedule=v6Contract?`<div class="student-calendar-state"><strong>Horário controlado pelo calendário</strong><span>${safe(formatSchedule(calendar.scheduleForContract(v6Contract)))}</span><span>Para alterar aulas, abra o calendário do professor.</span></div>`:`<div id="studentScheduleHost">${renderStudentScheduleHost(curTeacher,s.calendar_slot_ids||[])}</div>`;
- showModal(`<h2>${id?'Editar aluno':'Novo aluno'}</h2><p class="modal-intro">Para começar, informe somente nome e telefone. Complete os demais dados antes da matrícula.</p><form id="studentForm" data-id="${id||''}"><div class="form-grid">${input('Nome completo','full_name',s.full_name)}${input('Telefone com DDD','phone',s.phone)}${input('CPF','cpf',s.cpf,'text',false)}${input('E-mail','email',s.email,'email',false)}${input('Nascimento','birth_date',s.birth_date,'date',false)}${input('CEP','cep',s.cep,'text',false)}<div class="wide">${input('Endereço completo','address',s.address,'text',false)}</div><label class="field wide checkrow"><input type="checkbox" name="is_minor" id="studentMinor" ${minor?'checked':''}> Menor de idade com responsável legal</label></div><div id="guardianFields">${guardianHTML(s,minor)}</div><h3 class="form-section">Professor responsável</h3><label class="field"><span>Professor (opcional até a matrícula)</span><select name="calendar_teacher_id" id="studentTeacherSelect" ${v6Contract?'disabled':''}><option value="">Definir depois</option>${options(db.teachers.filter(t=>t.active),curTeacher)}</select></label><h3 class="form-section">${v6Contract?'Horários da agenda':'Horários semanais do professor'}</h3>${editSchedule}
+ showModal(`<h2>${id?'Editar aluno':'Novo aluno'}</h2><p class="modal-intro">Apenas o nome completo é obrigatório para cadastrar. Telefone (nacional ou internacional com +DDI), data de nascimento, CPF e endereço podem ser preenchidos ou completados depois.</p><form id="studentForm" data-id="${id||''}"><div class="form-grid">${input('Nome completo','full_name',s.full_name)}${input('Telefone / WhatsApp (opcional, aceita +DDI)','phone',s.phone,'tel',false)}${input('CPF','cpf',s.cpf,'text',false)}${input('E-mail','email',s.email,'email',false)}${input('Nascimento (opcional)','birth_date',s.birth_date,'date',false)}${input('CEP','cep',s.cep,'text',false)}<div class="wide">${input('Endereço completo','address',s.address,'text',false)}</div><label class="field wide checkrow"><input type="checkbox" name="is_minor" id="studentMinor" ${minor?'checked':''}> Menor de idade com responsável legal</label></div><div id="guardianFields">${guardianHTML(s,minor)}</div><h3 class="form-section">Professor responsável</h3><label class="field"><span>Professor (opcional até a matrícula)</span><select name="calendar_teacher_id" id="studentTeacherSelect" ${v6Contract?'disabled':''}><option value="">Definir depois</option>${options(db.teachers.filter(t=>t.active),curTeacher)}</select></label><h3 class="form-section">${v6Contract?'Horários da agenda':'Horários semanais do professor'}</h3>${editSchedule}
  ${!id?`<label class="checkrow" style="margin-top:16px"><input type="checkbox" name="create_contract"> Após cadastrar, preparar matrícula e contrato</label>`:''}
  <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Salvar cadastro</button></div></form>`);
 }
 function updateDuoEnrollmentView(form){
- if(!form||form.id!=='manualEnrollmentForm')return;
- const isDuo=form.elements.class_type?.value==='dupla';
- const duoSec=form.querySelector('#manualDuoSection');
+ if(!form||!['manualEnrollmentForm','renewForm'].includes(form.id))return;
+ const isDuo=(form.elements.class_type?.value||form.elements.enrollment_modality?.value)==='dupla';
+ const duoSec=form.querySelector('#manualDuoSection, #duoPartnerContainer');
  if(duoSec)duoSec.style.display=isDuo?'':'none';
  const s1=lookup('students',form.dataset.student);
- const duoMode=form.elements.student2_mode?.value||'search';
+ const s1Minor=Boolean(s1?.is_minor||s1?.guardian_name||s1?.guardian_cpf||form.dataset.s1Minor==='true');
+ const duoMode=form.elements.student2_mode?.value||form.elements.student2_source?.value||'search';
  const s2Id=form.elements.student2_id?.value;
  const s2=s2Id?lookup('students',s2Id):null;
- form.dataset.kind=isDuo?'dupla':(s1?.is_minor?'menor':'individual');
+ form.dataset.kind=isDuo?'dupla':(s1Minor?'menor':'individual');
  const pkgSelect=form.elements.package_id;
  if(pkgSelect){
   const curVal=pkgSelect.value;
   const filtered=isDuo?db.packages.filter(p=>p.active&&p.kind==='dupla'):db.packages.filter(p=>p.active&&p.kind!=='dupla');
-  pkgSelect.innerHTML='<option value="">Selecione um pacote cadastrado</option>'+options(filtered,filtered.some(p=>p.id===curVal)?curVal:'');
+  const firstOpt=form.id==='renewForm'?weeksOrCustom():'<option value="">Selecione um pacote cadastrado</option>';
+  pkgSelect.innerHTML=firstOpt+options(filtered,filtered.some(p=>p.id===curVal)?curVal:'');
  }
  const contractSelect=form.elements.type_option;
  if(contractSelect){
-  contractSelect.innerHTML=contractOptions(form.dataset.kind,form.elements.package_id?.value);
+  const curType=contractSelect.value;
+  contractSelect.innerHTML=contractOptions(form.dataset.kind,form.elements.package_id?.value,curType);
   renderContractExtra();
  }
  if(isDuo){
+  const existingField=form.querySelector('#student2ExistingField');
+  const newFields=form.querySelector('#student2NewFields');
+  if(existingField&&newFields){
+   existingField.style.display=duoMode==='existing'?'':'none';
+   newFields.style.display=duoMode==='new'?'':'none';
+  }
   const signerSelect=form.elements.signer_student_index;
   const warningBox=form.querySelector('#manualDuoWarning');
-  const s1Minor=Boolean(s1?.is_minor);
-  let s2Name='Aluno 2',s2Minor=false;
+  let s2Name='Aluno 2',s2Minor=false,s2GName='';
   if(duoMode==='new'){
-   s2Name=form.elements.student2_new_name?.value?.trim()||'Aluno 2';
-   s2Minor=Boolean(form.elements.student2_new_is_minor?.checked);
+   s2Name=(form.elements.student2_new_name?.value||form.elements.s2_full_name?.value||'').trim()||'Aluno 2';
+   const s2BDate=form.elements.student2_new_birth_date?.value||form.elements.s2_birth_date?.value||'';
+   let minorByAge=false;
+   if(s2BDate&&/^\d{4}-\d{2}-\d{2}$/.test(s2BDate)){
+    const [y,m,d]=today().split('-').map(Number),[yy,mm,dd]=s2BDate.split('-').map(Number);
+    const age=y-yy-(m<mm||(m===mm&&d<dd)?1:0);
+    minorByAge=age<18;
+   }
+   s2Minor=Boolean(form.elements.student2_new_is_minor?.checked||minorByAge||(form.elements.s2_guardian_name?.value||'').trim());
+   s2GName=(form.elements.student2_new_guardian_name?.value||form.elements.s2_guardian_name?.value||'').trim();
+   const gBox=form.querySelector('#s2NewGuardianFields');
+   if(gBox&&!form.elements.student2_new_is_minor)gBox.style.display=s2Minor?'':'none';
   }else if(s2){
    s2Name=s2.full_name;
-   s2Minor=Boolean(s2.is_minor);
+   s2Minor=Boolean(s2.is_minor||s2.guardian_name||s2.guardian_cpf);
+   s2GName=s2.guardian_name||'';
   }
   if(signerSelect){
-   if(s1Minor&&s2Minor){
-    signerSelect.innerHTML='<option value="1">Responsável legal (ambos são menores de idade)</option>';
-   }else if(s1Minor&&!s2Minor){
-    signerSelect.innerHTML=`<option value="2">${safe(s2Name)} (maior de idade)</option>`;
-   }else if(!s1Minor&&s2Minor){
-    signerSelect.innerHTML=`<option value="1">${safe(s1?.full_name||'Aluno 1')} (maior de idade)</option>`;
-   }else{
-    signerSelect.innerHTML=`<option value="1">${safe(s1?.full_name||'Aluno 1')} (Aluno 1)</option><option value="2">${safe(s2Name)} (Aluno 2)</option>`;
-   }
+   const curSigner=signerSelect.value||'1';
+   const s1Label=s1Minor?`Responsável legal de ${safe(s1?.full_name||'1º aluno')}${s1?.guardian_name?` (${safe(s1.guardian_name)})`:''}`:`${safe(s1?.full_name||'1º aluno')} (1º aluno · maior de idade)`;
+   const s2Label=s2Minor?`Responsável legal de ${safe(s2Name)}${s2GName?` (${safe(s2GName)})`:''}`:`${safe(s2Name)} (2º aluno · maior de idade)`;
+   signerSelect.innerHTML=`<option value="1" ${curSigner==='1'?'selected':''}>${s1Label}</option><option value="2" ${curSigner==='2'?'selected':''}>${s2Label}</option>`;
   }
   if(warningBox){
-   if(duoMode==='search'&&s2){
+   if((duoMode==='search'||duoMode==='existing')&&s2){
     const activeStatus=['signed','pre_enrolled','ready_manual','draft','sent'];
     const s1Contracts=db.contracts.filter(c=>c.student_id===s1?.id&&activeStatus.includes(c.status));
     const s2Contracts=db.contracts.filter(c=>c.student_id===s2.id&&activeStatus.includes(c.status));
@@ -2078,6 +2298,7 @@ function updateDuoEnrollmentView(form){
 }
 
 function setupManualDuoHandlers(f, s1){
+ if(!f)return;
  const modeInput = f.querySelector('#manualDuoMode');
  const s2IdInput = f.querySelector('#manualDuoStudent2Id');
  const btnSearch = f.querySelector('#btnDuoModeSearch');
@@ -2090,7 +2311,8 @@ function setupManualDuoHandlers(f, s1){
  const searchFieldWrapper = f.querySelector('#duoSearchFieldWrapper');
  const minorCheckbox = f.querySelector('#s2NewIsMinor');
  const guardianFields = f.querySelector('#s2NewGuardianFields');
- const newNameInput = f.querySelector('#s2NewName');
+ const newNameInput = f.querySelector('#s2NewName') || f.elements.s2_full_name;
+ const s2BirthInput = f.querySelector('#s2NewBirthDate') || f.elements.s2_birth_date;
 
  function setMode(mode){
   if(modeInput) modeInput.value = mode;
@@ -2119,19 +2341,35 @@ function setupManualDuoHandlers(f, s1){
   updateDuoEnrollmentView(f);
  });
 
+ s2BirthInput?.addEventListener('change', () => {
+  const val = s2BirthInput.value;
+  if(val && /^\d{4}-\d{2}-\d{2}$/.test(val)){
+   const [y,m,d]=today().split('-').map(Number),[yy,mm,dd]=val.split('-').map(Number);
+   const age=y-yy-(m<mm||(m===mm&&d<dd)?1:0);
+   if(age<18 && minorCheckbox){
+    minorCheckbox.checked = true;
+    if(guardianFields) guardianFields.style.display = '';
+   }
+  }
+  updateDuoEnrollmentView(f);
+ });
+
  newNameInput?.addEventListener('input', () => updateDuoEnrollmentView(f));
+ f.elements.s2_guardian_name?.addEventListener('input', () => updateDuoEnrollmentView(f));
+ f.elements.student2_new_guardian_name?.addEventListener('input', () => updateDuoEnrollmentView(f));
 
  function selectStudent(student){
   if(s2IdInput) s2IdInput.value = student.id;
   if(searchResults) searchResults.style.display = 'none';
   if(searchFieldWrapper) searchFieldWrapper.style.display = 'none';
+  const stMinor = Boolean(student.is_minor || student.guardian_name || student.guardian_cpf);
   if(selectedCard){
    selectedCard.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px 14px">
      <div>
       <strong style="color:#166534">${safe(student.full_name)}</strong>
-      <span class="pill pill-signed" style="margin-left:6px">${student.is_minor ? 'Menor de idade' : 'Maior de idade'}</span>
-      <div class="muted" style="font-size:12px">${safe(student.phone || 'Sem telefone')}${student.cpf ? ' · CPF: ' + safe(student.cpf) : ''}</div>
+      <span class="pill pill-signed" style="margin-left:6px">${stMinor ? 'Menor de idade' : 'Maior de idade'}</span>
+      <div class="muted" style="font-size:12px">${safe(student.phone || 'Sem telefone')}${student.cpf ? ' · CPF: ' + safe(student.cpf) : ''}${stMinor && student.guardian_name ? ' · Resp.: ' + safe(student.guardian_name) : ''}</div>
      </div>
      <button type="button" class="btn mini ghost" id="btnDuoChange">Trocar aluno</button>
     </div>`;
@@ -2173,16 +2411,18 @@ function setupManualDuoHandlers(f, s1){
    return;
   }
   if(searchResults){
-   searchResults.innerHTML = matches.map(m => `
+   searchResults.innerHTML = matches.map(m => {
+    const mMinor = Boolean(m.is_minor || m.guardian_name || m.guardian_cpf);
+    return `
     <div class="search-duo-item" data-id="${m.id}" style="padding:8px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center">
      <div>
       <b>${safe(m.full_name)}</b>
-      <span class="muted" style="font-size:12px;margin-left:6px">${m.is_minor ? 'Menor' : 'Maior'}</span>
+      <span class="muted" style="font-size:12px;margin-left:6px">${mMinor ? 'Menor' : 'Maior'}</span>
       <div class="muted" style="font-size:11px">${safe(m.phone || 'Sem telefone')}${m.cpf ? ' · ' + safe(m.cpf) : ''}</div>
      </div>
      <span class="btn mini light">Selecionar</span>
     </div>
-   `).join('');
+   `;}).join('');
    searchResults.style.display = '';
    searchResults.querySelectorAll('.search-duo-item').forEach(el => {
     el.addEventListener('click', () => {
@@ -2197,8 +2437,11 @@ function setupManualDuoHandlers(f, s1){
 function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;
  const teacherId=s.calendar_teacher_id||'';
  const selectedSlots=s.calendar_slot_ids||[];
+ const isMinor1=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
  const pkgs=db.packages.filter(p=>p.active&&p.kind!=='dupla');
- showModal(`<h2>Criar matrícula de ${safe(s.full_name)}</h2><p class="modal-intro">O aluno já está cadastrado. Gere um contrato agora ou feche para deixar sem matrícula.</p><form id="manualEnrollmentForm" data-student="${id}" data-kind="${s.is_minor?'menor':'individual'}"><div class="form-grid">
+ const missingInfo=[!s.cpf&&'CPF',!s.email&&'e-mail',!s.address&&'endereço'].filter(Boolean);
+ const missingBanner=missingInfo.length?`<div class="notice" style="margin-bottom:14px"><strong>Aviso (não impeditivo):</strong> Este aluno ainda não possui ${safe(missingInfo.join(', '))} preenchido(s) na ficha cadastral. Você pode prosseguir com a matrícula normalmente e completar os dados quando desejar.</div>`:'';
+ showModal(`<h2>Criar matrícula de ${safe(s.full_name)}</h2><p class="modal-intro">O aluno já está cadastrado. Gere um contrato agora ou feche para deixar sem matrícula.</p>${missingBanner}<form id="manualEnrollmentForm" data-student="${id}" data-s1-minor="${isMinor1?'true':'false'}" data-kind="${isMinor1?'menor':'individual'}"><div class="form-grid">
  <label class="field wide"><span>Modalidade da aula</span><select name="class_type" id="manualClassType"><option value="individual">Individual (1 aluno)</option><option value="dupla">Dupla (2 alunos no mesmo horário)</option></select></label>
  <div class="wide" id="manualDuoSection" style="display:none">
   <div class="form-grid" style="background:var(--bg-card,#f8fafc);border:1px solid var(--border,#e2e8f0);border-radius:8px;padding:14px;margin-bottom:12px">
@@ -2233,10 +2476,10 @@ function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;
      <div class="wide">
       <label class="field"><span>Nome completo do 2º aluno *</span><input type="text" name="student2_new_name" id="s2NewName" placeholder="Ex: Mariana Silva"></label>
      </div>
-     <label class="field"><span>Telefone</span><input type="tel" name="student2_new_phone" id="s2NewPhone" placeholder="(00) 00000-0000"></label>
+     <label class="field"><span>Telefone</span><input type="tel" name="student2_new_phone" id="s2NewPhone" placeholder="(00) 00000-0000 ou +DDI"></label>
      <label class="field"><span>CPF</span><input type="text" name="student2_new_cpf" id="s2NewCpf" placeholder="000.000.000-00"></label>
      <label class="field"><span>E-mail</span><input type="email" name="student2_new_email" id="s2NewEmail" placeholder="aluno2@exemplo.com"></label>
-     <label class="field"><span>Data de nascimento</span><input type="date" name="student2_new_birth_date" id="s2NewBirthDate"></label>
+     <label class="field"><span>Data de nascimento (opcional)</span><input type="date" name="student2_new_birth_date" id="s2NewBirthDate"></label>
      <label class="field wide checkrow">
       <input type="checkbox" name="student2_new_is_minor" id="s2NewIsMinor">
       Menor de idade (com responsável legal)
@@ -2245,8 +2488,11 @@ function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;
       <div class="form-grid" style="background:var(--bg-card,#f8fafc);border:1px dashed var(--border,#cbd5e1);border-radius:6px;padding:10px">
        <label class="field wide"><span>Nome do responsável</span><input type="text" name="student2_new_guardian_name" placeholder="Nome do pai/mãe/responsável"></label>
        <label class="field"><span>CPF do responsável</span><input type="text" name="student2_new_guardian_cpf" placeholder="000.000.000-00"></label>
+       <label class="field"><span>Data de nascimento do responsável</span><input type="date" name="student2_new_guardian_birth_date"></label>
        <label class="field"><span>Telefone do responsável</span><input type="tel" name="student2_new_guardian_phone" placeholder="Telefone"></label>
        <label class="field"><span>E-mail do responsável</span><input type="email" name="student2_new_guardian_email" placeholder="E-mail"></label>
+       <label class="field"><span>CEP do responsável</span><input type="text" name="student2_new_guardian_cep" placeholder="00000-000"></label>
+       <label class="field wide"><span>Endereço do responsável</span><input type="text" name="student2_new_guardian_address" placeholder="Rua, número, bairro, cidade"></label>
       </div>
      </div>
     </div>
@@ -2259,11 +2505,11 @@ function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;
  <label class="field wide"><span>Formato do plano</span><select name="enrollment_mode" id="manualEnrollmentMode"><option value="package">Pacote cadastrado</option><option value="custom">Pacote personalizado (saldo de aulas restantes)</option><option value="recurrence">Recorrência até o fim do contrato</option></select></label>
  <label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(t=>t.active),teacherId)}</select></label>${input('Curso','course','Inglês')}
  <label class="field wide" id="manualPackageField"><span>Pacote</span><select name="package_id" id="manualPackage"><option value="">Selecione um pacote cadastrado</option>${options(pkgs)}</select></label>
- <div class="wide" id="calPickerHost">${calendar.getFormPicker(teacherId,today(),false,selectedSlots,true)}</div>
- ${input('Início','start_date',today(),'date')}${input('Data de término do contrato','end_date','','date')}${input('Aulas','lessons_count','','number')}${input('Aulas por semana','weekly_frequency','2','number')}
+ <div class="wide" id="calPickerHost">${calendar.getFormPicker(teacherId,today(),false,selectedSlots,true,[id])}</div>
+ ${input('Início','start_date',today(),'date')}${input('Data de término do contrato','end_date','','date')}${input('Aulas','lessons_count','','number')}${input('Aulas por semana','weekly_frequency','1','number')}
  ${financialSectionHTML({total:'',installments:'6',installmentAmount:'',firstDueDate:today()})}
  <label class="field"><span>Pagamento</span><select name="payment_method"><option>Boleto</option><option>PIX</option><option>Cartão</option><option>Transferência</option></select></label>
- <label class="field wide"><span>Modelo de contrato</span><select name="type_option" id="manualContractType">${contractOptions(s.is_minor?'menor':'individual',null)}</select></label>
+ <label class="field wide"><span>Modelo de contrato</span><select name="type_option" id="manualContractType">${contractOptions(isMinor1?'menor':'individual',null)}</select></label>
  </div><div id="contractExtraFields"></div>
  <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Salvar dados e preparar contrato</button></div></form>`);
  const f=$('#manualEnrollmentForm');
@@ -2272,6 +2518,7 @@ function manualEnrollmentForm(id){const s=lookup('students',id);if(!s)return;
   if(f.elements.weekly_frequency){f.elements.weekly_frequency.readOnly=true;}
   if(f.elements.end_date){f.elements.end_date.readOnly=true;f.elements.end_date.placeholder='Calculado pelas aulas';}
   setupManualDuoHandlers(f,s);
+  updateWeeklyPickerIndicators(f);
  }
  renderContractExtra();
  calendar.autoPreview(f);
@@ -2364,11 +2611,81 @@ async function importDocx(file){
  docxValidationCache.set(file,parsed);return parsed;
 }
 
-function renderContractExtra(){const f=$('#contractForm')||$('#renewForm')||$('#manualEnrollmentForm');if(!f)return;const value=f.elements.type_option?.value||'';if(value==='preexisting'){$('#contractExtraFields').innerHTML='<div class="notice" style="margin-top:14px"><p><strong>Contrato preexistente:</strong> O aluno já possui contrato anterior ou físico firmado com a escola. A matrícula será ativada imediatamente e as aulas agendadas sem necessidade de modelo DOCX ou assinatura eletrônica.</p></div>';return;}const id=value.startsWith('custom:')?value.slice(7):null,ct=lookup('contract_types',id);const manual=['renewForm','manualEnrollmentForm'].includes(f.id);const fields=ct?.fields?.filter(x=>manual||x.who==='admin')||[];const previous=f.id==='renewForm'?lookup('contracts',f.dataset.original)?.terms?.custom_fields||{}:{};$('#contractExtraFields').innerHTML=fields.length?`<h3 class="form-section">Campos deste modelo</h3><div class="form-grid">${fields.map(x=>input(x.label,'extra_'+x.key,previous[x.key]||'')).join('')}</div>`:'';}
-function snapshotFromForm(f,kind,terms){const selected=f.elements.type_option.value;if(selected==='preexisting'){const config=db.school_settings[0]||{},k=f.dataset.kind||kind||'individual',preexistingHtml='<div class="preexisting-contract-doc"><h2>Contrato Preexistente</h2><p>Matrícula cadastrada no Campanella com base em contrato físico ou externo preexistente firmado diretamente com a escola.</p></div>';return {kind:k,contract_type_id:null,template_html:preexistingHtml,template_version:'preexisting',owner_name:config.owner_name||'',owner_signature_png:null,terms:{...terms,school_name:currentSchool().name||'',template_rules_version:'v5.2',is_preexisting_contract:true,custom_fields:{},custom_field_schema:[],template_storage_path:null}};}if(!selected.startsWith('custom:'))throw new Error('Selecione um modelo DOCX cadastrado e validado ou Contrato preexistente.');const ct=lookup('contract_types',selected.slice(7));if(!ct)throw new Error('Modelo DOCX não encontrado.');const validation=analyzeContractMarkers(ct.body_text||'',ct.kind);if(!validation.valid)throw new Error('O modelo DOCX possui campos base inválidos ou ausentes. Vá em Modelos de contratos, substitua o Word e confira a validação: '+validation.issues[0].message);const k=ct?.kind||selected.replace('base:','');const fields=ct?.fields||[];const custom_fields={};for(const spec of fields.filter(x=>['renewForm','manualEnrollmentForm'].includes(f.id)||x.who==='admin')){const value=f.elements['extra_'+spec.key]?.value?.trim();if(!value)throw new Error('Preencha '+spec.label);custom_fields[spec.key]=value;}
+function renderContractExtra(){
+ const f=$('#contractForm')||$('#renewForm')||$('#manualEnrollmentForm');if(!f)return;
+ const value=f.elements.type_option?.value||'';
+ if(value==='preexisting'){
+  $('#contractExtraFields').innerHTML='<div class="notice" style="margin-top:14px"><p><strong>Contrato preexistente:</strong> O aluno já possui contrato anterior ou físico firmado com a escola. A matrícula será ativada imediatamente e as aulas agendadas sem necessidade de modelo DOCX ou assinatura eletrônica.</p></div>';
+  return;
+ }
+ const id=value.startsWith('custom:')?value.slice(7):null,ct=lookup('contract_types',id);
+ const manual=['renewForm','manualEnrollmentForm'].includes(f.id);
+ const fields=ct?.fields?.filter(x=>manual||x.who==='admin')||[];
+ const previous=f.id==='renewForm'?(lookup('contracts',f.dataset.original)?.terms?.custom_fields||{}):{};
+ const dateCustomKeys=new Set(['data_inicio_contrato','data_fim_contrato','segunda_data','primeiro_vencimento','vencimento_demais_parcelas']);
+ const computeExtraDefault=(key)=>{
+  if(key==='primeira_parcela'){
+   const firstAmt=f.elements.first_installment_amount?.value||f.elements.installment_amount?.value||'';
+   return firstAmt?money(firstAmt):'';
+  }
+  if(key==='segunda_data'){
+   const sd=f.elements.second_due_date?.value||(f.elements.first_due_date?.value?plusMonth(f.elements.first_due_date.value):'');
+   return sd?dateBR(sd):'';
+  }
+  if(key==='quantidade_horas'){
+   return f.elements.lessons_count?.value||previous[key]||'';
+  }
+  if(key==='data_inicio_contrato'){
+   return f.elements.start_date?.value?dateBR(f.elements.start_date.value):'';
+  }
+  if(f.id==='renewForm'&&dateCustomKeys.has(key))return '';
+  return previous[key]||'';
+ };
+ $('#contractExtraFields').innerHTML=fields.length?`<h3 class="form-section">Campos deste modelo</h3><div class="form-grid">${fields.map(x=>input(x.label,'extra_'+x.key,computeExtraDefault(x.key),'text',false)).join('')}</div>`:'';
+}
+function snapshotFromForm(f,kind,terms){
+ const selected=f.elements.type_option.value;
+ const school=currentSchool();
+ const pkg=lookup('packages',terms?.package_id);
+ const enrichedTerms={
+  ...terms,
+  school_name:school.name||'',
+  school_cnpj:school.cnpj||'',
+  school_address:school.address||'',
+  school_phone:school.contact_phone||'',
+  school_email:school.contact_email||'',
+  package_duration:pkg?formatPackageDuration(pkg):(terms.package_duration||'')
+ };
+ if(selected==='preexisting'){
+  const config=db.school_settings[0]||{},k=f.dataset.kind||kind||'individual',preexistingHtml='<div class="preexisting-contract-doc"><h2>Contrato Preexistente</h2><p>Matrícula cadastrada no Campanella com base em contrato físico ou externo preexistente firmado diretamente com a escola.</p></div>';
+  return {kind:k,contract_type_id:null,template_html:preexistingHtml,template_version:'preexisting',owner_name:config.owner_name||'',owner_signature_png:null,terms:{...enrichedTerms,template_rules_version:'v5.2',is_preexisting_contract:true,custom_fields:{},custom_field_schema:[],template_storage_path:null}};
+ }
+ if(!selected.startsWith('custom:'))throw new Error('Selecione um modelo DOCX cadastrado e validado ou Contrato preexistente.');
+ const ct=lookup('contract_types',selected.slice(7));if(!ct)throw new Error('Modelo DOCX não encontrado.');
+ const validation=analyzeContractMarkers(ct.body_text||'',ct.kind);
+ if(!validation.valid)throw new Error('O modelo DOCX possui campos base inválidos ou ausentes. Vá em Modelos de contratos, substitua o Word e confira a validação: '+validation.issues[0].message);
+ const isFormDuo=f.dataset.kind==='dupla'||kind==='dupla';
+ const k=isFormDuo?'dupla':(ct?.kind||selected.replace('base:',''));
+ const fields=ct?.fields||[];
+ const custom_fields={};
+ for(const spec of fields.filter(x=>['renewForm','manualEnrollmentForm'].includes(f.id)||x.who==='admin')){
+  let value=f.elements['extra_'+spec.key]?.value?.trim()||'';
+  if(!value){
+   if(spec.key==='primeira_parcela')value=money(enrichedTerms.first_installment_amount??enrichedTerms.installment_amount??0);
+   else if(spec.key==='segunda_data')value=dateBR(enrichedTerms.second_due_date||plusMonth(enrichedTerms.first_due_date||today()));
+   else if(spec.key==='quantidade_horas')value=String(enrichedTerms.lessons_count||'');
+   else if(spec.key==='data_inicio_contrato')value=dateBR(enrichedTerms.start_date||today());
+  }
+  if(spec.key==='primeira_parcela'&&value&&!/^R\$/i.test(value)&&/^[\d.,]+$/.test(value)){
+   const num=Number(value.replace(/\./g,'').replace(',','.'));
+   if(Number.isFinite(num))value=money(num);
+  }
+  if(!value)throw new Error('Preencha '+spec.label);
+  custom_fields[spec.key]=value;
+ }
  const config=db.school_settings[0]||{};
- // Na etapa manual nao exigimos nem anexamos a imagem de assinatura da escola.
- return {kind:k,contract_type_id:ct.id,template_html:ct.template_html,template_version:'custom-'+ct.id+'-'+ct.updated_at,owner_name:config.owner_name||'',owner_signature_png:EXTERNAL_SIGNATURE_ENABLED?(config.owner_signature_png||null):null,terms:{...terms,school_name:currentSchool().name||'',template_rules_version:'v5.2',custom_fields,custom_field_schema:fields,template_storage_path:ct.template_storage_path||null}};}
+ return {kind:k,contract_type_id:ct.id,template_html:ct.template_html,template_version:'custom-'+ct.id+'-'+ct.updated_at,owner_name:config.owner_name||'',owner_signature_png:EXTERNAL_SIGNATURE_ENABLED?(config.owner_signature_png||null):null,terms:{...enrichedTerms,template_rules_version:'v5.2',custom_fields,custom_field_schema:fields,template_storage_path:ct.template_storage_path||null}};
+}
 function signatureImage(data,alt){return typeof data==='string'&&/^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(data)?`<img src="${data}" alt="${alt}" class="doc-signature-image">`:'';}
 function renderContract(c,student,{unsigned=false}={}){
  const hasMarkers=String(c.template_html||'').includes('{{assinatura_contratado}}')||String(c.template_html||'').includes('{{assinatura_contratante}}');
@@ -2412,6 +2729,9 @@ async function saveInterview(payload,id){
    delete copy.second_due_date;
    delete copy.has_custom_first_installment;
    delete copy.demais_parcelas;
+   delete copy.discount_amount;
+   delete copy.discount_until;
+   delete copy.discount_reason;
    delete copy.enrollment_mode;
    delete copy.pedagogical_notes;
    delete copy.preferred_schedule;
@@ -2459,12 +2779,16 @@ function financialFields(f,lessonCount,expectedFrequency){
   if(!Number.isFinite(partAmount)||partAmount<0)throw new Error('Informe o valor das demais parcelas.');
   secondDue=f.elements.second_due_date?.value||(firstDue?plusMonth(firstDue):'');
  }else{
-  partAmount=Math.round(total/n*100)/100;
-  const cents=Math.round(total*100),firstCents=cents-Math.round(cents/n)*(n-1);
-  if(firstCents<0)throw new Error('Revise os valores das parcelas.');
-  firstAmount=firstCents/100;
+  const enteredInst=Number(f.elements.installment_amount?.value);
+  partAmount=(Number.isFinite(enteredInst)&&enteredInst>=0)?Math.round(enteredInst*100)/100:Math.round(total/n*100)/100;
+  const cents=Math.round(total*100),firstCents=cents-Math.round(partAmount*100)*(n-1);
+  firstAmount=firstCents>=0?(firstCents/100):partAmount;
   secondDue=firstDue?plusMonth(firstDue):'';
  }
+ const hasDiscount=!!f.elements.has_special_discount?.checked;
+ const discountAmount=hasDiscount?(f.elements.discount_amount?.value?.trim()||null):null;
+ const discountUntil=hasDiscount?(f.elements.discount_until?.value||null):null;
+ const discountReason=hasDiscount?(f.elements.discount_reason?.value?.trim()||null):null;
  return {
   lesson_schedule:schedule,
   weekly_days:schedule.map(x=>x.day),
@@ -2480,6 +2804,9 @@ function financialFields(f,lessonCount,expectedFrequency){
   second_due_date:secondDue,
   has_custom_first_installment:hasCustom,
   demais_parcelas:n>1?n-1:0,
+  discount_amount:discountAmount,
+  discount_until:discountUntil,
+  discount_reason:discountReason,
   payment_method:f.elements.payment_method.value
  };
 }
@@ -2494,6 +2821,7 @@ function buildTerms(i,p){
   enrollment_mode:mode,
   package_id:mode==='package'?(p?.id||null):null,
   package_name:mode==='recurrence'?'Recorrência até o fim':(p?.name||'Personalizado'),
+  package_duration:p?formatPackageDuration(p):'',
   course:i.course||'Inglês',
   teacher_id:i.teacher_id,
   teacher_name:lookup('teachers',i.teacher_id)?.name||'',
@@ -2513,6 +2841,9 @@ function buildTerms(i,p){
   second_due_date:secondDue,
   has_custom_first_installment:i.has_custom_first_installment!=null?!!i.has_custom_first_installment:(n>1&&Math.abs(firstAmt-Number(i.installment_amount||0))>0.009),
   demais_parcelas:n>1?n-1:0,
+  discount_amount:i.discount_amount||null,
+  discount_until:i.discount_until||null,
+  discount_reason:i.discount_reason||null,
   payment_method:i.payment_method
  };
 }
@@ -2554,6 +2885,60 @@ function updateInstallment(f,edited='total_amount'){
   }
  }
  if(f.elements.total_extenso)f.elements.total_extenso.value=amountWords(Number(f.elements.total_amount.value));
+}
+
+function closeEnrollmentModal(id){
+ const c=lookup('contracts',id);if(!c)throw new Error('Contrato não encontrado.');
+ const s=lookup('students',c.student_id),s2=c.student2_id?lookup('students',c.student2_id):null;
+ const studentLabel=c.kind==='dupla'?`${s?.full_name||'Aluno 1'} & ${s2?.full_name||'Aluno 2'}`:(s?.full_name||'Aluno');
+ const noticeDefaultDate=addDays(today(),30);
+ showModal(`<div class="eyebrow">Gestão contratual</div><h2>Encerrar matrícula · ${safe(studentLabel)}</h2><p class="modal-intro">Escolha se o encerramento é imediato ou com aviso prévio (mantendo as aulas agendadas até a data final escolhida). O histórico de aulas já realizadas é sempre preservado.</p><form id="closeEnrollmentForm" data-id="${safe(c.id)}"><div class="form-grid">
+ <label class="field wide"><span>Modalidade de encerramento</span><select name="close_mode" id="closeEnrollmentMode"><option value="immediate">Encerrar imediatamente na data escolhida (cancela aulas posteriores)</option><option value="notice">Cancelamento com aviso prévio (mantém matrícula ativa e aulas até a data final)</option></select></label>
+ ${input('Data efetiva do encerramento','closed_date',today(),'date')}
+ <div class="wide">${input('Motivo do encerramento / cancelamento (opcional)','reason',c.terms?.cancellation_reason||'','text',false)}</div>
+ </div><div class="notice" id="closeEnrollmentHint" style="margin-top:12px">As aulas agendadas após a data efetiva serão canceladas e o horário do professor ficará livre a partir dessa data.</div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Voltar</button><button class="btn danger" type="submit">Confirmar encerramento</button></div></form>`);
+ const modeSel=document.getElementById('closeEnrollmentMode');
+ const dateInp=document.querySelector('#closeEnrollmentForm input[name="closed_date"]');
+ const hintEl=document.getElementById('closeEnrollmentHint');
+ modeSel?.addEventListener('change',e=>{
+  const isNotice=e.target.value==='notice';
+  if(dateInp&&isNotice&&dateInp.value<=today())dateInp.value=noticeDefaultDate;
+  if(hintEl)hintEl.textContent=isNotice?'A matrícula permanecerá ativa com etiqueta "Aviso prévio" e todas as aulas continuarão na agenda até a data final informada. As aulas posteriores serão canceladas.':'As aulas agendadas após a data efetiva serão canceladas e o horário do professor ficará livre a partir dessa data.';
+ });
+}
+
+function contractAddendumModal(id){
+ const c=lookup('contracts',id);if(!c)throw new Error('Contrato não encontrado.');
+ const s=lookup('students',c.student_id),s2=c.student2_id?lookup('students',c.student2_id):null;
+ const studentLabel=c.kind==='dupla'?`${s?.full_name||'Aluno 1'} & ${s2?.full_name||'Aluno 2'}`:(s?.full_name||'Aluno');
+ const t=c.terms||{};
+ showModal(`<div class="eyebrow">Alteração contratual</div><h2>Registrar aditivo · ${safe(studentLabel)}</h2><p class="modal-intro">Atualize valores, parcelas, desconto, vigência ou saldo de aulas sem precisar encerrar o contrato em vigor. A alteração ficará registrada no histórico de aditivos do contrato.</p><form id="contractAddendumForm" data-id="${safe(c.id)}"><div class="form-grid">
+ ${input('Valor total atualizado (R$)','total_amount',t.total_amount??'','number')}
+ ${input('Número de parcelas','installments',t.installments??1,'number')}
+ ${input('Valor mensal / da parcela (R$)','installment_amount',t.installment_amount??'','number')}
+ ${input('Nova data de término','end_date',t.end_date||today(),'date')}
+ ${input('Quantidade total de aulas','lessons_count',t.lessons_count??'','number')}
+ ${input('Desconto concedido (R$ ou %)','discount_amount',t.discount_amount||'','text',false)}
+ ${input('Desconto válido até','discount_until',t.discount_until||'','date',false)}
+ <div class="wide">${input('Motivo / descrição do aditivo *','reason','','text',true)}</div>
+ </div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Salvar aditivo contratual</button></div></form>`);
+}
+
+function exportStudentsCSV(){
+ if(!db.students.length)return toast('Nenhum aluno cadastrado para exportar.',true);
+ const headers=['aluno_id','nome_completo','cpf','email','telefone','data_nascimento','cep','endereco','menor_de_idade','responsavel_nome','responsavel_cpf','responsavel_telefone','responsavel_email','responsavel_data_nascimento','responsavel_cep','responsavel_endereco','situacao','professor_atual','pacote_atual','inicio_contrato','fim_contrato'];
+ const esc=v=>{const s=String(v??'').replace(/\r?\n/g,' ').trim();return /[;",]/.test(s)?`"${s.replace(/"/g,'""')}"`:s;};
+ const rows=db.students.map(s=>{
+  const c=db.contracts.filter(x=>(x.student_id===s.id||x.student2_id===s.id)&&['signed','pre_enrolled','ready_manual'].includes(x.status)).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];
+  const teacherName=lookup('teachers',s.calendar_teacher_id||c?.terms?.teacher_id)?.name||c?.terms?.teacher_name||'';
+  const isMinor=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
+  return [s.id,s.full_name,s.cpf||'',s.email||'',s.phone||'',s.birth_date||'',s.cep||'',s.address||'',isMinor?'sim':'nao',s.guardian_name||'',s.guardian_cpf||'',s.guardian_phone||'',s.guardian_email||'',s.guardian_birth_date||'',s.guardian_cep||'',s.guardian_address||'',studentCategory(s),teacherName,c?.terms?.package_name||'',c?.terms?.start_date||'',c?.terms?.end_date||''].map(esc).join(',');
+ });
+ const csv='\uFEFF'+headers.join(',')+'\n'+rows.join('\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=`alunos_${(currentSchool().name||'escola').toLowerCase().replace(/[^a-z0-9]+/g,'_')}_${today()}.csv`;
+ a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
+ toast(`${db.students.length} aluno(s) exportados com ID para CSV.`);
 }
 
 async function sendLink(id){if(externalSignatureFor(id))throw new Error('Este contrato já usa assinatura externa.');const c=lookup('contracts',id);if(!c||!['draft','sent'].includes(c.status))throw new Error('Contrato indisponível para link.');
@@ -2927,7 +3312,24 @@ document.addEventListener('click',async e=>{
  if(action==='studentTab'){ui.studentTab=x.dataset.tab;return render();}
  if(action==='openInterviewContract'){const c=lookup('contracts',id);if(!c)throw new Error('Contrato vinculado não encontrado.');ui.page='contracts';ui.search='';render();return previewContract(c.id);}
  if(action==='interviewStage'){const stage=x.dataset.stage;if(!['open','lost','archived'].includes(stage))return;const lead=lookup('leads',id),item=db.interviews.find(i=>i.lead_id===id);if(!lead||lead.status==='convertido')throw new Error('Lead indisponível.');if(item)await save('interviews',{pipeline_status:stage,archived_at:stage==='archived'?new Date().toISOString():null},item.id);await save('leads',{ficha_status:stage,status:stage==='lost'?'perdido':stage==='open'?(item?'entrevistado':'novo'):lead.status},id);toast(stage==='archived'?'Ficha arquivada':stage==='lost'?'Desistência registrada':'Ficha retomada');return refresh();}
- if(action==='closeEnrollment'){if(!await window.campanellaConfirm('Encerrar esta matrícula? O contrato permanecerá no histórico.'))return;const {error}=await sb.rpc('close_enrollment',{p_contract_id:id});if(error)throw error;toast('Matrícula encerrada e preservada no histórico.');await refresh();return;}
+ if(action==='exportStudentsCSV'){exportStudentsCSV();return;}
+ if(action==='closeEnrollment'){return closeEnrollmentModal(id);}
+ if(action==='contractAddendum'){return contractAddendumModal(id);}
+ if(action==='removeContract'){
+  const c=lookup('contracts',id);if(!c)throw new Error('Contrato não encontrado.');
+  const s=lookup('students',c.student_id),s2=c.student2_id?lookup('students',c.student2_id):null;
+  const label=c.kind==='dupla'?`${s?.full_name||'Aluno 1'} & ${s2?.full_name||'Aluno 2'}`:(s?.full_name||lookup('leads',c.lead_id)?.name||'este contrato');
+  if(!await window.campanellaConfirm(`Excluir DEFINITIVAMENTE o contrato/matrícula de "${label}" e remover suas aulas agendadas? Esta ação não pode ser desfeita.`,'Excluir contrato / matrícula','Excluir'))return;
+  const {error:rpcErr}=await sb.rpc('delete_contract_cascade',{p_school:ui.schoolId,p_contract_id:id});
+  if(rpcErr){
+   await sb.from('calendar_lessons').delete().eq('school_id',ui.schoolId).eq('contract_id',id).catch(()=>{});
+   await sb.from('contracts').update({previous_contract_id:null}).eq('school_id',ui.schoolId).eq('previous_contract_id',id).catch(()=>{});
+   const {error:delErr}=await sb.from('contracts').delete().eq('school_id',ui.schoolId).eq('id',id);
+   if(delErr)throw delErr;
+  }
+  toast('Contrato / matrícula excluído.');
+  return refresh();
+ }
  if(action==='copyInterviewLink'){await navigator.clipboard.writeText($('#generatedLink').textContent);toast('Link de entrevista copiado.');return;}
  if(action==='editContractType')return typeForm(id);
  if(action==='viewContractType')return viewContractType(id);
@@ -2959,27 +3361,37 @@ document.addEventListener('click',async e=>{
  if(action==='removeStudent'){
   const s=lookup('students',id);
   if(!s)throw new Error('Aluno não encontrado.');
-  if(db.contracts.some(c=>c.student_id===id||c.student2_id===id))throw new Error('Este aluno possui contratos ou matrículas vinculados e não pode ser excluído.');
-  if(!await window.campanellaConfirm(`Excluir definitivamente o aluno "${s.full_name}"? Esta ação não pode ser desfeita.`,'Excluir aluno','Excluir'))return;
+  const linkedContracts=db.contracts.filter(c=>c.student_id===id||c.student2_id===id);
+  const confirmMsg=linkedContracts.length
+   ? `O aluno "${s.full_name}" possui ${linkedContracts.length} contrato(s)/matrícula(s) vinculado(s). Deseja excluir DEFINITIVAMENTE o aluno, seus contratos individuais e suas aulas na agenda? Esta ação não pode ser desfeita.`
+   : `Excluir definitivamente o aluno "${s.full_name}"? Esta ação não pode ser desfeita.`;
+  if(!await window.campanellaConfirm(confirmMsg,'Excluir aluno','Excluir'))return;
   let deleted=false;
-  const {data:rpcRes,error:rpcErr}=await sb.rpc('delete_student_without_contracts',{p_school:ui.schoolId,p_student_id:id});
-  if(!rpcErr&&rpcRes){
+  const {data:cascadeRes,error:cascadeErr}=await sb.rpc('delete_student_cascade',{p_school:ui.schoolId,p_student_id:id});
+  if(!cascadeErr&&cascadeRes){
    deleted=true;
-  }else{
-   const orphanLeadId=s.lead_id;
-   if(orphanLeadId){
-    await sb.from('leads').update({student_id:null}).eq('school_id',ui.schoolId).eq('id',orphanLeadId).catch(()=>{});
-   }
-   const {data:delRows,error:delErr}=await sb.from('students').delete().eq('school_id',ui.schoolId).eq('id',id).select('id');
-   if(delErr)throw delErr;
-   if(delRows?.length){
-    deleted=true;
-    if(orphanLeadId&&!db.contracts.some(c=>c.lead_id===orphanLeadId)&&!db.interviews.some(i=>i.lead_id===orphanLeadId)&&!db.students.some(st=>st.id!==id&&st.lead_id===orphanLeadId)){
-     await sb.from('leads').delete().eq('school_id',ui.schoolId).eq('id',orphanLeadId).catch(()=>{});
+  }else if(!linkedContracts.length){
+   const {data:rpcRes,error:rpcErr}=await sb.rpc('delete_student_without_contracts',{p_school:ui.schoolId,p_student_id:id});
+   if(!rpcErr&&rpcRes)deleted=true;
+  }
+  if(!deleted){
+   for(const c of linkedContracts){
+    if(c.student_id===id&&c.student2_id){
+     await sb.from('contracts').update({student_id:c.student2_id,student2_id:null,kind:'individual'}).eq('school_id',ui.schoolId).eq('id',c.id).catch(()=>{});
+    }else if(c.student2_id===id){
+     await sb.from('contracts').update({student2_id:null}).eq('school_id',ui.schoolId).eq('id',c.id).catch(()=>{});
+    }else{
+     await sb.from('calendar_lessons').delete().eq('school_id',ui.schoolId).eq('contract_id',c.id).catch(()=>{});
+     await sb.from('contracts').delete().eq('school_id',ui.schoolId).eq('id',c.id).catch(()=>{});
     }
    }
+   await sb.from('calendar_lessons').delete().eq('school_id',ui.schoolId).eq('student_id',id).catch(()=>{});
+   if(s.lead_id)await sb.from('leads').update({student_id:null}).eq('school_id',ui.schoolId).eq('id',s.lead_id).catch(()=>{});
+   const {data:delRows,error:delErr}=await sb.from('students').delete().eq('school_id',ui.schoolId).eq('id',id).select('id');
+   if(delErr)throw delErr;
+   if(delRows?.length)deleted=true;
   }
-  if(!deleted)throw new Error('Para habilitar a exclusão de alunos sem matrícula no banco, execute o arquivo sql/37_upgrade_v85_fix_interviews_and_student_delete.sql no SQL Editor do Supabase.');
+  if(!deleted)throw new Error('Não foi possível concluir a exclusão do aluno.');
   if(ui.page==='student-profile'&&ui.studentId===id){ui.page=ui.studentReturnPage||'directory';ui.studentId=null;}
   toast('Aluno excluído.');
   return refresh();
@@ -3056,7 +3468,7 @@ document.addEventListener('input',e=>{
   if(view){$('#pageContent').innerHTML=view;$('#search').focus();$('#search').setSelectionRange(pos,pos);}
  }
  if(['total_amount','installments','installment_amount','first_installment_amount'].includes(e.target.name)&&['interviewForm','renewForm','manualEnrollmentForm','externalInterviewForm'].includes(e.target.form?.id))updateInstallment(e.target.form,e.target.name);
- if(e.target.name==='end_date'&&['manualEnrollmentForm','interviewForm'].includes(e.target.form?.id)&&e.target.form.elements.enrollment_mode?.value==='recurrence'){
+ if(e.target.name==='end_date'&&['manualEnrollmentForm','interviewForm','renewForm'].includes(e.target.form?.id)&&e.target.form.elements.enrollment_mode?.value==='recurrence'){
   if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value))calendar.autoPreview(e.target.form);
  }
  if(e.target.name==='end_date'&&e.target.form?.id==='externalInterviewForm'&&e.target.form.elements.enrollment_mode?.value==='recurrence'){
@@ -3109,7 +3521,7 @@ document.addEventListener('change',async e=>{
   return;
  }
  if(e.target.matches('[data-onb-map], [data-onb-edit-line]')){onboarding.change(e);return;}
- if(e.target.id==='manualClassType'||e.target.id==='manualDuoStudent2'){
+ if(['manualClassType','manualDuoStudent2','manualModality','student2Source','student2Select'].includes(e.target.id)){
   updateDuoEnrollmentView(e.target.form);
   return;
  }
@@ -3154,6 +3566,10 @@ document.addEventListener('change',async e=>{
   toggleCustomFirstInstallment(e.target.form);
   return;
  }
+ if(e.target.name==='has_special_discount'){
+  toggleSpecialDiscount(e.target.form);
+  return;
+ }
  if(e.target.name==='first_due_date'&&e.target.form?.elements.has_custom_first_installment?.checked){
   const second=e.target.form.elements.second_due_date;
   if(second&&(!second.value||second.dataset.auto!=='0')){
@@ -3176,7 +3592,7 @@ document.addEventListener('change',async e=>{
   renderContractExtra();
   return;
  }
- if(e.target.id==='calTeacherFilter'||e.target.form?.id==='calStudentSlotsForm'||e.target.form?.id==='calBulkSlotForm'||e.target.name==='cal_student_teacher'||['end_date','cal_manual_end','cal_slot','cal_start_date'].includes(e.target.name)||(['start_date','lessons_count'].includes(e.target.name)&&e.target.form?.querySelector('.cal-enrollment'))||(e.target.name==='teacher_id'&&(e.target.form?.id==='manualEnrollmentForm'||e.target.form?.id==='crmLeadFicheForm'))){try{await calendar.change(e.target);}catch(err){errors(err);}return;}
+ if(e.target.id==='calTeacherFilter'||e.target.form?.id==='calStudentSlotsForm'||e.target.form?.id==='calBulkSlotForm'||e.target.name==='cal_student_teacher'||['end_date','cal_manual_end','cal_slot','cal_start_date'].includes(e.target.name)||(['start_date','lessons_count'].includes(e.target.name)&&e.target.form?.querySelector('.cal-enrollment'))||(e.target.name==='teacher_id'&&['manualEnrollmentForm','renewForm','crmLeadFicheForm'].includes(e.target.form?.id))){try{await calendar.change(e.target);}catch(err){errors(err);}return;}
  if(e.target.name==='docx_file'&&e.target.form?.id==='typeForm'){
   const file=e.target.files?.[0];if(!file){renderDocxReport(null);return;}
   const report=$('#docxValidation');if(report)report.textContent='Analisando campos e marcadores do DOCX…';
@@ -3197,7 +3613,7 @@ document.addEventListener('change',async e=>{
  if(e.target.matches('input[name="days"]')){const el=e.target.closest('.schedule-row')?.querySelector('input[type="time"]');if(el){el.disabled=!e.target.checked;if(e.target.checked&&!el.value)el.value='18:00';}}
  if(['interviewPackage','renewPackage','manualPackage','externalPackage'].includes(e.target.id)){
   const p=(e.target.id==='externalPackage'?externalData?.packages.find(x=>x.id===e.target.value):lookup('packages',e.target.value));onPackageSelection(e.target.form,p);
-  if(e.target.id==='manualPackage')calendar.autoPreview(e.target.form);
+  if(['manualPackage','renewPackage'].includes(e.target.id))calendar.autoPreview(e.target.form);
   if(e.target.id==='externalPackage'){const el=e.target.form.elements.type_option;if(el)el.removeAttribute('required');externalPreview().catch(errors);}
  }
  if(e.target.id==='externalTeacher'&&e.target.form?.id==='externalInterviewForm'){
@@ -3217,9 +3633,23 @@ document.addEventListener('change',async e=>{
  if(e.target.id==='contractFilter'){ui.contractStatus=e.target.value;render();}
  if(e.target.id==='interviewFilter'){ui.interviewStatus=e.target.value;render();}
  if(['contractType','renewContractType','manualContractType'].includes(e.target.id))renderContractExtra();
- if(e.target.name==='kind'&&e.target.form?.id==='packageForm'){const selected=e.target.form.elements.contract_type_id;selected.innerHTML='<option value="">Nenhum · escolher na matrícula</option>'+options(db.contract_types.filter(t=>t.active&&(e.target.value==='dupla'?t.kind==='dupla':t.kind!=='dupla')));}
+ if(e.target.name==='kind'&&e.target.form?.id==='packageForm'){const selected=e.target.form.elements.contract_type_id;selected.innerHTML='<option value="">Nenhum · escolher na matrícula</option>'+options(db.contract_types.filter(t=>t.active),selected.value);}
  if(e.target.id==='studentMinor'){$('#guardianFields').innerHTML=guardianHTML({},e.target.checked);}
 });
+
+function normalizeStudentPhone(raw){
+ const trimmed=String(raw||'').trim();
+ if(!trimmed)return null;
+ const digits=onlyDigits(trimmed);
+ if(trimmed.startsWith('+')){
+  if(digits.length<7||digits.length>15)throw new Error('Telefone internacional inválido (+DDI e número, 7 a 15 dígitos).');
+  return '+'+digits;
+ }
+ let clean=digits;
+ if(clean.startsWith('55')&&[12,13].includes(clean.length))clean=clean.slice(2);
+ if(clean.length<7||clean.length>15)throw new Error('Informe um telefone válido com DDD (ou internacional com +DDI).');
+ return clean;
+}
 
 document.addEventListener('submit',async event=>{
  const f=event.target;if(!f.id)return;event.preventDefault();if(appBusy)return;const btn=f.querySelector('button[type="submit"],button:not([type])');if(btn)btn.disabled=true;
@@ -3283,7 +3713,38 @@ document.addEventListener('submit',async event=>{
  if(f.id==='externalInterviewForm'){await externalSave(f);return;}
  if(f.id==='profileForm'){const name=f.elements.full_name.value.trim();if(name.length<2||name.length>120)throw new Error('Informe um nome válido.');if(ui.role==='teacher')await calendar.updateTeacherProfile(name);const {data,error}=await sb.auth.updateUser({data:{full_name:name}});if(error)throw error;ui.user=data.user;toast('Perfil atualizado.');return render();}
  if(f.id==='profilePasswordForm'){const pwd=f.elements.password.value;if(pwd.length<8||pwd!==f.elements.password_confirm.value)throw new Error('A senha precisa ter pelo menos 8 caracteres e a confirmação deve coincidir.');const {data,error}=await sb.auth.updateUser({password:pwd});if(error)throw error;if(data?.user)ui.user=data.user;f.reset();toast('Senha atualizada.');return;}
- if(f.id==='schoolDetailsForm'){const d=formData(f);const {error}=await sb.rpc('update_school_details',{p_school:ui.schoolId,p_name:d.name,p_email:d.contact_email||'',p_phone:d.contact_phone||'',p_address:d.address||''});if(error)throw error;await loadSchools(ui.schoolId);toast('Informações da escola atualizadas.');return render();}
+ if(f.id==='schoolDetailsForm'){const d=formData(f);const {error}=await sb.rpc('update_school_details',{p_school:ui.schoolId,p_name:d.name,p_email:d.contact_email||'',p_phone:d.contact_phone||'',p_address:d.address||'',p_cnpj:d.cnpj||''});if(error){await sb.from('schools').update({name:d.name.trim(),contact_email:d.contact_email||null,contact_phone:d.contact_phone||null,address:d.address||null,cnpj:d.cnpj||null}).eq('id',ui.schoolId);}await loadSchools(ui.schoolId);toast('Informações da escola atualizadas.');return render();}
+ if(f.id==='closeEnrollmentForm'){
+  const id=f.dataset.id,d=formData(f);
+  const isNotice=d.close_mode==='notice';
+  const effDate=d.closed_date||today();
+  const {error}=await sb.rpc('close_enrollment',{p_contract_id:id,p_reason:d.reason?.trim()||'manual',p_closed_date:effDate,p_keep_until_date:isNotice});
+  if(error)throw error;
+  closeModal();await refresh();
+  toast(isNotice?`Aviso prévio registrado: matrícula e aulas mantidas até ${dateBR(effDate)}.`:`Matrícula encerrada com data efetiva ${dateBR(effDate)}.`);
+  return;
+ }
+ if(f.id==='contractAddendumForm'){
+  const id=f.dataset.id,d=formData(f);
+  if(!d.reason?.trim())throw new Error('Informe o motivo ou descrição do aditivo contratual.');
+  const changes={
+   total_amount:Number(d.total_amount),
+   total_extenso:amountWords(Number(d.total_amount)||0),
+   installments:Number(d.installments)||1,
+   installment_amount:Number(d.installment_amount),
+   end_date:d.end_date,
+   lessons_count:Number(d.lessons_count),
+   discount_amount:d.discount_amount?.trim()||null,
+   discount_until:d.discount_until||null,
+   reason:d.reason.trim(),
+   notes:d.reason.trim()
+  };
+  const {error}=await sb.rpc('apply_contract_addendum',{p_contract_id:id,p_data:changes});
+  if(error)throw error;
+  closeModal();await refresh();
+  toast('Aditivo contratual registrado com sucesso.');
+  return;
+ }
  if(f.id==='deleteSchoolForm'){const {error}=await sb.rpc('schedule_school_deletion',{p_school:ui.schoolId,p_confirm_name:f.elements.confirm_name.value});if(error)throw error;closeModal();await loadSchools(ui.schoolId);toast('Exclusão agendada por 30 dias.');return refresh();}
  if(f.id==='renewSchoolKeyForm'){const {error}=await sb.rpc('redeem_school_renewal_key',{p_school:ui.schoolId,p_key:f.elements.key.value.trim()});if(error)throw error;await loadSchools(ui.schoolId);toast('Licença atualizada pela nova chave.');return refresh();}
  if(f.id==='issueRenewalForm'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');const d=formData(f);const {data,error}=await sb.rpc('issue_school_renewal_key',{p_school:f.dataset.school,p_kind:d.kind,p_validity_mode:d.validity_mode,p_validity_days:d.validity_mode==='days'?Number(d.validity_days):null,p_expires_on:d.validity_mode==='date'?d.expires_on:null,p_plan:d.plan||'essencial',p_extra_students_packs:Number(d.extra_students_packs)||0,p_extra_teachers:Number(d.extra_teachers)||0});if(error)throw error;ui.newlyIssuedKey=data.key;closeModal();await loadPlatformData();render();toast('Chave de renovação gerada. Copie agora.');return;}
@@ -3355,7 +3816,7 @@ document.addEventListener('submit',async event=>{
   await save('leads',{name:d.name.trim(),student2_name:student2Name,kind:isDuo?'dupla':'individual',guardian_name:d.guardian_name?.trim()||null,phone:d.phone.trim()},f.dataset.id||undefined);
   toast('Lead salvo.');
  }
- else if(f.id==='packageForm'){const d=formData(f);if(+d.lessons_count<1||+d.weekly_frequency<1||+d.weekly_frequency>7)throw new Error('Confira aulas e frequência.');await save('packages',{name:d.name.trim(),kind:d.kind,lessons_count:+d.lessons_count,weekly_frequency:+d.weekly_frequency,default_total:+d.default_total,active:d.active==='true',contract_type_id:d.contract_type_id||null},f.dataset.id||undefined);toast('Pacote salvo.');}
+ else if(f.id==='packageForm'){const d=formData(f);if(+d.lessons_count<1||+d.weekly_frequency<1||+d.weekly_frequency>7)throw new Error('Confira aulas e frequência.');const durMonthsMap={mensal:1,trimestral:3,semestral:6,anual:12};const durMonths=d.duration_months?+d.duration_months:(durMonthsMap[d.duration_type]||null);await save('packages',{name:d.name.trim(),kind:d.kind,duration_type:d.duration_type||null,duration_months:durMonths,lessons_count:+d.lessons_count,weekly_frequency:+d.weekly_frequency,default_total:+d.default_total,active:d.active==='true',contract_type_id:d.contract_type_id||null},f.dataset.id||undefined);toast('Pacote salvo.');}
  else if(f.id==='interviewForm'){
   const mode=f.elements.enrollment_mode?.value||'package';
   const p=lookup('packages',f.elements.package_id.value),count=Number(f.elements.lessons_count.value),freq=Number(f.elements.weekly_frequency.value);
@@ -3431,14 +3892,94 @@ document.addEventListener('submit',async event=>{
  else if(f.id==='renewForm'){
   if(isCurrentSchoolCrmOnly())throw new Error('O plano CRM inclui apenas a gestão de leads e pipeline. Faça upgrade para o plano Essencial ou superior para realizar rematrículas.');
   await calendar.ensureEnrollmentDates(f);
-  const original=lookup('contracts',f.dataset.original),p=lookup('packages',f.elements.package_id.value);if(!original)throw new Error('Contrato anterior indisponível.');
-  if(p?.kind==='dupla')throw new Error('Rematrícula de dupla ainda não implementada.');
+  const original=lookup('contracts',f.dataset.original),p=lookup('packages',f.elements.package_id?.value);if(!original)throw new Error('Contrato anterior indisponível.');
+  const s=lookup('students',original.student_id);if(!s)throw new Error('Aluno original indisponível.');
+  const isDuo=(f.elements.enrollment_modality?.value||f.elements.class_type?.value)==='dupla';
+  let student2=null,signerIdx=1;
+  if(isDuo){
+   const s2Source=f.elements.student2_source?.value||f.elements.student2_mode?.value||'existing';
+   if(s2Source==='new'){
+    const s2Name=(f.elements.s2_full_name?.value||f.elements.student2_new_name?.value||'').trim();
+    if(!s2Name||s2Name.length<2)throw new Error('Informe o nome completo do 2º aluno.');
+    const s2Birth=f.elements.s2_birth_date?.value||f.elements.student2_new_birth_date?.value||null;
+    let s2Minor=!!f.elements.student2_new_is_minor?.checked;
+    if(s2Birth&&/^\d{4}-\d{2}-\d{2}$/.test(s2Birth)){
+     const [y,m,d]=today().split('-').map(Number),[yy,mm,dd]=s2Birth.split('-').map(Number);
+     if((y-yy-(m<mm||(m===mm&&d<dd)?1:0))<18)s2Minor=true;
+    }
+    const s2GName=(f.elements.s2_guardian_name?.value||f.elements.student2_new_guardian_name?.value||'').trim()||null;
+    if(s2GName)s2Minor=true;
+    const s2Phone=normalizeStudentPhone(f.elements.s2_phone?.value||f.elements.student2_new_phone?.value||'');
+    const s2Cpf=onlyDigits(f.elements.s2_cpf?.value||f.elements.student2_new_cpf?.value||'')||null;
+    if(s2Cpf&&!cpfValid(s2Cpf))throw new Error('CPF do 2º aluno inválido.');
+    const s2GCpf=s2Minor?(onlyDigits(f.elements.s2_guardian_cpf?.value||f.elements.student2_new_guardian_cpf?.value||'')||null):null;
+    if(s2GCpf&&!cpfValid(s2GCpf))throw new Error('CPF do responsável do 2º aluno inválido.');
+    student2=await save('students',{
+     full_name:s2Name,
+     phone:s2Phone,
+     cpf:s2Cpf,
+     email:(f.elements.s2_email?.value||f.elements.student2_new_email?.value||'').trim()||null,
+     birth_date:s2Birth,
+     cep:onlyDigits(f.elements.s2_cep?.value||'')||null,
+     address:(f.elements.s2_address?.value||'').trim()||null,
+     is_minor:s2Minor?true:(s2Birth?false:null),
+     guardian_name:s2Minor?s2GName:null,
+     guardian_cpf:s2GCpf,
+     guardian_birth_date:s2Minor?(f.elements.s2_guardian_birth_date?.value||f.elements.student2_new_guardian_birth_date?.value||null):null,
+     guardian_phone:s2Minor?normalizeStudentPhone(f.elements.s2_guardian_phone?.value||f.elements.student2_new_guardian_phone?.value||''):null,
+     guardian_email:s2Minor?((f.elements.s2_guardian_email?.value||f.elements.student2_new_guardian_email?.value||'').trim()||null):null,
+     guardian_cep:s2Minor?(onlyDigits(f.elements.s2_guardian_cep?.value||f.elements.student2_new_guardian_cep?.value||'')||null):null,
+     guardian_address:s2Minor?((f.elements.s2_guardian_address?.value||f.elements.student2_new_guardian_address?.value||'').trim()||null):null
+    });
+   }else{
+    const s2Id=f.elements.student2_id?.value;
+    if(!s2Id)throw new Error('Selecione o 2º aluno para a rematrícula em dupla.');
+    if(s2Id===s.id)throw new Error('O 2º aluno precisa ser diferente do 1º aluno.');
+    student2=lookup('students',s2Id);
+    if(!student2)throw new Error('2º aluno não encontrado.');
+   }
+   signerIdx=Number(f.elements.signer_student_index?.value||1);
+   if(![1,2].includes(signerIdx))signerIdx=1;
+  }
+  const mode=f.elements.enrollment_mode?.value||'package';
   const count=Number(f.elements.lessons_count.value),freq=Number(f.elements.weekly_frequency.value);
   if(!Number.isInteger(count)||count<1||count>500||!Number.isInteger(freq)||freq<1||freq>7)throw new Error('Confira quantidade e frequência.');
-  const fields=financialFields(f,count,freq),terms={...original.terms,...fields,package_id:p?.id||null,package_name:p?.name||'Personalizado',lessons_count:count,weekly_frequency:freq};
-  const snapshot=snapshotFromForm(f,null,await calendar.applyTerms(f,terms));
-  const s=lookup('students',original.student_id);if(!s)throw new Error('Aluno original indisponível.');
-  const renewed=await save('contracts',{lead_id:original.lead_id,student_id:original.student_id,previous_contract_id:original.id,...snapshot,status:'pre_enrolled',student_snapshot:{...s,custom_fields:{...snapshot.terms.custom_fields}},created_by:ui.user.id});closeModal();await refresh();toast('Rematrícula preparada: baixe o contrato sem assinaturas na lista de contratos.');ui.page='contracts';render();return;
+  const teacherId=f.elements.teacher_id?.value||original.terms?.teacher_id;
+  const courseName=f.elements.course?.value?.trim()||original.terms?.course||'Inglês';
+  const fields=financialFields(f,count,freq);
+  const terms={...original.terms,...fields,enrollment_mode:mode,package_id:(mode==='package'&&p)?p.id:null,package_name:mode==='recurrence'?'Recorrência até o fim':(p?.name||'Personalizado'),course:courseName,teacher_id:teacherId,teacher_name:lookup('teachers',teacherId)?.name||original.terms?.teacher_name||'',lessons_count:count,weekly_frequency:freq,signer_student_index:isDuo?signerIdx:null};
+  delete terms.cancellation_notice_at;
+  delete terms.cancellation_effective_date;
+  delete terms.cancellation_reason;
+  const plannedTerms=await calendar.applyTerms(f,terms);
+  const snapshot=snapshotFromForm(f,isDuo?'dupla':null,plannedTerms);
+  const isPreexisting=f.elements.type_option?.value==='preexisting';
+  const enrollmentStatus=isPreexisting?'signed':'pre_enrolled';
+  const audit=isPreexisting?{method:isDuo?'preexisting_renewal_duo':'preexisting_renewal',signature:'physical_prior',created_by:ui.user.id}:undefined;
+  const studentSnapshot=isDuo
+   ? {student1:{...s,custom_fields:{...snapshot.terms.custom_fields}},student2:{...student2,custom_fields:{...snapshot.terms.custom_fields}},signer_student_index:signerIdx,full_name:`${s.full_name} & ${student2.full_name}`}
+   : {...s,custom_fields:{...snapshot.terms.custom_fields}};
+  const renewed=await save('contracts',{
+   lead_id:original.lead_id,
+   student_id:original.student_id,
+   student2_id:isDuo?student2.id:null,
+   signer_student_index:isDuo?signerIdx:null,
+   previous_contract_id:original.id,
+   ...snapshot,
+   kind:isDuo?'dupla':snapshot.kind,
+   status:enrollmentStatus,
+   audit,
+   student_snapshot:studentSnapshot,
+   created_by:ui.user.id
+  });
+  closeModal();await refresh();
+  if(isPreexisting){
+   toast('Rematrícula ativada com sucesso (contrato preexistente).');
+   studentDetail(s.id);
+   return;
+  }
+  toast('Rematrícula preparada: baixe o contrato sem assinaturas em Matrículas ou Contratos.');
+  ui.page='students';render();return;
  }
  else if(f.id==='manualEnrollmentForm'){
   if(isCurrentSchoolCrmOnly())throw new Error('O plano CRM inclui apenas a gestão de leads e pipeline. Faça upgrade para o plano Essencial ou superior para cadastrar matrículas.');
@@ -3452,8 +3993,7 @@ document.addEventListener('submit',async event=>{
     const s2Name=f.elements.student2_new_name?.value?.trim();
     if(!s2Name||s2Name.length<2)throw new Error('Informe o nome completo do 2º aluno.');
     const s2Minor=!!f.elements.student2_new_is_minor?.checked;
-    let s2Phone=onlyDigits(f.elements.student2_new_phone?.value||'');
-    if(s2Phone.startsWith('55')&&[12,13].includes(s2Phone.length))s2Phone=s2Phone.slice(2);
+    const s2Phone=normalizeStudentPhone(f.elements.student2_new_phone?.value||'');
     const s2Cpf=onlyDigits(f.elements.student2_new_cpf?.value||'')||null;
     if(s2Cpf&&!cpfValid(s2Cpf))throw new Error('CPF do 2º aluno inválido.');
     const s2Email=f.elements.student2_new_email?.value?.trim()||null;
@@ -3461,23 +4001,29 @@ document.addEventListener('submit',async event=>{
     const s2GName=s2Minor?(f.elements.student2_new_guardian_name?.value?.trim()||null):null;
     const s2GCpf=s2Minor?(onlyDigits(f.elements.student2_new_guardian_cpf?.value||'')||null):null;
     if(s2GCpf&&!cpfValid(s2GCpf))throw new Error('CPF do responsável do 2º aluno inválido.');
-    const s2GPhone=s2Minor?(f.elements.student2_new_guardian_phone?.value?.trim()||null):null;
+    const s2GBirth=s2Minor?(f.elements.student2_new_guardian_birth_date?.value||null):null;
+    const s2GPhone=s2Minor?normalizeStudentPhone(f.elements.student2_new_guardian_phone?.value||''):null;
     const s2GEmail=s2Minor?(f.elements.student2_new_guardian_email?.value?.trim()||null):null;
+    const s2GCep=s2Minor?(onlyDigits(f.elements.student2_new_guardian_cep?.value||'')||null):null;
+    const s2GAddr=s2Minor?(f.elements.student2_new_guardian_address?.value?.trim()||null):null;
 
     const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();
     if(!lim.isUnlimited&&cur>=lim.maxStudents)throw new Error(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Faça upgrade de plano ou adquira pacotes de +10 alunos.`);
 
     student2=await save('students',{
      full_name:s2Name,
-     phone:s2Phone||null,
+     phone:s2Phone,
      cpf:s2Cpf,
      email:s2Email,
      birth_date:s2Birth,
-     is_minor:s2Birth?s2Minor:(s2Minor?true:null),
+     is_minor:s2Minor?true:(s2Birth?false:null),
      guardian_name:s2GName,
      guardian_cpf:s2GCpf,
+     guardian_birth_date:s2GBirth,
      guardian_phone:s2GPhone,
-     guardian_email:s2GEmail
+     guardian_email:s2GEmail,
+     guardian_cep:s2GCep,
+     guardian_address:s2GAddr
     });
    }else{
     const s2Id=f.elements.student2_id?.value;
@@ -3503,7 +4049,7 @@ document.addEventListener('submit',async event=>{
   const selectedSlots=plannedTerms.calendar_v6?.slot_ids||[...f.querySelectorAll('input[name="cal_slot"]:checked')].map(x=>x.value);
   const schedules=(plannedTerms.lesson_schedule||fields.lesson_schedule||[]).map(x=>({...x,slot_id:x.slot_id||dbCalendarSlotId(x,selectedSlots)}));
   let leadId=student.lead_id;
-  if(!leadId){const lead=await save('leads',{name:student.full_name,guardian_name:student.guardian_name,phone:student.phone,status:'convertido'});leadId=lead.id;await save('students',{lead_id:leadId},student.id);}
+  if(!leadId){const lead=await save('leads',{name:student.full_name,guardian_name:student.guardian_name,phone:student.phone||'',status:'convertido'});leadId=lead.id;await save('students',{lead_id:leadId},student.id);}
   let interview=db.interviews.find(x=>x.lead_id===leadId);
   const values={
    lead_id:leadId,
@@ -3544,7 +4090,7 @@ document.addEventListener('submit',async event=>{
     created_by:ui.user.id
   };
   const enrollment=await save('contracts',contractPayload);closeModal();await refresh();
-  toast(isPreexisting?'Matrícula ativada com sucesso (contrato preexistente).':'Cadastro pronto. Gere o contrato sem assinaturas na área Contratos.');
+  toast(isPreexisting?'Matrícula ativada com sucesso (contrato preexistente).':'Cadastro pronto. Gere o contrato sem assinaturas na área Matrículas ou Contratos.');
   if(isPreexisting){studentDetail(student.id);return;}
   ui.page='contracts';render();return;
  }
@@ -3569,10 +4115,9 @@ document.addEventListener('submit',async event=>{
    const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();
    if(!lim.isUnlimited&&cur>=lim.maxStudents)throw new Error(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Faça upgrade de plano ou adquira pacotes de +10 alunos.`);
   }
-  const d=formData(f),minor=!!f.elements.is_minor.checked;
+  const d=formData(f),minor=Boolean(f.elements.is_minor.checked||d.guardian_name?.trim()||d.guardian_cpf?.trim());
   if(d.full_name.trim().length<2||d.full_name.trim().length>180)throw new Error('Informe o nome completo do aluno.');
-  let phone=onlyDigits(d.phone);if(phone.startsWith('55')&&[12,13].includes(phone.length))phone=phone.slice(2);
-  if(![10,11].includes(phone.length))throw new Error('Informe o telefone com DDD (10 ou 11 dígitos).');
+  const phone=normalizeStudentPhone(d.phone);
   if(d.cpf&&!cpfValid(d.cpf))throw new Error('CPF inválido.');
   if(d.guardian_cpf&&!cpfValid(d.guardian_cpf))throw new Error('CPF do responsável inválido.');
   if(d.cep&&onlyDigits(d.cep).length!==8)throw new Error('CEP deve ter 8 dígitos.');
@@ -3580,9 +4125,9 @@ document.addEventListener('submit',async event=>{
    const bd=new Date(d.birth_date+'T12:00:00Z');if(!Number.isFinite(bd.valueOf())||d.birth_date>today())throw new Error('Nascimento inválido.');
    const [y,m,day]=today().split('-').map(Number),[sy,sm,sd]=d.birth_date.split('-').map(Number);
    const age=y-sy-(m<sm||(m===sm&&day<sd)?1:0);
-   if(minor!==(age<18))throw new Error('A opção de menor de idade não confere com a data de nascimento.');
+   if(f.elements.is_minor.checked!==(age<18))throw new Error('A opção de menor de idade não confere com a data de nascimento.');
   }
-  const calendarManaged=!!f.dataset.id&&db.contracts.some(c=>c.student_id===f.dataset.id&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status));
+  const calendarManaged=!!f.dataset.id&&db.contracts.some(c=>(c.student_id===f.dataset.id||c.student2_id===f.dataset.id)&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status));
   let current_schedule=[],current_weekly_days=[],current_lesson_time=null,calendar_slot_ids=[];
   if(!calendarManaged){
    const checkedSlots=$$('input[name="cal_slot"]:checked',f);
@@ -3595,10 +4140,10 @@ document.addEventListener('submit',async event=>{
     current_lesson_time=chosen[0]?.time||null;
    }
   }
-  const teacherForStudent=calendarManaged?db.students.find(x=>x.id===f.dataset.id)?.calendar_teacher_id||db.contracts.find(c=>c.student_id===f.dataset.id&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status))?.terms?.teacher_id:f.elements.calendar_teacher_id?.value||null;
+  const teacherForStudent=calendarManaged?db.students.find(x=>x.id===f.dataset.id)?.calendar_teacher_id||db.contracts.find(c=>(c.student_id===f.dataset.id||c.student2_id===f.dataset.id)&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status))?.terms?.teacher_id:f.elements.calendar_teacher_id?.value||null;
   if(!teacherForStudent&&f.elements.create_contract?.checked)throw new Error('Selecione o professor antes de preparar a matrícula.');
-  const payload={calendar_teacher_id:teacherForStudent,calendar_slot_ids,full_name:d.full_name.trim(),cpf:onlyDigits(d.cpf)||null,email:d.email.trim()||null,birth_date:d.birth_date||null,phone,address:d.address||null,cep:onlyDigits(d.cep)||null,is_minor:d.birth_date?minor:(minor?true:null),...(calendarManaged?{}:{current_schedule,current_weekly_days,current_lesson_time}),
-  guardian_name:minor?(d.guardian_name||null):null,guardian_birth_date:minor?(d.guardian_birth_date||null):null,guardian_cpf:minor?(onlyDigits(d.guardian_cpf)||null):null,guardian_phone:minor?(d.guardian_phone||null):null,guardian_email:minor?(d.guardian_email||null):null,guardian_address:minor?(d.guardian_address||null):null,guardian_cep:minor?(onlyDigits(d.guardian_cep)||null):null};
+  const payload={calendar_teacher_id:teacherForStudent,calendar_slot_ids,full_name:d.full_name.trim(),cpf:onlyDigits(d.cpf)||null,email:d.email.trim()||null,birth_date:d.birth_date||null,phone,address:d.address||null,cep:onlyDigits(d.cep)||null,is_minor:minor?true:(d.birth_date?false:null),...(calendarManaged?{}:{current_schedule,current_weekly_days,current_lesson_time}),
+  guardian_name:minor?(d.guardian_name||null):null,guardian_birth_date:minor?(d.guardian_birth_date||null):null,guardian_cpf:minor?(onlyDigits(d.guardian_cpf)||null):null,guardian_phone:minor?normalizeStudentPhone(d.guardian_phone):null,guardian_email:minor?(d.guardian_email||null):null,guardian_address:minor?(d.guardian_address||null):null,guardian_cep:minor?(onlyDigits(d.guardian_cep)||null):null};
   const saved=await save('students',payload,f.dataset.id||undefined);toast('Aluno salvo.');await refresh();if(!f.dataset.id&&f.elements.create_contract?.checked){manualEnrollmentForm(saved.id);return;}if(f.dataset.id){studentDetail(saved.id);return;}closeModal();return;
  }
  else if(f.id==='scheduleForm'){
@@ -3622,7 +4167,6 @@ document.addEventListener('submit',async event=>{
   if(!file){const report=analyzeContractMarkers(body_text||'',d.kind);renderDocxReport(report,true);if(!report.valid)throw new Error('Este modelo antigo precisa de um DOCX corrigido antes de salvar: '+report.issues[0].message);}
   const saved=await save('contract_types',{name:d.name.trim(),kind:d.kind,body_text,template_html,template_storage_path,fields,active:!!f.elements.active.checked},f.dataset.id||undefined);
   const chosen=new Set($$('input[name="linked_package"]:checked',f).map(x=>x.value));
-  for(const pkg of db.packages){if(chosen.has(pkg.id)&&(pkg.kind==='dupla')!==(d.kind==='dupla'))throw new Error(`O pacote ${pkg.name} possui modalidade incompatível com o modelo.`);}
   for(const pkg of db.packages){const next=chosen.has(pkg.id)?saved.id:pkg.contract_type_id===saved.id?null:pkg.contract_type_id;if(next!==pkg.contract_type_id)await save('packages',{contract_type_id:next},pkg.id);}
   toast('Modelo e associações salvos.');
  }
@@ -3675,7 +4219,7 @@ function externalRender(){
  <label class="field wide"><span>Professor responsável pelas aulas</span><select name="teacher_id" id="externalTeacher" required><option value="">Selecione</option>${options(d.teachers,teacher)}</select></label>
  <label class="field wide" id="externalPackageField" style="${currentMode==='package'?'':'display:none'}"><span>Pacote escolhido</span><select id="externalPackage" name="package_id">${weeksOrCustom()}${options(poolPackages,i.package_id||p?.id)}</select></label>
  ${input('Quantidade de aulas','lessons_count',i.lessons_count||p?.lessons_count||'','number')}
- ${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'2','number')}
+ ${input('Aulas por semana','weekly_frequency',i.weekly_frequency||p?.weekly_frequency||'1','number')}
  ${input('Data início','start_date',i.start_date||today(),'date')}
  ${input('Data de término do contrato','end_date',i.end_date||'','date')}
  <div class="wide interview-calendar-picker"><h3 class="form-section">Horários do professor</h3><div id="externalSlots">${externalSlotPicker(teacher,i.calendar_slot_ids||[],Number(i.weekly_frequency||p?.weekly_frequency||1))}</div><button type="button" class="btn mini light" id="externalPreviewBtn">Calcular datas das aulas</button><p class="muted" id="externalForecast" aria-live="polite"></p></div>
@@ -4352,11 +4896,13 @@ async function completePreEnrollment(f){
   if(publicData.kind==='dupla'){
    if(!d.s1_full_name?.trim())throw new Error('Informe o nome do 1º aluno.');
    if(!d.s2_full_name?.trim())throw new Error('Informe o nome do 2º aluno.');
-   if(!cpfValid(d.s1_cpf))throw new Error('CPF do Aluno 1 inválido.');
-   if(!cpfValid(d.s2_cpf))throw new Error('CPF do Aluno 2 inválido.');
-   const s1={full_name:d.s1_full_name.trim(),cpf:onlyDigits(d.s1_cpf),email:d.s1_email?.trim()||'',birth_date:d.s1_birth_date,phone:onlyDigits(d.s1_phone),cep:onlyDigits(d.s1_cep),address:d.s1_address?.trim()||'',custom_fields:formDataExtras(f)};
-   const s2={full_name:d.s2_full_name.trim(),cpf:onlyDigits(d.s2_cpf),email:d.s2_email?.trim()||'',birth_date:d.s2_birth_date,phone:onlyDigits(d.s2_phone),cep:onlyDigits(d.s2_cep),address:d.s2_address?.trim()||'',custom_fields:{}};
    const isGuardian=d.signer_student_index==='guardian';
+   if(d.s1_cpf&&!cpfValid(d.s1_cpf))throw new Error('CPF do Aluno 1 inválido.');
+   if(d.s2_cpf&&!cpfValid(d.s2_cpf))throw new Error('CPF do Aluno 2 inválido.');
+   if(!isGuardian&&d.signer_student_index==='1'&&!cpfValid(d.s1_cpf))throw new Error('CPF do Aluno 1 (contratante) inválido.');
+   if(!isGuardian&&d.signer_student_index==='2'&&!cpfValid(d.s2_cpf))throw new Error('CPF do Aluno 2 (contratante) inválido.');
+   const s1={full_name:d.s1_full_name.trim(),cpf:onlyDigits(d.s1_cpf),email:d.s1_email?.trim()||'',birth_date:d.s1_birth_date||null,phone:normalizeStudentPhone(d.s1_phone)||'',cep:onlyDigits(d.s1_cep),address:d.s1_address?.trim()||'',custom_fields:formDataExtras(f)};
+   const s2={full_name:d.s2_full_name.trim(),cpf:onlyDigits(d.s2_cpf),email:d.s2_email?.trim()||'',birth_date:d.s2_birth_date||null,phone:normalizeStudentPhone(d.s2_phone)||'',cep:onlyDigits(d.s2_cep),address:d.s2_address?.trim()||'',custom_fields:{}};
    let signerIdx=isGuardian?1:Number(d.signer_student_index||1);
    if(![1,2].includes(signerIdx))signerIdx=1;
    if(isGuardian){
@@ -4369,9 +4915,9 @@ async function completePreEnrollment(f){
     student2:s2,
     signer_student_index:signerIdx,
     guardian_name:isGuardian?(d.guardian_name?.trim()||null):null,
-    guardian_birth_date:isGuardian?d.guardian_birth_date:null,
+    guardian_birth_date:isGuardian?(d.guardian_birth_date||null):null,
     guardian_cpf:isGuardian?onlyDigits(d.guardian_cpf):null,
-    guardian_phone:isGuardian?onlyDigits(d.guardian_phone):null,
+    guardian_phone:isGuardian?(normalizeStudentPhone(d.guardian_phone)||null):null,
     guardian_email:isGuardian?d.guardian_email?.trim():null,
     guardian_address:isGuardian?d.guardian_address?.trim():null,
     guardian_cep:isGuardian?onlyDigits(d.guardian_cep):null
@@ -4383,10 +4929,12 @@ async function completePreEnrollment(f){
    return;
   }
   if(!d.full_name?.trim())throw new Error('Informe o nome completo do aluno.');
-  if(!cpfValid(d.cpf))throw new Error('CPF do aluno inválido.');
   if(publicData.kind==='menor'){
+   if(d.cpf&&!cpfValid(d.cpf))throw new Error('CPF do aluno inválido.');
    if(!d.guardian_name?.trim())throw new Error('Informe o nome do responsável legal.');
    if(!cpfValid(d.guardian_cpf))throw new Error('CPF do responsável inválido.');
+  }else{
+   if(!cpfValid(d.cpf))throw new Error('CPF do aluno inválido.');
   }
   startBusy('Enviando sua pré-matrícula...');
   const student={...d,custom_fields:formDataExtras(f)};
@@ -4400,7 +4948,21 @@ async function completePreEnrollment(f){
   throw err;
  }
 }
-window.addEventListener('hashchange',()=>{if(location.hash.includes('access_token=')||location.hash.includes('error='))return;if(location.hash.startsWith('#assinar/')||location.hash.startsWith('#pre-matricula/')||location.hash.startsWith('#entrevista/')||location.hash.startsWith('#orcamento/')||location.hash.startsWith('#professor/')||location.hash.startsWith('#admin/'))location.reload()});
+window.addEventListener('hashchange',async()=>{
+ if(location.hash.includes('access_token=')||location.hash.includes('error='))return;
+ if(location.hash.startsWith('#assinar/')||location.hash.startsWith('#pre-matricula/')||location.hash.startsWith('#entrevista/')||location.hash.startsWith('#orcamento/')||location.hash.startsWith('#professor/')||location.hash.startsWith('#admin/')){location.reload();return;}
+ if(ui.user&&ui.role==='admin'&&location.hash.startsWith('#/')){
+  const prevPage=ui.page,prevStudent=ui.studentId;
+  applyPanelRouteFromHash();
+  if(ui.page!==prevPage||ui.studentId!==prevStudent){
+   ensureActiveNavGroupOpen();
+   if(ui.page==='student-profile'&&ui.studentId){
+    await calendar.openStudent(ui.studentId,false).catch(()=>{});
+   }
+   render();
+  }
+ }
+});
 sb.auth.onAuthStateChange((event)=>{
  if(event==='PASSWORD_RECOVERY'){
   history.replaceState({},'',location.pathname+'?recuperar=1');
