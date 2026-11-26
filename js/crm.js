@@ -227,6 +227,19 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   const cleanPayload={...payload};
   if(!cleanPayload.notes&&cleanPayload.pedagogical_notes)cleanPayload.notes=cleanPayload.pedagogical_notes;
   delete cleanPayload.pedagogical_notes;
+  if(!Array.isArray(cleanPayload.lesson_schedule))cleanPayload.lesson_schedule=[];
+  if(!Array.isArray(cleanPayload.weekly_days)||!cleanPayload.weekly_days.length){
+   cleanPayload.weekly_days=cleanPayload.lesson_schedule.map(x=>Number(x.day)).filter(n=>Number.isInteger(n));
+  }
+  if(!cleanPayload.lesson_time){
+   const slotIds=Array.isArray(cleanPayload.calendar_slot_ids)?cleanPayload.calendar_slot_ids:[];
+   const allSlots=getCalendar?.()?.data?.()?.slots||[];
+   const firstSlot=slotIds.map(sid=>allSlots.find(s=>s.id===sid)).find(Boolean);
+   const rawTime=cleanPayload.lesson_schedule[0]?.time||firstSlot?.time||'09:00';
+   cleanPayload.lesson_time=String(rawTime).slice(0,5)||'09:00';
+  }
+  if(!cleanPayload.start_date)cleanPayload.start_date=todayISO();
+  if(!cleanPayload.end_date||cleanPayload.end_date<cleanPayload.start_date)cleanPayload.end_date=cleanPayload.start_date;
   if(typeof saveInterview==='function'){
    try{return await saveInterview(cleanPayload,id);}
    catch(e){console.warn('saveInterview delegation failed, falling back:',e);}
@@ -240,6 +253,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    delete copy.demais_parcelas;
    delete copy.enrollment_mode;
    delete copy.pedagogical_notes;
+   delete copy.preferred_schedule;
    try{
     return await save('interviews',copy,id);
    }catch(err2){

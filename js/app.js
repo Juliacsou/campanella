@@ -2,7 +2,7 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
 import {TEMPLATES} from './templates.js';
 import {generateContractPdf} from './pdf-contract.js';
 import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
-import {createCRM, decodeBudgetData} from './crm.js?v=8.1.7';
+import {createCRM, decodeBudgetData} from './crm.js?v=8.1.8';
 import {createCalendar} from './calendar-v6.js?v=8.1.4';
 import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
 import {parseCSV,isoDate} from './csv.js';
@@ -1571,7 +1571,7 @@ function studentProfilePage(){
  const latest=all.find(c=>c.status==='signed')||all[0];
  const curTeacher=s.calendar_teacher_id||latest?.terms?.teacher_id;
  const info=(label,value)=>`<div class="detail-item"><span>${safe(label)}</span><strong>${safe(value??'—')}</strong></div>`;
- const registration=`<section class="panel cal-section cal-profile-registration"><div class="panel-head"><h2>Dados cadastrais</h2><button class="btn mini light" type="button" data-action="editStudent" data-id="${s.id}">${ico('profile',14)} Editar dados</button></div><div class="profile-grid">${info('Aluno',s.full_name)}${info('Professor responsável',lookup('teachers',curTeacher)?.name||'Não definido')}${info('E-mail',s.email)}${info('Telefone',s.phone)}${info('Nascimento',dateBR(s.birth_date))}${info('CPF',s.cpf)}${s.is_minor?info('Responsável',s.guardian_name)+info('Telefone responsável',s.guardian_phone)+info('E-mail responsável',s.guardian_email):''}${info('Endereço',s.address)}</div></section>`;
+ const registration=`<section class="panel cal-section cal-profile-registration"><div class="panel-head"><h2>Dados cadastrais</h2><div class="actions"><button class="btn mini light" type="button" data-action="editStudent" data-id="${s.id}">${ico('profile',14)} Editar dados</button>${!all.length?`<button class="btn mini danger" type="button" data-action="removeStudent" data-id="${s.id}">${ico('trash',14)} Excluir aluno</button>`:''}</div></div><div class="profile-grid">${info('Aluno',s.full_name)}${info('Professor responsável',lookup('teachers',curTeacher)?.name||'Não definido')}${info('E-mail',s.email)}${info('Telefone',s.phone)}${info('Nascimento',dateBR(s.birth_date))}${info('CPF',s.cpf)}${s.is_minor?info('Responsável',s.guardian_name)+info('Telefone responsável',s.guardian_phone)+info('E-mail responsável',s.guardian_email):''}${info('Endereço',s.address)}</div></section>`;
  const contracts=all.map(c=>{
   const isPre=isPreexistingContract(c);
   const isDuo=c.kind==='dupla';
@@ -2001,7 +2001,7 @@ async function inviteInterview(leadId){const l=lookup('leads',leadId),i=db.inter
 }
 
 function studentCategory(s){const cs=db.contracts.filter(c=>c.student_id===s.id);if(cs.some(c=>enrollmentState(c)==='active'))return 'active';if(cs.some(c=>enrollmentState(c)==='expired'))return 'expired';if(cs.some(c=>enrollmentState(c)==='closed'))return 'closed';return 'none';}
-function directoryView(){const list=db.students.filter(s=>[s.full_name,s.email,s.phone].join(' ').toLowerCase().includes(ui.search)&&studentCategory(s)===ui.studentTab);return `${heading('Cadastros','Alunos','Alunos ativos, expirados, antigos e sem contrato.',`<div class="actions"><button class="btn light" type="button" data-action="importStudents">${ico('plus',16)} Importar CSV</button><button class="btn" type="button" data-action="editStudent">${ico('plus',16)} Novo aluno</button></div>`)}<section class="panel"><div class="panel-head panel-controls"><div class="tabs">${[['active','Alunos ativos'],['expired','Expirados'],['closed','Alunos antigos'],['none','Sem matrícula']].map(([v,label])=>`<button class="btn ${ui.studentTab===v?'':'light'}" data-action="studentTab" data-tab="${v}">${label} <span class="tab-count">${db.students.filter(s=>studentCategory(s)===v).length}</span></button>`).join('')}</div><div class="toolbar"><input id="search" class="search" placeholder="Buscar nome, telefone ou e-mail" value="${safe(ui.search)}"></div></div>${table(['Nome / contato','Último curso / pacote','Professor','Horário atual','Ações'],list.map(s=>{const c=db.contracts.filter(c=>c.student_id===s.id&&['signed','closed','superseded'].includes(c.status)).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];return row([`<b>${safe(s.full_name)}</b><div class="muted">${safe(s.email)} · ${safe(s.phone)}</div>`,c?`${safe(c.terms.course||'Inglês')} · ${safe(c.terms.package_name)}<div class="muted">${c.terms.lessons_count} aulas</div>`:'Sem contrato',safe(lookup('teachers',s.calendar_teacher_id||c?.terms?.teacher_id)?.name||c?.terms?.teacher_name||'—'),safe(formatSchedule(c?.terms?.calendar_v6?calendar.scheduleForContract(c):(s.current_schedule?.length?s.current_schedule:c?.terms?.lesson_schedule),c?.terms?.calendar_v6?[]:(s.current_weekly_days||c?.terms?.weekly_days),c?.terms?.calendar_v6?'':(s.current_lesson_time||c?.terms?.lesson_time))),`<button class="table-action-btn" data-action="studentDetail" data-id="${s.id}">${ico('profile',14)} <span>Ver perfil</span></button>`]);}),'Nenhum aluno neste grupo.')}</section>`;}
+function directoryView(){const list=db.students.filter(s=>[s.full_name,s.email,s.phone].join(' ').toLowerCase().includes(ui.search)&&studentCategory(s)===ui.studentTab);return `${heading('Cadastros','Alunos','Alunos ativos, expirados, antigos e sem contrato.',`<div class="actions"><button class="btn light" type="button" data-action="importStudents">${ico('plus',16)} Importar CSV</button><button class="btn" type="button" data-action="editStudent">${ico('plus',16)} Novo aluno</button></div>`)}<section class="panel"><div class="panel-head panel-controls"><div class="tabs">${[['active','Alunos ativos'],['expired','Expirados'],['closed','Alunos antigos'],['none','Sem matrícula']].map(([v,label])=>`<button class="btn ${ui.studentTab===v?'':'light'}" data-action="studentTab" data-tab="${v}">${label} <span class="tab-count">${db.students.filter(s=>studentCategory(s)===v).length}</span></button>`).join('')}</div><div class="toolbar"><input id="search" class="search" placeholder="Buscar nome, telefone ou e-mail" value="${safe(ui.search)}"></div></div>${table(['Nome / contato','Último curso / pacote','Professor','Horário atual','Ações'],list.map(s=>{const c=db.contracts.filter(c=>c.student_id===s.id&&['signed','closed','superseded'].includes(c.status)).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];const hasAnyContract=db.contracts.some(x=>x.student_id===s.id||x.student2_id===s.id);return row([`<b>${safe(s.full_name)}</b><div class="muted">${safe(s.email)} · ${safe(s.phone)}</div>`,c?`${safe(c.terms.course||'Inglês')} · ${safe(c.terms.package_name)}<div class="muted">${c.terms.lessons_count} aulas</div>`:'Sem contrato',safe(lookup('teachers',s.calendar_teacher_id||c?.terms?.teacher_id)?.name||c?.terms?.teacher_name||'—'),safe(formatSchedule(c?.terms?.calendar_v6?calendar.scheduleForContract(c):(s.current_schedule?.length?s.current_schedule:c?.terms?.lesson_schedule),c?.terms?.calendar_v6?[]:(s.current_weekly_days||c?.terms?.weekly_days),c?.terms?.calendar_v6?'':(s.current_lesson_time||c?.terms?.lesson_time))),`<div class="actions"><button class="table-action-btn" data-action="studentDetail" data-id="${s.id}">${ico('profile',14)} <span>Ver perfil</span></button>${!hasAnyContract?`<button class="table-action-btn danger" data-action="removeStudent" data-id="${s.id}" title="Excluir aluno sem contrato">${ico('trash',14)} <span>Excluir</span></button>`:''}</div>`]);}),'Nenhum aluno neste grupo.')}</section>`;}
 function renderStudentScheduleHost(teacherId,selectedSlotIds=[]){
  return calendar.studentSchedulePicker(teacherId,selectedSlotIds);
 }
@@ -2386,6 +2386,22 @@ async function saveInterview(payload,id){
  const cleanPayload={...payload};
  if(!cleanPayload.notes&&cleanPayload.pedagogical_notes)cleanPayload.notes=cleanPayload.pedagogical_notes;
  delete cleanPayload.pedagogical_notes;
+ if(!Array.isArray(cleanPayload.lesson_schedule))cleanPayload.lesson_schedule=[];
+ if(!Array.isArray(cleanPayload.weekly_days)||!cleanPayload.weekly_days.length){
+  cleanPayload.weekly_days=cleanPayload.lesson_schedule.map(x=>Number(x.day)).filter(n=>Number.isInteger(n));
+ }
+ if(!cleanPayload.lesson_time){
+  const slotIds=Array.isArray(cleanPayload.calendar_slot_ids)?cleanPayload.calendar_slot_ids:[];
+  const allSlots=calendar.data?.()?.slots||[];
+  const firstSlot=slotIds.map(sid=>allSlots.find(s=>s.id===sid)).find(Boolean);
+  const rawTime=cleanPayload.lesson_schedule[0]?.time||firstSlot?.time||'09:00';
+  cleanPayload.lesson_time=String(rawTime).slice(0,5)||'09:00';
+ }
+ if(!cleanPayload.start_date)cleanPayload.start_date=today();
+ if(!cleanPayload.end_date||cleanPayload.end_date<cleanPayload.start_date)cleanPayload.end_date=cleanPayload.start_date;
+ if(cleanPayload.total_amount!=null&&!cleanPayload.total_extenso){
+  cleanPayload.total_extenso=amountWords(Number(cleanPayload.total_amount)||0);
+ }
  try{
   return await save('interviews',cleanPayload,id);
  }catch(err){
@@ -2398,6 +2414,7 @@ async function saveInterview(payload,id){
    delete copy.demais_parcelas;
    delete copy.enrollment_mode;
    delete copy.pedagogical_notes;
+   delete copy.preferred_schedule;
    try{
     return await save('interviews',copy,id);
    }catch(err2){
@@ -2409,8 +2426,8 @@ async function saveInterview(payload,id){
     throw err2;
    }
   }
-  if((msg.includes('fk_interviews_interviewer_teacher')||msg.includes('violates foreign key constraint')||err?.code==='23503') && payload.teacher_id){
-   const copy={...payload};
+  if((msg.includes('fk_interviews_interviewer_teacher')||msg.includes('violates foreign key constraint')||err?.code==='23503') && cleanPayload.teacher_id){
+   const copy={...cleanPayload};
    copy.interviewer_teacher_id=copy.teacher_id;
    return await save('interviews',copy,id);
   }
@@ -2418,7 +2435,16 @@ async function saveInterview(payload,id){
  }
 }
 function financialFields(f,lessonCount,expectedFrequency){
- const schedule=f.querySelector('.cal-enrollment:not([data-no-slots])')?[]:readSchedule(f,expectedFrequency);
+ const calHost=f.querySelector('.cal-enrollment:not([data-no-slots])');
+ let schedule=[];
+ if(calHost){
+  const checkedIds=[...calHost.querySelectorAll('input[name="cal_slot"]:checked')].map(c=>c.value);
+  const allSlots=calendar.data?.()?.slots||[];
+  const chosenSlots=checkedIds.map(id=>allSlots.find(s=>s.id===id)).filter(Boolean);
+  schedule=chosenSlots.map(s=>({day:s.weekday,time:String(s.time||'').slice(0,5),duration_minutes:s.duration,slot_id:s.id}));
+ }else{
+  schedule=readSchedule(f,expectedFrequency);
+ }
  const start=f.elements.start_date.value,end=f.elements.end_date.value;
  if(!start||!end||end<start)throw new Error('Informe uma data final válida, igual ou posterior ao início.');
  const total=Number(f.elements.total_amount.value),n=Number(f.elements.installments.value);
@@ -2930,6 +2956,34 @@ document.addEventListener('click',async e=>{
  if(action==='copyGenerated'){await navigator.clipboard.writeText($('#generatedLink').textContent);await save('contracts',{status:'sent',sent_at:new Date().toISOString()},id);toast('Link de matr\u00edcula copiado.');closeModal();return refresh();}
  if(action==='shareWhatsApp'){const link=$('#generatedLink')?.textContent||'',c=lookup('contracts',id);if(!c)throw new Error('Contrato n\u00e3o encontrado.');openWhatsApp(c,link);await save('contracts',{status:'sent',sent_at:new Date().toISOString()},id);closeModal();toast('WhatsApp aberto com a mensagem pronta para envio.');return refresh();}
  if(action==='removeLead'){if(!await window.campanellaConfirm('Excluir este lead? Contratos e fichas existentes impedem exclusão.','Excluir lead','Excluir'))return;const {error}=await sb.from('leads').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;toast('Lead excluído.');return refresh();}
+ if(action==='removeStudent'){
+  const s=lookup('students',id);
+  if(!s)throw new Error('Aluno não encontrado.');
+  if(db.contracts.some(c=>c.student_id===id||c.student2_id===id))throw new Error('Este aluno possui contratos ou matrículas vinculados e não pode ser excluído.');
+  if(!await window.campanellaConfirm(`Excluir definitivamente o aluno "${s.full_name}"? Esta ação não pode ser desfeita.`,'Excluir aluno','Excluir'))return;
+  let deleted=false;
+  const {data:rpcRes,error:rpcErr}=await sb.rpc('delete_student_without_contracts',{p_school:ui.schoolId,p_student_id:id});
+  if(!rpcErr&&rpcRes){
+   deleted=true;
+  }else{
+   const orphanLeadId=s.lead_id;
+   if(orphanLeadId){
+    await sb.from('leads').update({student_id:null}).eq('school_id',ui.schoolId).eq('id',orphanLeadId).catch(()=>{});
+   }
+   const {data:delRows,error:delErr}=await sb.from('students').delete().eq('school_id',ui.schoolId).eq('id',id).select('id');
+   if(delErr)throw delErr;
+   if(delRows?.length){
+    deleted=true;
+    if(orphanLeadId&&!db.contracts.some(c=>c.lead_id===orphanLeadId)&&!db.interviews.some(i=>i.lead_id===orphanLeadId)&&!db.students.some(st=>st.id!==id&&st.lead_id===orphanLeadId)){
+     await sb.from('leads').delete().eq('school_id',ui.schoolId).eq('id',orphanLeadId).catch(()=>{});
+    }
+   }
+  }
+  if(!deleted)throw new Error('Para habilitar a exclusão de alunos sem matrícula no banco, execute o arquivo sql/37_upgrade_v85_fix_interviews_and_student_delete.sql no SQL Editor do Supabase.');
+  if(ui.page==='student-profile'&&ui.studentId===id){ui.page=ui.studentReturnPage||'directory';ui.studentId=null;}
+  toast('Aluno excluído.');
+  return refresh();
+ }
  if(action==='removePackage'){if(!await window.campanellaConfirm('Excluir pacote? Pacotes utilizados não podem ser excluídos.','Excluir pacote','Excluir'))return;const {error}=await sb.from('packages').delete().eq('school_id',ui.schoolId).eq('id',id);if(error)throw error;toast('Pacote excluído.');return refresh();}
  if(action==='voidContract'){if(!await window.campanellaConfirm('Cancelar contrato e invalidar seu link?'))return;const {error}=await sb.rpc('void_manual_contract',{p_contract_id:id});if(error)throw error;toast('Contrato cancelado.');return refresh();}
  if(action==='adminSwitchInviteAccount'){await sb.auth.signOut();return adminInviteLanding(currentAdminInviteToken,null);}
@@ -3440,14 +3494,37 @@ document.addEventListener('submit',async event=>{
   const count=Number(f.elements.lessons_count.value),freq=Number(f.elements.weekly_frequency.value);
   if(!Number.isInteger(count)||count<1||count>500||!Number.isInteger(freq)||freq<1||freq>7)throw new Error('Confira quantidade e frequência.');
   const fields=financialFields(f,count,freq);
-  if(!f.elements.teacher_id.value)throw new Error('Selecione o professor.');
+  const teacherId=f.elements.teacher_id.value;
+  if(!teacherId)throw new Error('Selecione o professor.');
+  const courseName=f.elements.course.value.trim();
+  const baseTerms={...fields,enrollment_mode:mode,package_id:(mode==='package'&&p)?p.id:null,package_name:mode==='recurrence'?'Recorrência até o fim':(p?.name||'Personalizado'),course:courseName,teacher_id:teacherId,teacher_name:lookup('teachers',teacherId)?.name||'',lessons_count:count,weekly_frequency:freq,signer_student_index:signerIdx};
+  const plannedTerms=await calendar.applyTerms(f,baseTerms);
+  const snap=snapshotFromForm(f,isDuo?'dupla':null,plannedTerms);
+  const selectedSlots=plannedTerms.calendar_v6?.slot_ids||[...f.querySelectorAll('input[name="cal_slot"]:checked')].map(x=>x.value);
+  const schedules=(plannedTerms.lesson_schedule||fields.lesson_schedule||[]).map(x=>({...x,slot_id:x.slot_id||dbCalendarSlotId(x,selectedSlots)}));
   let leadId=student.lead_id;
   if(!leadId){const lead=await save('leads',{name:student.full_name,guardian_name:student.guardian_name,phone:student.phone,status:'convertido'});leadId=lead.id;await save('students',{lead_id:leadId},student.id);}
   let interview=db.interviews.find(x=>x.lead_id===leadId);
-  const values={lead_id:leadId,package_id:p?.id||null,lessons_count:count,weekly_frequency:freq,interviewer_id:ui.user.id,teacher_id:f.elements.teacher_id.value,course:f.elements.course.value.trim(),...fields};
+  const values={
+   lead_id:leadId,
+   package_id:(mode==='package'&&p)?p.id:null,
+   enrollment_mode:mode,
+   kind:isDuo?'dupla':'individual',
+   student2_name:isDuo?(student2?.full_name||null):null,
+   lessons_count:plannedTerms.lessons_count||count,
+   weekly_frequency:plannedTerms.weekly_frequency||freq,
+   interviewer_id:ui.user.id,
+   interviewer_teacher_id:interview?.interviewer_teacher_id||teacherId,
+   calendar_slot_ids:selectedSlots,
+   teacher_id:teacherId,
+   course:courseName,
+   ...fields,
+   end_date:plannedTerms.end_date||fields.end_date,
+   lesson_schedule:schedules,
+   weekly_days:plannedTerms.weekly_days||fields.weekly_days||[],
+   lesson_time:plannedTerms.lesson_time||schedules[0]?.time||fields.lesson_time||'09:00'
+  };
   interview=await saveInterview(values,interview?.id);
-  const terms={...fields,enrollment_mode:mode,package_id:p?.id||null,package_name:mode==='recurrence'?'Recorrência até o fim':(p?.name||'Personalizado'),course:values.course,teacher_id:values.teacher_id,teacher_name:lookup('teachers',values.teacher_id)?.name||'',lessons_count:count,weekly_frequency:freq,signer_student_index:signerIdx};
-  const snap=snapshotFromForm(f,isDuo?'dupla':null,await calendar.applyTerms(f,terms));
   const isPreexisting=f.elements.type_option?.value==='preexisting';
   const enrollmentStatus=isPreexisting?'signed':'pre_enrolled';
   const audit=isPreexisting?{method:isDuo?'preexisting_enrollment_duo':'preexisting_enrollment',signature:'physical_prior',created_by:ui.user.id}:undefined;
