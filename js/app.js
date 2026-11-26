@@ -1029,7 +1029,7 @@ async function refresh(){
  await reloadLicenseState();if(!ui.licenseActive){for(const k of Object.keys(db))db[k]=[];render();return;}
  const [{data:members,error:memberError}]=await Promise.all([
   sb.from('school_members').select('user_id,role,created_at').eq('school_id',schoolId),
-  sb.rpc('crm_sync_pipeline',{p_school:schoolId}).catch(e=>console.warn('Sync pipeline:',e?.message))
+  (async()=>{try{await sb.rpc('crm_sync_pipeline',{p_school:schoolId});}catch(e){console.warn('Sync pipeline:',e?.message);}})()
  ]);
  if(version!==refreshVersion||ui.schoolId!==schoolId)return;
  if(memberError)throw memberError;
@@ -1055,7 +1055,7 @@ async function refresh(){
  Object.assign(db,newData);
  ui.driveConnection=null;
  await Promise.all([
-  sb.rpc('school_admin_list',{p_school:schoolId}).then(({data:admData,error:admErr})=>{ui.schoolAdmins=(!admErr&&admData)?admData:null;}).catch(()=>{ui.schoolAdmins=null;}),
+  (async()=>{try{const {data:admData,error:admErr}=await sb.rpc('school_admin_list',{p_school:schoolId});ui.schoolAdmins=(!admErr&&admData)?admData:null;}catch(e){ui.schoolAdmins=null;}})(),
   calendar.getTeacherAccess().then(acc=>{ui.teacherAccess=acc||[];}).catch(()=>{ui.teacherAccess=[];}),
   calendar.loadSafe()
  ]);
@@ -3322,8 +3322,8 @@ document.addEventListener('click',async e=>{
   if(!await window.campanellaConfirm(`Excluir DEFINITIVAMENTE o contrato/matrícula de "${label}" e remover suas aulas agendadas? Esta ação não pode ser desfeita.`,'Excluir contrato / matrícula','Excluir'))return;
   const {error:rpcErr}=await sb.rpc('delete_contract_cascade',{p_school:ui.schoolId,p_contract_id:id});
   if(rpcErr){
-   await sb.from('calendar_lessons').delete().eq('school_id',ui.schoolId).eq('contract_id',id).catch(()=>{});
-   await sb.from('contracts').update({previous_contract_id:null}).eq('school_id',ui.schoolId).eq('previous_contract_id',id).catch(()=>{});
+   try{await sb.from('calendar_lessons').delete().eq('school_id',ui.schoolId).eq('contract_id',id);}catch(_){}
+   try{await sb.from('contracts').update({previous_contract_id:null}).eq('school_id',ui.schoolId).eq('previous_contract_id',id);}catch(_){}
    const {error:delErr}=await sb.from('contracts').delete().eq('school_id',ui.schoolId).eq('id',id);
    if(delErr)throw delErr;
   }
@@ -3377,16 +3377,16 @@ document.addEventListener('click',async e=>{
   if(!deleted){
    for(const c of linkedContracts){
     if(c.student_id===id&&c.student2_id){
-     await sb.from('contracts').update({student_id:c.student2_id,student2_id:null,kind:'individual'}).eq('school_id',ui.schoolId).eq('id',c.id).catch(()=>{});
+     try{await sb.from('contracts').update({student_id:c.student2_id,student2_id:null,kind:'individual'}).eq('school_id',ui.schoolId).eq('id',c.id);}catch(_){}
     }else if(c.student2_id===id){
-     await sb.from('contracts').update({student2_id:null}).eq('school_id',ui.schoolId).eq('id',c.id).catch(()=>{});
+     try{await sb.from('contracts').update({student2_id:null}).eq('school_id',ui.schoolId).eq('id',c.id);}catch(_){}
     }else{
-     await sb.from('calendar_lessons').delete().eq('school_id',ui.schoolId).eq('contract_id',c.id).catch(()=>{});
-     await sb.from('contracts').delete().eq('school_id',ui.schoolId).eq('id',c.id).catch(()=>{});
+     try{await sb.from('calendar_lessons').delete().eq('school_id',ui.schoolId).eq('contract_id',c.id);}catch(_){}
+     try{await sb.from('contracts').delete().eq('school_id',ui.schoolId).eq('id',c.id);}catch(_){}
     }
    }
-   await sb.from('calendar_lessons').delete().eq('school_id',ui.schoolId).eq('student_id',id).catch(()=>{});
-   if(s.lead_id)await sb.from('leads').update({student_id:null}).eq('school_id',ui.schoolId).eq('id',s.lead_id).catch(()=>{});
+   try{await sb.from('calendar_lessons').delete().eq('school_id',ui.schoolId).eq('student_id',id);}catch(_){}
+   if(s.lead_id){try{await sb.from('leads').update({student_id:null}).eq('school_id',ui.schoolId).eq('id',s.lead_id);}catch(_){}}
    const {data:delRows,error:delErr}=await sb.from('students').delete().eq('school_id',ui.schoolId).eq('id',id).select('id');
    if(delErr)throw delErr;
    if(delRows?.length)deleted=true;
@@ -4834,7 +4834,7 @@ async function publicAPI(body){
      const {error:rpcErr}=await sb.rpc('admin_complete_pre_enrollment',{p_contract_id:c.id,p_student:body.student});
      if(rpcErr)throw rpcErr;
      if(isPreexisting){
-      await sb.rpc('activate_preexisting_contract',{p_contract_id:c.id}).catch(()=>{});
+      try{await sb.rpc('activate_preexisting_contract',{p_contract_id:c.id});}catch(_){}
      }
      return {ok:true,pre_enrolled:true,signed:isPreexisting,message:isPreexisting?'Matrícula preexistente ativada com sucesso.':'Pré-matrícula recebida. A escola entrará em contato sobre o contrato.'};
     }

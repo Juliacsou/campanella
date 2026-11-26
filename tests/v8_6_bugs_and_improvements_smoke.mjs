@@ -246,9 +246,12 @@ console.log('8. Verificando estruturas de Rematrícula, Exclusão, Aditivo, Avis
     'studentCategory deve incluir o 2º aluno da dupla e matrículas assinadas agendadas como ativos'
   );
 
-  // Bug #14 & Melhoria #10: Refresh paralelo e rota no hash
+  // Bug #14 & Melhoria #10: Refresh paralelo, rota no hash e compatibilidade com PostgrestFilterBuilder (sem .catch direto em sb.rpc/sb.from)
   assert.ok(appJs.includes('await Promise.all(Object.keys(db).map(async k=>{'), 'refresh() deve carregar as tabelas em paralelo');
   assert.ok(appJs.includes('function syncPanelRoute()') && appJs.includes('function applyPanelRouteFromHash()'), 'Deve sincronizar e restaurar a rota da seção pela URL (#/...)');
+  for (const [fname, content] of [['js/app.js', appJs], ['js/calendar-v6.js', calJs], ['js/onboarding-v67.js', onbJs], ['js/calendar-week-picker.js', pickerJs]]) {
+    assert.ok(!/sb\.(rpc|from)\([^;\n]*\.(catch|finally)\(/.test(content), `${fname} não deve chamar .catch() ou .finally() diretamente no retorno de sb.rpc() ou sb.from()`);
+  }
 
   // Bug #15 & #16: Download manual atualiza status para ready_manual e suporta nomes longos (180 chars)
   assert.ok(appJs.includes('.slice(0,180)'), 'downloadManualContract deve suportar até 180 caracteres no nome do arquivo');
