@@ -1,6 +1,6 @@
 // Campanella V6.10 - assistente acessivel, hierarquia de instrucoes e rolagem por etapa.
 // Importacoes sempre limitadas a uma unica escola. Confirmacoes e gravacoes no Supabase.
-import {parseCSV,isoDate} from './csv.js?v=8.7.0';
+import {parseCSV,isoDate} from './csv.js?v=8.7.1';
 
 const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,' ');
 const digits=v=>String(v||'').replace(/\D/g,'');
@@ -25,7 +25,7 @@ const aliases={
 };
 const weekdayAbbr=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const weekdayNames=['domingo','segunda','terca','quarta','quinta','sexta','sabado'];
-const isoDateFor=v=>{const t=String(v||'').trim();if(!t)return '';if(/^\d{4}-\d{2}-\d{2}$/.test(t))return t;if(/^\d{2}\/\d{2}\/\d{4}$/.test(t))return isoDate(t);return t;};
+const isoDateFor=v=>{const t=String(v||'').trim();if(!t)return '';return isoDate(t);};
 const normalPhone=v=>{const raw=String(v||'').trim();let n=raw.replace(/\D/g,'');if(!raw.startsWith('+')&&n.startsWith('55')&&[12,13].includes(n.length))n=n.slice(2);return n;};
 const validPhone=v=>{const raw=String(v||'').trim();if(!raw)return true;const d=raw.replace(/\D/g,'');if(raw.startsWith('+'))return d.length>=7&&d.length<=15;const br=d.startsWith('55')&&[12,13].includes(d.length)?d.slice(2):d;return br.length>=8&&br.length<=15;};
 const normalizeMoney=v=>{const text=String(v??'').trim().replace(/R\$/g,'').replace(/\s/g,'');if(!text)return null;const normalized=text.includes(',')?text.replace(/\./g,'').replace(',','.'):text;const amount=Number(normalized);return Number.isFinite(amount)&&amount>=0?Math.round(amount*100)/100:null;};

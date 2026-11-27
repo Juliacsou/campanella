@@ -14,4 +14,16 @@ export function parseCSV(raw,{requiredHeaders=['nome_completo','cpf','email']}={
  const missing=requiredHeaders.filter(h=>!headers.includes(h));if(missing.length)throw new Error('Colunas obrigatórias: '+missing.join(', '));
  return rows.map((line,i)=>({line:i+2,...Object.fromEntries(headers.map((h,k)=>[h,line[k]||'']))}));
 }
-export function isoDate(value){const v=String(value||'').trim();if(/^\d{2}\/\d{2}\/\d{4}$/.test(v))return `${v.slice(6)}-${v.slice(3,5)}-${v.slice(0,2)}`;return v;}
+export function isoDate(value){
+ const v=String(value||'').trim();
+ let iso='';
+ if(/^\d{2}\/\d{2}\/\d{4}$/.test(v))iso=`${v.slice(6)}-${v.slice(3,5)}-${v.slice(0,2)}`;
+ else if(/^\d{4}-\d{2}-\d{2}$/.test(v))iso=v;
+ else return v;
+ const [y,m,d]=iso.split('-').map(Number);
+ const dt=new Date(Date.UTC(y,m-1,d,12,0,0));
+ if(isNaN(dt.valueOf())||dt.getUTCFullYear()!==y||dt.getUTCMonth()+1!==m||dt.getUTCDate()!==d){
+  return 'INVALID_DATE';
+ }
+ return iso;
+}

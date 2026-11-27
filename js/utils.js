@@ -1,6 +1,7 @@
 export const $=(s,root=document)=>root.querySelector(s);
 export const $$=(s,root=document)=>[...root.querySelectorAll(s)];
 export const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const safeAttr=(s)=>safe(s==null?'':String(s));
 export const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 export const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 export const dateBR=s=>/^\d{4}-\d\d-\d\d$/.test(s||'')?`${s.slice(8)}/${s.slice(5,7)}/${s.slice(0,4)}`:'—';

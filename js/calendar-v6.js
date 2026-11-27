@@ -1,4 +1,4 @@
-import {weeklyPickerMarkup,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.7.0';
+import {weeklyPickerMarkup,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.7.1';
 // Campanella V6.4 - agenda escolar e docente. Nao depende de AssinAPI / Drive.
 // A autorizacao, a validacao de sobreposicoes e a mudanca de estado acontecem nas RPCs SQL.
 export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg,openLead}){
@@ -286,6 +286,29 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   </div><p class="form-note">Aulas futuras deste horário serão alteradas junto com os alunos vinculados. Aulas já realizadas e reagendamentos individuais serão preservados.</p>
   <div class="form-footer"><button class="btn ghost" type="button" data-action="close">Cancelar</button><button class="btn" type="submit">Revisar alteração</button></div></form>`);
  }
+ async function loadHistoricalBlocks(){
+  try{
+   const teacher=selectedTeacher();
+   const {data,error}=await sb.rpc('calendar_list_blocks',{
+    p_school:ui.schoolId,
+    p_from:null,
+    p_to:null,
+    p_teacher:teacher||null
+   });
+   if(!error&&Array.isArray(data)){
+    state.customBlocksList=data.map(b=>({
+     id:b.id,
+     from:b.start_date,
+     to:b.end_date,
+     teacher_id:b.teacher_id,
+     reason:b.reason,
+     start_time:b.start_time,
+     end_time:b.end_time,
+     is_historical:b.is_historical||b.end_date<today()
+    }));
+   }
+  }catch(_){}
+ }
  function blocksView(){
   const teacher=selectedTeacher();
   const filter=state.blocksFilter||'active';
@@ -466,9 +489,17 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
     f.elements.weekly_frequency.value=checked||1;
    }
   }else{
-   if(out)out.textContent=`${preview.total} aulas • última aula em ${dateBR(preview.end_date)}`;
-   const el=f.elements.end_date||f.elements.cal_manual_end;
-   if(el&&el.dataset.calManualEdited!=='1'){el.value=preview.end_date;el.dataset.calManualEdited='0';}
+   const isOngoing=f.elements.enrollment_origin?.value==='ongoing';
+   if(isOngoing){
+    const overflow=preview.overflow_count??preview.overflow??0;
+    const overflowText=overflow>0?` • ⚠ ${overflow} aula(s) excedem o término`:'' ;
+    const cutDate=f.elements.schedule_from_date?.value||today();
+    if(out)out.textContent=`${preview.total} aulas a agendar a partir de ${dateBR(cutDate)} • última aula em ${dateBR(preview.end_date)}${overflowText}`;
+   }else{
+    if(out)out.textContent=`${preview.total} aulas • última aula em ${dateBR(preview.end_date)}`;
+    const el=f.elements.end_date||f.elements.cal_manual_end;
+    if(el&&el.dataset.calManualEdited!=='1'){el.value=preview.end_date;el.dataset.calManualEdited='0';}
+   }
   }
   try{f.dispatchEvent(new CustomEvent('campanella:preview-updated',{bubbles:true}));}catch(_){}
   if(!silent)toast(mode==='recurrence'?`Calculadas ${preview.total} aulas até ${dateBR(preview.end_date)}.`:'Datas calculadas com recessos e indisponibilidades.');
@@ -865,6 +896,13 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   throw new Error('Ação de calendário não implementada: '+name);
  }
  async function change(element){
+  if(element.id==='calBlocksPeriodSelect'){
+   state.blocksFilter=element.value;
+   if(state.blocksFilter==='past'||state.blocksFilter==='all'){
+    await loadHistoricalBlocks();
+   }
+   return renderCalendar();
+  }
   if(element.id==='calTeacherFilter'){state.teacher=element.value;return renderCalendar();}
   if(element.form?.id==='calBulkSlotForm'){updateBulkSlotPreview(element.form);return;}
   if(element.name==='cal_student_teacher'&&element.form?.id==='calStudentSlotsForm'){
@@ -1048,7 +1086,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   }
   throw new Error('Formulário desconhecido do calendário');
  }
- return {data,load,loadSafe,view,teacherShell,renderCalendar,getTeacherAccess,processPendingInvite,enterTeacherIfApplicable,
+ return {data,plan,load,loadSafe,view,teacherShell,renderCalendar,getTeacherAccess,processPendingInvite,enterTeacherIfApplicable,
   inviteLanding,getFormPicker,updateFormPicker,slotIdForSchedule,autoPreview,applyTerms,hasAccess,action,change,submit,refresh:reload,adminNav,
   getOnboardingSnapshot:()=>state.snapshot,studentSchedulePicker,studentSlotChoices,computeBulkSlotPlan,
   studentSummaryFor,studentForContract,classSummaryFor,scheduleForContract,openStudent,studentProfileView,ensureEnrollmentDates,newBlock,
