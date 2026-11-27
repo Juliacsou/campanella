@@ -1,4 +1,4 @@
-import {weeklyPickerMarkup,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.6.2';
+import {weeklyPickerMarkup,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.6.3';
 // Campanella V6.4 - agenda escolar e docente. Nao depende de AssinAPI / Drive.
 // A autorizacao, a validacao de sobreposicoes e a mudanca de estado acontecem nas RPCs SQL.
 export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg,openLead}){
@@ -360,7 +360,9 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   updateWeeklyPickerIndicators(form);
   if(form.elements.enrollment_mode?.value==='recurrence'){
    const btn=host.querySelector('[data-action="calPreview"]');if(btn)btn.textContent='Calcular total de aulas';
-   const out=host.querySelector('[data-cal-result]');if(out)out.textContent='Selecione os horários semanais e defina a data final do contrato.';
+   const out=host.querySelector('[data-cal-result]');
+   const hasEnd=Boolean(form.elements.end_date?.value);
+   if(out)out.textContent=hasEnd?'Selecione pelo menos um horário semanal do professor para calcular.':'Selecione os horários semanais e defina a data final do contrato.';
   }
  }
  function studentSchedulePicker(teacherId,selectedIds=[]){
@@ -409,18 +411,22 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const out=part.querySelector('[data-cal-result]');
   const mode=form.elements.enrollment_mode?.value||'package';
   const checked=[...part.querySelectorAll('input[name="cal_slot"]:checked')];
+  const start=form.elements.cal_start_date?.value||form.elements.start_date?.value||today();
+  if(!start||!/^2\d{3}-\d{2}-\d{2}$/.test(start))return;
   if(mode==='recurrence'){
    const endDate=form.elements.end_date?.value||form.elements.cal_manual_end?.value;
    if(!checked.length){
     if(out)out.textContent='Selecione pelo menos um horário semanal do professor para calcular.';
     return;
    }
-   if(!endDate){
-    if(out)out.textContent='Informe a data de término do contrato para calcular o total de aulas.';
+   if(!endDate||!/^2\d{3}-\d{2}-\d{2}$/.test(endDate)||endDate<start){
+    if(out)out.textContent='Informe uma data de término igual ou posterior ao início para calcular o total de aulas.';
     return;
    }
   }else{
-   if(!checked.length)return;
+   const i=lookup('interviews',db.interviews?.find(x=>x.lead_id===form.dataset?.lead)?.id);
+   const count=form.id==='calAdoptLegacyForm'?Number(form.dataset.total)-Number(form.elements.completed_before?.value||0):Number(form.elements.lessons_count?.value||i?.lessons_count||0);
+   if(!checked.length||!(count>=1&&count<=500))return;
   }
   const btn=form.querySelector('[data-action="calPreview"]');if(!btn)return;
   try{await previewForm(btn,true);}catch(e){if(out)out.textContent=e.message||String(e);}

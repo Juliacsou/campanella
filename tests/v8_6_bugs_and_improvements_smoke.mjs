@@ -308,11 +308,11 @@ console.log('8. Verificando estruturas de Rematrícula, Exclusão, Aditivo, Avis
     assert.ok(Array.isArray(snap.slots) && Array.isArray(snap.roster), 'N1: calInstance.data() deve retornar slots e roster como arrays');
   }
 
-  // N2: Cache-busting unificado v=8.6.2 em index.html, app.js e calendar-v6.js
+  // N2: Cache-busting unificado v=8.6.3 em index.html, app.js e calendar-v6.js
   const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.ok(indexHtml.includes('app.js?v=8.6.2'), 'N2: index.html deve carregar app.js?v=8.6.2');
-  assert.ok(appJs.includes('./crm.js?v=8.6.2') && appJs.includes('./calendar-v6.js?v=8.6.2'), 'N2: app.js deve importar crm.js e calendar-v6.js com v=8.6.2');
-  assert.ok(calJs.includes('./calendar-week-picker.js?v=8.6.2'), 'N2: calendar-v6.js deve importar calendar-week-picker.js com v=8.6.2');
+  assert.ok(indexHtml.includes('app.js?v=8.6.3'), 'N2: index.html deve carregar app.js?v=8.6.3');
+  assert.ok(appJs.includes('./crm.js?v=8.6.3') && appJs.includes('./calendar-v6.js?v=8.6.3'), 'N2: app.js deve importar crm.js e calendar-v6.js com v=8.6.3');
+  assert.ok(calJs.includes('./calendar-week-picker.js?v=8.6.3'), 'N2: calendar-v6.js deve importar calendar-week-picker.js com v=8.6.3');
 
   // N3: Sincronização em tempo real dos Campos do Modelo (syncContractExtraFields e computeContractExtraDefault)
   assert.ok(appJs.includes('function computeContractExtraDefault(f,key)') && appJs.includes('function syncContractExtraFields(f)'), 'N3: app.js deve sincronizar Campos deste modelo a partir das datas e parcelas reais do formulário');
@@ -325,22 +325,30 @@ console.log('8. Verificando estruturas de Rematrícula, Exclusão, Aditivo, Avis
   assert.equal(plusMonth('2026-12-10', 12), '2027-12-10', 'N5: plusMonth deve somar 12 meses corretamente');
   assert.ok(appJs.includes("isRecurrence&&edited==='installments'"), 'N5: updateInstallment na recorrência deve manter o valor mensal e recalcular o total ao mudar parcelas');
 
-  // N6: Aditivo recalcula o total automaticamente ao mudar o valor da parcela ou número de parcelas
+  // N6 & Reteste #4: Aditivo recalcula o total automaticamente ao mudar o valor da parcela ou número de parcelas e ao abrir a janela
   assert.ok(appJs.includes("'contractAddendumForm'].includes(e.target.form?.id))updateInstallment"), 'N6: contractAddendumForm deve acionar updateInstallment ao editar parcela ou total');
+  assert.ok(appJs.includes("if(f&&!t.has_custom_first_installment&&Number(t.installment_amount)>0&&Number(t.installments)>0){\n  updateInstallment(f,'installment_amount');\n }"), 'Reteste #4: contractAddendumModal deve reconciliar o total logo ao abrir a janela');
 
-  // N7: Dupla de 2 menores com o mesmo responsável remove todas as linhas do 2º CONTRATANTE em branco (mesmo em múltiplos <p>) e respeita o 1º signatário
+  // N7 & Reteste #1: Dupla de 2 menores com o mesmo responsável remove tanto o bloco de identificação quanto a 2ª linha de assinatura CONTRATANTE em branco no rodapé, oferece opção "Ambos" e permite aproveitar responsável já cadastrado
   {
-    const multiParagraphDuoTpl = '<p><strong>CONTRATANTE: {{contratante_nome}}</strong></p><p>DATA DE NASCIMENTO: {{contratante_data_nascimento}}</p><p>CPF/CNPJ: {{contratante_cpf}}</p><p>ENDEREÇO: {{contratante_endereco}}</p><p>CEP: {{contratante_cep}}</p><p>CEL: {{contratante_telefone}}<br>E-MAIL: {{contratante_email}}</p><p><strong>CONTRATANTE: {{contratante_2_nome}}</strong></p><p>DATA DE NASCIMENTO: {{contratante_2_data_nascimento}}</p><p>CPF/CNPJ: {{contratante_2_cpf}}</p><p>ENDEREÇO: {{contratante_2_endereco}}<br>CEP: {{contratante_2_cep}}</p><p>CEL: {{contratante_2_telefone}}<br>E-MAIL: {{contratante_2_email}}</p>';
+    const multiParagraphDuoTpl = '<p><strong>CONTRATANTE: {{contratante_nome}}</strong></p><p>DATA DE NASCIMENTO: {{contratante_data_nascimento}}</p><p>CPF/CNPJ: {{contratante_cpf}}</p><p>ENDEREÇO: {{contratante_endereco}}</p><p>CEP: {{contratante_cep}}</p><p>CEL: {{contratante_telefone}}<br>E-MAIL: {{contratante_email}}</p><p><strong>CONTRATANTE: {{contratante_2_nome}}</strong></p><p>DATA DE NASCIMENTO: {{contratante_2_data_nascimento}}</p><p>CPF/CNPJ: {{contratante_2_cpf}}</p><p>ENDEREÇO: {{contratante_2_endereco}}<br>CEP: {{contratante_2_cep}}</p><p>CEL: {{contratante_2_telefone}}<br>E-MAIL: {{contratante_2_email}}</p><p><strong>_________________________________________\t\t</strong></p><p><strong>CONTRATANTE </strong>{{contratante_nome}}</p><p><strong> </strong></p><p><strong>_________________________________________\t\t</strong></p><p><strong>CONTRATANTE </strong>{{contratante_2_nome}}</p>';
     const m1 = { full_name: 'Pedro Alves', birth_date: '2015-03-10', is_minor: true, guardian_name: 'Fernanda Alves', guardian_cpf: '11122233344', guardian_phone: '11999990000', guardian_email: 'fernanda@exemplo.com', guardian_address: 'Av. Brasil, 500', guardian_cep: '01310000' };
     const m2 = { full_name: 'Sofia Alves', birth_date: '2017-07-22', is_minor: true, guardian_name: 'Fernanda Alves', guardian_cpf: '11122233344', guardian_phone: '11999990000', guardian_email: 'fernanda@exemplo.com', guardian_address: 'Av. Brasil, 500', guardian_cep: '01310000' };
     const htmlSigner2 = contractHTML(
       { kind: 'dupla', signer_student_index: 2, template_html: multiParagraphDuoTpl, terms: { total_amount: 2400, installments: 6, installment_amount: 400 } },
       { student1: m1, student2: m2, signer_student_index: 2 }
     );
-    const contractorOccurrences = (htmlSigner2.match(/CONTRATANTE:/g) || []).length;
-    assert.equal(contractorOccurrences, 1, 'N7: Não deve sobrar segunda linha de CONTRATANTE em branco no HTML/PDF de 2 menores com mesmo responsável');
+    const headerOccurrences = (htmlSigner2.match(/CONTRATANTE:/g) || []).length;
+    const signatureOccurrences = (htmlSigner2.match(/<strong>CONTRATANTE\s*<\/strong>/g) || []).length;
+    assert.equal(headerOccurrences, 1, 'N7: Não deve sobrar segundo cabeçalho de CONTRATANTE em branco');
+    assert.equal(signatureOccurrences, 1, 'Reteste #1: Não deve sobrar segunda linha de assinatura CONTRATANTE em branco no rodapé do PDF');
     assert.ok(htmlSigner2.indexOf('1º Aluno(a): Sofia Alves') < htmlSigner2.indexOf('2º Aluno(a): Pedro Alves'), 'N7: Escolher o 2º integrante como 1º signatário deve ordenar Sofia como 1º Aluno(a)');
+    assert.ok(appJs.includes('function existingGuardiansOptionsHTML(') && appJs.includes('data-guardian-picker'), 'Reteste #1: Deve permitir aproveitar responsável já cadastrado nos formulários de aluno e dupla');
+    assert.ok(appJs.includes('<option value="both"'), 'Reteste #1: Quem assina o contrato deve oferecer a opção Ambos');
   }
+
+  // Reteste #2: autoPreview valida parâmetros antes de chamar calendar_preview para evitar HTTP 400 no console
+  assert.ok(calJs.includes("if(!start||!/^2\\d{3}-\\d{2}-\\d{2}$/.test(start))return;") && calJs.includes("if(!checked.length||!(count>=1&&count<=500))return;"), 'Reteste #2: autoPreview não deve chamar calendar_preview com parâmetros incompletos');
 
   // N8: Telefone do aluno formatado no PDF
   assert.equal(formatPhoneBR('11900000005'), '(11) 90000-0005', 'N8: formatPhoneBR deve formatar celular de 11 dígitos');
@@ -350,12 +358,16 @@ console.log('8. Verificando estruturas de Rematrícula, Exclusão, Aditivo, Avis
     assert.equal(vals.contratante_telefone, '(11) 90000-0005', 'N8: contratante_telefone do aluno deve sair formatado no PDF');
   }
 
-  // N9 e N10: Aviso visível no modal, promoção de toast e limpeza de busca
+  // N9, Reteste #3, Reteste #5, Reteste #6, Reteste #7 e N10
   assert.ok(appJs.includes('form-submit-error-banner'), 'N9: Deve exibir banner de erro visível dentro do modal quando a validação do formulário falhar');
+  assert.ok(!appJs.includes('sel.required=e.target.checked'), 'Reteste #3: Não deve ativar validação nativa em inglês do navegador no select de professor do studentForm');
+  assert.ok(appJs.includes('let autoMatchedPkg=null;') && appJs.includes('const fallbackType=associated||validTypes.find(t=>t.kind===kind)||validTypes[0]||null;'), 'Reteste #5: Trocar modalidade entre individual e dupla deve manter pacote cadastrado e selecionar automaticamente o modelo de contrato correspondente');
+  assert.ok(appJs.includes("const noticeEnd=t.cancellation_effective_date||original.audit?.cancellation_notice?.effective_date||'';"), 'Reteste #6: Rematrícula de contrato em aviso prévio deve calcular o início a partir do fim do aviso prévio');
+  assert.ok(appJs.includes("if(page==='directory')ui.studentTab='active';"), 'Reteste #7: Navegar para Alunos pelo menu deve abrir na aba padrão de Alunos ativos');
   assert.ok(appJs.includes("if(el.matches(':popover-open'))el.hidePopover();"), 'N9: toast() deve promover o popover para o topo da Top Layer acima do modal');
   assert.ok(appJs.includes("if(action==='contractTab'){ui.contractTab=x.dataset.tab;ui.contractStatus='all';ui.expiry='all';ui.search='';return render();}"), 'N10: Trocar aba de contratos deve limpar busca anterior');
 }
-console.log('✓ Todas as verificações estruturais e funcionais (incluindo N1 a N10) passaram!');
+console.log('✓ Todas as verificações estruturais e funcionais (incluindo N1–N10 e Reteste #1–#7) passaram!');
 
 // 9. Verificação ativa no banco Supabase (quando SUPABASE_ACCESS_TOKEN estiver disponível)
 const token = process.env.SUPABASE_ACCESS_TOKEN;

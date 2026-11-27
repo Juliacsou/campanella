@@ -61,15 +61,16 @@ export function valuesFor(c,s={}){let t=c.terms||{},minor=c.kind==='menor',isDuo
    telefone: formatPhoneBR(st.phone || emptyFallback),
    email: st.email || emptyFallback
   });
-  const pSt = signerIdx === 2 ? s2 : s1;
-  const sSt = signerIdx === 2 ? s1 : s2;
-  a1 = { nome: pSt.full_name||'A preencher', nascimento: dateBR(pSt.birth_date), cpf: pSt.cpf||'A preencher', email: pSt.email||'A preencher' };
-  a2 = { nome: sSt.full_name||'A preencher', nascimento: dateBR(sSt.birth_date), cpf: sSt.cpf||'A preencher', email: sSt.email||'A preencher' };
+  a1 = { nome: s1.full_name||'A preencher', nascimento: dateBR(s1.birth_date), cpf: s1.cpf||'A preencher', email: s1.email||'A preencher' };
+  a2 = { nome: s2.full_name||'A preencher', nascimento: dateBR(s2.birth_date), cpf: s2.cpf||'A preencher', email: s2.email||'A preencher' };
 
   if(s1Minor && s2Minor){
    const g1Name = (s1.guardian_name || s.guardian_name || '').trim();
    const g2Name = (s2.guardian_name || '').trim();
-   const hasTwoDistinctGuardians = Boolean(g1Name && g2Name && g1Name.toLowerCase() !== g2Name.toLowerCase());
+   const g1Cpf = onlyDigits(s1.guardian_cpf || s.guardian_cpf || '');
+   const g2Cpf = onlyDigits(s2.guardian_cpf || '');
+   const sameByCpf = Boolean(g1Cpf && g2Cpf && g1Cpf === g2Cpf);
+   const hasTwoDistinctGuardians = !sameByCpf && Boolean(g1Name && g2Name && g1Name.toLowerCase() !== g2Name.toLowerCase());
    if(hasTwoDistinctGuardians){
     const rep1 = buildGuardianRep(s1, s2);
     const rep2 = buildGuardianRep(s2, s1);
@@ -261,6 +262,9 @@ export function contractHTML(c,s={}){
    }else{
     tpl=tpl.replace(/(\{\{aluno_nome\}\})/,`$1 e {{aluno_2_nome}}`);
    }
+  }
+  if(!fields.contratante_2_nome){
+   tpl=tpl.replace(/(?:<p[^>]*>\s*(?:<strong>)?\s*<\/strong>\s*<\/p>\s*)?(?:<p[^>]*>\s*(?:<strong>)?\s*_{5,}[\s\t]*(?:<\/strong>)?\s*<\/p>\s*)?<p[^>]*>\s*(?:<strong>)?\s*CONTRATANTE:?\s*(?:<\/strong>)?\s*\{\{contratante_2_nome\}\}\s*(?:<\/strong>)?\s*<\/p>/gi,'');
   }
  }
  return tpl.replace(/\{\{([a-z0-9_]+)\}\}/g,(_,key)=>key==='assinatura_contratante'||key==='assinatura_contratado'?`{{${key}}}`:safe(fields[key]??''));

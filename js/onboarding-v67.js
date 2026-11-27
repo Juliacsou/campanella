@@ -1,6 +1,6 @@
 // Campanella V6.10 - assistente acessivel, hierarquia de instrucoes e rolagem por etapa.
 // Importacoes sempre limitadas a uma unica escola. Confirmacoes e gravacoes no Supabase.
-import {parseCSV,isoDate} from './csv.js?v=8.6.2';
+import {parseCSV,isoDate} from './csv.js?v=8.6.3';
 
 const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,' ');
 const digits=v=>String(v||'').replace(/\D/g,'');
