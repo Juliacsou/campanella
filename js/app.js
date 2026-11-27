@@ -1,13 +1,13 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
-import {TEMPLATES} from './templates.js?v=8.7.1';
-import {generateContractPdf} from './pdf-contract.js?v=8.7.1';
-import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js?v=8.7.1';
-import {createCRM, decodeBudgetData} from './crm.js?v=8.7.1';
-import {createCalendar} from './calendar-v6.js?v=8.7.1';
-import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.7.1';
-import {parseCSV,isoDate} from './csv.js?v=8.7.1';
-import {createOnboarding} from './onboarding-v67.js?v=8.7.1';
-import {$,$$,safe,safeAttr,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js?v=8.7.1';
+import {TEMPLATES} from './templates.js?v=8.7.2';
+import {generateContractPdf} from './pdf-contract.js?v=8.7.2';
+import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js?v=8.7.2';
+import {createCRM, decodeBudgetData} from './crm.js?v=8.7.2';
+import {createCalendar} from './calendar-v6.js?v=8.7.2';
+import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.7.2';
+import {parseCSV,isoDate} from './csv.js?v=8.7.2';
+import {createOnboarding} from './onboarding-v67.js?v=8.7.2';
+import {$,$$,safe,safeAttr,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js?v=8.7.2';
 // Campanella V4 - multi-escolas, licencas e administracao.
 // Esta e uma chave publica, segura para uso em frontend com RLS corretamente configurado.
 // Nunca incluir chave secret ou service_role neste arquivo.
@@ -4869,7 +4869,12 @@ document.addEventListener('submit',async event=>{
   const selectedSlots=plannedTerms.calendar_v6?.slot_ids||[...f.querySelectorAll('input[name="cal_slot"]:checked')].map(x=>x.value);
   const schedules=(plannedTerms.lesson_schedule||fields.lesson_schedule||[]).map(x=>({...x,slot_id:x.slot_id||dbCalendarSlotId(x,selectedSlots)}));
   let leadId=student.lead_id;
-  if(!leadId){const lead=await save('leads',{name:student.full_name,guardian_name:student.guardian_name,phone:student.phone||'',status:'convertido',source:isOngoing?'implantacao':'manual'});leadId=lead.id;await save('students',{lead_id:leadId},student.id);}
+  if(!leadId){
+   const leadSrc=isOngoing?'implantacao':'manual';
+   const lead=await save('leads',{name:student.full_name,guardian_name:student.guardian_name,phone:student.phone||'',status:'convertido',source:leadSrc,crm_source:leadSrc});
+   leadId=lead.id;
+   await save('students',{lead_id:leadId},student.id);
+  }
   let interview=db.interviews.find(x=>x.lead_id===leadId);
   const values={
    lead_id:leadId,
@@ -4947,10 +4952,6 @@ document.addEventListener('submit',async event=>{
     },
     enrollment_origin:isOngoing?'ongoing':'new',
     schedule_from_date:scheduleFromDate,
-    remaining_lessons:remainingLessonsVal,
-    remaining_source:remainingSource,
-    estimate_memory:estimateMemory,
-    lessons_done_before:doneBeforeVal,
     onboarded_at:isOngoing?new Date().toISOString():null,
     pdf_url:pdfUrl||snap.pdf_url||null,
     status:enrollmentStatus,audit,
@@ -5880,3 +5881,7 @@ sb.auth.onAuthStateChange((event)=>{
  }
 });
 initialize().catch(errors);
+if(typeof window!=='undefined'){
+ window.campanellaTest={db,ui,sb,save,refresh,lookup,manualContractHTML,contractPdfBase64,downloadManualContract,render,closeModal,isBusy:()=>appBusy};
+}
+

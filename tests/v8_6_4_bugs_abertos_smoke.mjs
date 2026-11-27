@@ -47,8 +47,8 @@ console.log('2. Testando D09 (Proteção contra travamento na tela de boot e unh
   assert.ok(indexHtml.includes("window.addEventListener('unhandledrejection'"), 'D09: index.html deve capturar promessas rejeitadas na inicialização');
   assert.ok(indexHtml.includes('Demorando mais do que o esperado') && indexHtml.includes('16000'), 'D09: index.html deve exibir card de recuperação após timeout estendido de 16s');
   assert.ok(appJs.includes('const ensureBootCleared=') && appJs.includes('ensureBootCleared();return;'), 'D09: app.js deve garantir que #app não fique abandonado na tela .boot');
-  assert.ok((indexHtml.includes('app.js?v=8.7.1') || indexHtml.includes('app.js?v=8.7.0') || indexHtml.includes('app.js?v=8.6.4')), 'D09: index.html deve carregar app.js?v=8.7.1');
-  assert.ok((appJs.includes('./crm.js?v=8.7.1') || appJs.includes('./crm.js?v=8.7.0') || appJs.includes('./crm.js?v=8.6.4')) && (appJs.includes('./calendar-v6.js?v=8.7.1') || appJs.includes('./calendar-v6.js?v=8.7.0') || appJs.includes('./calendar-v6.js?v=8.6.4')), 'D09: app.js deve usar v=8.7.1');
+  assert.ok((indexHtml.includes('app.js?v=8.7.2') || indexHtml.includes('app.js?v=8.7.1') || indexHtml.includes('app.js?v=8.7.0') || indexHtml.includes('app.js?v=8.6.4')), 'D09: index.html deve carregar app.js');
+  assert.ok((appJs.includes('./crm.js?v=8.7.2') || appJs.includes('./crm.js?v=8.7.1') || appJs.includes('./crm.js?v=8.7.0') || appJs.includes('./crm.js?v=8.6.4')) && (appJs.includes('./calendar-v6.js?v=8.7.2') || appJs.includes('./calendar-v6.js?v=8.7.1') || appJs.includes('./calendar-v6.js?v=8.7.0') || appJs.includes('./calendar-v6.js?v=8.6.4')), 'D09: app.js deve usar versão atual');
   console.log('✓ D09 validado com sucesso.');
 }
 

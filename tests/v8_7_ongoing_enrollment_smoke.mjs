@@ -81,15 +81,15 @@ assert.ok(appJs.includes('onConflict:\'school_id\'') || appJs.includes("onConfli
 assert.ok(appJs.includes('Em andamento'), 'app.js deve renderizar pill "Em andamento" em contratos e matrículas');
 console.log('✓ app.js verificado com sucesso.');
 
-// 6. Verificações de Cache-Busting v8.7.1
-console.log('6. Verificando cache-busting v8.7.1...');
+// 6. Verificações de Cache-Busting v8.7.2
+console.log('6. Verificando cache-busting v8.7.2...');
 const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-assert.ok(indexHtml.includes('app.js?v=8.7.1'), 'index.html deve referenciar app.js?v=8.7.1');
-assert.ok(indexHtml.includes('style.css?v=8.7.1'), 'index.html deve referenciar style.css?v=8.7.1');
-assert.ok(appJs.includes('./crm.js?v=8.7.1'), 'app.js deve importar crm.js?v=8.7.1');
-assert.ok(appJs.includes('./calendar-v6.js?v=8.7.1'), 'app.js deve importar calendar-v6.js?v=8.7.1');
-assert.ok(calJs.includes('./calendar-week-picker.js?v=8.7.1'), 'calendar-v6.js deve importar calendar-week-picker.js?v=8.7.1');
-console.log('✓ Cache-busting v8.7.1 validado com sucesso.');
+assert.ok(indexHtml.includes('app.js?v=8.7.2'), 'index.html deve referenciar app.js?v=8.7.2');
+assert.ok(indexHtml.includes('style.css?v=8.7.2'), 'index.html deve referenciar style.css?v=8.7.2');
+assert.ok(appJs.includes('./crm.js?v=8.7.2'), 'app.js deve importar crm.js?v=8.7.2');
+assert.ok(appJs.includes('./calendar-v6.js?v=8.7.2'), 'app.js deve importar calendar-v6.js?v=8.7.2');
+assert.ok(calJs.includes('./calendar-week-picker.js?v=8.7.2'), 'calendar-v6.js deve importar calendar-week-picker.js?v=8.7.2');
+console.log('✓ Cache-busting v8.7.2 validado com sucesso.');
 
 // 7. Teste funcional de unidade para D23 (datas inexistentes)
 console.log('7. Testando funcionalidade unitária de D23 (isoDate)...');
