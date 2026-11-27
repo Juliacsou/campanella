@@ -13,7 +13,17 @@ export const onlyDigits=s=>String(s||'').replace(/\D/g,'');
 export function cpfValid(value){const s=onlyDigits(value);if(s.length!==11||/^(\d)\1{10}$/.test(s))return false;for(let n=9;n<11;n++){let x=0;for(let i=0;i<n;i++)x+=Number(s[i])*(n+1-i);if(((x*10)%11)%10!==+s[n])return false;}return true;}
 export async function sha256(s){const a=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(a)].map(n=>n.toString(16).padStart(2,'0')).join('')}
 export function randomToken(){const a=new Uint8Array(32);crypto.getRandomValues(a);return [...a].map(n=>n.toString(16).padStart(2,'0')).join('')}
-export function plusMonth(s){const [y,m,d]=s.split('-').map(Number);const x=new Date(Date.UTC(y,m,1)),end=new Date(Date.UTC(x.getUTCFullYear(),x.getUTCMonth()+1,0)).getUTCDate();return `${x.getUTCFullYear()}-${String(x.getUTCMonth()+1).padStart(2,'0')}-${String(Math.min(d,end)).padStart(2,'0')}`;}
+export function plusMonth(s,months=1){const [y,m,d]=s.split('-').map(Number);const x=new Date(Date.UTC(y,m-1+Number(months||1),1)),end=new Date(Date.UTC(x.getUTCFullYear(),x.getUTCMonth()+1,0)).getUTCDate();return `${x.getUTCFullYear()}-${String(x.getUTCMonth()+1).padStart(2,'0')}-${String(Math.min(d,end)).padStart(2,'0')}`;}
+export function formatPhoneBR(v){
+ const raw=String(v??'').trim();
+ if(!raw||raw==='A preencher')return raw;
+ if(raw.startsWith('+'))return raw;
+ const d=onlyDigits(raw);
+ const clean=(d.startsWith('55')&&(d.length===12||d.length===13))?d.slice(2):d;
+ if(clean.length===11)return `(${clean.slice(0,2)}) ${clean.slice(2,7)}-${clean.slice(7)}`;
+ if(clean.length===10)return `(${clean.slice(0,2)}) ${clean.slice(2,6)}-${clean.slice(6)}`;
+ return raw;
+}
 export function valuesFor(c,s={}){let t=c.terms||{},minor=c.kind==='menor',isDuo=c.kind==='dupla';
  const n=Number(t.installments||1);
  const firstAmount=t.first_installment_amount!=null?Number(t.first_installment_amount):Number(t.installment_amount||0);
@@ -38,7 +48,7 @@ export function valuesFor(c,s={}){let t=c.terms||{},minor=c.kind==='menor',isDuo
    cpf: st.guardian_cpf || fallback.guardian_cpf || s.guardian_cpf || 'A preencher',
    endereco: st.guardian_address || fallback.guardian_address || s.guardian_address || st.address || 'A preencher',
    cep: st.guardian_cep || fallback.guardian_cep || s.guardian_cep || st.cep || 'A preencher',
-   telefone: st.guardian_phone || fallback.guardian_phone || s.guardian_phone || st.phone || 'A preencher',
+   telefone: formatPhoneBR(st.guardian_phone || fallback.guardian_phone || s.guardian_phone || st.phone || 'A preencher'),
    email: st.guardian_email || fallback.guardian_email || s.guardian_email || st.email || 'A preencher',
    representedStudent: st
   });
@@ -48,11 +58,13 @@ export function valuesFor(c,s={}){let t=c.terms||{},minor=c.kind==='menor',isDuo
    cpf: st.cpf || emptyFallback,
    endereco: st.address || emptyFallback,
    cep: st.cep || emptyFallback,
-   telefone: st.phone || emptyFallback,
+   telefone: formatPhoneBR(st.phone || emptyFallback),
    email: st.email || emptyFallback
   });
-  a1 = { nome: s1.full_name||'A preencher', nascimento: dateBR(s1.birth_date), cpf: s1.cpf||'A preencher', email: s1.email||'A preencher' };
-  a2 = { nome: s2.full_name||'A preencher', nascimento: dateBR(s2.birth_date), cpf: s2.cpf||'A preencher', email: s2.email||'A preencher' };
+  const pSt = signerIdx === 2 ? s2 : s1;
+  const sSt = signerIdx === 2 ? s1 : s2;
+  a1 = { nome: pSt.full_name||'A preencher', nascimento: dateBR(pSt.birth_date), cpf: pSt.cpf||'A preencher', email: pSt.email||'A preencher' };
+  a2 = { nome: sSt.full_name||'A preencher', nascimento: dateBR(sSt.birth_date), cpf: sSt.cpf||'A preencher', email: sSt.email||'A preencher' };
 
   if(s1Minor && s2Minor){
    const g1Name = (s1.guardian_name || s.guardian_name || '').trim();
@@ -64,7 +76,7 @@ export function valuesFor(c,s={}){let t=c.terms||{},minor=c.kind==='menor',isDuo
     c1 = signerIdx === 2 ? rep2 : rep1;
     c2 = signerIdx === 2 ? rep1 : rep2;
    } else {
-    c1 = buildGuardianRep(s1, s2);
+    c1 = signerIdx === 2 ? buildGuardianRep(s2, s1) : buildGuardianRep(s1, s2);
     c2 = {};
    }
   } else if(!s1Minor && s2Minor){
@@ -103,7 +115,7 @@ export function valuesFor(c,s={}){let t=c.terms||{},minor=c.kind==='menor',isDuo
    cpf: (isMinorSingle?(s.guardian_cpf||s.cpf):s.cpf)||'A preencher',
    endereco: (isMinorSingle?(s.guardian_address||s.address):s.address)||'A preencher',
    cep: (isMinorSingle?(s.guardian_cep||s.cep):s.cep)||'A preencher',
-   telefone: (isMinorSingle?(s.guardian_phone||s.phone):s.phone)||'A preencher',
+   telefone: formatPhoneBR((isMinorSingle?(s.guardian_phone||s.phone):s.phone)||'A preencher'),
    email: (isMinorSingle?(s.guardian_email||s.email):s.email)||'A preencher'
   };
   a1 = {
@@ -205,10 +217,12 @@ export function contractHTML(c,s={}){
   const checkMinor=st=>st?.is_minor===true||(st?.birth_date?(new Date().getFullYear()-Number(st.birth_date.slice(0,4))-(new Date().toISOString().slice(5,10)<st.birth_date.slice(5,10)?1:0)<18):Boolean(st?.guardian_name||st?.guardian_cpf));
   const s1Minor=checkMinor(s1),s2Minor=checkMinor(s2);
   const formatMinorLine=(st,label='Nome')=>`${label}: ${safe(st.full_name||'A preencher')}, portador(a) do CPF nº ${safe(st.cpf||'Não informado')}${st.birth_date?`, Data de nascimento: ${safe(dateBR(st.birth_date))}`:''}${st.email?`, E-mail: ${safe(st.email)}`:''}.`;
+  const signerIdx=Number(c.signer_student_index||c.terms?.signer_student_index||s.signer_student_index||1);
+  const firstMinor=signerIdx===2?s2:s1,secondMinor=signerIdx===2?s1:s2;
+  const secondContractorRegex=/<p[^>]*>(?:<strong>)?\s*CONTRATANTE:\s*(?:<\/strong>)?\s*\{\{contratante_2_nome\}\}\s*(?:<\/strong>)?(?:<\/p>)?[\s\S]*?\{\{contratante_2_email\}\}\s*(?:<\/strong>)?<\/p>/i;
   if(!tpl.includes('{{aluno_nome}}')&&!tpl.includes('{{aluno_2_nome}}')){
    if(s1Minor&&s2Minor&&!fields.contratante_2_nome){
-    const bothBlock=`<p><strong>Responsável legal pelos(as) alunos(as) menores de idade:</strong><br>${formatMinorLine(s1,'1º Aluno(a)')}<br>${formatMinorLine(s2,'2º Aluno(a)')}</p>`;
-    const secondContractorRegex=/<p>(?:<strong>)?\s*CONTRATANTE:\s*(?:<\/strong>)?\s*\{\{contratante_2_nome\}\}[\s\S]*?\{\{contratante_2_email\}\}\s*(?:<\/strong>)?<\/p>/i;
+    const bothBlock=`<p><strong>Responsável legal pelos(as) alunos(as) menores de idade:</strong><br>${formatMinorLine(firstMinor,'1º Aluno(a)')}<br>${formatMinorLine(secondMinor,'2º Aluno(a)')}</p>`;
     if(secondContractorRegex.test(tpl)){
      tpl=tpl.replace(secondContractorRegex,bothBlock);
     }else if(/\{\{contratante_email\}\}\s*(?:<\/strong>)?<\/p>/i.test(tpl)){
@@ -217,6 +231,9 @@ export function contractHTML(c,s={}){
      tpl=tpl.replace(/(<p[^>]*>[\s\S]*?\{\{contratante_nome\}\}[\s\S]*?<\/p>)/i,`$1${bothBlock}`);
     }
    }else{
+    if(!fields.contratante_2_nome&&secondContractorRegex.test(tpl)){
+     tpl=tpl.replace(secondContractorRegex,'');
+    }
     if(fields._c1_minor_student){
      const block1=`<p><strong>Responsável legal por:</strong><br>${formatMinorLine(fields._c1_minor_student)}</p>`;
      if(/\{\{contratante_email\}\}\s*(?:<\/strong>)?<\/p>/i.test(tpl)){
@@ -235,6 +252,9 @@ export function contractHTML(c,s={}){
     }
    }
   }else if(tpl.includes('{{aluno_nome}}')&&!tpl.includes('{{aluno_2_nome}}')&&fields.aluno_2_nome){
+   if(!fields.contratante_2_nome&&secondContractorRegex.test(tpl)){
+    tpl=tpl.replace(secondContractorRegex,'');
+   }
    const extraStudent=`<br>2º Aluno(a): {{aluno_2_nome}}, portador(a) do CPF nº {{aluno_2_cpf}}${fields.aluno_2_data_nascimento&&fields.aluno_2_data_nascimento!=='—'?', Data de nascimento: {{aluno_2_data_nascimento}}':''}${fields.aluno_2_email?', E-mail: {{aluno_2_email}}':''}.`;
    if(tpl.includes('{{aluno_email}}')){
     tpl=tpl.replace(/(\{\{aluno_email\}\}\.?)/,`$1${extraStudent}`);

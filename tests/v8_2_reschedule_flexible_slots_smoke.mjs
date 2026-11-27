@@ -25,7 +25,7 @@ assert.ok(!calJs.includes('Number(s.duration)===Number(l.duration)'), 'Não deve
 assert.ok(calJs.includes('durLabel=Number(s.duration)!==Number(l.duration)'), 'Deve formatar rótulo de duração quando diferente da original');
 assert.ok(calJs.includes('data-duration="${Number(s.duration)}"'), 'Botão do slot deve expor data-duration');
 assert.ok(calJs.includes('duration:element.dataset.duration?Number(element.dataset.duration):undefined'), 'calRescheduleSelect deve capturar a duração');
-assert.ok(appJs.includes("calendar-v6.js?v=8.1.4"), 'Cache de calendar-v6.js deve estar versionado em 8.1.4');
+assert.ok(/calendar-v6\.js\?v=8\.[1-9]\.\d+/.test(appJs), 'Cache de calendar-v6.js deve estar versionado em 8.1.4+');
 console.log('  -> Estrutura do código frontend validada.');
 
 // 3. Teste unitário do motor do calendário com aula de 60 min e slots de 50 min

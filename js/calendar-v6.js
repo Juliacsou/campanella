@@ -1,4 +1,4 @@
-import {weeklyPickerMarkup,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
+import {weeklyPickerMarkup,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.6.2';
 // Campanella V6.4 - agenda escolar e docente. Nao depende de AssinAPI / Drive.
 // A autorizacao, a validacao de sobreposicoes e a mudanca de estado acontecem nas RPCs SQL.
 export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg,openLead}){
@@ -36,7 +36,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  const navIcon=(name)=>typeof iconSvg==='function'?iconSvg(name,18):'<svg class="camp-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>';
  function adminNav(){return `<aside class="cal-secondary-sidebar"><h2>Calendário</h2><nav aria-label="Áreas do calendário">${navItems.filter(([id])=>id!=='settings').map(([id,icon,label])=>`<button type="button" class="${state.page===id?'active':''}" data-action="calTeacherPage" data-page="${id}"><span class="cal-nav-icon" aria-hidden="true">${navIcon(icon)}</span>${label}</button>`).join('')}</nav></aside>`;}
  const weekRangeLabel=(start)=>`${dateBR(start)} · ${dateBR(shift(start,6))}`;
- const data=()=>state.snapshot||{teachers:[],slots:[],blocks:[],lessons:[],interviews:[],students:[],teacher_access:[]};
+ const data=()=>state.snapshot||{teachers:[],slots:[],blocks:[],lessons:[],interviews:[],students:[],teacher_access:[],roster:[]};
  const studentForContract=(id)=>data().students.find(x=>x.contract_id===id);
  const studentForStudentId=(id)=>data().students.find(x=>x.student_id===id);
  const classForContract=(id)=>data().lessons.filter(x=>x.contract_id===id && x.status!=='cancelled').sort((a,b)=>(a.date||'9999-12-31').localeCompare(b.date||'9999-12-31')||String(a.time||'').localeCompare(String(b.time||'')));
@@ -454,6 +454,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
    const el=f.elements.end_date||f.elements.cal_manual_end;
    if(el&&el.dataset.calManualEdited!=='1'){el.value=preview.end_date;el.dataset.calManualEdited='0';}
   }
+  try{f.dispatchEvent(new CustomEvent('campanella:preview-updated',{bubbles:true}));}catch(_){}
   if(!silent)toast(mode==='recurrence'?`Calculadas ${preview.total} aulas até ${dateBR(preview.end_date)}.`:'Datas calculadas com recessos e indisponibilidades.');
  }
  function teacherOptions(includeAll=false){
@@ -855,16 +856,22 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   }
   if(['cal_has_until_date','cal_from_date','cal_until_date','cal_student_slot'].includes(element.name)&&element.form?.id==='calStudentSlotsForm'){updateStudentScheduleModeUI(element.form);return;}
   if(element.name==='teacher_id'&&['manualEnrollmentForm','crmLeadFicheForm','renewForm','contractAddendumForm'].includes(element.form?.id)){updateFormPicker(element.form);return autoPreview(element.form);}
-  if(element.name==='start_date'&&element.form?.elements.cal_start_date){element.form.elements.cal_start_date.value=element.value;return autoPreview(element.form);}
+  if(element.name==='start_date'){
+   if(element.form?.elements.cal_start_date)element.form.elements.cal_start_date.value=element.value;
+   if(element.form?.elements.end_date&&element.form.elements.enrollment_mode?.value!=='recurrence')element.form.elements.end_date.dataset.calManualEdited='0';
+   return autoPreview(element.form);
+  }
   if(['cal_slot','cal_start_date','lessons_count'].includes(element.name)){
    if(element.name==='cal_slot'&&element.form?.elements.enrollment_mode?.value==='recurrence'){
     const checked=element.form.querySelectorAll('input[name="cal_slot"]:checked').length;
     if(element.form.elements.weekly_frequency)element.form.elements.weekly_frequency.value=checked||'1';
    }
+   if(element.form?.elements.end_date&&element.form.elements.enrollment_mode?.value!=='recurrence')element.form.elements.end_date.dataset.calManualEdited='0';
    return autoPreview(element.form);
   }
   if(element.name==='end_date'&&element.form?.querySelector('.cal-enrollment')){
-   element.dataset.calManualEdited='1';
+   if(element.form.elements.enrollment_mode?.value==='recurrence')element.dataset.recurrenceManual='1';
+   else element.dataset.calManualEdited='1';
    return autoPreview(element.form);
   }
   if(element.name==='cal_manual_end')element.dataset.calManualEdited='1';
@@ -1011,7 +1018,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   }
   throw new Error('Formulário desconhecido do calendário');
  }
- return {load,loadSafe,view,teacherShell,renderCalendar,getTeacherAccess,processPendingInvite,enterTeacherIfApplicable,
+ return {data,load,loadSafe,view,teacherShell,renderCalendar,getTeacherAccess,processPendingInvite,enterTeacherIfApplicable,
   inviteLanding,getFormPicker,updateFormPicker,slotIdForSchedule,autoPreview,applyTerms,hasAccess,action,change,submit,refresh:reload,adminNav,
   getOnboardingSnapshot:()=>state.snapshot,studentSchedulePicker,studentSlotChoices,computeBulkSlotPlan,
   studentSummaryFor,studentForContract,classSummaryFor,scheduleForContract,openStudent,studentProfileView,ensureEnrollmentDates,

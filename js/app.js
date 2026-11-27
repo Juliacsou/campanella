@@ -1,13 +1,13 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
-import {TEMPLATES} from './templates.js';
-import {generateContractPdf} from './pdf-contract.js';
-import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js';
-import {createCRM, decodeBudgetData} from './crm.js?v=8.1.8';
-import {createCalendar} from './calendar-v6.js?v=8.1.4';
-import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=6.6.0';
-import {parseCSV,isoDate} from './csv.js';
-import {createOnboarding} from './onboarding-v67.js?v=6.10.0';
-import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js';
+import {TEMPLATES} from './templates.js?v=8.6.2';
+import {generateContractPdf} from './pdf-contract.js?v=8.6.2';
+import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js?v=8.6.2';
+import {createCRM, decodeBudgetData} from './crm.js?v=8.6.2';
+import {createCalendar} from './calendar-v6.js?v=8.6.2';
+import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.6.2';
+import {parseCSV,isoDate} from './csv.js?v=8.6.2';
+import {createOnboarding} from './onboarding-v67.js?v=8.6.2';
+import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js?v=8.6.2';
 // Campanella V4 - multi-escolas, licencas e administracao.
 // Esta e uma chave publica, segura para uso em frontend com RLS corretamente configurado.
 // Nunca incluir chave secret ou service_role neste arquivo.
@@ -395,7 +395,8 @@ function toast(msg,bad=false){
  let usedPopover=false;
  if(typeof el.showPopover==='function'){
   try{
-   if(!el.matches(':popover-open'))el.showPopover();
+   if(el.matches(':popover-open'))el.hidePopover();
+   el.showPopover();
    usedPopover=true;
   }catch(e){}
  }
@@ -1266,6 +1267,7 @@ function onPackageSelection(form,p){
  const custom=!p;
  if(form.elements.lessons_count){form.elements.lessons_count.readOnly=!custom;form.elements.lessons_count.required=true;}
  if(form.elements.weekly_frequency){form.elements.weekly_frequency.readOnly=!custom;form.elements.weekly_frequency.required=true;}
+ if(form.elements.end_date)form.elements.end_date.dataset.calManualEdited='0';
  if(p){
   if(form.elements.lessons_count)form.elements.lessons_count.value=p.lessons_count;
   if(form.elements.weekly_frequency)form.elements.weekly_frequency.value=p.weekly_frequency;
@@ -1273,13 +1275,14 @@ function onPackageSelection(form,p){
   updateInstallment(form);
  }
  const type=form.elements.type_option;
- if(type){const kind=form.dataset.kind||'individual';type.innerHTML=contractOptions(kind,p?.id);renderContractExtra();}
+ if(type){const kind=form.dataset.kind||'individual';type.innerHTML=contractOptions(kind,p?.id,p?.contract_type_id?'':type.value);renderContractExtra();}
+ syncContractExtraFields(form);
  updateWeeklyPickerIndicators(form);
 }
 function financialSectionHTML({total='', installments='6', installmentAmount='', firstInstallmentAmount='', firstDueDate='', secondDueDate='', hasCustomFirst=false, showExtenso=false, totalExtenso='', enrollmentMode='package', discountAmount='', discountUntil='', discountReason=''}){
  const firstDue=firstDueDate||today();
- const secondDue=secondDueDate||(firstDue?plusMonth(firstDue):'');
- const firstAmt=firstInstallmentAmount||installmentAmount||'';
+ const secondDue=hasCustomFirst?(secondDueDate||(firstDue?plusMonth(firstDue):'')):'';
+ const firstAmt=hasCustomFirst?(firstInstallmentAmount||installmentAmount||''):'';
  const hasDiscount=Boolean(discountAmount||discountUntil||discountReason);
  const instLabel=hasCustomFirst?'Valor das demais parcelas (R$)':(enrollmentMode==='recurrence'?'Valor mensal / da parcela (R$)':'Valor da parcela');
  return `
@@ -1340,6 +1343,7 @@ function toggleCustomFirstInstallment(f){
   if(f.elements.second_due_date)f.elements.second_due_date.value='';
  }
  updateInstallment(f);
+ syncContractExtraFields(f);
 }
 function applyEnrollmentModeUI(f,mode){
  if(!f)return;
@@ -1357,14 +1361,21 @@ function applyEnrollmentModeUI(f,mode){
  if(mode==='recurrence'){
   if(pkgField)pkgField.style.display='none';
   if(f.elements.package_id){f.elements.package_id.value='';f.elements.package_id.required=false;}
-  if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.value='';lessonsCount.placeholder='Calculado automaticamente pelas datas';lessonsCount.required=true;}
+  if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.placeholder='Calculado automaticamente pelas datas';lessonsCount.required=true;}
   if(weeklyFreq){
    weeklyFreq.readOnly=true;
    const slotName=f.id==='externalInterviewForm'?'interview_slot':'cal_slot';
    const checked=f.querySelectorAll(`input[name="${slotName}"]:checked`).length;
    weeklyFreq.value=checked||'1';
   }
-  if(endDate){endDate.readOnly=false;endDate.required=true;endDate.placeholder='';}
+  if(endDate){
+   endDate.readOnly=false;endDate.required=true;endDate.placeholder='';
+   const startVal=f.elements.start_date?.value||f.elements.cal_start_date?.value||today();
+   const instCount=Math.max(1,Number(f.elements.installments?.value)||6);
+   if((!endDate.value||endDate.dataset.recurrenceManual!=='1')&&startVal&&/^\d{4}-\d{2}-\d{2}$/.test(startVal)){
+    endDate.value=plusMonth(startVal,instCount);
+   }
+  }
   if(calBtn)calBtn.textContent='Calcular total de aulas';
   if(calResult)calResult.textContent='Informe a data de término e marque os horários para calcular.';
  }else if(mode==='custom'){
@@ -1372,7 +1383,7 @@ function applyEnrollmentModeUI(f,mode){
   if(f.elements.package_id){f.elements.package_id.value='';f.elements.package_id.required=false;}
   if(lessonsCount){lessonsCount.readOnly=false;lessonsCount.placeholder='Ex: 14 aulas';lessonsCount.required=true;}
   if(weeklyFreq){weeklyFreq.readOnly=false;if(!weeklyFreq.value)weeklyFreq.value='1';}
-  if(endDate){endDate.readOnly=true;endDate.required=false;endDate.placeholder='Calculado pelas aulas';}
+  if(endDate){endDate.readOnly=true;endDate.required=false;endDate.placeholder='Calculado pelas aulas';endDate.dataset.calManualEdited='0';}
   if(calBtn)calBtn.textContent='Calcular última aula';
   if(calResult)calResult.textContent='';
  }else{
@@ -1380,15 +1391,16 @@ function applyEnrollmentModeUI(f,mode){
   if(f.elements.package_id){f.elements.package_id.required=true;}
   if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.placeholder='Selecione um pacote acima';lessonsCount.required=true;}
   if(weeklyFreq){weeklyFreq.readOnly=true;}
-  if(endDate){endDate.readOnly=true;endDate.required=false;endDate.placeholder='Calculado pelas aulas';}
+  if(endDate){endDate.readOnly=true;endDate.required=false;endDate.placeholder='Calculado pelas aulas';endDate.dataset.calManualEdited='0';}
   if(calBtn)calBtn.textContent='Calcular última aula';
   if(calResult)calResult.textContent='';
   const pkgSelect=f.querySelector('#manualPackage, #renewPackage, #interviewPackage, #externalPackage');
-  if(pkgSelect?.value){
+  if(pkgSelect?.value&&!lessonsCount?.value&&!f.elements.total_amount?.value){
    const curPkg=f.id==='externalInterviewForm'?(externalData?.packages||[]).find(x=>x.id===pkgSelect.value):lookup('packages',pkgSelect.value);
    if(curPkg)onPackageSelection(f,curPkg);
   }
  }
+ syncContractExtraFields(f);
  updateWeeklyPickerIndicators(f);
 }
 function interviewForm(leadId){
@@ -1640,7 +1652,14 @@ function contractForm(leadId){
  const titleName=isDuo&&(i.student2_name||l.student2_name)?`${safe(l.name)} & ${safe(i.student2_name||l.student2_name)}`:safe(l.name);
  showModal(`<h2>Iniciar pré-matrícula</h2><p class="modal-intro">${titleName} · ${safe(i.course||'Inglês')} · ${safe(p?.name||'Personalizado')}</p><form id="contractForm" data-lead="${leadId}" data-kind="${kind}" data-weekly-frequency="${Number(i.weekly_frequency||p?.weekly_frequency||1)}" data-original-slots="${safe((i.calendar_slot_ids||[]).join(','))}"><div class="detail-grid"><div class="detail-item"><span>Vigência</span><strong>${dateBR(i.start_date)} a ${dateBR(i.end_date)}</strong></div><div class="detail-item"><span>Valor total</span><strong>${money(i.total_amount)}</strong></div></div><div class="schedule-highlight"><b>Professor responsável</b><p>${safe(lookup('teachers',i.teacher_id)?.name||'—')}</p></div><div class="form-grid" style="margin-top:18px"><label class="field wide"><span>Modelo do contrato</span><select name="type_option" id="contractType" required>${contractOptions(kind,p?.id)}</select></label></div><div id="calPickerHost">${calendar.getFormPicker(i.teacher_id,i.start_date,true,i.calendar_slot_ids||[])}</div><div id="contractExtraFields"></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Criar contrato</button></div></form>`);renderContractExtra();calendar.autoPreview($('#contractForm'));
 }
-function previewContract(id){const c=lookup('contracts',id),s=c.student_snapshot||lookup('students',c.student_id)||{};
+function previewContract(id){const c=lookup('contracts',id);if(!c)return;
+ let s=c.student_snapshot||lookup('students',c.student_id)||{};
+ if(c.kind==='dupla'){
+  const s1=(s?.student1)||lookup('students',c.student_id)||{};
+  const s2=(s?.student2)||(c.student2_id?lookup('students',c.student2_id):{});
+  const signerIdx=c.signer_student_index||c.terms?.signer_student_index||1;
+  s={...s,student1:s1,student2:s2,signer_student_index:signerIdx,full_name:`${s1.full_name||'Aluno 1'} & ${s2.full_name||'Aluno 2'}`};
+ }
  const preexisting=isPreexistingContract(c);
  let html=c.signed_document_html||(preexisting
    ? `<article class="legal-document"><h2>Contrato Preexistente</h2><div class="notice" style="margin:20px 0"><p><strong>Matrícula migrada de contrato anterior</strong></p><p>O documento físico/externo foi firmado diretamente com a escola e não necessita de assinatura digital pelo Campanella.</p></div><div class="detail-grid" style="margin-top:20px"><div class="detail-item"><span>Aluno</span><strong>${safe(s.full_name)}</strong></div><div class="detail-item"><span>Professor</span><strong>${safe(lookup('teachers',c.terms?.teacher_id)?.name||c.terms?.teacher_name||'—')}</strong></div><div class="detail-item"><span>Vigência</span><strong>${dateBR(c.terms?.start_date)} até ${dateBR(c.terms?.end_date)}</strong></div><div class="detail-item"><span>Total de aulas</span><strong>${c.terms?.lessons_count} aulas</strong></div></div></article>`
@@ -1679,8 +1698,9 @@ async function studentDetail(id){
  const origin=ui.page==='student-profile'?(ui.studentReturnPage||'directory'):ui.page;
  // Perfil é uma pagina: nunca mostrar os dados do aluno em um modal.
  closeModal();
+ ui.studentReturnPage=origin;ui.studentId=id;ui.page='student-profile';ui.search='';
  await calendar.openStudent(id,false);
- ui.studentReturnPage=origin;ui.studentId=id;ui.page='student-profile';render();
+ if(ui.page==='student-profile'&&ui.studentId===id)render();
 }
 function studentProfilePage(){
  const s=lookup('students',ui.studentId);if(!s)return '<section class="panel"><p>Aluno não encontrado.</p></section>';
@@ -1699,7 +1719,8 @@ function studentProfilePage(){
   const addendums=Array.isArray(c.terms?.addendums)?c.terms.addendums:[];
   const addendumNote=addendums.length?`<div class="small muted" style="margin-top:4px">Aditivo(s): ${addendums.map(a=>`${safe(a.reason||'Alteração contratual')} (${dateBR(a.date)})`).join(' · ')}</div>`:'';
   const cancelNote=c.terms?.cancellation_reason?`<div class="small muted" style="margin-top:4px">Encerramento: ${safe(c.terms.cancellation_reason)} (${dateBR(c.terms.cancellation_effective_date||c.terms.end_date)})</div>`:'';
-  return `<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.terms?.package_name||'Contrato')} · ${safe(c.terms?.course||'Aulas')} ${isPre?'<span class="pill pill-signed" style="margin-left:6px">Contrato preexistente</span>':''}${duoBadge} ${enrollmentState(c)?enrollmentTag(c):contractTag(c)}</strong><small>${dateBR(c.terms?.start_date)} a ${dateBR(c.terms?.end_date)} · ${money(c.terms?.total_amount)} · ${safe(lookup('teachers',c.terms?.teacher_id)?.name||'')}</small>${addendumNote}${cancelNote}</div><div class="cal-lesson-actions">${contractActionsMenu(c)}${c.status==='signed'?`<button class="table-action-btn primary" data-action="renew" data-id="${c.id}">${ico('restore',13)} <span>Rematricular</span></button>`:''}</div></div>`;
+  const canRenew=['signed','closed','superseded'].includes(c.status);
+  return `<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.terms?.package_name||'Contrato')} · ${safe(c.terms?.course||'Aulas')} ${isPre?'<span class="pill pill-signed" style="margin-left:6px">Contrato preexistente</span>':''}${duoBadge} ${enrollmentState(c)?enrollmentTag(c):contractTag(c)}</strong><small>${dateBR(c.terms?.start_date)} a ${dateBR(c.terms?.end_date)} · ${money(c.terms?.total_amount)} · ${safe(lookup('teachers',c.terms?.teacher_id)?.name||'')}</small>${addendumNote}${cancelNote}</div><div class="cal-lesson-actions">${contractActionsMenu(c)}${canRenew?`<button class="table-action-btn primary" data-action="renew" data-id="${c.id}">${ico('restore',13)} <span>Rematricular</span></button>`:''}</div></div>`;
  }).join('')||'<p class="muted">Sem contratos.</p>';
  return calendar.studentProfileView(true,{registration,contractCount:all.length,contracts:contracts+`<div class="form-footer" style="margin-top:12px"><button class="btn" data-action="manualEnrollment" data-id="${s.id}">Criar matrícula</button></div>`});
 }
@@ -1739,8 +1760,9 @@ function renewForm(id){
  const isMinor1=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
  const isOrigDuo=original.kind==='dupla'||Boolean(original.student2_id);
  const origPartner=original.student2_id?lookup('students',original.student2_id):null;
+ const origSigner=String(original.signer_student_index||t.signer_student_index||1);
  const sched=s.current_schedule?.length?s.current_schedule:normalSchedule(t.lesson_schedule,t.weekly_days,t.lesson_time);
- const origSlots=Array.isArray(t.calendar_slot_ids)&&t.calendar_slot_ids.length?t.calendar_slot_ids:(s.calendar_slot_ids||[]);
+ const origSlots=Array.isArray(t.calendar_slot_ids)&&t.calendar_slot_ids.length?t.calendar_slot_ids:(Array.isArray(t.calendar_v6?.slot_ids)&&t.calendar_v6.slot_ids.length?t.calendar_v6.slot_ids:(s.calendar_slot_ids||[]));
  const start=computeNextRenewalStartDate(t.end_date,sched,origSlots);
  const nextFirstDue=computeNextRenewalDueDate(t.first_due_date,start);
  const nextSecondDue=plusMonth(nextFirstDue);
@@ -1779,7 +1801,7 @@ function renewForm(id){
     <div class="wide">${input('Endereço do responsável','s2_guardian_address','','text',false)}</div>
    </div>
   </div>
-  <label class="field wide" id="duoSignerField"><span>Quem assina o contrato? (Contratante)</span><select name="signer_student_index" id="duoSignerSelect"><option value="1">${safe(s.full_name)} (1º aluno)</option></select></label>
+  <label class="field wide" id="duoSignerField"><span>Quem assina o contrato? (Contratante)</span><select name="signer_student_index" id="duoSignerSelect"><option value="1" ${origSigner==='1'?'selected':''}>${safe(s.full_name)} (1º aluno)</option><option value="2" ${origSigner==='2'?'selected':''}>${safe(origPartner?.full_name||'2º aluno')} (2º aluno)</option></select></label>
  </div>
  <label class="field"><span>Professor</span><select name="teacher_id" required><option value="">Selecione</option>${options(db.teachers.filter(x=>x.active!==false||x.id===curTeacher),curTeacher)}</select></label>
  ${input('Curso','course',t.course||'Inglês')}
@@ -1787,7 +1809,7 @@ function renewForm(id){
  <label class="field wide"><span>Modelo</span><select name="type_option" id="renewContractType" required>${contractOptions(initialKind,t.package_id,isPreexistingContract(original)?'preexisting':(original.contract_type_id?`custom:${original.contract_type_id}`:''))}</select></label>
  ${input('Quantidade de aulas','lessons_count',t.lessons_count,'number')}${input('Aulas por semana','weekly_frequency',t.weekly_frequency||1,'number')}${input('Data de início','start_date',start,'date')}
  ${input('Data final','end_date',t.end_date>start?t.end_date:'','date')}
- <div class="wide" id="calPickerHost">${calendar.getFormPicker(curTeacher,start,false,origSlots,false,excludeIds)}</div>
+ <div class="wide" id="calPickerHost">${calendar.getFormPicker(curTeacher,start,false,origSlots,true,excludeIds)}</div>
  ${financialSectionHTML({total:t.total_amount,showExtenso:true,totalExtenso:t.total_extenso,installments:t.installments,installmentAmount:t.installment_amount,firstInstallmentAmount:t.first_installment_amount||'',firstDueDate:nextFirstDue,secondDueDate:t.has_custom_first_installment?nextSecondDue:'',hasCustomFirst:!!t.has_custom_first_installment,enrollmentMode:currentMode,discountAmount:t.discount_amount||'',discountUntil:t.discount_until||'',discountReason:t.discount_reason||''})}<label class="field"><span>Pagamento</span><select name="payment_method">${['Boleto','PIX','Transferência','Cartão'].map(x=>`<option ${t.payment_method===x?'selected':''}>${x}</option>`).join('')}</select></label>
  </div><div id="contractExtraFields"></div>
  <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn">Salvar rematrícula e preparar contrato</button></div></form>`);
@@ -2611,6 +2633,56 @@ async function importDocx(file){
  docxValidationCache.set(file,parsed);return parsed;
 }
 
+function computeContractExtraDefault(f,key){
+ if(!f)return '';
+ const i=f.id==='contractForm'?db.interviews.find(x=>x.lead_id===f.dataset.lead):null;
+ const previous=f.id==='renewForm'?(lookup('contracts',f.dataset.original)?.terms?.custom_fields||{}):{};
+ const dateCustomKeys=new Set(['data_inicio_contrato','data_fim_contrato','segunda_data','primeiro_vencimento','vencimento_demais_parcelas']);
+ const hasCustomFirst=f.elements.has_custom_first_installment?!!f.elements.has_custom_first_installment.checked:!!i?.has_custom_first_installment;
+ if(key==='primeira_parcela'){
+  const firstAmt=(hasCustomFirst&&f.elements.first_installment_amount?.value)?f.elements.first_installment_amount.value:(f.elements.installment_amount?.value||(hasCustomFirst?i?.first_installment_amount:null)||i?.installment_amount||'');
+  return firstAmt!==''?money(firstAmt):'';
+ }
+ if(key==='segunda_data'){
+  const firstDue=f.elements.first_due_date?.value||i?.first_due_date||f.elements.start_date?.value||i?.start_date||'';
+  const sd=(hasCustomFirst&&f.elements.second_due_date?.value)?f.elements.second_due_date.value:(firstDue?plusMonth(firstDue):(i?.second_due_date||''));
+  return sd?dateBR(sd):'';
+ }
+ if(key==='quantidade_horas'){
+  return f.elements.lessons_count?.value||i?.lessons_count||previous[key]||'';
+ }
+ if(key==='data_inicio_contrato'){
+  const st=f.elements.start_date?.value||i?.start_date||'';
+  return st?dateBR(st):'';
+ }
+ if(key==='data_fim_contrato'){
+  const ed=f.elements.end_date?.value||i?.end_date||'';
+  return ed?dateBR(ed):'';
+ }
+ if(key==='primeiro_vencimento'||key==='vencimento_primeira_parcela'){
+  const fd=f.elements.first_due_date?.value||i?.first_due_date||'';
+  return fd?dateBR(fd):'';
+ }
+ if(key==='vencimento_demais_parcelas'){
+  const firstDue=f.elements.first_due_date?.value||i?.first_due_date||'';
+  const sd=(hasCustomFirst&&f.elements.second_due_date?.value)?f.elements.second_due_date.value:(firstDue?plusMonth(firstDue):(i?.second_due_date||''));
+  return sd?dateBR(sd):'';
+ }
+ if(f.id==='renewForm'&&dateCustomKeys.has(key))return '';
+ return previous[key]||'';
+}
+function syncContractExtraFields(f){
+ const form=f||$('#contractForm')||$('#renewForm')||$('#manualEnrollmentForm');
+ if(!form)return;
+ const autoKeys=['primeira_parcela','segunda_data','quantidade_horas','data_inicio_contrato','data_fim_contrato','primeiro_vencimento','vencimento_primeira_parcela','vencimento_demais_parcelas'];
+ for(const key of autoKeys){
+  const inp=form.elements['extra_'+key];
+  if(inp&&inp.dataset.manuallyEdited!=='1'){
+   const nextVal=computeContractExtraDefault(form,key);
+   if(nextVal!==undefined)inp.value=nextVal;
+  }
+ }
+}
 function renderContractExtra(){
  const f=$('#contractForm')||$('#renewForm')||$('#manualEnrollmentForm');if(!f)return;
  const value=f.elements.type_option?.value||'';
@@ -2621,27 +2693,7 @@ function renderContractExtra(){
  const id=value.startsWith('custom:')?value.slice(7):null,ct=lookup('contract_types',id);
  const manual=['renewForm','manualEnrollmentForm'].includes(f.id);
  const fields=ct?.fields?.filter(x=>manual||x.who==='admin')||[];
- const previous=f.id==='renewForm'?(lookup('contracts',f.dataset.original)?.terms?.custom_fields||{}):{};
- const dateCustomKeys=new Set(['data_inicio_contrato','data_fim_contrato','segunda_data','primeiro_vencimento','vencimento_demais_parcelas']);
- const computeExtraDefault=(key)=>{
-  if(key==='primeira_parcela'){
-   const firstAmt=f.elements.first_installment_amount?.value||f.elements.installment_amount?.value||'';
-   return firstAmt?money(firstAmt):'';
-  }
-  if(key==='segunda_data'){
-   const sd=f.elements.second_due_date?.value||(f.elements.first_due_date?.value?plusMonth(f.elements.first_due_date.value):'');
-   return sd?dateBR(sd):'';
-  }
-  if(key==='quantidade_horas'){
-   return f.elements.lessons_count?.value||previous[key]||'';
-  }
-  if(key==='data_inicio_contrato'){
-   return f.elements.start_date?.value?dateBR(f.elements.start_date.value):'';
-  }
-  if(f.id==='renewForm'&&dateCustomKeys.has(key))return '';
-  return previous[key]||'';
- };
- $('#contractExtraFields').innerHTML=fields.length?`<h3 class="form-section">Campos deste modelo</h3><div class="form-grid">${fields.map(x=>input(x.label,'extra_'+x.key,computeExtraDefault(x.key),'text',false)).join('')}</div>`:'';
+ $('#contractExtraFields').innerHTML=fields.length?`<h3 class="form-section">Campos deste modelo</h3><div class="form-grid">${fields.map(x=>input(x.label,'extra_'+x.key,computeContractExtraDefault(f,x.key),'text',false)).join('')}</div>`:'';
 }
 function snapshotFromForm(f,kind,terms){
  const selected=f.elements.type_option.value;
@@ -2851,11 +2903,19 @@ function updateInstallment(f,edited='total_amount'){
  if(!f?.elements.total_amount||!f.elements.installments||!f.elements.installment_amount)return;
  const n=Number(f.elements.installments.value);if(!Number.isInteger(n)||n<1||n>48)return;
  const hasCustom=!!f.elements.has_custom_first_installment?.checked;
+ const isRecurrence=f.elements.enrollment_mode?.value==='recurrence';
  if(hasCustom && n > 1){
   const firstInput=f.elements.first_installment_amount;
   const regularInput=f.elements.installment_amount;
   const totalInput=f.elements.total_amount;
-  if(['first_installment_amount','total_amount','installments'].includes(edited)){
+  if(edited==='installment_amount'||(isRecurrence&&edited==='installments'&&Number(regularInput?.value)>0)){
+   const regular=Number(regularInput.value);
+   let first=Number(firstInput?.value||regular||0);
+   if(Number.isFinite(regular) && regular>=0){
+    const computedTotal=(first + regular * (n - 1)).toFixed(2);
+    totalInput.value=computedTotal;
+   }
+  }else if(['first_installment_amount','total_amount','installments'].includes(edited)){
    const total=Number(totalInput.value);
    let first=Number(firstInput?.value);
    if(!Number.isFinite(first) || first<0 || (edited==='total_amount' && !firstInput?.value)){
@@ -2866,25 +2926,28 @@ function updateInstallment(f,edited='total_amount'){
    const remainingParts=n - 1;
    const regular=(Math.round(remainingTotal / remainingParts * 100) / 100).toFixed(2);
    regularInput.value=regular;
-  }else if(edited==='installment_amount'){
-   const regular=Number(regularInput.value);
-   let first=Number(firstInput?.value||0);
-   if(Number.isFinite(regular) && regular>=0){
-    const computedTotal=(first + regular * (n - 1)).toFixed(2);
-    totalInput.value=computedTotal;
-   }
   }
  }else{
-  if(edited==='installment_amount'){
-   const p=Number(f.elements.installment_amount.value);if(!Number.isFinite(p)||p<0)return;
+  const curInst=Number(f.elements.installment_amount.value);
+  if(edited==='installment_amount'||(isRecurrence&&edited==='installments'&&Number.isFinite(curInst)&&curInst>0)){
+   const p=curInst;if(!Number.isFinite(p)||p<0)return;
    f.elements.total_amount.value=(Math.round(p*100)*n/100).toFixed(2);
   }else{
    const total=Number(f.elements.total_amount.value);if(!Number.isFinite(total)||total<0)return;
    f.elements.installment_amount.value=(Math.round(total/n*100)/100).toFixed(2);
-   if(f.elements.first_installment_amount)f.elements.first_installment_amount.value=f.elements.installment_amount.value;
   }
+  if(f.elements.first_installment_amount)f.elements.first_installment_amount.value='';
  }
  if(f.elements.total_extenso)f.elements.total_extenso.value=amountWords(Number(f.elements.total_amount.value));
+ if(isRecurrence&&edited==='installments'&&f.elements.end_date&&f.elements.end_date.dataset.recurrenceManual!=='1'){
+  const startVal=f.elements.start_date?.value||f.elements.cal_start_date?.value||today();
+  if(startVal&&/^\d{4}-\d{2}-\d{2}$/.test(startVal)){
+   f.elements.end_date.value=plusMonth(startVal,n);
+   if(f.id==='externalInterviewForm')externalPreview().catch(errors);
+   else calendar.autoPreview(f);
+  }
+ }
+ syncContractExtraFields(f);
 }
 
 function closeEnrollmentModal(id){
@@ -2912,7 +2975,7 @@ function contractAddendumModal(id){
  const s=lookup('students',c.student_id),s2=c.student2_id?lookup('students',c.student2_id):null;
  const studentLabel=c.kind==='dupla'?`${s?.full_name||'Aluno 1'} & ${s2?.full_name||'Aluno 2'}`:(s?.full_name||'Aluno');
  const t=c.terms||{};
- showModal(`<div class="eyebrow">Alteração contratual</div><h2>Registrar aditivo · ${safe(studentLabel)}</h2><p class="modal-intro">Atualize valores, parcelas, desconto, vigência ou saldo de aulas sem precisar encerrar o contrato em vigor. A alteração ficará registrada no histórico de aditivos do contrato.</p><form id="contractAddendumForm" data-id="${safe(c.id)}"><div class="form-grid">
+ showModal(`<div class="eyebrow">Alteração contratual</div><h2>Registrar aditivo · ${safe(studentLabel)}</h2><p class="modal-intro">Atualize valores, parcelas, desconto, vigência ou saldo de aulas sem precisar encerrar o contrato em vigor. A alteração ficará registrada no histórico de aditivos do contrato.</p><form id="contractAddendumForm" data-id="${safe(c.id)}"><input type="hidden" name="enrollment_mode" value="${safe(t.enrollment_mode||'package')}"><div class="form-grid">
  ${input('Valor total atualizado (R$)','total_amount',t.total_amount??'','number')}
  ${input('Número de parcelas','installments',t.installments??1,'number')}
  ${input('Valor mensal / da parcela (R$)','installment_amount',t.installment_amount??'','number')}
@@ -3261,21 +3324,21 @@ document.addEventListener('click',async e=>{
  startBusy();
  try{
  if(action.startsWith('onb'))return await onboarding.action(action,x);
- if(action.startsWith('cal'))return calendar.action(action,x,e);
+ if(action.startsWith('cal'))return await calendar.action(action,x,e);
  if(action==='close')return closeModal();
  if(action==='showSignup'){$('#app').innerHTML=signupPage();return;}
  if(action==='showForgotPassword'){$('#app').innerHTML=forgotPasswordPage();return;}
  if(action==='backLogin'){if(passwordRecoveryRoute())await sb.auth.signOut();history.replaceState({},'',location.pathname);ui.user=null;$('#app').innerHTML=login();return;}
  if(action==='navigate'){if(ui.role==='teacher'&&page!=='calendar')throw new Error('Acesso restrito ao professor.');if(page==='licenses'&&!ui.isPlatformAdmin)throw new Error('Acesso negado.');if((page==='settings'||page.startsWith('settings-')||['templates','teachers','packages'].includes(page))&&ui.schoolId&&!canAdmin())throw new Error('Área restrita.');ui.page=page;ensureActiveNavGroupOpen();if(page==='calendar')await calendar.load();if(page!=='licenses')ui.newlyIssuedKey=null;ui.search='';ui.expiry='all';if(page==='licenses')await loadPlatformData();return render();}
- if(action==='logout'){refreshVersion++;await sb.auth.signOut();ui.user=null;ui.role=null;ui.schoolId=null;ui.isPlatformAdmin=false;ui.newlyIssuedKey=null;ui.page='dashboard';return initialize();}
- if(action==='selectSchool')return switchSchool(id);
+ if(action==='logout'){refreshVersion++;await sb.auth.signOut();ui.user=null;ui.role=null;ui.schoolId=null;ui.isPlatformAdmin=false;ui.newlyIssuedKey=null;ui.page='dashboard';return await initialize();}
+ if(action==='selectSchool')return await switchSchool(id);
  if(action==='showActivation')return activationModal();
  if(action==='configureSchoolSignature'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Assinatura eletrônica não disponível nesta versão.');return schoolSignatureModal();}
  if(action==='importStudents'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('alunos');const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();if(!lim.isUnlimited&&cur>=lim.maxStudents){window.campanellaAlert(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Para importar novos alunos, faça upgrade de plano ou adquira pacotes de +10 alunos.`,'Limite atingido');return contactUpgradeModal('alunos');}return studentImportModal();}
  if(action==='platformSchoolDetail'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return platformSchoolDetail(id);}
  if(action==='issueRenewal'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return schoolRenewalForm(id);}
  if(action==='deleteSchool'){if(!canAdmin())throw new Error('Acesso restrito');return showModal(`<div class="eyebrow">Zona de perigo</div><h2>Excluir ${safe(currentSchool().name)}?</h2><p class="modal-intro">Os cadastros serão bloqueados imediatamente. Você poderá restaurar a escola durante 30 dias; após isso, a exclusão definitiva eliminará os registros e os arquivos da unidade.</p><form id="deleteSchoolForm"><label class="field"><span>Digite exatamente: <strong>${safe(currentSchool().name)}</strong></span><input name="confirm_name" required autocomplete="off"></label><div class="form-footer"><button class="btn ghost" type="button" data-action="close">Cancelar</button><button class="btn danger" type="submit">Agendar exclusão</button></div></form>`);}
- if(action==='restoreSchool'){const schoolId=id||ui.schoolId;if(!await window.campanellaConfirm('Cancelar a exclusão e restaurar esta escola?'))return;const {error}=await sb.rpc('cancel_school_deletion',{p_school:schoolId});if(error)throw error;await loadSchools(ui.schoolId);if(ui.isPlatformAdmin)await loadPlatformData();toast('Exclusão cancelada.');return ui.schoolId?refresh():render();}
+ if(action==='restoreSchool'){const schoolId=id||ui.schoolId;if(!await window.campanellaConfirm('Cancelar a exclusão e restaurar esta escola?'))return;const {error}=await sb.rpc('cancel_school_deletion',{p_school:schoolId});if(error)throw error;await loadSchools(ui.schoolId);if(ui.isPlatformAdmin)await loadPlatformData();toast('Exclusão cancelada.');return ui.schoolId?await refresh():render();}
  if(action==='issueLicense'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return licenseCreateForm(plan||'essencial');}
  if(action==='manageLicense'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return licenseManageForm(id);}
  if(action==='platformTransfer'){if(!ui.isPlatformAdmin)throw new Error('Acesso negado');return platformTransferForm(id);}
@@ -3289,29 +3352,29 @@ document.addEventListener('click',async e=>{
  if(action==='editInterview')return interviewForm(id);
  if(action==='startFiche'){const lead=lookup('leads',id);if(!lead||lead.status==='convertido')throw new Error('Lead indisponível.');if(!lead.ficha_iniciada_at)await save('leads',{ficha_iniciada_at:new Date().toISOString(),ficha_status:'open'},id);await refresh();return ficheCreatedPopup(id);}
  if(action==='navigateFiche'){const lead=lookup('leads',id),interview=db.interviews.find(i=>i.lead_id===id);ui.page='interviews';ui.search=lead?.name?.toLowerCase()||'';ui.interviewTab=lead?(['lost','archived'].includes(ficheStage(lead,interview))?ficheStage(lead,interview):'current'):'current';return render();}
- if(action==='externalPreview')return externalPreview();
+ if(action==='externalPreview')return await externalPreview();
  if(action==='contactUpgradeSupport')return contactUpgradeModal(x?.dataset?.reason||'');
  if(action==='newContract'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('contratos');return contractForm(id);}
- if(action==='studentDetail')return studentDetail(id);
- if(action==='studentProfileBack'){ui.page=ui.studentReturnPage||'directory';ui.studentId=null;return render();}
+ if(action==='studentDetail')return await studentDetail(id);
+ if(action==='studentProfileBack'){ui.page=ui.studentReturnPage||'directory';ui.studentId=null;ui.search='';return render();}
  if(action==='editStudent'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('alunos');if(!id){const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();if(!lim.isUnlimited&&cur>=lim.maxStudents){window.campanellaAlert(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Para cadastrar novos alunos, faça upgrade de plano ou adquira pacotes de +10 alunos.`,'Limite atingido');return contactUpgradeModal('alunos');}}return studentForm(id);}
  if(action==='editTeacher'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('professores');if(!id){const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();if(!lim.isUnlimited&&cur>=lim.maxTeachers){window.campanellaAlert(`Limite de professores ativos atingido (${cur}/${lim.maxTeachers} no plano ${lim.planName}). Para cadastrar novos professores, faça upgrade de plano ou adquira professores adicionais.`,'Limite atingido');return contactUpgradeModal('professores');}}return teacherForm(id);}
- if(action==='teacherToggle'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('professores');const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');if(t.active===false){const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();if(!lim.isUnlimited&&cur>=lim.maxTeachers){window.campanellaAlert(`Não é possível reativar este professor: o limite do plano ${lim.planName} (${lim.maxTeachers} professores ativos) já foi atingido. Faça upgrade de plano ou adquira professores adicionais.`,'Limite atingido');return contactUpgradeModal('professores');}}if(!await window.campanellaConfirm(`${t.active!==false?'Desativar':'Reativar'} ${t.name}?`))return;await save('teachers',{active:t.active===false},id);toast(t.active!==false?'Professor desativado.':'Professor reativado.');return refresh();}
+ if(action==='teacherToggle'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('professores');const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');if(t.active===false){const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();if(!lim.isUnlimited&&cur>=lim.maxTeachers){window.campanellaAlert(`Não é possível reativar este professor: o limite do plano ${lim.planName} (${lim.maxTeachers} professores ativos) já foi atingido. Faça upgrade de plano ou adquira professores adicionais.`,'Limite atingido');return contactUpgradeModal('professores');}}if(!await window.campanellaConfirm(`${t.active!==false?'Desativar':'Reativar'} ${t.name}?`))return;await save('teachers',{active:t.active===false},id);toast(t.active!==false?'Professor desativado.':'Professor reativado.');return await refresh();}
  if(action==='teacherRemove'){const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');const linked=db.interviews.some(i=>i.teacher_id===id)||db.interview_invites.some(i=>i.teacher_id===id)||(db.crm_appointments||[]).some(i=>i.teacher_id===id)||db.contracts.some(c=>c.terms?.teacher_id===id);
-  if(linked){if(!await window.campanellaConfirm(`O professor ${t.name} possui histórico. Ele será DESATIVADO para preservar contratos e entrevistas. Continuar?`))return;await save('teachers',{active:false},id);toast('Professor desativado. Histórico preservado.');return refresh();}
+  if(linked){if(!await window.campanellaConfirm(`O professor ${t.name} possui histórico. Ele será DESATIVADO para preservar contratos e entrevistas. Continuar?`))return;await save('teachers',{active:false},id);toast('Professor desativado. Histórico preservado.');return await refresh();}
   if(!await window.campanellaConfirm(`Excluir DEFINITIVAMENTE o professor ${t.name}? Esta ação não pode ser desfeita.`,'Excluir professor','Excluir'))return;
-  const {error}=await sb.from('teachers').delete().eq('school_id',ui.schoolId).eq('id',id);if(error){if(error.code==='23503'){await save('teachers',{active:false},id);toast('Professor vinculado a histórico: desativado em vez de excluído.');return refresh();}throw error;}
-  toast('Professor excluído.');return refresh();}
+  const {error}=await sb.from('teachers').delete().eq('school_id',ui.schoolId).eq('id',id);if(error){if(error.code==='23503'){await save('teachers',{active:false},id);toast('Professor vinculado a histórico: desativado em vez de excluído.');return await refresh();}throw error;}
+  toast('Professor excluído.');return await refresh();}
 
  if(action==='inviteInterview')return inviteInterview(id);
  if(action==='manualEnrollment'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('matriculas');return manualEnrollmentForm(id);}
  if(action==='toggleSchedule'){const el=$('#scheduleEditor');if(el)el.hidden=!el.hidden;return;}
- if(action==='enrollmentTab'){ui.enrollmentTab=x.dataset.tab;return render();}
- if(action==='interviewTab'){ui.interviewTab=x.dataset.tab;ui.interviewStatus='all';return render();}
- if(action==='contractTab'){ui.contractTab=x.dataset.tab;ui.contractStatus='all';ui.expiry='all';return render();}
- if(action==='studentTab'){ui.studentTab=x.dataset.tab;return render();}
+ if(action==='enrollmentTab'){ui.enrollmentTab=x.dataset.tab;ui.search='';return render();}
+ if(action==='interviewTab'){ui.interviewTab=x.dataset.tab;ui.interviewStatus='all';ui.search='';return render();}
+ if(action==='contractTab'){ui.contractTab=x.dataset.tab;ui.contractStatus='all';ui.expiry='all';ui.search='';return render();}
+ if(action==='studentTab'){ui.studentTab=x.dataset.tab;ui.search='';return render();}
  if(action==='openInterviewContract'){const c=lookup('contracts',id);if(!c)throw new Error('Contrato vinculado não encontrado.');ui.page='contracts';ui.search='';render();return previewContract(c.id);}
- if(action==='interviewStage'){const stage=x.dataset.stage;if(!['open','lost','archived'].includes(stage))return;const lead=lookup('leads',id),item=db.interviews.find(i=>i.lead_id===id);if(!lead||lead.status==='convertido')throw new Error('Lead indisponível.');if(item)await save('interviews',{pipeline_status:stage,archived_at:stage==='archived'?new Date().toISOString():null},item.id);await save('leads',{ficha_status:stage,status:stage==='lost'?'perdido':stage==='open'?(item?'entrevistado':'novo'):lead.status},id);toast(stage==='archived'?'Ficha arquivada':stage==='lost'?'Desistência registrada':'Ficha retomada');return refresh();}
+ if(action==='interviewStage'){const stage=x.dataset.stage;if(!['open','lost','archived'].includes(stage))return;const lead=lookup('leads',id),item=db.interviews.find(i=>i.lead_id===id);if(!lead||lead.status==='convertido')throw new Error('Lead indisponível.');if(item)await save('interviews',{pipeline_status:stage,archived_at:stage==='archived'?new Date().toISOString():null},item.id);await save('leads',{ficha_status:stage,status:stage==='lost'?'perdido':stage==='open'?(item?'entrevistado':'novo'):lead.status},id);toast(stage==='archived'?'Ficha arquivada':stage==='lost'?'Desistência registrada':'Ficha retomada');return await refresh();}
  if(action==='exportStudentsCSV'){exportStudentsCSV();return;}
  if(action==='closeEnrollment'){return closeEnrollmentModal(id);}
  if(action==='contractAddendum'){return contractAddendumModal(id);}
@@ -3445,6 +3508,7 @@ document.addEventListener('click',async e=>{
  }catch(error){errors(error)}finally{finishBusy()}
 });
 document.addEventListener('click',e=>{if(e.target.closest('#externalPreviewBtn'))externalPreview().catch(errors);});
+document.addEventListener('campanella:preview-updated',e=>{if(e.target?.tagName==='FORM')syncContractExtraFields(e.target);});
 document.addEventListener('toggle',event=>{
  const node=event.target;if(!node.matches?.('.contract-actions-dropdown'))return;
  if(node.open){
@@ -3467,16 +3531,28 @@ document.addEventListener('input',e=>{
   const view=ui.page==='leads'?null:ui.page==='interviews'?interviewsView():ui.page==='contracts'?contractsView():ui.page==='students'?studentsView():ui.page==='directory'?directoryView():null;
   if(view){$('#pageContent').innerHTML=view;$('#search').focus();$('#search').setSelectionRange(pos,pos);}
  }
- if(['total_amount','installments','installment_amount','first_installment_amount'].includes(e.target.name)&&['interviewForm','renewForm','manualEnrollmentForm','externalInterviewForm'].includes(e.target.form?.id))updateInstallment(e.target.form,e.target.name);
+ if(e.target.name?.startsWith('extra_'))e.target.dataset.manuallyEdited='1';
+ if(['total_amount','installments','installment_amount','first_installment_amount'].includes(e.target.name)&&['interviewForm','renewForm','manualEnrollmentForm','externalInterviewForm','contractAddendumForm'].includes(e.target.form?.id))updateInstallment(e.target.form,e.target.name);
+ if(['start_date','end_date','first_due_date','second_due_date','lessons_count'].includes(e.target.name)&&['renewForm','manualEnrollmentForm','contractForm'].includes(e.target.form?.id))syncContractExtraFields(e.target.form);
  if(e.target.name==='end_date'&&['manualEnrollmentForm','interviewForm','renewForm'].includes(e.target.form?.id)&&e.target.form.elements.enrollment_mode?.value==='recurrence'){
+  e.target.dataset.recurrenceManual='1';
   if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value))calendar.autoPreview(e.target.form);
  }
  if(e.target.name==='end_date'&&e.target.form?.id==='externalInterviewForm'&&e.target.form.elements.enrollment_mode?.value==='recurrence'){
+  e.target.dataset.recurrenceManual='1';
   if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value))externalPreview().catch(errors);
  }
  if(e.target.form?.id==='calBulkSlotForm'){try{calendar.change(e.target);}catch(err){}}
 });
 document.addEventListener('change',async e=>{
+ if(e.target.name==='create_contract'&&e.target.form?.id==='studentForm'){
+  const sel=e.target.form.elements.calendar_teacher_id;
+  if(sel){
+   sel.required=e.target.checked;
+   if(e.target.checked&&!sel.value)sel.focus();
+  }
+  return;
+ }
  if(e.target.id==='leadKindSelect'||(e.target.name==='kind'&&e.target.form?.id==='leadForm')){
   const duo=e.target.value==='dupla';
   const f2=document.getElementById('leadStudent2Field');
@@ -3570,13 +3646,16 @@ document.addEventListener('change',async e=>{
   toggleSpecialDiscount(e.target.form);
   return;
  }
- if(e.target.name==='first_due_date'&&e.target.form?.elements.has_custom_first_installment?.checked){
-  const second=e.target.form.elements.second_due_date;
-  if(second&&(!second.value||second.dataset.auto!=='0')){
-   second.value=plusMonth(e.target.value);
+ if(e.target.name==='first_due_date'){
+  if(e.target.form?.elements.has_custom_first_installment?.checked){
+   const second=e.target.form.elements.second_due_date;
+   if(second&&(!second.value||second.dataset.auto!=='0')){
+    second.value=plusMonth(e.target.value);
+   }
   }
+  syncContractExtraFields(e.target.form);
  }
- if(e.target.name==='second_due_date')e.target.dataset.auto='0';
+ if(e.target.name==='second_due_date'){e.target.dataset.auto='0';syncContractExtraFields(e.target.form);}
  if(e.target.name==='calendar_teacher_id'&&e.target.form?.id==='studentForm'){
   const host=$('#studentScheduleHost');
   if(host)host.innerHTML=renderStudentScheduleHost(e.target.value,[]);
@@ -3592,7 +3671,14 @@ document.addEventListener('change',async e=>{
   renderContractExtra();
   return;
  }
- if(e.target.id==='calTeacherFilter'||e.target.form?.id==='calStudentSlotsForm'||e.target.form?.id==='calBulkSlotForm'||e.target.name==='cal_student_teacher'||['end_date','cal_manual_end','cal_slot','cal_start_date'].includes(e.target.name)||(['start_date','lessons_count'].includes(e.target.name)&&e.target.form?.querySelector('.cal-enrollment'))||(e.target.name==='teacher_id'&&['manualEnrollmentForm','renewForm','crmLeadFicheForm'].includes(e.target.form?.id))){try{await calendar.change(e.target);}catch(err){errors(err);}return;}
+ if(e.target.name==='start_date'&&e.target.form){
+  if(e.target.form.elements.enrollment_mode?.value==='recurrence'&&e.target.form.elements.end_date&&e.target.form.elements.end_date.dataset.recurrenceManual!=='1'&&/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)){
+   const instCount=Math.max(1,Number(e.target.form.elements.installments?.value)||6);
+   e.target.form.elements.end_date.value=plusMonth(e.target.value,instCount);
+  }
+  syncContractExtraFields(e.target.form);
+ }
+ if(e.target.id==='calTeacherFilter'||e.target.form?.id==='calStudentSlotsForm'||e.target.form?.id==='calBulkSlotForm'||e.target.name==='cal_student_teacher'||['end_date','cal_manual_end','cal_slot','cal_start_date'].includes(e.target.name)||(['start_date','lessons_count'].includes(e.target.name)&&e.target.form?.querySelector('.cal-enrollment'))||(e.target.name==='teacher_id'&&['manualEnrollmentForm','renewForm','crmLeadFicheForm'].includes(e.target.form?.id))){try{await calendar.change(e.target);syncContractExtraFields(e.target.form);}catch(err){errors(err);}return;}
  if(e.target.name==='docx_file'&&e.target.form?.id==='typeForm'){
   const file=e.target.files?.[0];if(!file){renderDocxReport(null);return;}
   const report=$('#docxValidation');if(report)report.textContent='Analisando campos e marcadores do DOCX…';
@@ -3613,7 +3699,7 @@ document.addEventListener('change',async e=>{
  if(e.target.matches('input[name="days"]')){const el=e.target.closest('.schedule-row')?.querySelector('input[type="time"]');if(el){el.disabled=!e.target.checked;if(e.target.checked&&!el.value)el.value='18:00';}}
  if(['interviewPackage','renewPackage','manualPackage','externalPackage'].includes(e.target.id)){
   const p=(e.target.id==='externalPackage'?externalData?.packages.find(x=>x.id===e.target.value):lookup('packages',e.target.value));onPackageSelection(e.target.form,p);
-  if(['manualPackage','renewPackage'].includes(e.target.id))calendar.autoPreview(e.target.form);
+  if(['interviewPackage','manualPackage','renewPackage'].includes(e.target.id))calendar.autoPreview(e.target.form);
   if(e.target.id==='externalPackage'){const el=e.target.form.elements.type_option;if(el)el.removeAttribute('required');externalPreview().catch(errors);}
  }
  if(e.target.id==='externalTeacher'&&e.target.form?.id==='externalInterviewForm'){
@@ -3972,14 +4058,18 @@ document.addEventListener('submit',async event=>{
    student_snapshot:studentSnapshot,
    created_by:ui.user.id
   });
-  closeModal();await refresh();
+  closeModal();
+  ui.search='';ui.enrollmentTab='current';ui.contractTab='current';ui.contractStatus='all';ui.expiry='all';
   if(isPreexisting){
+   await refresh();
    toast('Rematrícula ativada com sucesso (contrato preexistente).');
-   studentDetail(s.id);
+   await studentDetail(s.id);
    return;
   }
+  ui.page='students';
+  await refresh();
   toast('Rematrícula preparada: baixe o contrato sem assinaturas em Matrículas ou Contratos.');
-  ui.page='students';render();return;
+  return;
  }
  else if(f.id==='manualEnrollmentForm'){
   if(isCurrentSchoolCrmOnly())throw new Error('O plano CRM inclui apenas a gestão de leads e pipeline. Faça upgrade para o plano Essencial ou superior para cadastrar matrículas.');
@@ -4089,10 +4179,18 @@ document.addEventListener('submit',async event=>{
     student_snapshot:studentSnapshot,
     created_by:ui.user.id
   };
-  const enrollment=await save('contracts',contractPayload);closeModal();await refresh();
-  toast(isPreexisting?'Matrícula ativada com sucesso (contrato preexistente).':'Cadastro pronto. Gere o contrato sem assinaturas na área Matrículas ou Contratos.');
-  if(isPreexisting){studentDetail(student.id);return;}
-  ui.page='contracts';render();return;
+  const enrollment=await save('contracts',contractPayload);closeModal();
+  ui.search='';ui.enrollmentTab='current';ui.contractTab='current';ui.contractStatus='all';ui.expiry='all';
+  if(isPreexisting){
+   await refresh();
+   toast('Matrícula ativada com sucesso (contrato preexistente).');
+   await studentDetail(student.id);
+   return;
+  }
+  ui.page='contracts';
+  await refresh();
+  toast('Cadastro pronto. Gere o contrato sem assinaturas na área Matrículas ou Contratos.');
+  return;
  }
  else if(f.id==='teacherForm'){
   if(isCurrentSchoolCrmOnly())throw new Error('O plano CRM não inclui gestão de professores e agenda. Faça upgrade para o plano Essencial ou superior.');
@@ -4141,15 +4239,18 @@ document.addEventListener('submit',async event=>{
    }
   }
   const teacherForStudent=calendarManaged?db.students.find(x=>x.id===f.dataset.id)?.calendar_teacher_id||db.contracts.find(c=>(c.student_id===f.dataset.id||c.student2_id===f.dataset.id)&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status))?.terms?.teacher_id:f.elements.calendar_teacher_id?.value||null;
-  if(!teacherForStudent&&f.elements.create_contract?.checked)throw new Error('Selecione o professor antes de preparar a matrícula.');
+  if(!teacherForStudent&&f.elements.create_contract?.checked){
+   f.elements.calendar_teacher_id?.focus();
+   throw new Error('Selecione o professor antes de preparar a matrícula.');
+  }
   const payload={calendar_teacher_id:teacherForStudent,calendar_slot_ids,full_name:d.full_name.trim(),cpf:onlyDigits(d.cpf)||null,email:d.email.trim()||null,birth_date:d.birth_date||null,phone,address:d.address||null,cep:onlyDigits(d.cep)||null,is_minor:minor?true:(d.birth_date?false:null),...(calendarManaged?{}:{current_schedule,current_weekly_days,current_lesson_time}),
   guardian_name:minor?(d.guardian_name||null):null,guardian_birth_date:minor?(d.guardian_birth_date||null):null,guardian_cpf:minor?(onlyDigits(d.guardian_cpf)||null):null,guardian_phone:minor?normalizeStudentPhone(d.guardian_phone):null,guardian_email:minor?(d.guardian_email||null):null,guardian_address:minor?(d.guardian_address||null):null,guardian_cep:minor?(onlyDigits(d.guardian_cep)||null):null};
-  const saved=await save('students',payload,f.dataset.id||undefined);toast('Aluno salvo.');await refresh();if(!f.dataset.id&&f.elements.create_contract?.checked){manualEnrollmentForm(saved.id);return;}if(f.dataset.id){studentDetail(saved.id);return;}closeModal();return;
+  const saved=await save('students',payload,f.dataset.id||undefined);toast('Aluno salvo.');await refresh();if(!f.dataset.id&&f.elements.create_contract?.checked){manualEnrollmentForm(saved.id);return;}if(f.dataset.id){await studentDetail(saved.id);return;}closeModal();return;
  }
  else if(f.id==='scheduleForm'){
   if(db.contracts.some(c=>c.student_id===f.dataset.id&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status)))throw new Error('Esta matrícula usa o calendário V6. Reagende cada aula no calendário para evitar divergências.');
   const schedule=readSchedule(f);
-  await save('students',{current_schedule:schedule,current_weekly_days:schedule.map(x=>x.day),current_lesson_time:schedule[0].time},f.dataset.id);toast('Horário atual alterado sem modificar contratos.');await refresh();studentDetail(f.dataset.id);return;
+  await save('students',{current_schedule:schedule,current_weekly_days:schedule.map(x=>x.day),current_lesson_time:schedule[0].time},f.dataset.id);toast('Horário atual alterado sem modificar contratos.');await refresh();await studentDetail(f.dataset.id);return;
  }
  else if(f.id==='ownerForm'){
   const file=f.elements.signature_file.files[0];let data=db.school_settings[0]?.owner_signature_png||null;
@@ -4175,7 +4276,20 @@ document.addEventListener('submit',async event=>{
  else if(f.id==='budgetPreEnrollmentForm'){await completeBudgetPreEnrollment(f);return;}
  else return;
  closeModal();await refresh();
- }catch(error){errors(error)}finally{finishBusy();if(btn)btn.disabled=false;}
+ }catch(error){
+  if($('#modal')?.open&&f){
+   let banner=f.querySelector('.form-submit-error-banner');
+   if(!banner){
+    banner=document.createElement('div');
+    banner.className='notice form-submit-error-banner';
+    banner.style.cssText='background:#fde8e8;color:#9b1c1c;border:1px solid #f87171;padding:10px 14px;border-radius:8px;margin-top:12px;font-weight:600;';
+    const footer=f.querySelector('.form-footer');
+    if(footer)f.insertBefore(banner,footer);else f.appendChild(banner);
+   }
+   banner.textContent=error?.message||String(error);
+  }
+  errors(error);
+ }finally{finishBusy();if(btn)btn.disabled=false;}
 });
 
 function formDataExtras(f){const o={};for(const [key,value] of new FormData(f).entries()){if(key.startsWith('extra_'))o[key.slice(6)]=String(value).trim();}return o;}
