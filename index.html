@@ -9,19 +9,17 @@
  <link rel="preconnect" href="https://fonts.googleapis.com">
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;700;900&display=swap" rel="stylesheet">
- <link rel="stylesheet" href="./css/style.css?v=8.6.3">
- <link rel="stylesheet" href="./css/crm.css?v=8.6.3">
- <link rel="stylesheet" href="./css/calendar-v6.css?v=8.6.3">
- <link rel="stylesheet" href="./css/onboarding-v67.css?v=8.6.3">
+ <link rel="stylesheet" href="./css/style.css?v=8.6.4">
+ <link rel="stylesheet" href="./css/crm.css?v=8.6.4">
+ <link rel="stylesheet" href="./css/calendar-v6.css?v=8.6.4">
+ <link rel="stylesheet" href="./css/onboarding-v67.css?v=8.6.4">
  <script defer src="https://unpkg.com/pizzip@3.2.0/dist/pizzip.js"></script>
  <script defer src="https://unpkg.com/docxtemplater@3.71.0/build/docxtemplater.js"></script>
  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
  <script>
-  window.addEventListener('error', function(event) {
+  function renderBootFailure(msg) {
    var app = document.getElementById('app');
    if (app && app.querySelector('.boot')) {
-    console.error('Falha de inicialização detectada:', event.error || event.message);
-    var msg = event.message || (event.error && event.error.message) || 'Erro ao processar scripts da plataforma.';
     app.innerHTML = '<div class="boot" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:#F2F2F2;">' +
      '<div style="max-width:420px;width:100%;background:#ffffff;border:1px solid #EAECF0;border-radius:16px;padding:28px;text-align:center;box-shadow:0 8px 24px rgba(29,41,57,0.08);color:#1D2939;font-family:Lato,sans-serif;">' +
       '<div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#EB5757;margin-bottom:8px;">Falha no carregamento</div>' +
@@ -34,6 +32,16 @@
      '</div>' +
     '</div>';
    }
+  }
+  window.addEventListener('error', function(event) {
+   console.error('Falha de inicialização detectada:', event.error || event.message);
+   var msg = event.message || (event.error && event.error.message) || 'Erro ao processar scripts da plataforma.';
+   renderBootFailure(msg);
+  });
+  window.addEventListener('unhandledrejection', function(event) {
+   console.error('Rejeição assíncrona não tratada na inicialização:', event.reason);
+   var msg = (event.reason && (event.reason.message || event.reason.error_description)) || String(event.reason || 'Falha na comunicação com os serviços.');
+   renderBootFailure(msg);
   });
   setTimeout(function() {
    var app = document.getElementById('app');
@@ -48,8 +56,24 @@
     }
    }
   }, 8000);
+  setTimeout(function() {
+   var app = document.getElementById('app');
+   if (app && app.querySelector('.boot')) {
+    var card = app.querySelector('.boot-card');
+    if (card) {
+     card.innerHTML = '<div style="padding:16px;text-align:center;">' +
+      '<div style="font-size:13px;font-weight:700;color:#ea580c;margin-bottom:6px;">Demorando mais do que o esperado</div>' +
+      '<p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.4;">A conexão aos serviços está lenta ou instável. Deseja recarregar o sistema?</p>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;">' +
+       '<button onclick="location.reload()" style="background:#ea580c;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Recarregar agora</button>' +
+       '<button onclick="localStorage.clear();sessionStorage.clear();location.reload(true)" style="background:#fff;border:1px solid #cbd5e1;color:#334155;padding:8px 14px;border-radius:6px;font-size:12px;cursor:pointer;">Limpar cache e recarregar</button>' +
+      '</div>' +
+     '</div>';
+    }
+   }
+  }, 16000);
  </script>
- <script type="module" src="./js/app.js?v=8.6.3"></script>
+ <script type="module" src="./js/app.js?v=8.6.4"></script>
 </head>
 <body>
  <div id="app" aria-live="polite">

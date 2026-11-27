@@ -1,13 +1,13 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
-import {TEMPLATES} from './templates.js?v=8.6.3';
-import {generateContractPdf} from './pdf-contract.js?v=8.6.3';
-import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js?v=8.6.3';
-import {createCRM, decodeBudgetData} from './crm.js?v=8.6.3';
-import {createCalendar} from './calendar-v6.js?v=8.6.3';
-import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.6.3';
-import {parseCSV,isoDate} from './csv.js?v=8.6.3';
-import {createOnboarding} from './onboarding-v67.js?v=8.6.3';
-import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js?v=8.6.3';
+import {TEMPLATES} from './templates.js?v=8.6.4';
+import {generateContractPdf} from './pdf-contract.js?v=8.6.4';
+import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js?v=8.6.4';
+import {createCRM, decodeBudgetData} from './crm.js?v=8.6.4';
+import {createCalendar} from './calendar-v6.js?v=8.6.4';
+import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.6.4';
+import {parseCSV,isoDate} from './csv.js?v=8.6.4';
+import {createOnboarding} from './onboarding-v67.js?v=8.6.4';
+import {$,$$,safe,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js?v=8.6.4';
 // Campanella V4 - multi-escolas, licencas e administracao.
 // Esta e uma chave publica, segura para uso em frontend com RLS corretamente configurado.
 // Nunca incluir chave secret ou service_role neste arquivo.
@@ -869,7 +869,11 @@ function applyPanelRouteFromHash(){
  const h=location.hash||'';
  if(!h.startsWith('#/'))return;
  const path=h.slice(2).trim();
- if(!path)return;
+ if(!path){
+  ui.page='dashboard';
+  ui.studentId=null;
+  return;
+ }
  if(path.startsWith('aluno/')){
   const sid=path.slice(6).split(/[/?#]/)[0].trim();
   if(sid){ui.studentId=sid;ui.page='student-profile';}
@@ -877,21 +881,14 @@ function applyPanelRouteFromHash(){
  }
  const mapped=SLUG_TO_PAGE[path]||path;
  if(['dashboard','leads','interviews','contracts','students','directory','teachers','calendar','packages','templates','settings','licenses','profile','schools'].includes(mapped)||mapped.startsWith('settings-')||mapped.startsWith('profile-')){
+  if(mapped==='leads'&&ui.page!=='leads')crm.resetTab?.();
   ui.page=mapped;
+  ui.studentId=null;
+ }else{
+  // Rota desconhecida (D16): voltar com seguranca para visao geral
+  ui.page='dashboard';
+  ui.studentId=null;
  }
-}
-if(typeof window!=='undefined'){
- window.addEventListener('hashchange',async()=>{
-  if(!ui.user||!location.hash.startsWith('#/'))return;
-  const prevPage=ui.page,prevStudent=ui.studentId;
-  applyPanelRouteFromHash();
-  if(ui.page==='student-profile'&&ui.studentId&&(prevPage!=='student-profile'||prevStudent!==ui.studentId)){
-   try{await calendar.openStudent(ui.studentId,false);}catch(e){}
-   render();
-  }else if(ui.page!==prevPage){
-   render();
-  }
- });
 }
 async function processPendingAdminInvite(){
  if(!ui.user)return;
@@ -1023,6 +1020,7 @@ async function initialize(){
  const driveReturn=new URLSearchParams(location.search).get('drive');
  if(driveReturn){toast(driveReturn==='connected'?'Google Drive conectado à escola.':'Não foi possível concluir a conexão com o Google Drive.',driveReturn!=='connected');history.replaceState({},'',location.pathname);}
 }
+const ensureBootCleared=()=>{if(typeof document!=='undefined'&&document.querySelector('#app .boot')&&!document.querySelector('#app .shell')){setTimeout(()=>{if(document.querySelector('#app .boot')&&!document.querySelector('#app .shell'))render();},300);}};
 async function refresh(){
  if(ui.role==='teacher'){await calendar.load();calendar.renderCalendar();return;}
  const version=++refreshVersion,schoolId=ui.schoolId;
@@ -1032,7 +1030,7 @@ async function refresh(){
   sb.from('school_members').select('user_id,role,created_at').eq('school_id',schoolId),
   (async()=>{try{await sb.rpc('crm_sync_pipeline',{p_school:schoolId});}catch(e){console.warn('Sync pipeline:',e?.message);}})()
  ]);
- if(version!==refreshVersion||ui.schoolId!==schoolId)return;
+ if(version!==refreshVersion||ui.schoolId!==schoolId){ensureBootCleared();return;}
  if(memberError)throw memberError;
  const schoolMembers=members||[];
  const myMember=schoolMembers.find(m=>m.user_id===ui.user?.id)||((currentSchool().admin_user_id===ui.user?.id)?{user_id:ui.user.id,role:'admin'}:null);
@@ -1045,13 +1043,13 @@ async function refresh(){
    let q=sb.from(k).select('*');
    q=k==='profiles'?q.in('id',schoolMembers.map(m=>m.user_id)):q.eq('school_id',schoolId);
    const {data,error}=await q.order('created_at',{ascending:false}).range(page*pageSize,(page+1)*pageSize-1);
-   if(version!==refreshVersion||ui.schoolId!==schoolId)return;
+   if(version!==refreshVersion||ui.schoolId!==schoolId){ensureBootCleared();return;}
    if(error)throw error;
    all.push(...(data||[]));if(!data||data.length<pageSize)break;
   }
   newData[k]=all;
  }));
- if(version!==refreshVersion||ui.schoolId!==schoolId)return;
+ if(version!==refreshVersion||ui.schoolId!==schoolId){ensureBootCleared();return;}
  ui.schoolMembers=schoolMembers;ui.role='admin';
  Object.assign(db,newData);
  ui.driveConnection=null;
@@ -1717,8 +1715,9 @@ function studentProfilePage(){
  const latest=all.find(c=>c.status==='signed')||all[0];
  const curTeacher=s.calendar_teacher_id||latest?.terms?.teacher_id;
  const isMinor=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
+ const formatCEP=v=>{if(!v)return '';const d=onlyDigits(v);return d.length===8?`${d.slice(0,5)}-${d.slice(5)}`:v;};
  const info=(label,value)=>`<div class="detail-item"><span>${safe(label)}</span><strong>${safe(value??'—')}</strong></div>`;
- const registration=`<section class="panel cal-section cal-profile-registration"><div class="panel-head"><h2>Dados cadastrais</h2><div class="actions"><button class="btn mini light" type="button" data-action="editStudent" data-id="${s.id}">${ico('profile',14)} Editar dados</button><button class="btn mini danger" type="button" data-action="removeStudent" data-id="${s.id}">${ico('trash',14)} Excluir aluno</button></div></div><div class="profile-grid">${info('Aluno',s.full_name)}${info('Professor responsável',lookup('teachers',curTeacher)?.name||'Não definido')}${info('E-mail',s.email)}${info('Telefone',s.phone)}${info('Nascimento',dateBR(s.birth_date))}${info('CPF',s.cpf)}${isMinor?info('Responsável',s.guardian_name)+info('CPF responsável',s.guardian_cpf)+info('Telefone responsável',s.guardian_phone)+info('E-mail responsável',s.guardian_email):''}${info('Endereço',s.address)}</div></section>`;
+ const registration=`<section class="panel cal-section cal-profile-registration"><div class="panel-head"><h2>Dados cadastrais</h2><div class="actions"><button class="btn mini light" type="button" data-action="editStudent" data-id="${s.id}">${ico('profile',14)} Editar dados</button><button class="btn mini danger" type="button" data-action="removeStudent" data-id="${s.id}">${ico('trash',14)} Excluir aluno</button></div></div><div class="profile-grid">${info('Aluno',s.full_name)}${info('Professor responsável',lookup('teachers',curTeacher)?.name||'Não definido')}${info('E-mail',s.email)}${info('Telefone',s.phone)}${info('Nascimento',dateBR(s.birth_date))}${info('CPF',s.cpf)}${info('CEP',s.cep?formatCEP(s.cep):'—')}${info('Endereço',s.address)}${isMinor?info('Responsável',s.guardian_name)+info('CPF responsável',s.guardian_cpf)+info('Telefone responsável',s.guardian_phone)+info('E-mail responsável',s.guardian_email)+(s.guardian_cep?info('CEP responsável',formatCEP(s.guardian_cep)):'')+(s.guardian_address?info('Endereço responsável',s.guardian_address):''):''}</div></section>`;
  const contracts=all.map(c=>{
   const isPre=isPreexistingContract(c);
   const isDuo=c.kind==='dupla';
@@ -2246,11 +2245,15 @@ function directoryView(){const list=db.students.filter(s=>[s.full_name,s.email,s
 function renderStudentScheduleHost(teacherId,selectedSlotIds=[]){
  return calendar.studentSchedulePicker(teacherId,selectedSlotIds);
 }
-function studentForm(id){const s=lookup('students',id)||{},minor=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
+function studentForm(id){
+ const s=id?lookup('students',id):{};
+ if(id&&!s){toast('Aluno não encontrado para edição.',true);return;}
+ const minor=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
  const v6Contract=id?db.contracts.find(c=>(c.student_id===id||c.student2_id===id)&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status)):null;
  const curTeacher=s.calendar_teacher_id||v6Contract?.terms?.teacher_id||'';
  const editSchedule=v6Contract?`<div class="student-calendar-state"><strong>Horário controlado pelo calendário</strong><span>${safe(formatSchedule(calendar.scheduleForContract(v6Contract)))}</span><span>Para alterar aulas, abra o calendário do professor.</span></div>`:`<div id="studentScheduleHost">${renderStudentScheduleHost(curTeacher,s.calendar_slot_ids||[])}</div>`;
- showModal(`<h2>${id?'Editar aluno':'Novo aluno'}</h2><p class="modal-intro">Apenas o nome completo é obrigatório para cadastrar. Telefone (nacional ou internacional com +DDI), data de nascimento, CPF e endereço podem ser preenchidos ou completados depois.</p><form id="studentForm" data-id="${id||''}"><div class="form-grid">${input('Nome completo','full_name',s.full_name)}${input('Telefone / WhatsApp (opcional, aceita +DDI)','phone',s.phone,'tel',false)}${input('CPF','cpf',s.cpf,'text',false)}${input('E-mail','email',s.email,'email',false)}${input('Nascimento (opcional)','birth_date',s.birth_date,'date',false)}${input('CEP','cep',s.cep,'text',false)}<div class="wide">${input('Endereço completo','address',s.address,'text',false)}</div><label class="field wide checkrow"><input type="checkbox" name="is_minor" id="studentMinor" ${minor?'checked':''}> Menor de idade com responsável legal</label></div><div id="guardianFields">${guardianHTML(s,minor)}</div><h3 class="form-section">Professor responsável</h3><label class="field"><span>Professor (opcional até a matrícula)</span><select name="calendar_teacher_id" id="studentTeacherSelect" ${v6Contract?'disabled':''}><option value="">Definir depois</option>${options(db.teachers.filter(t=>t.active),curTeacher)}</select></label><h3 class="form-section">${v6Contract?'Horários da agenda':'Horários semanais do professor'}</h3>${editSchedule}
+ const formTitle=id?`Editar aluno — ${safe(s.full_name||'Cadastro')}`:'Novo aluno';
+ showModal(`<h2>${formTitle}</h2><p class="modal-intro">Apenas o nome completo é obrigatório para cadastrar. Telefone (nacional ou internacional com +DDI), data de nascimento, CPF e endereço podem ser preenchidos ou completados depois.</p><form id="studentForm" data-id="${id||''}" autocomplete="off"><div class="form-grid">${input('Nome completo','full_name',s.full_name)}${input('Telefone / WhatsApp (opcional, aceita +DDI)','phone',s.phone,'tel',false)}${input('CPF','cpf',s.cpf,'text',false)}${input('E-mail','email',s.email,'email',false)}${input('Nascimento (opcional)','birth_date',s.birth_date,'date',false)}${input('CEP','cep',s.cep,'text',false)}<div class="wide">${input('Endereço completo','address',s.address,'text',false)}</div><label class="field wide checkrow"><input type="checkbox" name="is_minor" id="studentMinor" ${minor?'checked':''}> Menor de idade com responsável legal</label></div><div id="guardianFields">${guardianHTML(s,minor)}</div><h3 class="form-section">Professor responsável</h3><label class="field"><span>Professor (opcional até a matrícula)</span><select name="calendar_teacher_id" id="studentTeacherSelect" ${v6Contract?'disabled':''}><option value="">Definir depois</option>${options(db.teachers.filter(t=>t.active),curTeacher)}</select></label><h3 class="form-section">${v6Contract?'Horários da agenda':'Horários semanais do professor'}</h3>${editSchedule}
  ${!id?`<label class="checkrow" style="margin-top:16px"><input type="checkbox" name="create_contract"> Após cadastrar, preparar matrícula e contrato</label>`:''}
  <div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Salvar cadastro</button></div></form>`);
 }
@@ -2664,7 +2667,7 @@ const DOCX_MARKER=CONTRACT_MARKER;
 let docxValidationCache=new WeakMap();
 function renderDocxReport(report,existing=false){const el=$('#docxValidation');if(!el)return;
  if(!report){el.innerHTML='<p class="muted small">Selecione um arquivo DOCX para analisar.</p>';return;}
- const ok=report.valid;el.innerHTML=`<div class="docx-report-heading ${ok?'is-ok':'is-error'}"><b>${ok?'✓ Modelo validado':`⚠ ${report.issues.length} ajuste(s) necessário(s)`}</b><span>${report.baseFound}/${report.requiredCount} campos base obrigatórios encontrados</span></div>${existing&&!ok?'<p class="small">Este modelo antigo precisa ser corrigido e ter o DOCX substituído antes de ser usado em uma nova matrícula.</p>':''}${report.issues.length?`<ul>${report.issues.map(x=>`<li>${safe(x.message)}</li>`).join('')}</ul>`:`<p class="small">Campos base, papéis e assinaturas corretos. Campos adicionais identificados: ${report.customFields.length}.</p>`}`;
+ const ok=report.valid;const sigBadge=`${report.sigFound??2}/${report.requiredCount||2} assinaturas obrigatórias`;const baseBadge=report.baseFound?` · ${report.baseFound} campo(s) base identificado(s)`:'';el.innerHTML=`<div class="docx-report-heading ${ok?'is-ok':'is-error'}"><b>${ok?'✓ Modelo validado':`⚠ ${report.issues.length} ajuste(s) necessário(s)`}</b><span>${sigBadge}${baseBadge}</span></div>${existing&&!ok?'<p class="small">Este modelo antigo precisa ser corrigido e ter o DOCX substituído antes de ser usado em uma nova matrícula.</p>':''}${report.issues.length?`<ul>${report.issues.map(x=>`<li>${safe(x.message)}</li>`).join('')}</ul>`:`<p class="small">Campos base, papéis e assinaturas corretos. Campos adicionais identificados: ${report.customFields.length}.</p>`}`;
 }
 function safeDocxHTML(markup){const doc=new DOMParser().parseFromString(markup,'text/html');const tags=new Set(['P','DIV','SPAN','H1','H2','H3','H4','B','STRONG','I','EM','U','BR','UL','OL','LI','TABLE','TBODY','THEAD','TR','TD','TH','BLOCKQUOTE']);for(const el of [...doc.body.querySelectorAll('*')]){if(!tags.has(el.tagName)){el.replaceWith(...el.childNodes);continue;}for(const attr of [...el.attributes])el.removeAttribute(attr.name);}
  const blockTags='p,li,td,th,h1,h2,h3,h4,blockquote';for(const el of doc.body.querySelectorAll(blockTags)){
@@ -3393,7 +3396,7 @@ document.addEventListener('click',async e=>{
  if(action==='showSignup'){$('#app').innerHTML=signupPage();return;}
  if(action==='showForgotPassword'){$('#app').innerHTML=forgotPasswordPage();return;}
  if(action==='backLogin'){if(passwordRecoveryRoute())await sb.auth.signOut();history.replaceState({},'',location.pathname);ui.user=null;$('#app').innerHTML=login();return;}
- if(action==='navigate'){if(ui.role==='teacher'&&page!=='calendar')throw new Error('Acesso restrito ao professor.');if(page==='licenses'&&!ui.isPlatformAdmin)throw new Error('Acesso negado.');if((page==='settings'||page.startsWith('settings-')||['templates','teachers','packages'].includes(page))&&ui.schoolId&&!canAdmin())throw new Error('Área restrita.');ui.page=page;ensureActiveNavGroupOpen();if(page==='calendar')await calendar.load();if(page!=='licenses')ui.newlyIssuedKey=null;ui.search='';ui.expiry='all';if(page==='directory')ui.studentTab='active';if(page==='students')ui.enrollmentTab='current';if(page==='contracts'){ui.contractTab='current';ui.contractStatus='all';}if(page==='interviews'){ui.interviewTab='current';ui.interviewStatus='all';}if(page==='licenses')await loadPlatformData();return render();}
+ if(action==='navigate'){if(ui.role==='teacher'&&page!=='calendar')throw new Error('Acesso restrito ao professor.');if(page==='licenses'&&!ui.isPlatformAdmin)throw new Error('Acesso negado.');if((page==='settings'||page.startsWith('settings-')||['templates','teachers','packages'].includes(page))&&ui.schoolId&&!canAdmin())throw new Error('Área restrita.');ui.page=page;ensureActiveNavGroupOpen();if(page==='calendar')await calendar.load();if(page!=='licenses')ui.newlyIssuedKey=null;ui.search='';ui.expiry='all';if(page==='leads')crm.resetTab?.();if(page==='directory')ui.studentTab='active';if(page==='students')ui.enrollmentTab='current';if(page==='contracts'){ui.contractTab='current';ui.contractStatus='all';}if(page==='interviews'){ui.interviewTab='current';ui.interviewStatus='all';}if(page==='licenses')await loadPlatformData();return render();}
  if(action==='logout'){refreshVersion++;await sb.auth.signOut();ui.user=null;ui.role=null;ui.schoolId=null;ui.isPlatformAdmin=false;ui.newlyIssuedKey=null;ui.page='dashboard';return await initialize();}
  if(action==='selectSchool')return await switchSchool(id);
  if(action==='showActivation')return activationModal();
@@ -4304,40 +4307,49 @@ document.addEventListener('submit',async event=>{
   if(!f.dataset.id){
    const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();
    if(!lim.isUnlimited&&cur>=lim.maxStudents)throw new Error(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Faça upgrade de plano ou adquira pacotes de +10 alunos.`);
+  }else{
+   const targetStudent=lookup('students',f.dataset.id);
+   if(!targetStudent)throw new Error('Aluno não encontrado para atualização.');
   }
-  const d=formData(f),minor=Boolean(f.elements.is_minor.checked||d.guardian_name?.trim()||d.guardian_cpf?.trim());
-  if(d.full_name.trim().length<2||d.full_name.trim().length>180)throw new Error('Informe o nome completo do aluno.');
-  const phone=normalizeStudentPhone(d.phone);
-  if(d.cpf&&!cpfValid(d.cpf))throw new Error('CPF inválido.');
-  if(d.guardian_cpf&&!cpfValid(d.guardian_cpf))throw new Error('CPF do responsável inválido.');
-  if(d.cep&&onlyDigits(d.cep).length!==8)throw new Error('CEP deve ter 8 dígitos.');
-  if(d.birth_date){
-   const bd=new Date(d.birth_date+'T12:00:00Z');if(!Number.isFinite(bd.valueOf())||d.birth_date>today())throw new Error('Nascimento inválido.');
-   const [y,m,day]=today().split('-').map(Number),[sy,sm,sd]=d.birth_date.split('-').map(Number);
-   const age=y-sy-(m<sm||(m===sm&&day<sd)?1:0);
-   if(f.elements.is_minor.checked!==(age<18))throw new Error('A opção de menor de idade não confere com a data de nascimento.');
-  }
-  const calendarManaged=!!f.dataset.id&&db.contracts.some(c=>(c.student_id===f.dataset.id||c.student2_id===f.dataset.id)&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status));
-  let current_schedule=[],current_weekly_days=[],current_lesson_time=null,calendar_slot_ids=[];
-  if(!calendarManaged){
-   const checkedSlots=$$('input[name="cal_slot"]:checked',f);
-   if(checkedSlots.length){
-    const allSlots=calendar.data?.()?.slots||[];
-    calendar_slot_ids=checkedSlots.map(c=>c.value);
-    const chosen=calendar_slot_ids.map(id=>allSlots.find(sl=>sl.id===id)).filter(Boolean);
-    current_schedule=chosen.map(s=>({day:s.weekday,time:s.time,duration_minutes:s.duration}));
-    current_weekly_days=chosen.map(s=>s.weekday);
-    current_lesson_time=chosen[0]?.time||null;
+  const subBtn=f.querySelector('button[type="submit"]');
+  if(subBtn){subBtn.disabled=true;subBtn.textContent='Salvando...';}
+  try{
+   const d=formData(f),minor=Boolean(f.elements.is_minor.checked||d.guardian_name?.trim()||d.guardian_cpf?.trim());
+   if(d.full_name.trim().length<2||d.full_name.trim().length>180)throw new Error('Informe o nome completo do aluno.');
+   const phone=normalizeStudentPhone(d.phone);
+   if(d.cpf&&!cpfValid(d.cpf))throw new Error('CPF inválido.');
+   if(d.guardian_cpf&&!cpfValid(d.guardian_cpf))throw new Error('CPF do responsável inválido.');
+   if(d.cep&&onlyDigits(d.cep).length!==8)throw new Error('CEP deve ter 8 dígitos.');
+   if(d.birth_date){
+    const bd=new Date(d.birth_date+'T12:00:00Z');if(!Number.isFinite(bd.valueOf())||d.birth_date>today())throw new Error('Nascimento inválido.');
+    const [y,m,day]=today().split('-').map(Number),[sy,sm,sd]=d.birth_date.split('-').map(Number);
+    const age=y-sy-(m<sm||(m===sm&&day<sd)?1:0);
+    if(f.elements.is_minor.checked!==(age<18))throw new Error('A opção de menor de idade não confere com a data de nascimento.');
    }
+   const calendarManaged=!!f.dataset.id&&db.contracts.some(c=>(c.student_id===f.dataset.id||c.student2_id===f.dataset.id)&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status));
+   let current_schedule=[],current_weekly_days=[],current_lesson_time=null,calendar_slot_ids=[];
+   if(!calendarManaged){
+    const checkedSlots=$$('input[name="cal_slot"]:checked',f);
+    if(checkedSlots.length){
+     const allSlots=calendar.data?.()?.slots||[];
+     calendar_slot_ids=checkedSlots.map(c=>c.value);
+     const chosen=calendar_slot_ids.map(id=>allSlots.find(sl=>sl.id===id)).filter(Boolean);
+     current_schedule=chosen.map(s=>({day:s.weekday,time:s.time,duration_minutes:s.duration}));
+     current_weekly_days=chosen.map(s=>s.weekday);
+     current_lesson_time=chosen[0]?.time||null;
+    }
+   }
+   const teacherForStudent=calendarManaged?db.students.find(x=>x.id===f.dataset.id)?.calendar_teacher_id||db.contracts.find(c=>(c.student_id===f.dataset.id||c.student2_id===f.dataset.id)&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status))?.terms?.teacher_id:f.elements.calendar_teacher_id?.value||null;
+   if(!teacherForStudent&&f.elements.create_contract?.checked){
+    f.elements.calendar_teacher_id?.focus();
+    throw new Error('Selecione o professor antes de preparar a matrícula.');
+   }
+   const payload={calendar_teacher_id:teacherForStudent,calendar_slot_ids,full_name:d.full_name.trim(),cpf:onlyDigits(d.cpf)||null,email:d.email.trim()||null,birth_date:d.birth_date||null,phone,address:d.address||null,cep:onlyDigits(d.cep)||null,is_minor:minor?true:(d.birth_date?false:null),...(calendarManaged?{}:{current_schedule,current_weekly_days,current_lesson_time}),
+   guardian_name:minor?(d.guardian_name||null):null,guardian_birth_date:minor?(d.guardian_birth_date||null):null,guardian_cpf:minor?(onlyDigits(d.guardian_cpf)||null):null,guardian_phone:minor?normalizeStudentPhone(d.guardian_phone):null,guardian_email:minor?(d.guardian_email||null):null,guardian_address:minor?(d.guardian_address||null):null,guardian_cep:minor?(onlyDigits(d.guardian_cep)||null):null};
+   const saved=await save('students',payload,f.dataset.id||undefined);toast('Aluno salvo.');await refresh();if(!f.dataset.id&&f.elements.create_contract?.checked){manualEnrollmentForm(saved.id);return;}if(f.dataset.id){await studentDetail(saved.id);return;}closeModal();return;
+  }finally{
+   if(subBtn){subBtn.disabled=false;subBtn.textContent='Salvar cadastro';}
   }
-  const teacherForStudent=calendarManaged?db.students.find(x=>x.id===f.dataset.id)?.calendar_teacher_id||db.contracts.find(c=>(c.student_id===f.dataset.id||c.student2_id===f.dataset.id)&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status))?.terms?.teacher_id:f.elements.calendar_teacher_id?.value||null;
-  if(!teacherForStudent&&f.elements.create_contract?.checked){
-   f.elements.calendar_teacher_id?.focus();
-   throw new Error('Selecione o professor antes de preparar a matrícula.');
-  }
-  const payload={calendar_teacher_id:teacherForStudent,calendar_slot_ids,full_name:d.full_name.trim(),cpf:onlyDigits(d.cpf)||null,email:d.email.trim()||null,birth_date:d.birth_date||null,phone,address:d.address||null,cep:onlyDigits(d.cep)||null,is_minor:minor?true:(d.birth_date?false:null),...(calendarManaged?{}:{current_schedule,current_weekly_days,current_lesson_time}),
-  guardian_name:minor?(d.guardian_name||null):null,guardian_birth_date:minor?(d.guardian_birth_date||null):null,guardian_cpf:minor?(onlyDigits(d.guardian_cpf)||null):null,guardian_phone:minor?normalizeStudentPhone(d.guardian_phone):null,guardian_email:minor?(d.guardian_email||null):null,guardian_address:minor?(d.guardian_address||null):null,guardian_cep:minor?(onlyDigits(d.guardian_cep)||null):null};
-  const saved=await save('students',payload,f.dataset.id||undefined);toast('Aluno salvo.');await refresh();if(!f.dataset.id&&f.elements.create_contract?.checked){manualEnrollmentForm(saved.id);return;}if(f.dataset.id){await studentDetail(saved.id);return;}closeModal();return;
  }
  else if(f.id==='scheduleForm'){
   if(db.contracts.some(c=>c.student_id===f.dataset.id&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status)))throw new Error('Esta matrícula usa o calendário V6. Reagende cada aula no calendário para evitar divergências.');

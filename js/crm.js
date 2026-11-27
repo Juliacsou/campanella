@@ -1,5 +1,5 @@
 // CAMPANELLA V2 | CRM & Pipeline Personalizável + Tags Coloridas + Agenda Docente.
-import {$,$$,safe,today,dateBR,onlyDigits,formData,randomToken,sha256} from './utils.js?v=8.6.3';
+import {$,$$,safe,today,dateBR,onlyDigits,formData,randomToken,sha256} from './utils.js?v=8.6.4';
 
 // Mantido apenas para compatibilidade caso algum script externo importe CRM_STAGES
 export const CRM_STAGES={
@@ -578,7 +578,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    const isDuo=l.kind==='dupla'||!!l.student2_name;
    const displayName=isDuo?`${l.name} & ${l.student2_name||'2º Aluno'}`:l.name;
    return `<tr><td><strong>${safe(displayName)}</strong>${isDuo?' <span class="pill pill-signed" style="margin-left:4px">Dupla</span>':''}<small>${safe(l.phone||'Sem telefone')}</small></td><td>${pill(statusLabel,'soft')}</td><td>${tags.length?`<div class="crm-card-tags">${tags.map(renderTagBadge).join('')}</div>`:'<span class="crm-muted">—</span>'}</td><td>${safe(l.crm_source||'—')}<small>${safe(l.crm_service||'')}</small></td><td>${interviewText(l)}</td><td>${ficheText(l)}</td><td>${btn('crmDetail',`${crmIcon('eye',14)} <span>Abrir</span>`,l.id,'table-action-btn subtle')}</td></tr>`;
-  }).join('')||'<tr><td colspan="7" class="crm-no-data">Nenhum lead corresponde a estes filtros.</td></tr>'}</tbody></table></div>`;
+  }).join('')||`<tr><td colspan="7" class="crm-no-data"><div style="padding:14px 0;text-align:center;"><p style="margin-bottom:8px;">${state.tab==='open'?'Nenhum lead corresponde a estes filtros.':`Nenhum lead nesta aba (${safe(STATUS_TABS[state.tab]||state.tab)}).`}</p>${state.tab!=='open'?`<button type="button" class="crm-btn subtle mini" data-action="crmTab" data-tab="open">Ver leads em andamento (${stats().open})</button>`:''}</div></td></tr>`}</tbody></table></div>`;
  }
 
  function upcomingInterviews(){
@@ -594,6 +594,7 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
    contact:{icon:'phone',label:'Contato',badge:'primary'},
    stage:{icon:'move',label:'Etapa',badge:'neutral'},
    appointment:{icon:'calendar',label:'Entrevista',badge:'purple'},
+   fiche:{icon:'fileText',label:'Orçamento',badge:'primary'},
    archive:{icon:'archive',label:'Desfecho',badge:'danger'},
    import:{icon:'upload',label:'Importação',badge:'neutral'},
    system:{icon:'check',label:'Sistema',badge:'neutral'}
@@ -1714,7 +1715,18 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   d.showModal();
  }
 
- async function log(id,kind,title,details='',at){await save('crm_activities',{lead_id:id,kind,title,details:details||null,actor_id:ui.user.id,...(at?{occurred_at:at}:{})});}
+ async function log(id,kind,title,details='',at){
+  try {
+   await save('crm_activities',{lead_id:id,kind,title,details:details||null,actor_id:ui.user?.id||null,...(at?{occurred_at:at}:{})});
+  } catch(err) {
+   console.warn('log crm_activities falhou com kind='+kind, err);
+   try {
+    await save('crm_activities',{lead_id:id,kind:'system',title,details:details||null,actor_id:ui.user?.id||null,...(at?{occurred_at:at}:{})});
+   } catch(err2) {
+    console.error('log crm_activities fallback falhou', err2);
+   }
+  }
+ }
  async function reloadReopen(id){await refresh();detail(id);}
  async function updateLead(id,data,title='',detailText=''){await save('leads',data,id);if(title)await log(id,'stage',title,detailText);await refresh();detail(id);}
 
@@ -2336,5 +2348,5 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
   }
  });
 
- return {view,stats,openLead:detail,scheduleInterview:appointmentForm};
+ return {view,stats,openLead:detail,scheduleInterview:appointmentForm,resetTab:()=>{state.tab='open';}};
 }

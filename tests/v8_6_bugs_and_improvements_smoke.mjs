@@ -308,11 +308,11 @@ console.log('8. Verificando estruturas de Rematrícula, Exclusão, Aditivo, Avis
     assert.ok(Array.isArray(snap.slots) && Array.isArray(snap.roster), 'N1: calInstance.data() deve retornar slots e roster como arrays');
   }
 
-  // N2: Cache-busting unificado v=8.6.3 em index.html, app.js e calendar-v6.js
+  // N2: Cache-busting unificado v=8.6.4 em index.html, app.js e calendar-v6.js
   const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.ok(indexHtml.includes('app.js?v=8.6.3'), 'N2: index.html deve carregar app.js?v=8.6.3');
-  assert.ok(appJs.includes('./crm.js?v=8.6.3') && appJs.includes('./calendar-v6.js?v=8.6.3'), 'N2: app.js deve importar crm.js e calendar-v6.js com v=8.6.3');
-  assert.ok(calJs.includes('./calendar-week-picker.js?v=8.6.3'), 'N2: calendar-v6.js deve importar calendar-week-picker.js com v=8.6.3');
+  assert.ok(indexHtml.includes('app.js?v=8.6.4'), 'N2: index.html deve carregar app.js?v=8.6.4');
+  assert.ok(appJs.includes('./crm.js?v=8.6.4') && appJs.includes('./calendar-v6.js?v=8.6.4'), 'N2: app.js deve importar crm.js e calendar-v6.js com v=8.6.4');
+  assert.ok(calJs.includes('./calendar-week-picker.js?v=8.6.4'), 'N2: calendar-v6.js deve importar calendar-week-picker.js com v=8.6.4');
 
   // N3: Sincronização em tempo real dos Campos do Modelo (syncContractExtraFields e computeContractExtraDefault)
   assert.ok(appJs.includes('function computeContractExtraDefault(f,key)') && appJs.includes('function syncContractExtraFields(f)'), 'N3: app.js deve sincronizar Campos deste modelo a partir das datas e parcelas reais do formulário');

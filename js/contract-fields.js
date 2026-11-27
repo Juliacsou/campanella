@@ -109,6 +109,8 @@ export function analyzeContractMarkers(source,kind='individual'){
  // Detecta delimitadores incompletos; se houver sinais << sem um par valido, impede o upload.
  const cleaned=raw.replace(tokenRegex,'');
  if(cleaned.includes('<<')||cleaned.includes('>>'))issues.push({code:'syntax',message:'Ha um marcador aberto ou malformado. Confira os sinais << e >> no Word.'});
+ const reqSigFound = ['contratante','contratado'].filter(who => markers.some(x => x.key === 'assinatura' && x.who === who)).length;
+ const distinctBaseFound = new Set(markers.filter(m => m.key !== 'assinatura' && BASE_MAP.has(m.key)).map(m => m.key)).size;
  const baseFoundCount = markers.filter(m => m.key !== 'assinatura' && BASE_MAP.has(m.key)).length;
  const uniqueIssues=[];
  const seenMsg=new Set();
@@ -119,7 +121,7 @@ export function analyzeContractMarkers(source,kind='individual'){
    uniqueIssues.push(issue);
   }
  }
- return {valid:uniqueIssues.length===0,issues:uniqueIssues,customFields:custom,baseFound:baseFoundCount,requiredCount:2};
+ return {valid:uniqueIssues.length===0,issues:uniqueIssues,customFields:custom,sigFound:reqSigFound,baseFound:distinctBaseFound,totalBaseCount:baseFoundCount,requiredCount:2};
 }
 // Os modelos convertidos mantem apenas {{campo}}; valida novamente antes do envio externo.
 export function validateConvertedTemplate(html,kind='individual'){
