@@ -1,4 +1,4 @@
-import {weeklyPickerMarkup,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.7.2';
+import {weeklyPickerMarkup,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.7.3';
 // Campanella V6.4 - agenda escolar e docente. Nao depende de AssinAPI / Drive.
 // A autorizacao, a validacao de sobreposicoes e a mudanca de estado acontecem nas RPCs SQL.
 export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg,openLead}){
@@ -298,13 +298,13 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
    if(!error&&Array.isArray(data)){
     state.customBlocksList=data.map(b=>({
      id:b.id,
-     from:b.start_date,
-     to:b.end_date,
+     from:b.start_date||b.from||b.date_from,
+     to:b.end_date||b.to||b.date_to,
      teacher_id:b.teacher_id,
      reason:b.reason,
      start_time:b.start_time,
      end_time:b.end_time,
-     is_historical:b.is_historical||b.end_date<today()
+     is_historical:b.is_historical||((b.end_date||b.to)<today())
     }));
    }
   }catch(_){}
@@ -312,11 +312,16 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  function blocksView(){
   const teacher=selectedTeacher();
   const filter=state.blocksFilter||'active';
-  let blocks=(state.customBlocksList||data().blocks).filter(b=>!teacher||!b.teacher_id||b.teacher_id===teacher);
-  if(filter==='active')blocks=blocks.filter(b=>b.to>=today());
-  else if(filter==='past')blocks=blocks.filter(b=>b.to<today());
+  const rawList=state.customBlocksList||data().blocks||[];
+  let blocks=rawList.map(b=>({
+   ...b,
+   from:b.from||b.start_date||b.date_from,
+   to:b.to||b.end_date||b.date_to
+  })).filter(b=>!teacher||!b.teacher_id||b.teacher_id===teacher);
+  if(filter==='active')blocks=blocks.filter(b=>(b.to||b.from)>=today());
+  else if(filter==='past')blocks=blocks.filter(b=>(b.to||b.from)<today());
   return `<section class="panel cal-section"><div class="panel-head"><h2>Bloqueios</h2><div class="actions"><label class="small">Período <select id="calBlocksPeriodSelect"><option value="active" ${filter==='active'?'selected':''}>Próximos e atuais</option><option value="past" ${filter==='past'?'selected':''}>Passados</option><option value="all" ${filter==='all'?'selected':''}>Todos</option></select></label>${control('calNewBlock','+ Bloquear período','','')}</div></div>${blocks.length?blocks.map(b=>{
-   const isHist=b.is_historical||b.to<today();
+   const isHist=b.is_historical||(b.to||b.from)<today();
    return `<div class="cal-block-row"><span class="cal-nav-icon">${navIcon('lock')}</span><div><strong>${safe(b.reason)}${isHist?' <span class="pill pill-neutral" style="margin-left:6px">Histórico</span>':''}</strong><small>${escapeDate(b.from)} a ${escapeDate(b.to)} · ${b.teacher_id?safe(teacherName(b.teacher_id)):'Toda a escola'}${b.start_time?' · '+niceTime(b.start_time)+'–'+niceTime(b.end_time):' · Dia inteiro'}</small></div>${control('calCancelBlock','Cancelar',`data-id="${b.id}"`,'ghost')}</div>`;
   }).join(''):'<p class="muted">Nenhum bloqueio no período visualizado.</p>'}</section>`;
  }
@@ -359,8 +364,8 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   return `<header class="page-head"><div><h1>Minha agenda</h1></div></header><div class="cal-metrics"><div><strong>${upcoming}</strong><span>Aulas hoje</span></div><div><strong>${periodCount}</strong><span>Aulas ${state.mode==='day'?'no dia':state.mode==='week'?'na semana':'no mês'}</span></div><div><strong>${totalStudents}</strong><span>Meus alunos</span></div><div class="${pending?'cal-attention':''}"><strong>${pending}</strong><span>Reagendamentos</span></div></div><div class="cal-toolbar">${control('calNewOneOff',`${navIcon('plus')} Horário avulso`,'','light')}<div class="cal-switcher">${[['day','Dia'],['week','Semana'],['month','Mês']].map(([k,n])=>`<button type="button" class="${state.mode===k?'selected':''}" data-action="calMode" data-mode="${k}">${n}</button>`).join('')}</div><div class="cal-nav">${control('calPrev','‹','','ghost')}${control('calToday','Hoje','','ghost')}${control('calNext','›','','ghost')}<b>${safe(state.mode==='day'?dateBR(state.selected):state.mode==='week'?weekRangeLabel(startOfWeek(state.selected)):monthLabel(state.selected))}</b></div></div><section class="panel cal-calendar">${state.mode==='day'?dayView():state.mode==='month'?monthView():weekView()}</section>`;
  }
  function renderCalendar(){if(teacherMode()){document.getElementById('app').innerHTML=teacherShell();document.getElementById('pageContent').innerHTML=teacherPageView();}else{render();}}
- async function reload(){if(!teacherMode())await refresh();await load();if(state.studentId&&state.studentProfile){await openStudent(state.studentId,false);}renderCalendar();}
- async function reloadCalendarOnly(){await load();if(state.studentId&&state.studentProfile){await openStudent(state.studentId,false);}renderCalendar();}
+ async function reload(){if(!teacherMode())await refresh();await load();if(state.page==='blocks'||state.customBlocksList)await loadHistoricalBlocks();if(state.studentId&&state.studentProfile){await openStudent(state.studentId,false);}renderCalendar();}
+ async function reloadCalendarOnly(){await load();if(state.page==='blocks'||state.customBlocksList)await loadHistoricalBlocks();if(state.studentId&&state.studentProfile){await openStudent(state.studentId,false);}renderCalendar();}
 
  function getFormPicker(teacherId,startDate,includeManualEnd=false,selectedIds=[],compact=false,excludeStudentIds=[]){
   if(!teacherId)return `<div class="cal-enrollment" data-teacher=""><p class="muted">Selecione o professor responsável.</p></div>`;
@@ -425,10 +430,15 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const endDate=rawManual?.value||terms.end_date||null;
   if(mode==='recurrence'&&!endDate)throw new Error('Informe a data final do contrato para matrículas por recorrência.');
   if(isOngoing&&!endDate)throw new Error('Informe a data final do contrato.');
-  const count=mode==='recurrence'?null:(isOngoing?Number(form.elements.remaining_lessons?.value??terms.remaining_lessons??terms.lessons_count):Number(terms.lessons_count||form.elements.lessons_count?.value));
-  const previewMode=isOngoing?(mode==='recurrence'?'recurrence':'ongoing'):mode;
-  const preview=await call('calendar_preview',{p_school:school(),p_teacher:teacherId,p_start:start,p_count:count,p_slots:checked.map(c=>c.value),p_end_date:endDate,p_mode:previewMode});
-  const adjusted=mode==='recurrence'?preview.end_date:(isOngoing?endDate:(rawManual?.dataset.calManualEdited==='1'?rawManual.value:preview.end_date));
+  const count=isOngoing?Number(form.elements.remaining_lessons?.value??terms.remaining_lessons??terms.lessons_count):(mode==='recurrence'?null:Number(terms.lessons_count||form.elements.lessons_count?.value));
+  const previewMode=isOngoing?'ongoing':mode;
+  let preview;
+  try{
+   preview=await call('calendar_preview',{p_school:school(),p_teacher:teacherId,p_start:start,p_count:count,p_slots:checked.map(c=>c.value),p_end_date:endDate,p_mode:previewMode});
+  }catch(_retry){
+   preview=await call('calendar_preview',{p_school:school(),p_teacher:teacherId,p_start:start,p_count:count,p_slots:checked.map(c=>c.value),p_end_date:endDate,p_mode:previewMode});
+  }
+  const adjusted=mode==='recurrence'?(isOngoing?endDate:preview.end_date):(isOngoing?endDate:(rawManual?.dataset.calManualEdited==='1'?rawManual.value:preview.end_date));
   if(!isOngoing&&adjusted<preview.end_date)throw new Error('A data final escolhida é anterior à última aula. Ajuste-a ou altere os horários.');
   const normalized={...terms,enrollment_mode:mode,lessons_count:isOngoing?(Number(form.elements.lessons_count?.value)||preview.total):preview.total,teacher_id:teacherId,teacher_name:teacherName(teacherId),start_date:isOngoing?(form.elements.start_date?.value||terms.start_date):start,end_date:adjusted,
    lesson_schedule:slots.map(s=>({day:s.weekday,time:s.time,duration_minutes:s.duration})),weekly_days:slots.map(s=>s.weekday),
@@ -481,7 +491,8 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   const {preview}=await plan(f,{teacher_id:teacherId,start_date:start,lessons_count:count,enrollment_mode:mode,end_date:endDate});
   if(!preview)return toast('Configure os horários fixos do professor para calcular a agenda.',true);
   const out=f.querySelector('[data-cal-result]');
-  if(mode==='recurrence'){
+  const isOngoing=f.elements.enrollment_origin?.value==='ongoing'||f.dataset.ongoing==='1';
+  if(mode==='recurrence'&&!isOngoing){
    if(out)out.textContent=`✓ ${preview.total} aulas calculadas • última aula em ${dateBR(preview.end_date)}`;
    if(f.elements.lessons_count){f.elements.lessons_count.value=preview.total;}
    if(f.elements.weekly_frequency){
@@ -489,7 +500,6 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
     f.elements.weekly_frequency.value=checked||1;
    }
   }else{
-   const isOngoing=f.elements.enrollment_origin?.value==='ongoing';
    if(isOngoing){
     const overflow=preview.overflow_count??preview.overflow??0;
     const overflowText=overflow>0?` • ⚠ ${overflow} aula(s) excedem o término`:'' ;
@@ -603,7 +613,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  }
  function newBlock(defaultFrom=today(),defaultTo=today(),defaultTeacher=null){
   const tId=defaultTeacher!==null?defaultTeacher:(teacherMode()?ui.teacherId:null);
-  showModal(`<div class="eyebrow">Agenda V6</div><h2>Novo bloqueio</h2><form id="calBlockForm"><div class="form-grid"><label class="field wide"><span>Quem será afetado?</span><select name="teacher_id" ${teacherMode()?'disabled':''}>${teacherOptions(!teacherMode(),tId)}</select></label><label class="field"><span>Início</span><input name="from" type="date" value="${safeAttr(defaultFrom)}" required></label><label class="field"><span>Fim</span><input name="to" type="date" value="${safeAttr(defaultTo)}" required></label><label class="field"><span>Hora inicial (opcional)</span><input name="start_time" type="time"></label><label class="field"><span>Hora final (opcional)</span><input name="end_time" type="time"></label><label class="field wide"><span>Motivo</span><select name="reason_preset">${blockReasons.map(x=>`<option value="${x}">${x}</option>`).join('')}</select></label><label class="field wide" data-custom-reason style="display:none"><span>Descreva o motivo</span><input name="reason_custom" maxlength="140" placeholder="Ex.: reunião pedagógica"></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Ver impacto e bloquear</button></div></form>`);
+  showModal(`<div class="eyebrow">Agenda V6</div><h2>Novo bloqueio</h2><p class="modal-intro">Bloqueie períodos letivos ou individuais. <b>Datas passadas são aceitas</b> para registrar recessos e férias históricos.</p><form id="calBlockForm"><div class="form-grid"><label class="field wide"><span>Quem será afetado?</span><select name="teacher_id" ${teacherMode()?'disabled':''}>${teacherOptions(!teacherMode(),tId)}</select></label><label class="field"><span>Início</span><input name="from" type="date" value="${safeAttr(defaultFrom)}" required></label><label class="field"><span>Fim</span><input name="to" type="date" value="${safeAttr(defaultTo)}" required></label><label class="field"><span>Hora inicial (opcional)</span><input name="start_time" type="time"></label><label class="field"><span>Hora final (opcional)</span><input name="end_time" type="time"></label><label class="field wide"><span>Motivo</span><select name="reason_preset">${blockReasons.map(x=>`<option value="${x}">${x}</option>`).join('')}</select></label><label class="field wide" data-custom-reason style="display:none"><span>Descreva o motivo</span><input name="reason_custom" maxlength="140" placeholder="Ex.: reunião pedagógica"></label></div><div class="form-footer"><button type="button" class="btn ghost" data-action="close">Cancelar</button><button class="btn" type="submit">Ver impacto e bloquear</button></div></form>`);
  }
  async function reschedule(id){
   const l=lessonById(id);if(!l)throw new Error('Aula não encontrada.');
@@ -717,8 +727,8 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
    const originBadge=l.origin==='after_end'?' <span class="pill pill-warning" style="margin-left:4px">Após término</span>':(l.origin==='makeup'?` <span class="pill pill-signed" style="margin-left:4px">Reposição${l.makeup_deadline?` (até ${dateBR(l.makeup_deadline)})`:''}</span>`:(l.origin==='overflow'?' <span class="pill pill-warning" style="margin-left:4px">Excedente</span>':''));
    return `<div class="cal-lesson-row"><span class="cal-lesson-number">#${Number(l.number)}</span><div class="cal-lesson-main"><strong>${l.date?`${safe(weekNames[parse(l.date).getDay()])}, ${dateBR(l.date)}`:'Data a definir'} ${l.time?'· '+safe(niceTime(l.time)):''}${isTemp?' <span class="cal-temp-badge">Horário temporário</span>':''}${originBadge}</strong><small>${safe(l.teacher_name||teacherName(l.teacher_id))} · ${safe(l.contract.course||'Aulas')} · ${Number(l.duration)} min · ${safe(textStatus(l.status))}</small>${detail}</div><div class="cal-lesson-actions">${['scheduled','needs_reschedule','reserved'].includes(l.status)?control('calReschedule','Reagendar',`data-id="${safeAttr(l.id)}"`,'light'):''}${['scheduled','needs_reschedule','reserved'].includes(l.status)?control('calSkipLesson','Pular data',`data-id="${safeAttr(l.id)}"`,'ghost'):''}${l.status==='scheduled'?control('calRecord','Registrar',`data-id="${safeAttr(l.id)}"`,'light'):''}</div></div>`;
   }).join(''):'<p class="muted">Nenhuma aula neste grupo.</p>';
-  const total=contracts.reduce((n,c)=>n+Number(c.total||0),0);
-  const doneBefore=contracts.reduce((n,c)=>n+Number(c.lessons_done_before||0),0);
+  const total=contracts.reduce((n,c)=>n+Number(c.total||c.terms?.lessons_count||c.lessons_count||0),0);
+  const doneBefore=contracts.reduce((n,c)=>n+Number(c.lessons_done_before??c.terms?.ongoing?.lessons_done_before??c.terms?.lessons_done_before??0),0);
   const basic=admin&&adminSections?.registration?adminSections.registration:`<section class="panel cal-section cal-profile-registration"><div class="panel-head"><h2>Dados cadastrais</h2></div><div class="profile-grid"><div class="detail-item"><span>Nome</span><strong>${safe(profile.name)}</strong></div><div class="detail-item"><span>Professor responsável</span><strong>${safe(teacherName(topTeacher))}</strong></div><div class="detail-item"><span>Telefone</span><strong>${safe(profile.phone||'—')}</strong></div><div class="detail-item"><span>E-mail</span><strong>${safe(profile.email||'—')}</strong></div></div></section>`;
   const contractCards=admin&&adminSections?.contracts?adminSections.contracts:contracts.map(c=>`<div class="cal-lesson-row"><div class="cal-lesson-main"><strong>${safe(c.course||'Aulas')} · ${safe(c.package||'Pacote')}${c.kind==='dupla'?`<span class="pill pill-signed" style="margin-left:6px">Dupla${c.partner_name?` com ${safe(c.partner_name)}`:''}</span>`:''}</strong><small>${safe(c.teacher_name||teacherName(c.teacher_id))} · ${c.start?dateBR(c.start):'—'} a ${c.contract_end?dateBR(c.contract_end):'—'} · ${safe(c.status)}</small></div></div>`).join('')||'<p class="muted">Sem matrículas vinculadas.</p>';
   const accordion=(title,subtitle,content,icon)=>`<details class="panel cal-profile-accordion"><summary class="cal-profile-accordion-toggle"><span class="cal-profile-accordion-icon">${navIcon(icon)}</span><span class="cal-profile-accordion-title"><strong>${title}</strong><small>${subtitle}</small></span><span class="cal-profile-accordion-chevron" aria-hidden="true"></span></summary><div class="cal-profile-accordion-content">${content}</div></details>`;
@@ -824,7 +834,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(name==='calAdoptLegacyOpen')return legacyAdoptionModal(id);
   if(name==='calSwitchInviteAccount'){await sb.auth.signOut();return inviteLanding(state.inviteToken,null);}
   if(name==='calTeacherHome')return reload();
-  if(name==='calTeacherPage'){state.page=element.dataset.page||'agenda';state.studentProfile=null;state.studentId=null;if(state.page==='slots'&&!teacherMode()&&state.teacher==='all'){state.teacher=data().teachers.find(t=>t.active)?.id||'all';}return renderCalendar();}
+  if(name==='calTeacherPage'){state.page=element.dataset.page||'agenda';state.studentProfile=null;state.studentId=null;if(state.page==='slots'&&!teacherMode()&&state.teacher==='all'){state.teacher=data().teachers.find(t=>t.active)?.id||'all';}if(state.page==='blocks')await loadHistoricalBlocks();return renderCalendar();}
   if(name==='calStudentLessonsTab'){const tab=element.dataset.tab||'future';state.studentLessonsTab=tab;const root=element.closest?.('.cal-lessons-tabs-section');if(root){root.querySelectorAll('[data-action="calStudentLessonsTab"]').forEach(b=>b.classList.toggle('is-active',b.dataset.tab===tab));root.querySelectorAll('[data-lessons-tab-panel]').forEach(p=>{p.style.display=p.dataset.lessonsTabPanel===tab?'block':'none';});}return;}
   if(name==='calTeacherSettingsTab'){state.settingsTab=element.dataset.tab||'profile';return renderCalendar();}
   if(name==='calSendPasswordRecovery'){const email=ui.user?.email;if(!email)throw new Error('E-mail de acesso indisponível');const url=new URL(location.href);url.hash='';url.search='?recuperar=1';const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:url.toString()});if(error)throw error;toast('Enviamos as instruções para o e-mail cadastrado.');return;}
@@ -870,7 +880,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(name==='calSkipLesson')return skipLesson(id);
   if(name==='calRecord')return record(id);
   if(name==='calPreview')return previewForm(element);
-  if(name==='calCancelBlock'){if(!await window.campanellaConfirm('Cancelar este bloqueio? As aulas pendentes continuarão aguardando reagendamento individual.'))return;await call('calendar_cancel_block',{p_block:id});toast('Bloqueio cancelado. Aulas pendentes preservadas.');return reload();}
+  if(name==='calCancelBlock'){if(!await window.campanellaConfirm('Cancelar este bloqueio? As aulas pendentes continuarão aguardando reagendamento individual.'))return;await call('calendar_cancel_block',{p_block:id});await loadHistoricalBlocks();toast('Bloqueio cancelado. Aulas pendentes preservadas.');return reload();}
   if(name==='calRevokeTeacher'){if(!await window.campanellaConfirm('Revogar o acesso docente? O professor perderá o acesso à agenda, sem apagar aulas ou seu cadastro.'))return;await call('calendar_revoke_teacher_access',{p_school:school(),p_teacher:id});toast('Acesso revogado.');return refresh();}
   if(name==='calRemoveSlot'){if(!await window.campanellaConfirm('Desativar este horário? Horários com aulas futuras precisarão ser resolvidos antes.'))return;await call('calendar_deactivate_slot',{p_slot:id});closeModal();toast('Horário desativado.');return reloadCalendarOnly();}
   if(name==='calDeleteSlot'){if(!await window.campanellaConfirm('Excluir DEFINITIVAMENTE este horário da grade? Horários com aulas futuras precisarão ser resolvidos antes.','Excluir horário','Excluir'))return;await call('calendar_delete_slot',{p_slot:id});closeModal();toast('Horário excluído.');return reloadCalendarOnly();}
@@ -898,9 +908,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  async function change(element){
   if(element.id==='calBlocksPeriodSelect'){
    state.blocksFilter=element.value;
-   if(state.blocksFilter==='past'||state.blocksFilter==='all'){
-    await loadHistoricalBlocks();
-   }
+   await loadHistoricalBlocks();
    return renderCalendar();
   }
   if(element.id==='calTeacherFilter'){state.teacher=element.value;return renderCalendar();}
@@ -1056,7 +1064,8 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
    if((args.p_start===null)!==(args.p_end===null))throw new Error('Informe ambas as horas ou deixe ambas vazias.');
    const reason=(v.reason_preset.value==='Outro'?v.reason_custom.value:v.reason_preset.value).trim();
    if(!reason)throw new Error('Informe o motivo do bloqueio.');
-   const count=await call('calendar_block_impact',args);
+   const rawCount=await call('calendar_block_impact',args);
+   const count=typeof rawCount==='object'&&rawCount!==null?(rawCount.count??rawCount.impact??0):Number(rawCount||0);
    const isAllPast=v.to.value<today();
    const isCross=v.from.value<today()&&v.to.value>=today();
    let msg='';
@@ -1067,11 +1076,15 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
    }else if(isCross){
     msg=`Este bloqueio inicia no passado (${dateBR(v.from.value)}) e vai até ${dateBR(v.to.value)}. As aulas já realizadas no passado não serão alteradas. ${count>0?`${count} aula(s) futura(s) ficarão pendentes para reagendamento individual.`:'Nenhuma aula futura será afetada.'} Deseja confirmar?`;
    }else{
-    msg=count>0?`Este bloqueio afetará ${count} aula(s). Todas ficarão pendentes para reagendamento individual.`:'Criar este bloqueio?';
+    msg=count>0?`Este bloqueio afetará ${count} aula(s). Todas ficarão pendentes para reagendamento individual.`:'Nenhuma aula será afetada. Deseja criar este bloqueio mesmo assim?';
    }
    if(!await window.campanellaConfirm(msg,title))return;
    const result=await call('calendar_create_block',{...args,p_reason:reason});
-   closeModal();toast(`Bloqueio criado.${isAllPast?' Histórico registrado com sucesso.':` ${result.pending} aula(s) para reagendar individualmente.`}`);return reload();
+   await loadHistoricalBlocks();
+   closeModal();
+   const pendingCount=typeof result==='object'&&result!==null?(result.pending??result.count??0):0;
+   toast(`Bloqueio criado.${isAllPast?' Histórico registrado com sucesso.':` ${pendingCount} aula(s) para reagendar individualmente.`}`);
+   return reload();
   }
   if(f.id==='calRescheduleForm'){
    const v=f.elements;if(!v.date.value||!v.time.value||!state.rescheduleChoice)throw new Error('Selecione um horário livre no calendário.');

@@ -1,5 +1,5 @@
 // CAMPANELLA V2 | CRM & Pipeline Personalizável + Tags Coloridas + Agenda Docente.
-import {$,$$,safe,today,dateBR,onlyDigits,formData,randomToken,sha256} from './utils.js?v=8.7.2';
+import {$,$$,safe,today,dateBR,onlyDigits,formData,randomToken,sha256} from './utils.js?v=8.7.3';
 
 // Mantido apenas para compatibilidade caso algum script externo importe CRM_STAGES
 export const CRM_STAGES={

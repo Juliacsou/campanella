@@ -1,6 +1,6 @@
 // Campanella V6.10 - assistente acessivel, hierarquia de instrucoes e rolagem por etapa.
 // Importacoes sempre limitadas a uma unica escola. Confirmacoes e gravacoes no Supabase.
-import {parseCSV,isoDate} from './csv.js?v=8.7.2';
+import {parseCSV,isoDate} from './csv.js?v=8.7.3';
 
 const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,' ');
 const digits=v=>String(v||'').replace(/\D/g,'');
@@ -363,23 +363,28 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
     if(model.fields?.length)throw Error('Modelo com campos personalizados: conclua esta matrícula individualmente');
    }
    const isOngoing=['em_andamento','andamento','ongoing'].includes(normalize(r.tipo||r.tipo_matricula||''))||Boolean(r.agendar_aulas_a_partir_de||r.saldo_aulas||r.aulas_restantes);
-   const start=isoDateFor(r.data_inicio);if(!/^\d{4}-\d\d-\d\d$/.test(start)||(!isOngoing&&start<today())||Number.isNaN(new Date(start+'T12:00:00Z').valueOf()))throw Error(isOngoing?'Data de início inválida':'Data de início inválida ou passada');
+   const start=isoDateFor(r.data_inicio);if(!/^\d{4}-\d\d-\d\d$/.test(start)||start==='INVALID_DATE'||(!isOngoing&&start<today())||Number.isNaN(new Date(start+'T12:00:00Z').valueOf()))throw Error(isOngoing?'Data de início inválida':'Data de início inválida ou passada');
    const rawEnd=isoDateFor(r.data_termino||r.fim_contrato||'');
-   if(isOngoing&&!rawEnd)throw Error('Data de término do contrato é obrigatória para matrículas em andamento');
+   if(isOngoing&&(!rawEnd||rawEnd==='INVALID_DATE'))throw Error('Data de término do contrato é obrigatória para matrículas em andamento');
    const isRecurrence=Boolean(rawEnd)&&!isOngoing;
-   if(rawEnd&&(!/^\d{4}-\d\d-\d\d$/.test(rawEnd)||rawEnd<start))throw Error('Data de término do contrato inválida ou anterior ao início');
+   if(rawEnd&&(!/^\d{4}-\d\d-\d\d$/.test(rawEnd)||rawEnd==='INVALID_DATE'||rawEnd<start))throw Error('Data de término do contrato inválida ou anterior ao início');
    const cutoverDate=isOngoing?(isoDateFor(r.agendar_aulas_a_partir_de||'')||today()):null;
-   if(cutoverDate&&(cutoverDate<start||cutoverDate>rawEnd))throw Error('Data para agendar aulas a partir de deve estar entre o início e o término');
+   if(cutoverDate&&(!/^\d{4}-\d\d-\d\d$/.test(cutoverDate)||cutoverDate==='INVALID_DATE'||cutoverDate<start||cutoverDate>rawEnd))throw Error('Data para agendar aulas a partir de deve estar entre o início e o término');
    const amount=normalizeMoney(r.valor_total);if(r.valor_total&&amount===null)throw Error('Valor total inválido');
    const installments=Number(r.parcelas||1);if(!Number.isInteger(installments)||installments<1||installments>48)throw Error('Informe de 1 a 48 parcelas');
-   const due=isoDateFor(r.primeiro_vencimento||start);if(!/^\d{4}-\d\d-\d\d$/.test(due))throw Error('Primeiro vencimento inválido');
+   const due=isoDateFor(r.primeiro_vencimento||start);if(!/^\d{4}-\d\d-\d\d$/.test(due)||due==='INVALID_DATE')throw Error('Primeiro vencimento inválido');
    const roster=slotData().roster||[];
    const occupied=roster.find(a=>a.teacher_id===t.id&&slots.some(sl=>sl.id===a.slot_id)&&a.student_id!==s.id);
    if(occupied)throw Error('Horário ocupado por outro aluno na grade. Escolha outro horário');
    const contractedLessons=isOngoing?Number(r.aulas_contratadas||r.aulas_totais||p.lessons_count):null;
-   const remainingLessons=isOngoing?(r.aulas_restantes?Number(r.aulas_restantes):null):null;
+   if(isOngoing&&(r.aulas_restantes===undefined||r.aulas_restantes===null||String(r.aulas_restantes).trim()===''||isNaN(Number(r.aulas_restantes))))throw Error('Saldo de aulas restantes (aulas_restantes) é obrigatório para matrículas em andamento');
+   const remainingLessons=isOngoing?Number(r.aulas_restantes):null;
    const doneBefore=isOngoing?(r.aulas_realizadas_antes?Number(r.aulas_realizadas_antes):null):null;
-   row.payload={linha:r.line,aluno_id:s.id,professor_id:t.id,pacote_id:p.id,modelo_id:model?.id||null,contrato_preexistente:isPreexisting,modo:isOngoing?'ongoing':(isRecurrence?'recorrencia':'package'),tipo:isOngoing?'em_andamento':'nova',agendar_aulas_a_partir_de:cutoverDate,aulas_contratadas:contractedLessons,aulas_restantes:remainingLessons,origem_saldo:r.origem_saldo||(remainingLessons?'manual':'estimativa_calendario'),aulas_realizadas_antes:doneBefore,destino_excedentes:r.destino_excedentes||null,prazo_reposicao_dias:r.prazo_reposicao_dias?Number(r.prazo_reposicao_dias):30,observacoes_implantacao:r.observacoes_implantacao||null,parcelas_restantes:r.parcelas_restantes?Number(r.parcelas_restantes):null,proximo_vencimento:r.proximo_vencimento?isoDateFor(r.proximo_vencimento):null,data_termino:rawEnd||null,horarios_ids:slots.map(s=>s.id),data_inicio:start,curso:r.curso||'Inglês',valor_total:amount??p.default_total,valor_total_extenso:amountWords(amount??p.default_total),parcelas:installments,primeiro_vencimento:due,forma_pagamento:r.forma_pagamento||'A combinar'};
+   const rawOrigin=normalize(r.origem_saldo||'');
+   const balanceOrigin=rawOrigin.includes('estim')?'calendar_estimate':(remainingLessons!=null?'manual':'calendar_estimate');
+   const nextDue=r.proximo_vencimento?isoDateFor(r.proximo_vencimento):null;
+   if(nextDue&&(!/^\d{4}-\d\d-\d\d$/.test(nextDue)||nextDue==='INVALID_DATE'))throw Error('Data do próximo vencimento inválida');
+   row.payload={linha:r.line,aluno_id:s.id,professor_id:t.id,pacote_id:p.id,modelo_id:model?.id||null,contrato_preexistente:isPreexisting,modo:isOngoing?'ongoing':(isRecurrence?'recorrencia':'package'),tipo:isOngoing?'em_andamento':'nova',agendar_aulas_a_partir_de:cutoverDate,aulas_contratadas:contractedLessons,aulas_restantes:remainingLessons,origem_saldo:balanceOrigin,aulas_realizadas_antes:doneBefore,destino_excedentes:r.destino_excedentes||null,prazo_reposicao_dias:null,observacoes_implantacao:r.observacoes_implantacao||null,parcelas_restantes:r.parcelas_restantes?Number(r.parcelas_restantes):null,proximo_vencimento:nextDue,data_termino:rawEnd||null,horarios_ids:slots.map(s=>s.id),data_inicio:start,curso:r.curso||'Inglês',valor_total:amount??p.default_total,valor_total_extenso:amountWords(amount??p.default_total),parcelas:installments,primeiro_vencimento:due,forma_pagamento:r.forma_pagamento||'A combinar'};
   }catch(error){row.error=error?.message||String(error);}
   return row;
  }
@@ -402,22 +407,27 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
     model=resolveByName(db.contract_types.filter(c=>c.active&&(c.kind==='dupla'||c.kind==='menor')),r.modelo||p.contract_type_id,'Modelo de contrato');
    }
    const isOngoing=['em_andamento','andamento','ongoing'].includes(normalize(r.tipo||r.tipo_matricula||''))||Boolean(r.agendar_aulas_a_partir_de||r.saldo_aulas||r.aulas_restantes);
-   const start=isoDateFor(r.data_inicio);if(!/^\d{4}-\d\d-\d\d$/.test(start)||(!isOngoing&&start<today())||Number.isNaN(new Date(start+'T12:00:00Z').valueOf()))throw Error(isOngoing?'Data de início inválida':'Data de início inválida ou passada');
+   const start=isoDateFor(r.data_inicio);if(!/^\d{4}-\d\d-\d\d$/.test(start)||start==='INVALID_DATE'||(!isOngoing&&start<today())||Number.isNaN(new Date(start+'T12:00:00Z').valueOf()))throw Error(isOngoing?'Data de início inválida':'Data de início inválida ou passada');
    const rawEnd=isoDateFor(r.data_termino||r.fim_contrato||'');
-   if(isOngoing&&!rawEnd)throw Error('Data de término do contrato é obrigatória para matrículas em andamento');
+   if(isOngoing&&(!rawEnd||rawEnd==='INVALID_DATE'))throw Error('Data de término do contrato é obrigatória para matrículas em andamento');
    const isRecurrence=Boolean(rawEnd)&&!isOngoing;
-   if(rawEnd&&(!/^\d{4}-\d\d-\d\d$/.test(rawEnd)||rawEnd<start))throw Error('Data de término do contrato inválida ou anterior ao início');
+   if(rawEnd&&(!/^\d{4}-\d\d-\d\d$/.test(rawEnd)||rawEnd==='INVALID_DATE'||rawEnd<start))throw Error('Data de término do contrato inválida ou anterior ao início');
    const cutoverDate=isOngoing?(isoDateFor(r.agendar_aulas_a_partir_de||'')||today()):null;
-   if(cutoverDate&&(cutoverDate<start||cutoverDate>rawEnd))throw Error('Data para agendar aulas a partir de deve estar entre o início e o término');
+   if(cutoverDate&&(!/^\d{4}-\d\d-\d\d$/.test(cutoverDate)||cutoverDate==='INVALID_DATE'||cutoverDate<start||cutoverDate>rawEnd))throw Error('Data para agendar aulas a partir de deve estar entre o início e o término');
    const amount=normalizeMoney(r.valor_total);if(r.valor_total&&amount===null)throw Error('Valor total inválido');
    const installments=Number(r.parcelas||1);if(!Number.isInteger(installments)||installments<1||installments>48)throw Error('Informe de 1 a 48 parcelas');
-   const due=isoDateFor(r.primeiro_vencimento||start);if(!/^\d{4}-\d\d-\d\d$/.test(due))throw Error('Primeiro vencimento inválido');
+   const due=isoDateFor(r.primeiro_vencimento||start);if(!/^\d{4}-\d\d-\d\d$/.test(due)||due==='INVALID_DATE')throw Error('Primeiro vencimento inválido');
    const signerIdx=Number(r.quem_assina||1);
    const closePrior=['sim','true','1','s'].includes(String(r.encerrar_anteriores||'').toLowerCase().trim());
    const contractedLessons=isOngoing?Number(r.aulas_contratadas||r.aulas_totais||p.lessons_count):null;
-   const remainingLessons=isOngoing?(r.aulas_restantes?Number(r.aulas_restantes):null):null;
+   if(isOngoing&&(r.aulas_restantes===undefined||r.aulas_restantes===null||String(r.aulas_restantes).trim()===''||isNaN(Number(r.aulas_restantes))))throw Error('Saldo de aulas restantes (aulas_restantes) é obrigatório para matrículas em andamento');
+   const remainingLessons=isOngoing?Number(r.aulas_restantes):null;
    const doneBefore=isOngoing?(r.aulas_realizadas_antes?Number(r.aulas_realizadas_antes):null):null;
-   row.payload={linha:r.line,aluno_1_id:s1.id,aluno_1_nome:s1.full_name,aluno_2_id:s2.id,aluno_2_nome:s2.full_name,professor_id:t.id,pacote_id:p.id,modelo_id:model?.id||null,contrato_preexistente:isPreexisting,modo:isOngoing?'ongoing':(isRecurrence?'recorrencia':'package'),tipo:isOngoing?'em_andamento':'nova',agendar_aulas_a_partir_de:cutoverDate,aulas_contratadas:contractedLessons,aulas_restantes:remainingLessons,origem_saldo:r.origem_saldo||(remainingLessons?'manual':'estimativa_calendario'),aulas_realizadas_antes:doneBefore,destino_excedentes:r.destino_excedentes||null,prazo_reposicao_dias:r.prazo_reposicao_dias?Number(r.prazo_reposicao_dias):30,observacoes_implantacao:r.observacoes_implantacao||null,parcelas_restantes:r.parcelas_restantes?Number(r.parcelas_restantes):null,proximo_vencimento:r.proximo_vencimento?isoDateFor(r.proximo_vencimento):null,data_termino:rawEnd||null,horarios_ids:slots.map(s=>s.id),data_inicio:start,curso:r.curso||'Inglês',valor_total:amount??p.default_total,valor_total_extenso:amountWords(amount??p.default_total),parcelas:installments,primeiro_vencimento:due,forma_pagamento:r.forma_pagamento||'A combinar',quem_assina:signerIdx===2?2:1,encerrar_anteriores:closePrior};
+   const rawOrigin=normalize(r.origem_saldo||'');
+   const balanceOrigin=rawOrigin.includes('estim')?'calendar_estimate':(remainingLessons!=null?'manual':'calendar_estimate');
+   const nextDue=r.proximo_vencimento?isoDateFor(r.proximo_vencimento):null;
+   if(nextDue&&(!/^\d{4}-\d\d-\d\d$/.test(nextDue)||nextDue==='INVALID_DATE'))throw Error('Data do próximo vencimento inválida');
+   row.payload={linha:r.line,aluno_1_id:s1.id,aluno_1_nome:s1.full_name,aluno_2_id:s2.id,aluno_2_nome:s2.full_name,professor_id:t.id,pacote_id:p.id,modelo_id:model?.id||null,contrato_preexistente:isPreexisting,modo:isOngoing?'ongoing':(isRecurrence?'recorrencia':'package'),tipo:isOngoing?'em_andamento':'nova',agendar_aulas_a_partir_de:cutoverDate,aulas_contratadas:contractedLessons,aulas_restantes:remainingLessons,origem_saldo:balanceOrigin,aulas_realizadas_antes:doneBefore,destino_excedentes:r.destino_excedentes||null,prazo_reposicao_dias:null,observacoes_implantacao:r.observacoes_implantacao||null,parcelas_restantes:r.parcelas_restantes?Number(r.parcelas_restantes):null,proximo_vencimento:nextDue,data_termino:rawEnd||null,horarios_ids:slots.map(s=>s.id),data_inicio:start,curso:r.curso||'Inglês',valor_total:amount??p.default_total,valor_total_extenso:amountWords(amount??p.default_total),parcelas:installments,primeiro_vencimento:due,forma_pagamento:r.forma_pagamento||'A combinar',quem_assina:signerIdx===2?2:1,encerrar_anteriores:closePrior};
   }catch(error){row.error=error?.message||String(error);}
   return row;
  }
@@ -583,16 +593,15 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
    download(csvExport(headers,sampleRows),'modelo_importacao_duplas.csv');return;
   }
   if(action==='onbDownloadOngoingTemplate'){
-   const headers=['aluno_id','cpf','email','nome_completo','tipo','professor','pacote','horarios','data_inicio','data_termino','agendar_aulas_a_partir_de','aulas_contratadas','aulas_restantes','origem_saldo','aulas_realizadas_antes','destino_excedentes','prazo_reposicao_dias','curso','valor_total','parcelas','primeiro_vencimento','parcelas_restantes','proximo_vencimento','forma_pagamento','modelo','observacoes_implantacao'];
+   const headers=['aluno_id','cpf','email','nome_completo','tipo','professor','pacote','horarios','data_inicio','data_termino','agendar_aulas_a_partir_de','aulas_contratadas','aulas_restantes','origem_saldo','aulas_realizadas_antes','destino_excedentes','curso','valor_total','parcelas','primeiro_vencimento','parcelas_restantes','proximo_vencimento','forma_pagamento','modelo','observacoes_implantacao'];
    const ready=notEnrolled();
-   const cfg=db.school_settings[0]||{};
-   const cutover=cfg.onboarding_cutover_date||today();
+   const cutover=today();
    const sampleRows=[{
     aluno_id:ready[0]?.id||'',cpf:ready[0]?.cpf||'',email:ready[0]?.email||'',nome_completo:ready[0]?.full_name||'Aluno Exemplo',
     tipo:'em_andamento',professor:db.teachers.find(t=>t.active)?.name||'',pacote:db.packages.find(p=>p.active&&p.kind!=='dupla')?.name||'',
     horarios:'',data_inicio:'2026-01-10',data_termino:'2026-12-20',agendar_aulas_a_partir_de:cutover,
     aulas_contratadas:'40',aulas_restantes:'18',origem_saldo:'manual',aulas_realizadas_antes:'22',
-    destino_excedentes:cfg.overflow_policy||'expire',prazo_reposicao_dias:cfg.overflow_makeup_days||'30',
+    destino_excedentes:'expire',
     curso:'Inglês',valor_total:'3600.00',parcelas:'12',primeiro_vencimento:'2026-01-10',
     parcelas_restantes:'5',proximo_vencimento:cutover,forma_pagamento:'Boleto',modelo:'preexistente',
     observacoes_implantacao:'Migração da escola antiga'
@@ -600,17 +609,16 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
    download(csvExport(headers,sampleRows),'modelo_matriculas_em_andamento.csv');return;
   }
   if(action==='onbDownloadDuoOngoingTemplate'){
-   const headers=['aluno_1_id','aluno_1_cpf','aluno_1_email','aluno_1_nome','aluno_2_id','aluno_2_cpf','aluno_2_email','aluno_2_nome','tipo','professor','pacote','horarios','data_inicio','data_termino','agendar_aulas_a_partir_de','aulas_contratadas','aulas_restantes','origem_saldo','aulas_realizadas_antes','destino_excedentes','prazo_reposicao_dias','curso','valor_total','parcelas','primeiro_vencimento','parcelas_restantes','proximo_vencimento','forma_pagamento','modelo','quem_assina','encerrar_anteriores','observacoes_implantacao'];
+   const headers=['aluno_1_id','aluno_1_cpf','aluno_1_email','aluno_1_nome','aluno_2_id','aluno_2_cpf','aluno_2_email','aluno_2_nome','tipo','professor','pacote','horarios','data_inicio','data_termino','agendar_aulas_a_partir_de','aulas_contratadas','aulas_restantes','origem_saldo','aulas_realizadas_antes','destino_excedentes','curso','valor_total','parcelas','primeiro_vencimento','parcelas_restantes','proximo_vencimento','forma_pagamento','modelo','quem_assina','encerrar_anteriores','observacoes_implantacao'];
    const ready=notEnrolled();
-   const cfg=db.school_settings[0]||{};
-   const cutover=cfg.onboarding_cutover_date||today();
+   const cutover=today();
    const sampleRows=[{
     aluno_1_id:ready[0]?.id||'',aluno_1_cpf:ready[0]?.cpf||'',aluno_1_email:ready[0]?.email||'',aluno_1_nome:ready[0]?.full_name||'Aluno 1',
     aluno_2_id:ready[1]?.id||'',aluno_2_cpf:ready[1]?.cpf||'',aluno_2_email:ready[1]?.email||'',aluno_2_nome:ready[1]?.full_name||'Aluno 2',
     tipo:'em_andamento',professor:db.teachers.find(t=>t.active)?.name||'',pacote:db.packages.find(p=>p.active&&p.kind==='dupla')?.name||'',
     horarios:'',data_inicio:'2026-01-10',data_termino:'2026-12-20',agendar_aulas_a_partir_de:cutover,
     aulas_contratadas:'40',aulas_restantes:'18',origem_saldo:'manual',aulas_realizadas_antes:'22',
-    destino_excedentes:cfg.overflow_policy||'expire',prazo_reposicao_dias:cfg.overflow_makeup_days||'30',
+    destino_excedentes:'expire',
     curso:'Inglês',valor_total:'4800.00',parcelas:'12',primeiro_vencimento:'2026-01-10',
     parcelas_restantes:'5',proximo_vencimento:cutover,forma_pagamento:'Boleto',modelo:'preexistente',
     quem_assina:'1',encerrar_anteriores:'sim',observacoes_implantacao:'Migração da escola antiga'

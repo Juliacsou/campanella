@@ -1,13 +1,13 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
-import {TEMPLATES} from './templates.js?v=8.7.2';
-import {generateContractPdf} from './pdf-contract.js?v=8.7.2';
-import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js?v=8.7.2';
-import {createCRM, decodeBudgetData} from './crm.js?v=8.7.2';
-import {createCalendar} from './calendar-v6.js?v=8.7.2';
-import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.7.2';
-import {parseCSV,isoDate} from './csv.js?v=8.7.2';
-import {createOnboarding} from './onboarding-v67.js?v=8.7.2';
-import {$,$$,safe,safeAttr,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js?v=8.7.2';
+import {TEMPLATES} from './templates.js?v=8.7.3';
+import {generateContractPdf} from './pdf-contract.js?v=8.7.3';
+import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js?v=8.7.3';
+import {createCRM, decodeBudgetData} from './crm.js?v=8.7.3';
+import {createCalendar} from './calendar-v6.js?v=8.7.3';
+import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.7.3';
+import {parseCSV,isoDate} from './csv.js?v=8.7.3';
+import {createOnboarding} from './onboarding-v67.js?v=8.7.3';
+import {$,$$,safe,safeAttr,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js?v=8.7.3';
 // Campanella V4 - multi-escolas, licencas e administracao.
 // Esta e uma chave publica, segura para uso em frontend com RLS corretamente configurado.
 // Nunca incluir chave secret ou service_role neste arquivo.
@@ -17,7 +17,7 @@ const sb=createClient(SUPA_URL,KEY);
 // Campanella V6: calendario interno. As integracoes de assinaturas/Drive seguem suspensas.
 const EXTERNAL_SIGNATURE_ENABLED=false;
 const db={leads:[],interviews:[],packages:[],students:[],contracts:[],profiles:[],teachers:[],contract_types:[],school_settings:[],interview_invites:[],external_signatures:[],crm_followups:[],crm_appointments:[],crm_activities:[],crm_pipeline_columns:[],crm_tags:[]};
-const ui={page:'dashboard',user:null,role:null,teacherId:null,teacherSchoolName:null,teacherAccess:[],schoolId:null,schools:[],memberships:[],schoolMembers:[],schoolAdmins:null,emailConfirmCallback:false,isPlatformAdmin:false,schoolLicense:null,licenseActive:false,licenses:[],platformSchools:[],platformProfiles:[],platformKeys:[],platformEvents:[],platformRenewalKeys:[],platformSearch:'',platformFilter:'all',newlyIssuedKey:null,driveConnection:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',studentId:null,studentReturnPage:'directory',contractTab:'current',interviewTab:'current',sidebarCollapsed:(()=>{try{return localStorage.getItem('campanella:sidebar-collapsed')==='true';}catch(e){return false;}})(),expandedNavGroups:null};
+const ui={page:'dashboard',user:null,role:null,teacherId:null,teacherSchoolName:null,teacherAccess:[],schoolId:null,schools:[],memberships:[],schoolMembers:[],schoolAdmins:null,emailConfirmCallback:false,isPlatformAdmin:false,schoolLicense:null,licenseActive:false,licenseChecking:true,licenses:[],platformSchools:[],platformProfiles:[],platformKeys:[],platformEvents:[],platformRenewalKeys:[],platformSearch:'',platformFilter:'all',newlyIssuedKey:null,driveConnection:null,search:'',expiry:'all',leadStatus:'all',interviewStatus:'all',contractStatus:'all',enrollmentTab:'current',studentTab:'active',studentId:null,studentReturnPage:'directory',contractTab:'current',interviewTab:'current',sidebarCollapsed:(()=>{try{return localStorage.getItem('campanella:sidebar-collapsed')==='true';}catch(e){return false;}})(),expandedNavGroups:null};
 
 // Campanella V7.2 - Planos de Uso, Limites e Adicionais
 const PLAN_CONFIGS={
@@ -688,7 +688,6 @@ function shell(){
  const settingsLinks=[
   ['settings-identity','school','Dados da escola'],
   ['settings-admin','profile','Administradores'],
-  ['settings-enrollment-rules','calendar','Regras de aulas'],
   ['settings-import','students','Importar alunos'],
   ['settings-license','key','Plano e licença']
  ];
@@ -740,7 +739,8 @@ async function loadSchools(preferred){
  const chosen=ui.schools.find(x=>x.id===saved)||ui.schools[0];
  ui.schoolId=chosen?.id||null;
  ui.role=ui.schoolId?'admin':null;ui.schoolLicense=schoolLicense(ui.schoolId);
- if(!ui.schoolId){ui.licenseActive=false;for(const k of Object.keys(db))db[k]=[];if(ui.isPlatformAdmin)ui.page='licenses';}
+ if(ui.schoolLicense&&!ui.schoolLicense.suspended_at&&(!ui.schoolLicense.expires_on||new Date(ui.schoolLicense.expires_on)>=new Date()))ui.licenseActive=true;
+ if(!ui.schoolId){ui.licenseActive=false;ui.licenseChecking=false;for(const k of Object.keys(db))db[k]=[];if(ui.isPlatformAdmin)ui.page='licenses';}
  if(ui.schoolId)localStorage.setItem('campanella:escola:'+ui.user.id,ui.schoolId);
 }
 async function switchSchool(id){
@@ -823,7 +823,7 @@ async function reloadLicenseState(){
  ]);
  if(licenseError)throw licenseError;ui.licenses=ui.licenses.filter(x=>x.school_id!==ui.schoolId);if(license)ui.licenses.push(license);
  if(error)throw error;
- ui.licenseActive=!!data;ui.schoolLicense=schoolLicense(ui.schoolId);
+ ui.licenseActive=!!data;ui.schoolLicense=schoolLicense(ui.schoolId);ui.licenseChecking=false;
 }
 function licenseBlockView(){const pending=!!currentSchool().deletion_requested_at;return `${heading('Licenciamento',pending?'Escola em exclusão':'Acesso temporariamente suspenso',pending?'O prazo de 30 dias para restauração fica disponível nas configurações da escola.':'Esta escola não pode receber novas operações enquanto não houver uma licença válida.')}<section class="panel"><div class="panel-body license-locked"><h2>${pending?'Exclusão programada':ui.schoolLicense?.suspended_at?'Licença suspensa':'Licença vencida'}</h2><p>Escola: <strong>${safe(currentSchool().name)}</strong></p><p>Validade: <strong>${safe(licenseExpiration(ui.schoolLicense))}</strong></p><p>Entre em contato com o responsável pelo Campanella para renovar via Pix. Seus registros permanecem preservados.</p><button class="btn light" data-action="navigate" data-page="settings">Abrir configurações da escola</button></div></section>`;}
 function passwordRecoveryRoute(){return new URLSearchParams(location.search).get('recuperar')==='1';}
@@ -1077,8 +1077,9 @@ function render(){
  if(ui.page==='schools'){$('#pageContent').innerHTML=schoolsView();return;}
  if(ui.page==='student-profile'){$('#pageContent').innerHTML=studentProfilePage();return;}
  if(ui.page==='settings-backup'&&!EXTERNAL_SIGNATURE_ENABLED)ui.page='settings';
+ if(ui.page==='settings-enrollment-rules')ui.page='settings';
  if(ui.page==='settings'||ui.page.startsWith('settings-')){$('#pageContent').innerHTML=settingsView();return;}
- if(!ui.licenseActive){$('#pageContent').innerHTML=licenseBlockView();return;}
+ if(!ui.licenseActive&&!ui.licenseChecking){$('#pageContent').innerHTML=licenseBlockView();return;}
  if(isCurrentSchoolCrmOnly()&&MANAGEMENT_PAGES.includes(ui.page)){
   $('#pageContent').innerHTML=planUpgradeBlockedView(ui.page);
   return;
@@ -1267,13 +1268,20 @@ function contractOptions(kind,pkgId,selected=''){
 function onPackageSelection(form,p){
  if(!form)return;
  const custom=!p;
+ const isOngoing=form.querySelector('input[name="enrollment_origin"]:checked')?.value==='ongoing'||form.elements.enrollment_origin?.value==='ongoing';
  if(form.elements.lessons_count){form.elements.lessons_count.readOnly=!custom;form.elements.lessons_count.required=true;}
  if(form.elements.weekly_frequency){form.elements.weekly_frequency.readOnly=!custom;form.elements.weekly_frequency.required=true;}
- if(form.elements.end_date)form.elements.end_date.dataset.calManualEdited='0';
+ if(form.elements.end_date&&!isOngoing)form.elements.end_date.dataset.calManualEdited='0';
  if(p){
   if(form.elements.lessons_count)form.elements.lessons_count.value=p.lessons_count;
   if(form.elements.weekly_frequency)form.elements.weekly_frequency.value=p.weekly_frequency;
-  if(form.elements.total_amount)form.elements.total_amount.value=Number(p.default_total).toFixed(2);
+  if(form.elements.total_amount&&(!form.elements.total_amount.value||!Number(form.elements.total_amount.value))){
+   form.elements.total_amount.value=Number(p.default_total).toFixed(2);
+  }
+  if(form.elements.installments&&!form.elements.installments.value){
+   const pkgMonths=p.duration_months||{mensal:1,trimestral:3,semestral:6,anual:12}[p.duration_type]||6;
+   form.elements.installments.value=String(pkgMonths);
+  }
   updateInstallment(form);
  }
  const type=form.elements.type_option;
@@ -1359,22 +1367,23 @@ function applyEnrollmentModeUI(f,mode){
  const calResult=f.querySelector('[data-cal-result], #externalForecast');
  const amountLabel=f.querySelector('.installment-amount-label');
  const hasCustomFirst=!!f.elements.has_custom_first_installment?.checked;
+ const isOngoing=f.querySelector('input[name="enrollment_origin"]:checked')?.value==='ongoing'||f.elements.enrollment_origin?.value==='ongoing';
  if(amountLabel)amountLabel.textContent=hasCustomFirst?'Valor das demais parcelas (R$)':(mode==='recurrence'?'Valor mensal / da parcela (R$)':'Valor da parcela');
  if(mode==='recurrence'){
   if(pkgField)pkgField.style.display='none';
   if(f.elements.package_id){f.elements.package_id.value='';f.elements.package_id.required=false;}
-  if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.placeholder='Calculado automaticamente pelas datas';lessonsCount.required=true;}
+  if(lessonsCount){lessonsCount.readOnly=!isOngoing;lessonsCount.placeholder=isOngoing?'Ex: 40 aulas':'Calculado automaticamente pelas datas';lessonsCount.required=true;}
   if(weeklyFreq){
-   weeklyFreq.readOnly=true;
+   weeklyFreq.readOnly=!isOngoing;
    const slotName=f.id==='externalInterviewForm'?'interview_slot':'cal_slot';
    const checked=f.querySelectorAll(`input[name="${slotName}"]:checked`).length;
    weeklyFreq.value=checked||'1';
   }
   if(endDate){
-   endDate.readOnly=false;endDate.required=true;endDate.placeholder='';
+   endDate.readOnly=false;endDate.required=true;endDate.placeholder=isOngoing?'Data final contratual':'';
    const startVal=f.elements.start_date?.value||f.elements.cal_start_date?.value||today();
    const instCount=Math.max(1,Number(f.elements.installments?.value)||6);
-   if((!endDate.value||endDate.dataset.recurrenceManual!=='1')&&startVal&&/^\d{4}-\d{2}-\d{2}$/.test(startVal)){
+   if(!isOngoing&&(!endDate.value||endDate.dataset.recurrenceManual!=='1')&&startVal&&/^\d{4}-\d{2}-\d{2}$/.test(startVal)){
     endDate.value=plusMonth(startVal,instCount);
    }
   }
@@ -1391,15 +1400,15 @@ function applyEnrollmentModeUI(f,mode){
   if(f.elements.package_id){f.elements.package_id.value='';f.elements.package_id.required=false;}
   if(lessonsCount){lessonsCount.readOnly=false;lessonsCount.placeholder='Ex: 14 aulas';lessonsCount.required=true;}
   if(weeklyFreq){weeklyFreq.readOnly=false;if(!weeklyFreq.value)weeklyFreq.value='1';}
-  if(endDate){endDate.readOnly=true;endDate.required=false;endDate.placeholder='Calculado pelas aulas';endDate.dataset.calManualEdited='0';}
+  if(endDate){endDate.readOnly=!isOngoing;endDate.required=isOngoing;endDate.placeholder=isOngoing?'Data final contratual':'Calculado pelas aulas';if(!isOngoing)endDate.dataset.calManualEdited='0';}
   if(calBtn)calBtn.textContent='Calcular última aula';
   if(calResult)calResult.textContent='';
  }else{
   if(pkgField)pkgField.style.display='';
   if(f.elements.package_id){f.elements.package_id.required=true;}
-  if(lessonsCount){lessonsCount.readOnly=true;lessonsCount.placeholder='Selecione um pacote acima';lessonsCount.required=true;}
-  if(weeklyFreq){weeklyFreq.readOnly=true;}
-  if(endDate){endDate.readOnly=true;endDate.required=false;endDate.placeholder='Calculado pelas aulas';endDate.dataset.calManualEdited='0';}
+  if(lessonsCount){lessonsCount.readOnly=!isOngoing;lessonsCount.placeholder=isOngoing?'Ex: 40 aulas':'Selecione um pacote acima';lessonsCount.required=true;}
+  if(weeklyFreq){weeklyFreq.readOnly=!isOngoing;}
+  if(endDate){endDate.readOnly=!isOngoing;endDate.required=isOngoing;endDate.placeholder=isOngoing?'Data final contratual':'Calculado pelas aulas';if(!isOngoing)endDate.dataset.calManualEdited='0';}
   if(calBtn)calBtn.textContent='Calcular última aula';
   if(calResult)calResult.textContent='';
   const pkgSelect=f.querySelector('#manualPackage, #renewPackage, #interviewPackage, #externalPackage');
@@ -1407,6 +1416,15 @@ function applyEnrollmentModeUI(f,mode){
    const curPkg=f.id==='externalInterviewForm'?(externalData?.packages||[]).find(x=>x.id===pkgSelect.value):lookup('packages',pkgSelect.value);
    if(curPkg)onPackageSelection(f,curPkg);
   }
+ }
+ if(isOngoing){
+  if(f.elements.start_date){f.elements.start_date.readOnly=false;f.elements.start_date.required=true;}
+  if(endDate){endDate.readOnly=false;endDate.required=true;endDate.placeholder='Data final contratual';}
+ }
+ if(endDate&&!endDate._recurrenceManualBound){
+  endDate._recurrenceManualBound=true;
+  endDate.addEventListener('input',()=>{endDate.dataset.recurrenceManual='1';});
+  endDate.addEventListener('change',()=>{endDate.dataset.recurrenceManual='1';});
  }
  syncContractExtraFields(f);
  updateWeeklyPickerIndicators(f);
@@ -1755,7 +1773,7 @@ function previewContract(id){const c=lookup('contracts',id);if(!c)return;
  const isOngoing=c.enrollment_origin==='ongoing';
  const preexisting=isOngoing||isPreexistingContract(c);
  let html=c.signed_document_html||(isOngoing
-   ? `<article class="legal-document"><h2>Matrícula em Andamento</h2><div class="notice" style="margin:20px 0"><p><strong>Matrícula migrada/implantada no Campanella</strong></p><p>Este contrato foi firmado originalmente em <b>${dateBR(c.terms?.start_date)}</b> com término previsto em <b>${dateBR(c.terms?.end_date)}</b>. O agendamento no sistema iniciou em <b>${dateBR(c.schedule_from_date||c.onboarded_at||c.terms?.start_date)}</b> com saldo restante de <b>${c.terms?.remaining_lessons??c.terms?.lessons_count}</b> aula(s).</p></div><div class="detail-grid" style="margin-top:20px"><div class="detail-item"><span>Aluno</span><strong>${safe(s.full_name)}</strong></div><div class="detail-item"><span>Professor</span><strong>${safe(lookup('teachers',c.terms?.teacher_id)?.name||c.terms?.teacher_name||'—')}</strong></div><div class="detail-item"><span>Vigência original</span><strong>${dateBR(c.terms?.start_date)} até ${dateBR(c.terms?.end_date)}</strong></div><div class="detail-item"><span>Total contratado</span><strong>${c.terms?.lessons_count} aulas</strong></div><div class="detail-item"><span>Realizadas antes</span><strong>${c.lessons_done_before||0} aulas</strong></div><div class="detail-item"><span>Saldo no sistema</span><strong>${c.terms?.remaining_lessons??c.terms?.lessons_count} aulas</strong></div><div class="detail-item"><span>Política de excedentes</span><strong>${safe(c.terms?.overflow_policy||'expire')}</strong></div></div>${c.pdf_url?`<div style="margin-top:20px"><a href="${safe(c.pdf_url)}" target="_blank" rel="noopener noreferrer" class="btn light">Abrir documento original anexado (PDF)</a></div>`:''}</article>`
+    ? `<article class="legal-document"><h2>Matrícula em Andamento</h2><div class="notice" style="margin:20px 0"><p><strong>Matrícula migrada/implantada no Campanella</strong></p><p>Este contrato foi firmado originalmente em <b>${dateBR(c.terms?.start_date)}</b> com término previsto em <b>${dateBR(c.terms?.end_date)}</b>. O agendamento no sistema iniciou em <b>${dateBR(c.schedule_from_date||c.onboarded_at||c.terms?.start_date)}</b> com saldo restante de <b>${c.terms?.remaining_lessons??c.terms?.lessons_count}</b> aula(s).</p></div><div class="detail-grid" style="margin-top:20px"><div class="detail-item"><span>Aluno</span><strong>${safe(s.full_name)}</strong></div><div class="detail-item"><span>Professor</span><strong>${safe(lookup('teachers',c.terms?.teacher_id)?.name||c.terms?.teacher_name||'—')}</strong></div><div class="detail-item"><span>Vigência original</span><strong>${dateBR(c.terms?.start_date)} até ${dateBR(c.terms?.end_date)}</strong></div><div class="detail-item"><span>Total contratado</span><strong>${c.terms?.lessons_count} aulas</strong></div><div class="detail-item"><span>Realizadas antes</span><strong>${c.terms?.ongoing?.lessons_done_before ?? c.terms?.lessons_done_before ?? c.lessons_done_before ?? 0} aulas</strong></div><div class="detail-item"><span>Saldo no sistema</span><strong>${c.terms?.remaining_lessons??c.terms?.lessons_count} aulas</strong></div><div class="detail-item"><span>Política de excedentes</span><strong>${safe(c.terms?.overflow_policy||'expire')}</strong></div></div>${c.pdf_url?`<div style="margin-top:20px"><a href="${safe(c.pdf_url)}" target="_blank" rel="noopener noreferrer" class="btn light">Abrir documento original anexado (PDF)</a></div>`:''}</article>`
    : (preexisting
    ? `<article class="legal-document"><h2>Contrato Preexistente</h2><div class="notice" style="margin:20px 0"><p><strong>Matrícula migrada de contrato anterior</strong></p><p>O documento físico/externo foi firmado diretamente com a escola e não necessita de assinatura digital pelo Campanella.</p></div><div class="detail-grid" style="margin-top:20px"><div class="detail-item"><span>Aluno</span><strong>${safe(s.full_name)}</strong></div><div class="detail-item"><span>Professor</span><strong>${safe(lookup('teachers',c.terms?.teacher_id)?.name||c.terms?.teacher_name||'—')}</strong></div><div class="detail-item"><span>Vigência</span><strong>${dateBR(c.terms?.start_date)} até ${dateBR(c.terms?.end_date)}</strong></div><div class="detail-item"><span>Total de aulas</span><strong>${c.terms?.lessons_count} aulas</strong></div></div></article>`
    : `<article class="legal-document">${renderContract(externalSignatureFor(c.id)?c:{...c,manualUnsigned:true,signed_at:null},s,{unsigned:!externalSignatureFor(c.id)})}</article>`));
@@ -1933,7 +1951,6 @@ const profileSections=[
 const schoolSections=[
  ['settings-identity','school','Informações da escola','Nome, contato e endereço'],
  ['settings-admin','profile','Administradores e permissões','Administrador responsável, convites de administradores e função de professor'],
- ['settings-enrollment-rules','calendar','Regras de matrícula e aulas','Aulas excedentes, reposição e implantação'],
  ['settings-import','students','Importação de Alunos e Matrículas','Importe alunos, complete cadastros e matricule em lote'],
  ['settings-license','key','Licença e ativação','Validade e código de renovação'],
  // ['settings-backup','school','Backup no Google Drive','Conectar o Drive desta escola'], // recurso preservado para uso futuro
@@ -2006,64 +2023,11 @@ function profileView(){const user=ui.user||{},name=user.user_metadata?.full_name
  else main=preferencesOverview(profileSections,'Selecione uma categoria ao lado para alterar seus dados, senha ou visualizar as escolas que administra.');
  return preferencesLayout('Conta pessoal','Configurações do perfil','Gerencie sua conta pessoal separadamente das escolas.',profileSections,section,main);
 }
-function settingsEnrollmentRulesPanel(s,pending){
- const cfg=db.school_settings[0]||{};
- const policy=cfg.overflow_policy||'expire';
- const makeupDays=Number(cfg.overflow_makeup_days||30);
- const cutover=cfg.onboarding_cutover_date||today();
- const checkedAt=cfg.history_calendar_checked_at?new Date(cfg.history_calendar_checked_at).toLocaleDateString('pt-BR'):null;
- const checkedBy=cfg.history_calendar_checked_by||'';
- const body=`<form id="enrollmentRulesForm" class="license-form">
-  <div class="form-grid">
-   <label class="field wide">
-    <span>Política padrão para aulas excedentes após o término do contrato</span>
-    <select name="overflow_policy">
-     <option value="" ${!policy?'selected':''}>Não definido (perguntar em cada matrícula)</option>
-     <option value="expire" ${policy==='expire'?'selected':''}>Expirar no término do contrato (padrão contratual — aula não é agendada após o fim)</option>
-     <option value="makeup_after_end" ${policy==='makeup_after_end'?'selected':''}>Gerar como reposição após o término (permite agendar com prazo limite)</option>
-     <option value="carry_over" ${policy==='carry_over'?'selected':''}>Acumular como crédito para a próxima rematrícula</option>
-     <option value="schedule_after_end" ${policy==='schedule_after_end'?'selected':''}>Agendar após o término sem reposição (estende a agenda regular)</option>
-     <option value="to_reschedule" ${policy==='to_reschedule'?'selected':''}>Deixar em "A reagendar" sem data marcada</option>
-    </select>
-    <small class="muted" style="margin-top:4px;display:block">Define o comportamento padrão quando o saldo de aulas de um contrato não cabe nos horários regulares até o fim da vigência.</small>
-   </label>
-   <label class="field">
-    <span>Prazo para reposições após o término (dias)</span>
-    <input type="number" name="overflow_makeup_days" min="1" max="365" value="${makeupDays}" required>
-   </label>
-   <label class="field">
-    <span>Data de corte padrão para implantação (matrículas em andamento)</span>
-    <input type="date" name="onboarding_cutover_date" value="${safeAttr(cutover)}" required>
-    <small class="muted" style="margin-top:4px;display:block">Aulas serão agendadas a partir desta data por padrão ao cadastrar matrículas em andamento.</small>
-   </label>
-  </div>
-
-  <div class="card" style="margin-top:20px;padding:16px;background:var(--bg-card,#f8fafc);border:1px solid var(--border,#e2e8f0);border-radius:8px">
-   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
-    <div>
-     <h4 style="margin:0 0 6px 0;font-size:15px">Calendário escolar histórico (recessos e feriados passados)</h4>
-     <p class="muted" style="font-size:13px;margin:0 0 8px 0">Registrar os bloqueios e férias passadas permite que o sistema estime com exatidão quantas aulas foram dadas antes do início no sistema.</p>
-     ${checkedAt?`<span class="pill pill-signed">${ico('check',12)} Verificado em ${checkedAt}${checkedBy?` por ${safe(checkedBy)}`:''}</span>`:'<span class="pill pill-warning">Ainda não revisado</span>'}
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-     <button type="button" class="btn mini light" data-action="calNewPastBlock">${ico('calendar',13)} Registrar recesso passado</button>
-     <button type="button" class="btn mini ghost" data-action="markHistoricalCalendarChecked">${ico('check',13)} Marcar como verificado</button>
-    </div>
-   </div>
-  </div>
-
-  <div class="form-footer" style="margin-top:20px">
-   <button class="btn" type="submit" ${pending?'disabled':''}>Salvar regras de matrícula</button>
-  </div>
- </form>`;
- return preferencesPanel('Regras de matrícula e aulas','Defina o tratamento de aulas excedentes, reposições e parâmetros de implantação.',body,'calendar');
-}
 function schoolRemovalNotice(s){if(!s.deletion_requested_at)return '';const canRestore=s.deletion_due_at&&new Date(s.deletion_due_at)>new Date()&&!s.deletion_started_at;return `<section class="deletion-banner"><div>${ico('trash',20)}<div><b>Exclusão agendada</b><p>Esta escola está desativada. Você pode cancelar a exclusão até ${new Date(s.deletion_due_at).toLocaleString('pt-BR')}. Depois disso, os dados serão removidos pela rotina do servidor.</p></div></div>${canRestore?`<button class="btn light" data-action="restoreSchool" data-id="${safe(s.id)}">${ico('restore',15)} Restaurar escola</button>`:`<strong>Prazo encerrado · limpeza em andamento</strong>`}</section>`;}
 function settingsView(){const s=currentSchool(),l=ui.schoolLicense,section=ui.page;const pending=!!s.deletion_requested_at;
  let main='';
  if(section==='settings-import')main=onboarding.view();
  else if(section==='settings-identity')main=preferencesPanel('Informações da escola','Atualize os dados institucionais da unidade.',`<form id="schoolDetailsForm" class="license-form">${input('Nome da escola','name',s.name)}${input('CNPJ da escola','cnpj',s.cnpj||'','text',false)}${input('E-mail institucional','contact_email',s.contact_email||'','email',false)}${input('Telefone / WhatsApp','contact_phone',s.contact_phone||'','text',false)}<label class="field"><span>Endereço da escola</span><textarea name="address" maxlength="500" rows="3">${safe(s.address||'')}</textarea></label><div class="form-footer"><button class="btn" ${pending?'disabled':''}>Salvar informações</button></div></form>`,'school');
- else if(section==='settings-enrollment-rules')main=settingsEnrollmentRulesPanel(s,pending);
  else if(section==='settings-license'){
   const limits=schoolPlanLimits(l);
   const activeStudents=currentSchoolActiveStudentsCount();
@@ -2710,8 +2674,6 @@ async function estimateOngoingBalance(form){
    const skipped=data.skipped;
    const noBlocks=data.no_blocks_warning;
    const skippedList=Array.isArray(data.skipped_dates)?data.skipped_dates:[];
-   const cfg=db.school_settings[0]||{};
-   const checkedAt=cfg.history_calendar_checked_at;
    let skippedHtml='';
    if(skippedList.length){
     skippedHtml=`<div style="margin-top:8px;max-height:120px;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;border-radius:4px;padding:6px;font-size:12px">
@@ -2727,12 +2689,10 @@ async function estimateOngoingBalance(form){
     <div>• Aulas estimadas já realizadas no passado: <strong>${valid}</strong></div>
     <div>• Saldo restante sugerido: <strong>${est}</strong> de <strong>${contracted}</strong> contratadas</div>
     ${skippedHtml}
-    ${noBlocks?'<div style="color:#b45309;margin-top:6px">⚠ Atenção: Nenhum bloqueio escolar passado foi encontrado. Registre os recessos históricos da escola para maior precisão.</div>':''}
-    ${!checkedAt?'<div style="color:#854d0e;margin-top:4px;font-size:12px">ℹ O calendário histórico da escola ainda não foi marcado como verificado.</div>':''}
+    ${noBlocks?'<div style="color:#b45309;margin-top:6px">⚠ Nenhum recesso passado encontrado. Para uma estimativa mais exata, registre os recessos em Calendário de aulas > Bloqueios > + Bloquear período (aceita datas passadas).</div>':''}
     <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
      <button type="button" class="btn mini" id="btnApplySuggestedBalance">Aplicar saldo sugerido (${est} aulas)</button>
      <button type="button" class="btn mini ghost" id="btnDiscardSuggestedBalance">Descartar</button>
-     <button type="button" class="btn mini light" id="btnNewPastBlockFromEst">＋ Cadastrar bloqueio passado</button>
     </div>
    </div>`;
    box.querySelector('#btnApplySuggestedBalance')?.addEventListener('click',()=>{
@@ -2746,9 +2706,6 @@ async function estimateOngoingBalance(form){
    box.querySelector('#btnDiscardSuggestedBalance')?.addEventListener('click',()=>{
     box.style.display='none';
     box.innerHTML='';
-   });
-   box.querySelector('#btnNewPastBlockFromEst')?.addEventListener('click',()=>{
-    calendar.newBlock(startDate,cutoverDate);
    });
   }
  }catch(err){
@@ -2776,12 +2733,11 @@ function setupManualOngoingHandlers(form){
   if(form.elements.start_date){
    const startLabel=form.elements.start_date.closest('.field')?.querySelector('span');
    if(startLabel)startLabel.textContent=isOngoing?'Início original do contrato *':'Início';
-   if(isOngoing&&form.elements.start_date.value===today()&&!form.dataset.startManuallySet){
-    form.elements.start_date.value='';
-   }
+   if(isOngoing){form.elements.start_date.readOnly=false;form.elements.start_date.required=true;}
   }
   if(form.elements.end_date){
    form.elements.end_date.readOnly=!isOngoing && form.elements.enrollment_mode?.value!=='recurrence';
+   form.elements.end_date.required=isOngoing||form.elements.enrollment_mode?.value==='recurrence';
    form.elements.end_date.placeholder=isOngoing?'Data final contratual':'Calculado pelas aulas';
    const endLabel=form.elements.end_date.closest('.field')?.querySelector('span');
    if(endLabel)endLabel.textContent=isOngoing?'Data de término do contrato *':'Data de término do contrato';
@@ -2855,18 +2811,26 @@ function renderOngoingReviewStep(f,baseTerms,plannedTerms,preview){
     <span style="font-weight:600">Destino das aulas excedentes *</span>
     <select id="reviewOverflowPolicy" class="input" style="width:100%">
      <option value="expire" ${currentPolicy==='expire'?'selected':''}>Expirar no término do contrato (padrão)</option>
-     <option value="makeup_after_end" ${currentPolicy==='makeup_after_end'?'selected':''}>Gerar como reposição após o término</option>
+     <option value="makeup_after_end" ${currentPolicy==='makeup_after_end'?'selected':''}>Gerar como reposição após o término (sem prazo; a escola combina quando repor)</option>
      <option value="carry_over" ${currentPolicy==='carry_over'?'selected':''}>Acumular como crédito para a próxima rematrícula</option>
      <option value="schedule_after_end" ${currentPolicy==='schedule_after_end'?'selected':''}>Agendar após o término sem reposição</option>
      <option value="to_reschedule" ${currentPolicy==='to_reschedule'?'selected':''}>Deixar em "A reagendar" sem data</option>
     </select>
    </label>
-   <div id="reviewMakeupDaysRow" style="${currentPolicy==='makeup_after_end'?'':'display:none;'}margin-top:6px">
-    <label class="field">
-     <span>Prazo para reposições após término (dias)</span>
-     <input type="number" id="reviewMakeupDays" min="1" max="365" value="${makeupDays}">
-    </label>
-   </div>
+  </div>`;
+ }
+
+ const isExcessive = baseTerms.remaining_lessons > baseTerms.lessons_count || ((baseTerms.lessons_done_before||0) + baseTerms.remaining_lessons) > baseTerms.lessons_count;
+ let excessiveCard = '';
+ if(isExcessive){
+  excessiveCard = `<div class="card" style="margin:16px 0;padding:14px;background:#fef2f2;border:1px solid #f87171;border-radius:8px">
+   <div style="font-weight:700;color:#991b1b;margin-bottom:6px">⚠ Atenção: Saldo de aulas maior que o total contratado</div>
+   <p style="margin:0 0 10px 0;font-size:13px;color:#7f1d1d">
+    O saldo restante informado (<strong>${baseTerms.remaining_lessons}</strong>) somado às aulas já realizadas (<strong>${baseTerms.lessons_done_before||0}</strong>) ultrapassa o total de aulas contratadas (<strong>${baseTerms.lessons_count}</strong>).
+   </p>
+   <label class="checkrow" style="font-weight:600;color:#991b1b">
+    <input type="checkbox" id="confirmExcessiveBalance"> Confirmo que este saldo maior que o contrato está correto e desejo prosseguir
+   </label>
   </div>`;
  }
 
@@ -2894,17 +2858,13 @@ function renderOngoingReviewStep(f,baseTerms,plannedTerms,preview){
   </div>
 
   ${overflowCard}
+  ${excessiveCard}
 
   <div class="form-footer" style="margin-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
    <button type="button" class="btn ghost" id="btnBackToFormEdit">← Voltar e editar dados</button>
    <button type="button" class="btn" id="btnConfirmActivateOngoing">Ativar matrícula em andamento</button>
   </div>
  `;
-
- reviewBox.querySelector('#reviewOverflowPolicy')?.addEventListener('change',(e)=>{
-  const row=reviewBox.querySelector('#reviewMakeupDaysRow');
-  if(row)row.style.display=e.target.value==='makeup_after_end'?'block':'none';
- });
 
  reviewBox.querySelector('#btnBackToFormEdit')?.addEventListener('click',()=>{
   reviewBox.style.display='none';
@@ -2913,15 +2873,42 @@ function renderOngoingReviewStep(f,baseTerms,plannedTerms,preview){
  });
 
  reviewBox.querySelector('#btnConfirmActivateOngoing')?.addEventListener('click',()=>{
+  if(isExcessive && !reviewBox.querySelector('#confirmExcessiveBalance')?.checked){
+   toast('Confirme que o saldo maior que o total contratado está correto marcando a caixa de seleção.', true);
+   return;
+  }
   const selPolicy=reviewBox.querySelector('#reviewOverflowPolicy');
   if(selPolicy&&f.elements.overflow_policy){
    f.elements.overflow_policy.value=selPolicy.value;
   }
-  const selDays=reviewBox.querySelector('#reviewMakeupDays');
-  if(selDays&&f.elements.overflow_makeup_days){
-   f.elements.overflow_makeup_days.value=selDays.value;
+  const teacherVal=f.elements.teacher_id?.value;
+  if(!teacherVal){
+   reviewBox.style.display='none';if(grid)grid.style.display='';if(existingFooter)existingFooter.style.display='';f.dataset.reviewed='0';
+   toast('Selecione o professor antes de ativar.', true);f.elements.teacher_id?.focus();return;
   }
+  const startVal=f.elements.start_date?.value;
+  if(!startVal){
+   reviewBox.style.display='none';if(grid)grid.style.display='';if(existingFooter)existingFooter.style.display='';f.dataset.reviewed='0';
+   toast('Informe a data de início original.', true);f.elements.start_date?.focus();return;
+  }
+  const endVal=f.elements.end_date?.value;
+  if(!endVal){
+   reviewBox.style.display='none';if(grid)grid.style.display='';if(existingFooter)existingFooter.style.display='';f.dataset.reviewed='0';
+   toast('Informe a data de término do contrato.', true);f.elements.end_date?.focus();return;
+  }
+  const remVal=f.elements.remaining_lessons?.value;
+  if(remVal===''||remVal==null||Number.isNaN(Number(remVal))||Number(remVal)<0){
+   reviewBox.style.display='none';if(grid)grid.style.display='';if(existingFooter)existingFooter.style.display='';f.dataset.reviewed='0';
+   toast('Informe o saldo de aulas restante.', true);f.elements.remaining_lessons?.focus();return;
+  }
+
+  const btnAct=reviewBox.querySelector('#btnConfirmActivateOngoing');
+  const btnBack=reviewBox.querySelector('#btnBackToFormEdit');
+  if(btnAct){btnAct.disabled=true;btnAct.textContent='Ativando matrícula...';}
+  if(btnBack){btnBack.disabled=true;}
+
   f.dataset.reviewed='1';
+  f.noValidate=true;
   f.requestSubmit();
  });
 }
@@ -2931,17 +2918,14 @@ function manualEnrollmentForm(id,defaultOrigin='new'){const s=lookup('students',
  const selectedSlots=s.calendar_slot_ids||[];
  const isMinor1=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
  const pkgs=db.packages.filter(p=>p.active&&p.kind!=='dupla');
- const cfg=db.school_settings[0]||{};
- const schoolPolicy=cfg.overflow_policy||'expire';
- const schoolMakeupDays=Number(cfg.overflow_makeup_days||30);
- const schoolCutoverDate=cfg.onboarding_cutover_date||today();
  const missingInfo=[!s.cpf&&'CPF',!s.email&&'e-mail',!s.address&&'endereço'].filter(Boolean);
  const missingBanner=missingInfo.length?`<div class="notice" style="margin-bottom:14px"><strong>Aviso (não impeditivo):</strong> Este aluno ainda não possui ${safe(missingInfo.join(', '))} preenchido(s) na ficha cadastral. Você pode prosseguir com a matrícula normalmente e completar os dados quando desejar.</div>`:'';
  const isOngoingInit=defaultOrigin==='ongoing';
  const modalHeader=isOngoingInit
   ? `<div style="display:inline-block;padding:2px 8px;border-radius:4px;background:#e0e7ff;color:#3730a3;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Implantação — Contrato firmado fora do sistema</div><h2>Matrícula em andamento de ${safe(s.full_name)}</h2><p class="modal-intro">Cadastre o saldo e vigência de um contrato já existente para iniciar os agendamentos no sistema.</p>`
   : `<h2>Criar matrícula de ${safe(s.full_name)}</h2><p class="modal-intro">Configure o pacote, horários e contrato para um novo ciclo de aulas.</p>`;
- showModal(`${modalHeader}${missingBanner}<form id="manualEnrollmentForm" data-student="${id}" data-s1-minor="${isMinor1?'true':'false'}" data-kind="${isMinor1?'menor':'individual'}"><div class="form-grid">
+ const idempotencyKey=crypto.randomUUID();
+ showModal(`${modalHeader}${missingBanner}<form id="manualEnrollmentForm" data-student="${id}" data-idempotency-key="${idempotencyKey}" data-s1-minor="${isMinor1?'true':'false'}" data-kind="${isMinor1?'menor':'individual'}"><div class="form-grid">
  <div class="wide" style="${isOngoingInit?'display:none;':''}margin-bottom:12px;padding:12px 14px;background:var(--bg-card,#f8fafc);border:1px solid var(--border,#e2e8f0);border-radius:8px">
   <strong style="font-size:13px;display:block;margin-bottom:6px">Tipo de matrícula:</strong>
   <div style="display:flex;gap:18px;flex-wrap:wrap">
@@ -2958,7 +2942,7 @@ function manualEnrollmentForm(id,defaultOrigin='new'){const s=lookup('students',
   <div class="form-grid">
    <label class="field">
     <span>Agendar aulas no sistema a partir de *</span>
-    <input type="date" name="schedule_from_date" value="${safeAttr(schoolCutoverDate)}">
+    <input type="date" name="schedule_from_date" value="${safeAttr(today())}">
     <small class="muted">As aulas futuras serão geradas na agenda a partir desta data.</small>
    </label>
    <label class="field">
@@ -2986,16 +2970,12 @@ function manualEnrollmentForm(id,defaultOrigin='new'){const s=lookup('students',
    <label class="field wide">
     <span>Política para aulas que ultrapassam a data final do contrato</span>
     <select name="overflow_policy">
-     <option value="expire" ${schoolPolicy==='expire'?'selected':''}>Expirar no término do contrato (padrão)</option>
-     <option value="makeup_after_end" ${schoolPolicy==='makeup_after_end'?'selected':''}>Gerar como reposição após o término</option>
-     <option value="carry_over" ${schoolPolicy==='carry_over'?'selected':''}>Acumular como crédito para a próxima rematrícula</option>
-     <option value="schedule_after_end" ${schoolPolicy==='schedule_after_end'?'selected':''}>Agendar após o término sem reposição</option>
-     <option value="to_reschedule" ${schoolPolicy==='to_reschedule'?'selected':''}>Deixar em "A reagendar" sem data</option>
+     <option value="expire" selected>Expirar no término do contrato (padrão)</option>
+     <option value="makeup_after_end">Gerar como reposição após o término</option>
+     <option value="carry_over">Acumular como crédito para a próxima rematrícula</option>
+     <option value="schedule_after_end">Agendar após o término sem reposição</option>
+     <option value="to_reschedule">Deixar em "A reagendar" sem data</option>
     </select>
-   </label>
-   <label class="field">
-    <span>Prazo para reposições após término (dias)</span>
-    <input type="number" name="overflow_makeup_days" min="1" max="365" value="${schoolMakeupDays}">
    </label>
    <label class="field wide">
     <span>Observações da implantação</span>
@@ -3509,7 +3489,8 @@ function updateInstallment(f,edited='total_amount'){
   if(f.elements.first_installment_amount)f.elements.first_installment_amount.value='';
  }
  if(f.elements.total_extenso)f.elements.total_extenso.value=amountWords(Number(f.elements.total_amount.value));
- if(isRecurrence&&edited==='installments'&&f.elements.end_date&&f.elements.end_date.dataset.recurrenceManual!=='1'){
+ const isOngoing=f.querySelector('input[name="enrollment_origin"]:checked')?.value==='ongoing'||f.elements.enrollment_origin?.value==='ongoing';
+ if(!isOngoing&&isRecurrence&&edited==='installments'&&f.elements.end_date&&f.elements.end_date.dataset.recurrenceManual!=='1'){
   const startVal=f.elements.start_date?.value||f.elements.cal_start_date?.value||today();
   if(startVal&&/^\d{4}-\d{2}-\d{2}$/.test(startVal)){
    f.elements.end_date.value=plusMonth(startVal,n);
@@ -3982,21 +3963,6 @@ document.addEventListener('click',async e=>{
   window.open(c.pdf_url,'_blank');
   return;
  }
- if(action==='calNewPastBlock'){
-  calendar.newBlock(x?.dataset?.from||undefined,x?.dataset?.to||undefined);
-  return;
- }
- if(action==='markHistoricalCalendarChecked'){
-  const now=new Date().toISOString();
-  const who=ui.user?.email||ui.user?.id||'admin';
-  await sb.from('school_settings').update({
-   history_calendar_checked_at:now,
-   history_calendar_checked_by:who
-  }).eq('school_id',ui.schoolId);
-  toast('Calendário histórico marcado como conferido.');
-  await refresh();
-  return;
- }
  if(action==='renew'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('rematriculas');return renewForm(id);}
  if(action==='externalSend'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Assinatura eletrônica indisponível nesta versão.');return externalSendForm(id);}
  if(action==='externalStatus'){if(!EXTERNAL_SIGNATURE_ENABLED)throw new Error('Integração desativada.');const result=await v5Request('contract-signing',{action:'status',contractId:id});toast(`AssinAPI: ${result.providerStatus||result.localStatus||'pendente'}`);await refresh();return;}
@@ -4365,7 +4331,9 @@ function normalizeStudentPhone(raw){
 }
 
 document.addEventListener('submit',async event=>{
- const f=event.target;if(!f.id)return;event.preventDefault();if(appBusy)return;const btn=f.querySelector('button[type="submit"],button:not([type])');if(btn)btn.disabled=true;
+ const f=event.target;if(!f.id)return;event.preventDefault();
+ if(appBusy){toast('Aguarde, a operação anterior ainda está em andamento.',true);return;}
+ const btn=f.querySelector('button[type="submit"],button:not([type])');if(btn)btn.disabled=true;
  if(f.id!=='signForm')startBusy();
  try{
  if(f.id.startsWith('onb')){await onboarding.submit(f);return;}
@@ -4498,21 +4466,6 @@ document.addEventListener('submit',async event=>{
   closeModal();
   await refresh();
   toast('Contrato PDF original anexado com sucesso.');
-  return;
- }
- if(f.id==='enrollmentRulesForm'){
-  const d=formData(f);
-  const patch={
-   school_id:ui.schoolId,
-   overflow_policy:d.overflow_policy||null,
-   overflow_makeup_days:Math.max(1,parseInt(d.overflow_makeup_days,10)||30),
-   onboarding_cutover_date:d.onboarding_cutover_date||null
-  };
-  const {error}=await sb.from('school_settings').upsert(patch,{onConflict:'school_id'});
-  if(error)throw error;
-  closeModal?.();
-  await refresh();
-  toast('Regras de matrícula e aulas salvas com sucesso.');
   return;
  }
  if(f.id==='deleteSchoolForm'){const {error}=await sb.rpc('schedule_school_deletion',{p_school:ui.schoolId,p_confirm_name:f.elements.confirm_name.value});if(error)throw error;closeModal();await loadSchools(ui.schoolId);toast('Exclusão agendada por 30 dias.');return refresh();}
@@ -4870,10 +4823,16 @@ document.addEventListener('submit',async event=>{
   const schedules=(plannedTerms.lesson_schedule||fields.lesson_schedule||[]).map(x=>({...x,slot_id:x.slot_id||dbCalendarSlotId(x,selectedSlots)}));
   let leadId=student.lead_id;
   if(!leadId){
-   const leadSrc=isOngoing?'implantacao':'manual';
-   const lead=await save('leads',{name:student.full_name,guardian_name:student.guardian_name,phone:student.phone||'',status:'convertido',source:leadSrc,crm_source:leadSrc});
-   leadId=lead.id;
+   const existingLead=db.leads.find(l=>l.name?.trim().toLowerCase()===student.full_name?.trim().toLowerCase()&&(!student.phone||l.phone===student.phone));
+   if(existingLead){
+    leadId=existingLead.id;
+   }else{
+    const leadSrc=isOngoing?'implantacao':'manual';
+    const lead=await save('leads',{name:student.full_name,guardian_name:student.guardian_name,phone:student.phone||'',status:'convertido',source:leadSrc,crm_source:leadSrc});
+    leadId=lead.id;
+   }
    await save('students',{lead_id:leadId},student.id);
+   student.lead_id=leadId;
   }
   let interview=db.interviews.find(x=>x.lead_id===leadId);
   const values={
@@ -4935,7 +4894,7 @@ document.addEventListener('submit',async event=>{
       estimate_memory:estimateMemory,
       lessons_done_before:doneBeforeVal,
       overflow_policy:overflowPolicy,
-      overflow_makeup_days:overflowMakeupDays,
+      overflow_makeup_days:null,
       onboarding_note:onboardingNote,
       ongoing:isOngoing?{
         schedule_from_date:scheduleFromDate,
@@ -4944,7 +4903,7 @@ document.addEventListener('submit',async event=>{
         estimate_memory:estimateMemory,
         lessons_done_before:doneBeforeVal,
         overflow_policy:overflowPolicy,
-        overflow_makeup_days:overflowMakeupDays,
+        overflow_makeup_days:null,
         onboarding_note:onboardingNote,
         remaining_installments:remainingInstallments,
         next_due_date:nextDueDate
@@ -4958,7 +4917,30 @@ document.addEventListener('submit',async event=>{
     student_snapshot:studentSnapshot,
     created_by:ui.user.id
   };
-  const enrollment=await save('contracts',contractPayload);closeModal();
+  let enrollment=null;
+  if(isOngoing){
+   const twoMinAgo=new Date(Date.now()-120000).toISOString();
+   const {data:existingContracts}=await sb.from('contracts').select('*').eq('school_id',ui.schoolId).eq('student_id',student.id).eq('start_date',contractPayload.start_date).gte('created_at',twoMinAgo).order('created_at',{ascending:false}).limit(1);
+   if(existingContracts&&existingContracts.length>0)enrollment=existingContracts[0];
+  }
+  if(!enrollment){
+   try{
+    enrollment=await save('contracts',contractPayload);
+   }catch(err){
+    if(isOngoing||/fetch|network|timeout/i.test(err?.message||'')){
+     const twoMinAgo=new Date(Date.now()-120000).toISOString();
+     const {data:checkCreated}=await sb.from('contracts').select('*').eq('school_id',ui.schoolId).eq('student_id',student.id).eq('start_date',contractPayload.start_date).gte('created_at',twoMinAgo).order('created_at',{ascending:false}).limit(1);
+     if(checkCreated&&checkCreated.length>0)enrollment=checkCreated[0];else throw err;
+    }else{
+     throw err;
+    }
+   }
+  }
+  if(enrollment&&enrollment.id){
+   const idx=db.contracts.findIndex(c=>c.id===enrollment.id);
+   if(idx>=0)db.contracts[idx]=enrollment;else db.contracts.unshift(enrollment);
+  }
+  closeModal();
   ui.search='';ui.enrollmentTab='current';ui.contractTab='current';ui.contractStatus='all';ui.expiry='all';
   if(isOngoing){
    await refresh();
@@ -5085,7 +5067,14 @@ document.addEventListener('submit',async event=>{
    banner.textContent=error?.message||String(error);
   }
   errors(error);
- }finally{finishBusy();if(btn)btn.disabled=false;}
+ }finally{
+  finishBusy();
+  if(btn)btn.disabled=false;
+  const btnAct=f?.querySelector?.('#btnConfirmActivateOngoing');
+  if(btnAct){btnAct.disabled=false;btnAct.innerHTML='Ativar matrícula e agendar aulas';}
+  const btnBck=f?.querySelector?.('#btnBackToFormEdit');
+  if(btnBck)btnBck.disabled=false;
+ }
 });
 
 function formDataExtras(f){const o={};for(const [key,value] of new FormData(f).entries()){if(key.startsWith('extra_'))o[key.slice(6)]=String(value).trim();}return o;}
@@ -5882,6 +5871,6 @@ sb.auth.onAuthStateChange((event)=>{
 });
 initialize().catch(errors);
 if(typeof window!=='undefined'){
- window.campanellaTest={db,ui,sb,save,refresh,lookup,manualContractHTML,contractPdfBase64,downloadManualContract,render,closeModal,isBusy:()=>appBusy};
+ window.campanellaTest={db,ui,sb,save,refresh,lookup,manualContractHTML,contractPdfBase64,downloadManualContract,render,closeModal,studentDetail,manualEnrollmentForm,isBusy:()=>appBusy};
 }
 
