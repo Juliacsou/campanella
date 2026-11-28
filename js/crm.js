@@ -1,5 +1,5 @@
 // CAMPANELLA V2 | CRM & Pipeline Personalizável + Tags Coloridas + Agenda Docente.
-import {$,$$,safe,today,dateBR,onlyDigits,formData,randomToken,sha256} from './utils.js?v=8.7.3';
+import {$,$$,safe,today,dateBR,onlyDigits,formData,randomToken,sha256} from './utils.js?v=8.7.4';
 
 // Mantido apenas para compatibilidade caso algum script externo importe CRM_STAGES
 export const CRM_STAGES={
@@ -2097,29 +2097,43 @@ export function createCRM({sb,db,ui,save,refresh,showModal,closeModal,toast,erro
      archived_at:null
     };
 
-    await internalSaveInterview(interviewPayload,ficheId||undefined);
+    try{
+     await internalSaveInterview(interviewPayload,ficheId||undefined);
 
-    const ficheCol=columnForTrigger('fiche_created');
-    const leadPatch={
-     name:d.lead_name.trim(),
-     student2_name:isDuo?(d.student2_name?.trim()||null):null,
-     guardian_name:d.guardian_name?.trim()||null,
-     kind:isDuo?'dupla':'individual',
-     ficha_status:'open',
-     ...(!l.ficha_iniciada_at?{ficha_iniciada_at:new Date().toISOString()}:{}),
-     ...(ficheCol&&!l.crm_column_id?{crm_column_id:ficheCol.id}:{})
-    };
-    await save('leads',leadPatch,id);
+     const ficheCol=columnForTrigger('fiche_created');
+     const leadPatch={
+      name:d.lead_name.trim(),
+      student2_name:isDuo?(d.student2_name?.trim()||null):null,
+      guardian_name:d.guardian_name?.trim()||null,
+      kind:isDuo?'dupla':'individual',
+      ficha_status:'open',
+      ...(l.status==='arquivado'||l.status==='perdido'?{status:'novo'}:{}),
+      ...(!l.ficha_iniciada_at?{ficha_iniciada_at:new Date().toISOString()}:{}),
+      ...(ficheCol&&!l.crm_column_id?{crm_column_id:ficheCol.id}:{})
+     };
+     await save('leads',leadPatch,id);
 
-    await log(id,'fiche',ficheId?'Orçamento atualizado':'Orçamento preenchido',`${d.course.trim()} · ${lessonsCount?lessonsCount+' aulas · ':''}Total: R$ ${total.toFixed(2)} (${inst}x de R$ ${Math.round(instAmt*100)/100})`);
+     await log(id,'fiche',ficheId?'Orçamento atualizado':'Orçamento preenchido',`${d.course.trim()} · ${lessonsCount?lessonsCount+' aulas · ':''}Total: R$ ${total.toFixed(2)} (${inst}x de R$ ${Math.round(instAmt*100)/100})`);
 
-    state.editingFicheLeadId=null;
-    state.showBudgetLinkForLeadId=null;
-    state.detailTab='fiche';
-    await refresh();
-    detail(id);
-    toast(ficheId?'Orçamento atualizado com sucesso!':'Orçamento salvo com sucesso!');
-    return;
+     state.editingFicheLeadId=null;
+     state.showBudgetLinkForLeadId=null;
+     state.detailTab='fiche';
+     await refresh();
+     detail(id);
+     toast(ficheId?'Orçamento atualizado com sucesso!':'Orçamento salvo com sucesso!');
+     return;
+    }catch(err){
+     console.error('Falha ao salvar orçamento:',err);
+     let userMsg='Não foi possível salvar o orçamento.';
+     const raw=err?.message||String(err);
+     if(raw.includes('crm_activities_kind_check')||raw.includes('violates check constraint')||raw.includes('check constraint')){
+      userMsg='Esta ficha encontra-se arquivada. Por favor, retome a ficha antes de atualizar o orçamento.';
+     }else if(raw){
+      userMsg=raw;
+     }
+     toast(userMsg,true);
+     throw new Error(userMsg);
+    }
    }
    if(f.id==='crmNoteForm'){
     const d=formData(f),id=f.dataset.lead,contact=f.dataset.kind==='contact';

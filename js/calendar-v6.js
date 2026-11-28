@@ -1,4 +1,4 @@
-import {weeklyPickerMarkup,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.7.3';
+import {weeklyPickerMarkup,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.7.4';
 // Campanella V6.4 - agenda escolar e docente. Nao depende de AssinAPI / Drive.
 // A autorizacao, a validacao de sobreposicoes e a mudanca de estado acontecem nas RPCs SQL.
 export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,toast,refresh,render,initialize,authWrap,lookup,canAdmin,iconSvg,openLead}){
@@ -304,10 +304,53 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
      reason:b.reason,
      start_time:b.start_time,
      end_time:b.end_time,
+     affected_count:Number(b.affected_count||0),
+     affected_lessons:Array.isArray(b.affected_lessons)?b.affected_lessons:[],
      is_historical:b.is_historical||((b.end_date||b.to)<today())
     }));
    }
   }catch(_){}
+ }
+ function blockDetail(id){
+  const rawList=state.customBlocksList||data().blocks||[];
+  const b=rawList.find(x=>x.id===id);
+  if(!b)throw new Error('Bloqueio não encontrado.');
+  const from=b.from||b.start_date;
+  const to=b.to||b.end_date;
+  const count=b.affected_count||0;
+  const reach=b.teacher_id?safe(teacherName(b.teacher_id)):'Toda a escola';
+  const timeStr=b.start_time?`${niceTime(b.start_time)} às ${niceTime(b.end_time)}`:'Dia inteiro';
+  const lessons=Array.isArray(b.affected_lessons)?b.affected_lessons:[];
+
+  const lessonsMarkup=lessons.length?`
+   <div style="margin-top:16px;">
+    <strong style="font-size:13px;display:block;margin-bottom:8px">Aulas afetadas (${lessons.length})</strong>
+    <div class="table-wrap">
+     <table class="data-table">
+      <thead><tr><th>Aluno</th><th>Data</th><th>Horário</th><th>Professor</th></tr></thead>
+      <tbody>
+       ${lessons.map(l=>`<tr><td><b>${safe(l.student_name||'Aluno')}</b></td><td>${escapeDate(l.date)}</td><td>${safe(l.time||'—')}</td><td>${safe(l.teacher_name||reach)}</td></tr>`).join('')}
+      </tbody>
+     </table>
+    </div>
+   </div>`:
+   `<div style="margin-top:16px;padding:12px;background:var(--bg-card,#f8fafc);border-radius:6px;color:var(--muted,#64748b);font-size:13px;">Nenhuma aula foi afetada por este bloqueio.</div>`;
+
+  showModal(`
+   <div class="eyebrow">Calendário de aulas · Bloqueio</div>
+   <h2>${safe(b.reason)}</h2>
+   <div class="detail-grid">
+    <div class="detail-item"><span>Período</span><strong>${escapeDate(from)} a ${escapeDate(to)}</strong></div>
+    <div class="detail-item"><span>Alcance</span><strong>${reach}</strong></div>
+    <div class="detail-item"><span>Horário</span><strong>${safe(timeStr)}</strong></div>
+    <div class="detail-item"><span>Aulas afetadas</span><strong>${count>0?count+' aula(s)':'Nenhuma'}</strong></div>
+   </div>
+   ${lessonsMarkup}
+   <div class="form-footer" style="margin-top:20px;display:flex;justify-content:space-between">
+    <button type="button" class="btn ghost" data-action="close">Fechar</button>
+    ${control('calCancelBlock','Cancelar este bloqueio',`data-id="${b.id}"`,'danger')}
+   </div>
+  `);
  }
  function blocksView(){
   const teacher=selectedTeacher();
@@ -322,7 +365,9 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   else if(filter==='past')blocks=blocks.filter(b=>(b.to||b.from)<today());
   return `<section class="panel cal-section"><div class="panel-head"><h2>Bloqueios</h2><div class="actions"><label class="small">Período <select id="calBlocksPeriodSelect"><option value="active" ${filter==='active'?'selected':''}>Próximos e atuais</option><option value="past" ${filter==='past'?'selected':''}>Passados</option><option value="all" ${filter==='all'?'selected':''}>Todos</option></select></label>${control('calNewBlock','+ Bloquear período','','')}</div></div>${blocks.length?blocks.map(b=>{
    const isHist=b.is_historical||(b.to||b.from)<today();
-   return `<div class="cal-block-row"><span class="cal-nav-icon">${navIcon('lock')}</span><div><strong>${safe(b.reason)}${isHist?' <span class="pill pill-neutral" style="margin-left:6px">Histórico</span>':''}</strong><small>${escapeDate(b.from)} a ${escapeDate(b.to)} · ${b.teacher_id?safe(teacherName(b.teacher_id)):'Toda a escola'}${b.start_time?' · '+niceTime(b.start_time)+'–'+niceTime(b.end_time):' · Dia inteiro'}</small></div>${control('calCancelBlock','Cancelar',`data-id="${b.id}"`,'ghost')}</div>`;
+   const count=b.affected_count||0;
+   const countLabel=count>0?`${count} aula(s) afetada(s)`:'nenhuma aula afetada';
+   return `<div class="cal-block-row"><span class="cal-nav-icon">${navIcon('lock')}</span><div style="flex:1;cursor:pointer" data-action="calBlockDetail" data-id="${b.id}"><strong><a href="javascript:void(0)" style="color:inherit;text-decoration:underline">${safe(b.reason)}</a>${isHist?' <span class="pill pill-neutral" style="margin-left:6px">Histórico</span>':''}</strong><small>${escapeDate(b.from)} a ${escapeDate(b.to)} · ${b.teacher_id?safe(teacherName(b.teacher_id)):'Toda a escola'}${b.start_time?' · '+niceTime(b.start_time)+'–'+niceTime(b.end_time):' · Dia inteiro'} · <span style="font-weight:600;color:var(--text-secondary,#475569)">${countLabel}</span></small></div><div class="actions" style="display:flex;align-items:center;gap:6px"><button type="button" class="btn mini light" data-action="calBlockDetail" data-id="${b.id}">Ver detalhes</button>${control('calCancelBlock','Cancelar',`data-id="${b.id}"`,'ghost')}</div></div>`;
   }).join(''):'<p class="muted">Nenhum bloqueio no período visualizado.</p>'}</section>`;
  }
  function teacherSelect(){const cur=selectedTeacher()||state.teacher;return teacherMode()?'':`<label class="cal-teacher-picker">Professor <select id="calTeacherFilter">${state.page==='slots'?'':'<option value="all">Todos</option>'}${data().teachers.filter(t=>t.active).map(t=>`<option value="${t.id}" ${cur===t.id?'selected':''}>${safe(t.name)}</option>`).join('')}</select></label>`;}
@@ -828,7 +873,7 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   showModal(`<div class="eyebrow">Convite de professor</div><h2>Convite para ${safe(t.name)}</h2><p class="modal-intro">Válido por 7 dias e utilizável uma única vez. Somente ${safe(t.email)} poderá aceitar.</p><label class="field"><span>Link exclusivo</span><textarea id="calInviteLink" rows="3" readonly>${safe(link)}</textarea></label><div class="form-footer">${control('calCopyInvite','Copiar link','','')}<button type="button" class="btn ghost" data-action="close">Fechar</button></div>`);
  }
  async function action(name,element,event){
-  const id=element.dataset.id;
+  const id=typeof element==='string'?element:element?.dataset?.id;
   if(name==='calCopyInvite'){await navigator.clipboard.writeText(document.getElementById('calInviteLink')?.value||'');return toast('Link copiado.');}
   if(name==='calInviteTeacher')return createInvite(id);
   if(name==='calAdoptLegacyOpen')return legacyAdoptionModal(id);
@@ -880,7 +925,24 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
   if(name==='calSkipLesson')return skipLesson(id);
   if(name==='calRecord')return record(id);
   if(name==='calPreview')return previewForm(element);
-  if(name==='calCancelBlock'){if(!await window.campanellaConfirm('Cancelar este bloqueio? As aulas pendentes continuarão aguardando reagendamento individual.'))return;await call('calendar_cancel_block',{p_block:id});await loadHistoricalBlocks();toast('Bloqueio cancelado. Aulas pendentes preservadas.');return reload();}
+   if(name==='calBlockDetail')return blockDetail(id);
+   if(name==='calCancelBlock'){
+    if(typeof finishBusy==='function')finishBusy();
+    const rawList=state.customBlocksList||data().blocks||[];
+    const b=rawList.find(x=>x.id===id);
+    const period=b?`${escapeDate(b.from||b.start_date)} a ${escapeDate(b.to||b.end_date)}`:'';
+    const count=b?.affected_count??0;
+    const countStr=count===0?'nenhuma aula afetada':`${count} aula(s) afetada(s)`;
+    const title=b?.reason?`'${b.reason}'`:'este bloqueio';
+    const msg=`Cancelar o bloqueio ${title}${period?' de '+period:''} (${countStr})? As aulas pendentes continuarão aguardando reagendamento individual.`;
+    if(!await window.campanellaConfirm(msg,'Cancelar bloqueio','Confirmar cancelamento'))return;
+    if(typeof startBusy==='function')startBusy();
+    await call('calendar_cancel_block',{p_block:id});
+    closeModal();
+    await loadHistoricalBlocks();
+    toast('Bloqueio cancelado. Aulas pendentes preservadas.');
+    return reload();
+   }
   if(name==='calRevokeTeacher'){if(!await window.campanellaConfirm('Revogar o acesso docente? O professor perderá o acesso à agenda, sem apagar aulas ou seu cadastro.'))return;await call('calendar_revoke_teacher_access',{p_school:school(),p_teacher:id});toast('Acesso revogado.');return refresh();}
   if(name==='calRemoveSlot'){if(!await window.campanellaConfirm('Desativar este horário? Horários com aulas futuras precisarão ser resolvidos antes.'))return;await call('calendar_deactivate_slot',{p_slot:id});closeModal();toast('Horário desativado.');return reloadCalendarOnly();}
   if(name==='calDeleteSlot'){if(!await window.campanellaConfirm('Excluir DEFINITIVAMENTE este horário da grade? Horários com aulas futuras precisarão ser resolvidos antes.','Excluir horário','Excluir'))return;await call('calendar_delete_slot',{p_slot:id});closeModal();toast('Horário excluído.');return reloadCalendarOnly();}
@@ -1102,6 +1164,6 @@ export function createCalendar({sb,ui,db,safe,dateBR,today,showModal,closeModal,
  return {data,plan,load,loadSafe,view,teacherShell,renderCalendar,getTeacherAccess,processPendingInvite,enterTeacherIfApplicable,
   inviteLanding,getFormPicker,updateFormPicker,slotIdForSchedule,autoPreview,applyTerms,hasAccess,action,change,submit,refresh:reload,adminNav,
   getOnboardingSnapshot:()=>state.snapshot,studentSchedulePicker,studentSlotChoices,computeBulkSlotPlan,
-  studentSummaryFor,studentForContract,classSummaryFor,scheduleForContract,openStudent,studentProfileView,ensureEnrollmentDates,newBlock,
+  studentSummaryFor,studentForContract,classSummaryFor,scheduleForContract,openStudent,studentProfileView,ensureEnrollmentDates,newBlock,blockDetail,
   async updateTeacherProfile(name){const n=String(name||'').trim();if(n.length<2||n.length>120)throw new Error('Informe um nome válido.');await call('calendar_update_my_teacher_name',{p_school:school(),p_name:n});await load();}};
 }

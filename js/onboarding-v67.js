@@ -1,6 +1,6 @@
 // Campanella V6.10 - assistente acessivel, hierarquia de instrucoes e rolagem por etapa.
 // Importacoes sempre limitadas a uma unica escola. Confirmacoes e gravacoes no Supabase.
-import {parseCSV,isoDate} from './csv.js?v=8.7.3';
+import {parseCSV,isoDate} from './csv.js?v=8.7.4';
 
 const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,' ');
 const digits=v=>String(v||'').replace(/\D/g,'');
@@ -654,7 +654,17 @@ export function createOnboarding({db,ui,sb,calendar,canAdmin,render,refresh,safe
   if(action==='onbConfirmEnrollments'){
    const valid=(state.enrollPreview||[]).filter(x=>!x.error).map(x=>x.payload);
    if(!valid.length)throw Error('Nenhuma matrícula válida para importar');
-   if(!await confirm(`Preparar ${valid.length} matrícula(s)? O professor e os horários serão verificados novamente no banco. Contratos ficarão pendentes de assinatura manual.`,'Confirmar matrículas em lote'))return;
+   const preCount=valid.filter(x=>x.contrato_preexistente).length;
+   const newCount=valid.length-preCount;
+   let msg='';
+   if(newCount===0){
+    msg=`Preparar ${valid.length} matrícula(s)? O professor e os horários serão verificados novamente no banco. Os contratos preexistentes serão ativados imediatamente, sem pendência de assinatura manual.`;
+   }else if(preCount===0){
+    msg=`Preparar ${valid.length} matrícula(s)? O professor e os horários serão verificados novamente no banco. Contratos ficarão pendentes de assinatura manual.`;
+   }else{
+    msg=`Preparar ${valid.length} matrícula(s)? O professor e os horários serão verificados novamente no banco. ${preCount} com contrato preexistente serão ativados imediatamente; ${newCount} ficarão pendentes de assinatura manual.`;
+   }
+   if(!await confirm(msg,'Confirmar matrículas em lote'))return;
    const preErrors=(state.enrollPreview||[]).filter(x=>x.error).map(x=>({linha:x.line,resultado:'erro',motivo:x.error}));
    const merged={preparadas:0,erros:preErrors.length,linhas:[...preErrors]};
    if(state.isDuoEnrollment){

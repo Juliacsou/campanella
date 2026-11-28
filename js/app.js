@@ -1,13 +1,13 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.58.0';
-import {TEMPLATES} from './templates.js?v=8.7.3';
-import {generateContractPdf} from './pdf-contract.js?v=8.7.3';
-import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js?v=8.7.3';
-import {createCRM, decodeBudgetData} from './crm.js?v=8.7.3';
-import {createCalendar} from './calendar-v6.js?v=8.7.3';
-import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.7.3';
-import {parseCSV,isoDate} from './csv.js?v=8.7.3';
-import {createOnboarding} from './onboarding-v67.js?v=8.7.3';
-import {$,$$,safe,safeAttr,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js?v=8.7.3';
+import {TEMPLATES} from './templates.js?v=8.7.4';
+import {generateContractPdf} from './pdf-contract.js?v=8.7.4';
+import {CONTRACT_RESERVED, CONTRACT_MARKER, analyzeContractMarkers, validateConvertedTemplate} from './contract-fields.js?v=8.7.4';
+import {createCRM, decodeBudgetData} from './crm.js?v=8.7.4';
+import {createCalendar} from './calendar-v6.js?v=8.7.4';
+import {weeklyPickerMarkup,initWeeklyPicker,updateWeeklyPickerIndicators} from './calendar-week-picker.js?v=8.7.4';
+import {parseCSV,isoDate} from './csv.js?v=8.7.4';
+import {createOnboarding} from './onboarding-v67.js?v=8.7.4';
+import {$,$$,safe,safeAttr,money,today,dateBR,days,fullDays,addDays,endDate,diffDays,onlyDigits,cpfValid,sha256,randomToken,plusMonth,valuesFor,contractHTML,formData,options,input,tag,amountWords} from './utils.js?v=8.7.4';
 // Campanella V4 - multi-escolas, licencas e administracao.
 // Esta e uma chave publica, segura para uso em frontend com RLS corretamente configurado.
 // Nunca incluir chave secret ou service_role neste arquivo.
@@ -615,8 +615,21 @@ function isNavGroupOpen(groupId){
  if(!ui.expandedNavGroups)ui.expandedNavGroups=initNavGroupsState();
  return ui.expandedNavGroups.has(groupId);
 }
-function toggleNavGroup(groupId){
+function toggleNavGroup(groupId, e){
  if(!ui.expandedNavGroups)ui.expandedNavGroups=initNavGroupsState();
+ const isArrowClick=Boolean(e?.target?.closest?.('.nav-group-arrow'));
+ if(groupId==='alunos'&&!isArrowClick){
+  ui.expandedNavGroups.add('alunos');
+  try{localStorage.setItem('campanella:nav-groups-expanded',JSON.stringify(Array.from(ui.expandedNavGroups)));}catch(_){}
+  if(ui.sidebarCollapsed){
+   ui.sidebarCollapsed=false;
+   try{localStorage.setItem('campanella:sidebar-collapsed','false');}catch(_){}
+  }
+  ui.page='directory';
+  ui.studentTab='active';
+  ui.search='';
+  return render();
+ }
  if(ui.sidebarCollapsed){
   ui.sidebarCollapsed=false;
   try{localStorage.setItem('campanella:sidebar-collapsed','false');}catch(e){}
@@ -989,38 +1002,74 @@ async function resolveInviteAndEmailCallback(){
  }
  return {profToken,adminToken,isEmailConfirm};
 }
+function withTimeout(promise, ms, fallbackValue=undefined, opName='Operação'){
+ let timer;
+ const standardPromise=Promise.resolve(promise);
+ const timeoutPromise=new Promise((resolve,reject)=>{
+  timer=setTimeout(()=>{
+   if(fallbackValue!==undefined){
+    console.warn(`${opName} excedeu ${ms}ms. Prosseguindo com fallback.`);
+    resolve(fallbackValue);
+   }else{
+    reject(new Error(`${opName} excedeu tempo limite de ${ms/1000}s`));
+   }
+  },ms);
+ });
+ return Promise.race([
+  standardPromise.finally(()=>clearTimeout(timer)),
+  timeoutPromise
+ ]);
+}
+let initAttemptCount=0;
 async function initialize(){
  if(location.hash.startsWith('#orcamento/'))return publicOrcamentoStart(location.hash.slice(11));
  if(location.hash.startsWith('#pre-matricula/'))return publicStart(location.hash.slice(15));
  if(location.hash.startsWith('#assinar/'))return publicStart(location.hash.slice(9));
  if(location.hash.startsWith('#entrevista/'))return externalStart(location.hash.slice('#entrevista/'.length));
- const routeState=await resolveInviteAndEmailCallback();
- if(routeState.profToken||(routeState.isEmailConfirm&&(localStorage.getItem('campanella:v6:convite')||localStorage.getItem('campanella:v6:convite_signup_done')))){
-  const {data:{session}}=await sb.auth.getSession();
-  return calendar.inviteLanding(routeState.profToken||localStorage.getItem('campanella:v6:convite')||'',session,{emailConfirmed:routeState.isEmailConfirm});
+ try{
+  const routeState=await withTimeout(resolveInviteAndEmailCallback(),8000,{},'resolveInvite');
+  if(routeState.profToken||(routeState.isEmailConfirm&&(localStorage.getItem('campanella:v6:convite')||localStorage.getItem('campanella:v6:convite_signup_done')))){
+   const {data:{session}}=await withTimeout(sb.auth.getSession(),6000,{data:{session:null}},'getSession');
+   return calendar.inviteLanding(routeState.profToken||localStorage.getItem('campanella:v6:convite')||'',session,{emailConfirmed:routeState.isEmailConfirm});
+  }
+  if(routeState.adminToken||(routeState.isEmailConfirm&&(localStorage.getItem('campanella:v7:admin_convite')||localStorage.getItem('campanella:v7:admin_signup_done')))){
+   const {data:{session}}=await withTimeout(sb.auth.getSession(),6000,{data:{session:null}},'getSession');
+   return adminInviteLanding(routeState.adminToken||localStorage.getItem('campanella:v7:admin_convite')||'',session,{emailConfirmed:routeState.isEmailConfirm});
+  }
+  if(routeState.isEmailConfirm)ui.emailConfirmCallback=true;
+  if(passwordRecoveryRoute()){
+   const {data:{session}}=await withTimeout(sb.auth.getSession(),6000,{data:{session:null}},'getSession');ui.user=null;
+   $('#app').innerHTML=session?newPasswordPage():forgotPasswordPage('O link de recuperação está inválido ou expirou. Solicite um novo e-mail.');return;
+  }
+  const {data:{session},error}=await withTimeout(sb.auth.getSession(),8000,{data:{session:null}},'getSession');if(error)throw error;
+  if(!session){ui.user=null;ui.schoolId=null;$('#app').innerHTML=login();return;}
+  ui.user=session.user;ui.emailConfirmCallback=false;
+  await processPendingAdminInvite();
+  await calendar.processPendingInvite();
+  const {data:isMaster,error:masterError}=await withTimeout(sb.rpc('is_platform_admin'),8000,{data:false},'is_platform_admin');if(masterError)throw masterError;ui.isPlatformAdmin=!!isMaster;
+  await withTimeout(loadSchools(),10000,undefined,'loadSchools');if(ui.isPlatformAdmin)await loadPlatformData();
+  if(!ui.schoolId){if(await calendar.enterTeacherIfApplicable()){calendar.renderCalendar();return;}if(ui.isPlatformAdmin){ui.page='licenses';render();}else $('#app').innerHTML=noSchoolPage();return;}
+  applyPanelRouteFromHash();
+  await withTimeout(refresh(),16000,undefined,'refresh');
+  const driveReturn=new URLSearchParams(location.search).get('drive');
+  if(driveReturn){toast(driveReturn==='connected'?'Google Drive conectado à escola.':'Não foi possível concluir a conexão com o Google Drive.',driveReturn!=='connected');history.replaceState({},'',location.pathname);}
+ }catch(err){
+  console.warn('Erro na tentativa de inicialização:',err);
+  if(initAttemptCount<2){
+   initAttemptCount++;
+   console.log(`Tentando auto-recuperação da inicialização (tentativa ${initAttemptCount})...`);
+   await new Promise(r=>setTimeout(r,500));
+   return initialize();
+  }
+  if(ui.user&&ui.schoolId){
+   try{render();return;}catch(_){}
+  }
+  if(typeof window.renderBootFailure==='function')window.renderBootFailure(err.message||'Falha na comunicação com os serviços.');
+  else throw err;
  }
- if(routeState.adminToken||(routeState.isEmailConfirm&&(localStorage.getItem('campanella:v7:admin_convite')||localStorage.getItem('campanella:v7:admin_signup_done')))){
-  const {data:{session}}=await sb.auth.getSession();
-  return adminInviteLanding(routeState.adminToken||localStorage.getItem('campanella:v7:admin_convite')||'',session,{emailConfirmed:routeState.isEmailConfirm});
- }
- if(routeState.isEmailConfirm)ui.emailConfirmCallback=true;
- if(passwordRecoveryRoute()){
-  const {data:{session}}=await sb.auth.getSession();ui.user=null;
-  $('#app').innerHTML=session?newPasswordPage():forgotPasswordPage('O link de recuperação está inválido ou expirou. Solicite um novo e-mail.');return;
- }
- const {data:{session},error}=await sb.auth.getSession();if(error)throw error;
- if(!session){ui.user=null;ui.schoolId=null;$('#app').innerHTML=login();return;}
- ui.user=session.user;ui.emailConfirmCallback=false;
- await processPendingAdminInvite();
- await calendar.processPendingInvite();
- const {data:isMaster,error:masterError}=await sb.rpc('is_platform_admin');if(masterError)throw masterError;ui.isPlatformAdmin=!!isMaster;
- await loadSchools();if(ui.isPlatformAdmin)await loadPlatformData();
- if(!ui.schoolId){if(await calendar.enterTeacherIfApplicable()){calendar.renderCalendar();return;}if(ui.isPlatformAdmin){ui.page='licenses';render();}else $('#app').innerHTML=noSchoolPage();return;}
- applyPanelRouteFromHash();
- await refresh();
- const driveReturn=new URLSearchParams(location.search).get('drive');
- if(driveReturn){toast(driveReturn==='connected'?'Google Drive conectado à escola.':'Não foi possível concluir a conexão com o Google Drive.',driveReturn!=='connected');history.replaceState({},'',location.pathname);}
 }
+window.campanellaRetryInit=()=>initialize();
+window.campanellaEmergencyRender=()=>{if(ui.user&&ui.schoolId&&document.querySelector('#app .boot')){try{render();return true;}catch(_){}}return false;};
 const ensureBootCleared=()=>{if(typeof document!=='undefined'&&document.querySelector('#app .boot')&&!document.querySelector('#app .shell')){setTimeout(()=>{if(document.querySelector('#app .boot')&&!document.querySelector('#app .shell'))render();},300);}};
 async function refresh(){
  if(ui.role==='teacher'){await calendar.load();calendar.renderCalendar();return;}
@@ -2363,15 +2412,22 @@ function directoryView(){const list=db.students.filter(s=>[s.full_name,s.email,s
 function renderStudentScheduleHost(teacherId,selectedSlotIds=[]){
  return calendar.studentSchedulePicker(teacherId,selectedSlotIds);
 }
-function studentForm(id){
- const s=id?lookup('students',id):{};
- if(id&&!s){toast('Aluno não encontrado para edição.',true);return;}
+async function studentForm(id){
+ let s={};
+ if(id){
+  closeModal();
+  const {data:fresh,error}=await sb.from('students').select('*').eq('school_id',ui.schoolId).eq('id',id).maybeSingle();
+  if(error||!fresh){toast('Aluno não encontrado para edição.',true);return;}
+  s=fresh;
+  const idx=(db.students||[]).findIndex(x=>x.id===id);
+  if(idx>=0)db.students[idx]=fresh;else (db.students=db.students||[]).push(fresh);
+ }
  const minor=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
  const v6Contract=id?db.contracts.find(c=>(c.student_id===id||c.student2_id===id)&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status)):null;
  const curTeacher=s.calendar_teacher_id||v6Contract?.terms?.teacher_id||'';
  const editSchedule=v6Contract?`<div class="student-calendar-state"><strong>Horário controlado pelo calendário</strong><span>${safe(formatSchedule(calendar.scheduleForContract(v6Contract)))}</span><span>Para alterar aulas, abra o calendário do professor.</span></div>`:`<div id="studentScheduleHost">${renderStudentScheduleHost(curTeacher,s.calendar_slot_ids||[])}</div>`;
  const formTitle=id?`Editar aluno — ${safe(s.full_name||'Cadastro')}`:'Novo aluno';
- showModal(`<h2>${formTitle}</h2><p class="modal-intro">Apenas o nome completo é obrigatório para cadastrar. Telefone (nacional ou internacional com +DDI), data de nascimento, CPF e endereço podem ser preenchidos ou completados depois.</p><form id="studentForm" data-id="${id||''}" autocomplete="off"><div class="form-grid">${input('Nome completo','full_name',s.full_name)}${input('Telefone / WhatsApp (opcional, aceita +DDI)','phone',s.phone,'tel',false)}${input('CPF','cpf',s.cpf,'text',false)}${input('E-mail','email',s.email,'email',false)}${input('Nascimento (opcional)','birth_date',s.birth_date,'date',false)}${input('CEP','cep',s.cep,'text',false)}<div class="wide">${input('Endereço completo','address',s.address,'text',false)}</div><label class="field wide checkrow"><input type="checkbox" name="is_minor" id="studentMinor" ${minor?'checked':''}> Menor de idade com responsável legal</label></div><div id="guardianFields">${guardianHTML(s,minor)}</div><h3 class="form-section">Professor responsável</h3><label class="field"><span>Professor (opcional até a matrícula)</span><select name="calendar_teacher_id" id="studentTeacherSelect" ${v6Contract?'disabled':''}><option value="">Definir depois</option>${options(db.teachers.filter(t=>t.active),curTeacher)}</select></label><h3 class="form-section">${v6Contract?'Horários da agenda':'Horários semanais do professor'}</h3>${editSchedule}
+ showModal(`<h2>${formTitle}</h2><p class="modal-intro">Apenas o nome completo é obrigatório para cadastrar. Telefone (nacional ou internacional com +DDI), data de nascimento, CPF e endereço podem ser preenchidos ou completados depois.</p><form id="studentForm" data-id="${id||''}" data-loaded-id="${id||''}" autocomplete="off"><div class="form-grid">${input('Nome completo','full_name',s.full_name)}${input('Telefone / WhatsApp (opcional, aceita +DDI)','phone',s.phone,'tel',false)}${input('CPF','cpf',s.cpf,'text',false)}${input('E-mail','email',s.email,'email',false)}${input('Nascimento (opcional)','birth_date',s.birth_date,'date',false)}${input('CEP','cep',s.cep,'text',false)}<div class="wide">${input('Endereço completo','address',s.address,'text',false)}</div><label class="field wide checkrow"><input type="checkbox" name="is_minor" id="studentMinor" ${minor?'checked':''}> Menor de idade com responsável legal</label></div><div id="guardianFields">${guardianHTML(s,minor)}</div><h3 class="form-section">Professor responsável</h3><label class="field"><span>Professor (opcional até a matrícula)</span><select name="calendar_teacher_id" id="studentTeacherSelect" ${v6Contract?'disabled':''}><option value="">Definir depois</option>${options(db.teachers.filter(t=>t.active),curTeacher)}</select></label><h3 class="form-section">${v6Contract?'Horários da agenda':'Horários semanais do professor'}</h3>${editSchedule}
  ${!id?`<div class="wide" style="margin-top:14px;padding:12px;background:var(--bg-card,#f8fafc);border:1px solid var(--border,#e2e8f0);border-radius:8px">
   <strong style="font-size:13px;display:block;margin-bottom:8px">Ação após salvar o aluno:</strong>
   <div style="display:flex;flex-direction:column;gap:8px">
@@ -3550,13 +3606,14 @@ function exportStudentsCSV(){
   const c=db.contracts.filter(x=>(x.student_id===s.id||x.student2_id===s.id)&&['signed','pre_enrolled','ready_manual'].includes(x.status)).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];
   const teacherName=lookup('teachers',s.calendar_teacher_id||c?.terms?.teacher_id)?.name||c?.terms?.teacher_name||'';
   const isMinor=Boolean(s.is_minor||s.guardian_name||s.guardian_cpf);
-  return [s.id,s.full_name,s.cpf||'',s.email||'',s.phone||'',s.birth_date||'',s.cep||'',s.address||'',isMinor?'sim':'nao',s.guardian_name||'',s.guardian_cpf||'',s.guardian_phone||'',s.guardian_email||'',s.guardian_birth_date||'',s.guardian_cep||'',s.guardian_address||'',studentCategory(s),teacherName,c?.terms?.package_name||'',c?.terms?.start_date||'',c?.terms?.end_date||''].map(esc).join(',');
+  return [s.id,s.full_name,s.cpf||'',s.email||'',s.phone||'',s.birth_date||'',s.cep||'',s.address||'',isMinor?'sim':'nao',s.guardian_name||'',s.guardian_cpf||'',s.guardian_phone||'',s.guardian_email||'',s.guardian_birth_date||'',s.guardian_cep||'',s.guardian_address||'',studentCategory(s),teacherName,c?.terms?.package_name||'',c?.terms?.start_date||'',c?.terms?.end_date||''].map(esc).join(';');
  });
- const csv='\uFEFF'+headers.join(',')+'\n'+rows.join('\n');
+ const csv='\uFEFF'+headers.join(';')+'\n'+rows.join('\n');
  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download=`alunos_${(currentSchool().name||'escola').toLowerCase().replace(/[^a-z0-9]+/g,'_')}_${today()}.csv`;
  a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
  toast(`${db.students.length} aluno(s) exportados com ID para CSV.`);
+ return csv;
 }
 
 async function sendLink(id){if(externalSignatureFor(id))throw new Error('Este contrato já usa assinatura externa.');const c=lookup('contracts',id);if(!c||!['draft','sent'].includes(c.status))throw new Error('Contrato indisponível para link.');
@@ -3874,9 +3931,9 @@ document.addEventListener('click',async e=>{
  if(action==='toggleTheme'){window.toggleTheme();return;}
  if(action==='setTheme'){window.toggleTheme(x.dataset.theme);render();return;}
  if(action==='setThemeMode'){window.setThemeMode(x.dataset.mode);return;}
- if(action==='toggleNavGroup'){toggleNavGroup(x.dataset.group);return;}
+ if(action==='toggleNavGroup'){toggleNavGroup(x.dataset.group, e);return;}
  if(action==='toggleSidebar'){toggleSidebar();return;}
- startBusy();
+ if(!['calCancelBlock','calDeleteSlot','calRemoveSlot','calRevokeTeacher','interviewStage','removeStudent','teacherRemove','teacherToggle','removeContract'].includes(action)) startBusy();
  try{
  if(action.startsWith('onb'))return await onboarding.action(action,x);
  if(action.startsWith('cal'))return await calendar.action(action,x,e);
@@ -3912,7 +3969,7 @@ document.addEventListener('click',async e=>{
  if(action==='newContract'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('contratos');return contractForm(id);}
  if(action==='studentDetail')return await studentDetail(id);
  if(action==='studentProfileBack'){ui.page=ui.studentReturnPage||'directory';ui.studentId=null;ui.search='';return render();}
- if(action==='editStudent'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('alunos');if(!id){const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();if(!lim.isUnlimited&&cur>=lim.maxStudents){window.campanellaAlert(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Para cadastrar novos alunos, faça upgrade de plano ou adquira pacotes de +10 alunos.`,'Limite atingido');return contactUpgradeModal('alunos');}}return studentForm(id);}
+ if(action==='editStudent'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('alunos');if(!id){const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();if(!lim.isUnlimited&&cur>=lim.maxStudents){window.campanellaAlert(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Para cadastrar novos alunos, faça upgrade de plano ou adquira pacotes de +10 alunos.`,'Limite atingido');return contactUpgradeModal('alunos');}}return await studentForm(id);}
  if(action==='editTeacher'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('professores');if(!id){const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();if(!lim.isUnlimited&&cur>=lim.maxTeachers){window.campanellaAlert(`Limite de professores ativos atingido (${cur}/${lim.maxTeachers} no plano ${lim.planName}). Para cadastrar novos professores, faça upgrade de plano ou adquira professores adicionais.`,'Limite atingido');return contactUpgradeModal('professores');}}return teacherForm(id);}
  if(action==='teacherToggle'){if(isCurrentSchoolCrmOnly())return contactUpgradeModal('professores');const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');if(t.active===false){const lim=schoolPlanLimits(),cur=currentSchoolActiveTeachersCount();if(!lim.isUnlimited&&cur>=lim.maxTeachers){window.campanellaAlert(`Não é possível reativar este professor: o limite do plano ${lim.planName} (${lim.maxTeachers} professores ativos) já foi atingido. Faça upgrade de plano ou adquira professores adicionais.`,'Limite atingido');return contactUpgradeModal('professores');}}if(!await window.campanellaConfirm(`${t.active!==false?'Desativar':'Reativar'} ${t.name}?`))return;await save('teachers',{active:t.active===false},id);toast(t.active!==false?'Professor desativado.':'Professor reativado.');return await refresh();}
  if(action==='teacherRemove'){const t=lookup('teachers',id);if(!t)throw new Error('Professor não encontrado.');const linked=db.interviews.some(i=>i.teacher_id===id)||db.interview_invites.some(i=>i.teacher_id===id)||(db.crm_appointments||[]).some(i=>i.teacher_id===id)||db.contracts.some(c=>c.terms?.teacher_id===id);
@@ -3930,7 +3987,20 @@ document.addEventListener('click',async e=>{
  if(action==='contractTab'){ui.contractTab=x.dataset.tab;ui.contractStatus='all';ui.expiry='all';ui.search='';return render();}
  if(action==='studentTab'){ui.studentTab=x.dataset.tab;ui.search='';return render();}
  if(action==='openInterviewContract'){const c=lookup('contracts',id);if(!c)throw new Error('Contrato vinculado não encontrado.');ui.page='contracts';ui.search='';render();return previewContract(c.id);}
- if(action==='interviewStage'){const stage=x.dataset.stage;if(!['open','lost','archived'].includes(stage))return;const lead=lookup('leads',id),item=db.interviews.find(i=>i.lead_id===id);if(!lead||lead.status==='convertido')throw new Error('Lead indisponível.');if(item)await save('interviews',{pipeline_status:stage,archived_at:stage==='archived'?new Date().toISOString():null},item.id);await save('leads',{ficha_status:stage,status:stage==='lost'?'perdido':stage==='open'?(item?'entrevistado':'novo'):lead.status},id);toast(stage==='archived'?'Ficha arquivada':stage==='lost'?'Desistência registrada':'Ficha retomada');return await refresh();}
+ if(action==='interviewStage'){
+  const stage=x.dataset.stage;if(!['open','lost','archived'].includes(stage))return;
+  const lead=lookup('leads',id),item=db.interviews.find(i=>i.lead_id===id);
+  if(!lead||lead.status==='convertido')throw new Error('Lead indisponível.');
+  if(stage==='archived'||stage==='lost'){
+   const actionLabel=stage==='archived'?'Arquivar a ficha':'Registrar desistência da ficha';
+   if(!await window.campanellaConfirm(`${actionLabel} de "${lead.name}"?`,'Confirmar alteração',stage==='archived'?'Arquivar':'Registrar desistência'))return;
+  }
+  if(item)await save('interviews',{pipeline_status:stage,archived_at:stage==='archived'?new Date().toISOString():null},item.id);
+  await save('leads',{ficha_status:stage,status:stage==='lost'?'perdido':stage==='open'?(item?'entrevistado':'novo'):lead.status},id);
+  toast(stage==='archived'?'Ficha arquivada':stage==='lost'?'Desistência registrada':'Ficha retomada');
+  await refresh();
+  return render();
+ }
  if(action==='exportStudentsCSV'){exportStudentsCSV();return;}
  if(action==='closeEnrollment'){return closeEnrollmentModal(id);}
  if(action==='contractAddendum'){return contractAddendumModal(id);}
@@ -4980,6 +5050,7 @@ document.addEventListener('submit',async event=>{
    const lim=schoolPlanLimits(),cur=currentSchoolActiveStudentsCount();
    if(!lim.isUnlimited&&cur>=lim.maxStudents)throw new Error(`Limite de alunos ativos atingido (${cur}/${lim.maxStudents} no plano ${lim.planName}). Faça upgrade de plano ou adquira pacotes de +10 alunos.`);
   }else{
+   if(f.dataset.loadedId&&f.dataset.id!==f.dataset.loadedId)throw new Error('Inconsistência nos dados do formulário. Feche e abra a edição novamente.');
    const targetStudent=lookup('students',f.dataset.id);
    if(!targetStudent)throw new Error('Aluno não encontrado para atualização.');
   }
@@ -4997,6 +5068,33 @@ document.addEventListener('submit',async event=>{
     const [y,m,day]=today().split('-').map(Number),[sy,sm,sd]=d.birth_date.split('-').map(Number);
     const age=y-sy-(m<sm||(m===sm&&day<sd)?1:0);
     if(f.elements.is_minor.checked!==(age<18))throw new Error('A opção de menor de idade não confere com a data de nascimento.');
+   }
+   // D05: Checagem de possível cadastro duplicado
+   const normName=d.full_name.trim().toLowerCase();
+   const normCpf=onlyDigits(d.cpf);
+   const normEmail=(d.email||'').trim().toLowerCase();
+   const normPhone=phone;
+   const currentStudentId=f.dataset.id||'';
+
+   const dupMatch=(db.students||[]).find(st=>{
+    if(st.id===currentStudentId)return false;
+    if(normCpf&&onlyDigits(st.cpf)===normCpf)return true;
+    if(normPhone&&normalizeStudentPhone(st.phone)===normPhone)return true;
+    if(normEmail&&(st.email||'').trim().toLowerCase()===normEmail)return true;
+    if(normName&&(st.full_name||'').trim().toLowerCase()===normName)return true;
+    return false;
+   });
+
+   if(dupMatch&&!f.dataset.duplicateConfirmed){
+    let matchField='dados cadastrais';
+    if(normCpf&&onlyDigits(dupMatch.cpf)===normCpf)matchField='o mesmo CPF';
+    else if(normPhone&&normalizeStudentPhone(dupMatch.phone)===normPhone)matchField='o mesmo telefone';
+    else if(normEmail&&(dupMatch.email||'').trim().toLowerCase()===normEmail)matchField='o mesmo e-mail';
+    else if(normName&&(dupMatch.full_name||'').trim().toLowerCase()===normName)matchField='o mesmo nome completo';
+
+    const dupMsg=`Atenção: Já existe um aluno cadastrado nesta escola com ${matchField} (${dupMatch.full_name}).\n\nDeseja salvar o cadastro mesmo assim?`;
+    if(!await window.campanellaConfirm(dupMsg,'Possível cadastro duplicado','Salvar mesmo assim','Voltar e revisar'))return;
+    f.dataset.duplicateConfirmed='true';
    }
    const calendarManaged=!!f.dataset.id&&db.contracts.some(c=>(c.student_id===f.dataset.id||c.student2_id===f.dataset.id)&&c.terms?.calendar_v6&&['signed','pre_enrolled','ready_manual'].includes(c.status));
    let current_schedule=[],current_weekly_days=[],current_lesson_time=null,calendar_slot_ids=[];
@@ -5871,6 +5969,6 @@ sb.auth.onAuthStateChange((event)=>{
 });
 initialize().catch(errors);
 if(typeof window!=='undefined'){
- window.campanellaTest={db,ui,sb,save,refresh,lookup,manualContractHTML,contractPdfBase64,downloadManualContract,render,closeModal,studentDetail,manualEnrollmentForm,isBusy:()=>appBusy};
+ window.campanellaTest={db,ui,sb,save,refresh,lookup,manualContractHTML,contractPdfBase64,downloadManualContract,render,closeModal,studentDetail,studentForm,exportStudentsCSV,manualEnrollmentForm,calendar,crm,isBusy:()=>appBusy};
 }
 
